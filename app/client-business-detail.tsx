@@ -1,6 +1,6 @@
 /**
  * Client Portal — Business Detail Screen
- * Fetches data from separate public API endpoints with null-safety guards.
+ * Full dark-green portal theme with white text, glass cards, no scrollbar.
  */
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -18,31 +18,35 @@ import { getApiBaseUrl } from "@/constants/oauth";
 import * as Haptics from "expo-haptics";
 import { ClientPortalBackground } from "@/components/client-portal-background";
 
+// ─── Portal theme constants ───────────────────────────────────────────────────
+const PORTAL_BG   = "#1A3A28";
+const ACCENT      = "#8FBF6A";   // bright lime-green for active/accent
+const LIME_GREEN  = "#4A7C59";   // used for buttons
+const TEXT_PRIMARY = "#FFFFFF";
+const TEXT_MUTED   = "rgba(255,255,255,0.65)";
+const CARD_BG      = "rgba(255,255,255,0.07)";
+const CARD_BORDER  = "rgba(255,255,255,0.12)";
+const DIVIDER      = "rgba(255,255,255,0.10)";
+
 function formatPhone(raw: string): string {
   const digits = (raw ?? "").replace(/\D/g, "");
-  if (digits.length === 10) {
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
-  if (digits.length === 11 && digits[0] === "1") {
-    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
-  }
+  if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  if (digits.length === 11 && digits[0] === "1") return `+1 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
   return raw ?? "";
 }
 
-const LIME_GREEN = "#4A7C59";
-
 function getCategoryEmoji(category?: string | null): string {
   if (!category) return "✨";
-  const cat = category.toLowerCase();
-  if (cat.includes("hair")) return "✂️";
-  if (cat.includes("nail")) return "💅";
-  if (cat.includes("skin") || cat.includes("facial")) return "🧖";
-  if (cat.includes("massage") || cat.includes("body")) return "💆";
-  if (cat.includes("brow") || cat.includes("lash")) return "👁️";
-  if (cat.includes("wax")) return "🌿";
-  if (cat.includes("makeup") || cat.includes("beauty")) return "💄";
-  if (cat.includes("wellness") || cat.includes("spa")) return "🌸";
-  if (cat.includes("barber") || cat.includes("beard")) return "🪒";
+  const c = category.toLowerCase();
+  if (c.includes("hair")) return "✂️";
+  if (c.includes("nail")) return "💅";
+  if (c.includes("skin") || c.includes("facial")) return "🧖";
+  if (c.includes("massage") || c.includes("body")) return "💆";
+  if (c.includes("brow") || c.includes("lash")) return "👁️";
+  if (c.includes("wax")) return "🌿";
+  if (c.includes("makeup") || c.includes("beauty")) return "💄";
+  if (c.includes("wellness") || c.includes("spa")) return "🌸";
+  if (c.includes("barber") || c.includes("beard")) return "🪒";
   return "✨";
 }
 
@@ -63,7 +67,8 @@ interface ApiBusiness {
   id: number; businessName: string; ownerName: string; description: string | null;
   address: string | null; phone: string | null; email: string | null;
   businessCategory?: string | null; category?: string | null;
-  avgRating?: number | null; reviewCount?: number; businessLogoUri?: string | null; coverPhotoUri?: string | null;
+  avgRating?: number | null; reviewCount?: number;
+  businessLogoUri?: string | null; coverPhotoUri?: string | null;
   workingHours?: Record<string, { enabled: boolean; start: string; end: string }> | null;
 }
 interface ApiLocation {
@@ -73,7 +78,10 @@ interface ApiLocation {
 }
 
 const DAY_ORDER = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
-const DAY_LABELS: Record<string,string> = { monday:"Monday", tuesday:"Tuesday", wednesday:"Wednesday", thursday:"Thursday", friday:"Friday", saturday:"Saturday", sunday:"Sunday" };
+const DAY_LABELS: Record<string,string> = {
+  monday:"Monday", tuesday:"Tuesday", wednesday:"Wednesday",
+  thursday:"Thursday", friday:"Friday", saturday:"Saturday", sunday:"Sunday",
+};
 
 function formatPrice(price: string | null | undefined): string {
   if (!price) return "Price varies";
@@ -88,6 +96,9 @@ function parseWorkingHours(wh: Record<string, { enabled: boolean; start: string;
     return { day, isOpen: entry?.enabled ?? false, openTime: entry?.start ?? "—", closeTime: entry?.end ?? "—" };
   });
 }
+
+const isRemoteUri = (uri: string | null | undefined) =>
+  !!uri && (uri.startsWith("http://") || uri.startsWith("https://"));
 
 export default function ClientBusinessDetailScreen() {
   const colors = useColors();
@@ -111,16 +122,6 @@ export default function ClientBusinessDetailScreen() {
   const [detailReviewRating, setDetailReviewRating] = useState(5);
   const [detailReviewComment, setDetailReviewComment] = useState("");
   const [detailReviewSubmitting, setDetailReviewSubmitting] = useState(false);
-  // Derived: unique categories from services
-  const serviceCategories = useMemo(() => {
-    const cats = services.map(s => s.category).filter(Boolean) as string[];
-    return Array.from(new Set(cats));
-  }, [services]);
-  // Derived: services filtered by selected category
-  const filteredServices = useMemo(() => {
-    if (!serviceCategory) return services;
-    return services.filter(s => s.category === serviceCategory);
-  }, [services, serviceCategory]);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [lightboxVisible, setLightboxVisible] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -129,6 +130,16 @@ export default function ClientBusinessDetailScreen() {
 
   const SCREEN_WIDTH = Dimensions.get("window").width;
   const apiBase = getApiBaseUrl();
+
+  const serviceCategories = useMemo(() => {
+    const cats = services.map(s => s.category).filter(Boolean) as string[];
+    return Array.from(new Set(cats));
+  }, [services]);
+
+  const filteredServices = useMemo(() => {
+    if (!serviceCategory) return services;
+    return services.filter(s => s.category === serviceCategory);
+  }, [services, serviceCategory]);
 
   useEffect(() => {
     if (!slug) return;
@@ -199,22 +210,16 @@ export default function ClientBusinessDetailScreen() {
     router.push({ pathname: "/client-booking-wizard", params: { slug, serviceLocalId: service.localId } } as any);
   };
 
-  const s = styles(colors);
   const hours = parseWorkingHours(business?.workingHours);
   const category = business?.businessCategory ?? business?.category ?? null;
-  const rawLogoUri = business?.businessLogoUri ?? null;
-  const rawCoverUri = business?.coverPhotoUri ?? null;
-  // Only use URIs that are remote (http/https) — local file:// paths don't work cross-device
-  const isRemoteUri = (uri: string | null | undefined) =>
-    !!uri && (uri.startsWith("http://") || uri.startsWith("https://"));
-  const logoUri = isRemoteUri(rawLogoUri) ? rawLogoUri : null;
-  const coverUri = isRemoteUri(rawCoverUri) ? rawCoverUri : null;
+  const logoUri = isRemoteUri(business?.businessLogoUri) ? business!.businessLogoUri : null;
+  const coverUri = isRemoteUri(business?.coverPhotoUri) ? business!.coverPhotoUri : null;
 
   if (loading) {
     return (
       <ScreenContainer>
         <ClientPortalBackground />
-        <View style={s.loadingContainer}><ActivityIndicator size="large" color={LIME_GREEN} /></View>
+        <View style={s.loadingContainer}><ActivityIndicator size="large" color={ACCENT} /></View>
       </ScreenContainer>
     );
   }
@@ -224,9 +229,9 @@ export default function ClientBusinessDetailScreen() {
       <ScreenContainer className="px-6">
         <ClientPortalBackground />
         <View style={s.loadingContainer}>
-          <Text style={{ color: colors.foreground, fontSize: 16 }}>Business not found.</Text>
+          <Text style={{ color: TEXT_PRIMARY, fontSize: 16 }}>Business not found.</Text>
           <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
-            <Text style={{ color: LIME_GREEN }}>Go back</Text>
+            <Text style={{ color: ACCENT, fontSize: 14 }}>Go back</Text>
           </Pressable>
         </View>
       </ScreenContainer>
@@ -241,9 +246,10 @@ export default function ClientBusinessDetailScreen() {
   return (
     <ScreenContainer>
       <ClientPortalBackground />
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        {/* Header Banner */}
-        <View style={[s.banner, { backgroundColor: "#1A3A2A", overflow: "hidden" }]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+
+        {/* ── Header Banner ── */}
+        <View style={[s.banner, { backgroundColor: PORTAL_BG, overflow: "hidden" }]}>
           {(coverUri || logoUri) ? (
             <Image source={{ uri: coverUri || logoUri! }} style={StyleSheet.absoluteFillObject} contentFit="cover" transition={300} />
           ) : null}
@@ -256,81 +262,82 @@ export default function ClientBusinessDetailScreen() {
           </Pressable>
         </View>
 
-        {/* Business Info */}
+        {/* ── Business Info ── */}
         <View style={s.infoSection}>
-          <View style={[s.logoCircle, { backgroundColor: `${LIME_GREEN}20`, borderColor: colors.background }]}>
+          <View style={[s.logoCircle, { backgroundColor: `${LIME_GREEN}30`, borderColor: PORTAL_BG }]}>
             {logoUri
               ? <Image source={{ uri: logoUri }} style={{ width: 66, height: 66, borderRadius: 33 }} contentFit="cover" />
               : <Image source={require("../assets/images/icon.png")} style={{ width: 66, height: 66, borderRadius: 33 }} contentFit="cover" />}
           </View>
-          <Text style={[s.bizName, { color: colors.foreground }]}>{business.businessName}</Text>
-          {category && <Text style={[s.bizCategory, { color: LIME_GREEN }]}>{category}</Text>}
+          <Text style={[s.bizName, { color: TEXT_PRIMARY }]}>{business.businessName}</Text>
+          {category && <Text style={[s.bizCategory, { color: ACCENT }]}>{category}</Text>}
           {distanceMiles ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
-              <IconSymbol name="location.fill" size={12} color={colors.muted} />
-              <Text style={{ color: colors.muted, fontSize: 13 }}>{distanceMiles} mi away</Text>
+              <IconSymbol name="location.fill" size={12} color={TEXT_MUTED} />
+              <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>{distanceMiles} mi away</Text>
             </View>
           ) : null}
           {business.avgRating != null && (
             <View style={s.ratingRow}>
               {[1,2,3,4,5].map((star) => (
-                <IconSymbol key={star} name="star.fill" size={14} color={star <= Math.round(Number(business.avgRating)) ? colors.warning : colors.border} />
+                <IconSymbol key={star} name="star.fill" size={14} color={star <= Math.round(Number(business.avgRating)) ? "#F59E0B" : DIVIDER} />
               ))}
-              <Text style={[s.ratingText, { color: colors.muted }]}>
+              <Text style={[s.ratingText, { color: TEXT_MUTED }]}>
                 {Number(business.avgRating).toFixed(1)} ({business.reviewCount ?? 0} reviews)
               </Text>
             </View>
           )}
-          {business.address && (
+          {/* Show primary location address if only 1 location, else use business.address */}
+          {(locations.length === 1 ? locations[0].address : business.address) ? (
             <View style={s.metaRow}>
-              <IconSymbol name="location.fill" size={13} color={colors.muted} />
-              <Text style={[s.metaText, { color: colors.muted }]}>{business.address}</Text>
+              <IconSymbol name="location.fill" size={13} color={TEXT_MUTED} />
+              <Text style={[s.metaText, { color: TEXT_MUTED }]}>
+                {locations.length === 1 ? locations[0].address : business.address}
+              </Text>
             </View>
-          )}
-          {business.phone && (
-            <Pressable style={({ pressed }) => [s.metaRow, pressed && { opacity: 0.7 }]} onPress={() => Linking.openURL(`tel:${formatPhone(business.phone ?? "")}`)}>
-              <IconSymbol name="phone.fill" size={13} color={colors.muted} />
-              <Text style={[s.metaText, { color: LIME_GREEN }]}>{formatPhone(business.phone ?? "")}</Text>
+          ) : null}
+          {/* Phone: prefer location phone if single location */}
+          {(locations.length === 1 ? (locations[0].phone || business.phone) : business.phone) ? (
+            <Pressable
+              style={({ pressed }) => [s.metaRow, pressed && { opacity: 0.7 }]}
+              onPress={() => Linking.openURL(`tel:${(locations.length === 1 ? (locations[0].phone || business.phone) : business.phone) ?? ""}`)}
+            >
+              <IconSymbol name="phone.fill" size={13} color={TEXT_MUTED} />
+              <Text style={[s.metaText, { color: ACCENT }]}>
+                {formatPhone((locations.length === 1 ? (locations[0].phone || business.phone) : business.phone) ?? "")}
+              </Text>
             </Pressable>
-          )}
+          ) : null}
           {business.description && (
-            <Text style={[s.description, { color: colors.muted }]}>{business.description}</Text>
+            <Text style={[s.description, { color: TEXT_MUTED }]}>{business.description}</Text>
           )}
         </View>
 
-        {/* Tab Bar */}
-        <View style={[s.tabBar, { borderBottomColor: colors.border }]}>
+        {/* ── Tab Bar ── */}
+        <View style={[s.tabBar, { borderBottomColor: DIVIDER }]}>
           {tabs.map((tab) => (
-            <Pressable key={tab} style={[s.tab, activeTab === tab && { borderBottomColor: LIME_GREEN, borderBottomWidth: 2 }]} onPress={() => setActiveTab(tab)}>
-              <Text style={[s.tabText, { color: activeTab === tab ? LIME_GREEN : colors.muted }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+            <Pressable key={tab} style={[s.tab, activeTab === tab && { borderBottomColor: ACCENT, borderBottomWidth: 2 }]} onPress={() => setActiveTab(tab)}>
+              <Text style={[s.tabText, { color: activeTab === tab ? ACCENT : TEXT_MUTED }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 {tab === "gallery"
-                ? `Gallery (${servicePhotos.length})`
-                : tab === "reviews" && reviews.length > 0
-                ? `Reviews (${reviews.length})`
-                : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  ? `Gallery (${servicePhotos.length})`
+                  : tab === "reviews" && reviews.length > 0
+                  ? `Reviews (${reviews.length})`
+                  : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </Text>
             </Pressable>
           ))}
         </View>
 
-        {/* Services Tab */}
+        {/* ── Services Tab ── */}
         {activeTab === "services" && (
           <View>
-            {/* Category filter chips */}
             {serviceCategories.length > 1 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, gap: 8, flexDirection: "row" }}>
-                <Pressable
-                  onPress={() => setServiceCategory(null)}
-                  style={[s.catChip, !serviceCategory && { backgroundColor: LIME_GREEN }]}
-                >
+                <Pressable onPress={() => setServiceCategory(null)} style={[s.catChip, !serviceCategory && { backgroundColor: ACCENT }]}>
                   <Text style={[s.catChipText, !serviceCategory && { color: "#fff" }]}>All</Text>
                 </Pressable>
                 {serviceCategories.map(cat => (
-                  <Pressable
-                    key={cat}
-                    onPress={() => setServiceCategory(serviceCategory === cat ? null : cat)}
-                    style={[s.catChip, serviceCategory === cat && { backgroundColor: LIME_GREEN }]}
-                  >
+                  <Pressable key={cat} onPress={() => setServiceCategory(serviceCategory === cat ? null : cat)} style={[s.catChip, serviceCategory === cat && { backgroundColor: ACCENT }]}>
                     <Text style={[s.catChipText, serviceCategory === cat && { color: "#fff" }]}>{cat}</Text>
                   </Pressable>
                 ))}
@@ -338,38 +345,33 @@ export default function ClientBusinessDetailScreen() {
             )}
             <View style={s.tabContent}>
               {filteredServices.length === 0
-                ? <Text style={[s.emptyText, { color: colors.muted }]}>No services in this category.</Text>
+                ? <Text style={[s.emptyText, { color: TEXT_MUTED }]}>No services in this category.</Text>
                 : filteredServices.map((svc) => (
-                  <View key={svc.localId} style={[s.serviceCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: "column", padding: 0, overflow: "hidden" }]}>
-                    {/* Service image — tap to preview */}
+                  <View key={svc.localId} style={[s.serviceCard, { backgroundColor: CARD_BG, borderColor: CARD_BORDER, flexDirection: "column", padding: 0, overflow: "hidden" }]}>
                     {svc.photoUri ? (
                       <Pressable onPress={() => setServiceLightboxUri(svc.photoUri!)} style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1, width: "100%", height: 160 })}>
-                        <Image
-                          source={{ uri: svc.photoUri }}
-                          style={{ width: "100%", height: 160 }}
-                          contentFit="cover"
-                        />
+                        <Image source={{ uri: svc.photoUri }} style={{ width: "100%", height: 160 }} contentFit="cover" />
                         <View style={{ position: "absolute", bottom: 8, right: 8, backgroundColor: "rgba(0,0,0,0.45)", borderRadius: 14, paddingHorizontal: 8, paddingVertical: 4, flexDirection: "row", alignItems: "center", gap: 4 }}>
                           <IconSymbol name="magnifyingglass" size={12} color="#FFFFFF" />
                           <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "600" }}>Preview</Text>
                         </View>
                       </Pressable>
                     ) : (
-                      <View style={{ width: "100%", height: 80, backgroundColor: `${LIME_GREEN}15`, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 10 }}>
+                      <View style={{ width: "100%", height: 80, backgroundColor: `${LIME_GREEN}25`, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 10 }}>
                         <Text style={{ fontSize: 28 }}>{getCategoryEmoji(svc.category)}</Text>
-                        <Text style={{ fontSize: 13, fontWeight: "600", color: LIME_GREEN, opacity: 0.8 }}>{svc.category || "Service"}</Text>
+                        <Text style={{ fontSize: 13, fontWeight: "600", color: ACCENT }}>{svc.category || "Service"}</Text>
                       </View>
                     )}
                     <View style={{ padding: 14, flexDirection: "row", alignItems: "center", gap: 12 }}>
                       <View style={s.serviceInfo}>
                         {svc.category && (
-                          <Text style={{ fontSize: 10, fontWeight: "700", color: LIME_GREEN, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>{svc.category}</Text>
+                          <Text style={{ fontSize: 10, fontWeight: "700", color: ACCENT, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>{svc.category}</Text>
                         )}
-                        <Text style={[s.serviceName, { color: colors.foreground }]}>{svc.name}</Text>
-                        {svc.description && <Text style={[s.serviceDesc, { color: colors.muted }]} numberOfLines={2}>{svc.description}</Text>}
+                        <Text style={[s.serviceName, { color: TEXT_PRIMARY }]}>{svc.name}</Text>
+                        {svc.description && <Text style={[s.serviceDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{svc.description}</Text>}
                         <View style={s.serviceMeta}>
-                          <Text style={[s.serviceDuration, { color: colors.muted }]}>⏱ {svc.duration} min</Text>
-                          <Text style={[s.servicePrice, { color: colors.foreground }]}>{formatPrice(svc.price)}</Text>
+                          <Text style={[s.serviceDuration, { color: TEXT_MUTED }]}>⏱ {svc.duration} min</Text>
+                          <Text style={[s.servicePrice, { color: TEXT_PRIMARY }]}>{formatPrice(svc.price)}</Text>
                         </View>
                       </View>
                       <Pressable style={({ pressed }) => [s.bookBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]} onPress={() => handleBookService(svc)}>
@@ -382,31 +384,31 @@ export default function ClientBusinessDetailScreen() {
           </View>
         )}
 
-        {/* Staff Tab */}
+        {/* ── Staff Tab ── */}
         {activeTab === "staff" && (
           <View style={s.tabContent}>
             {staff.length === 0
-              ? <Text style={[s.emptyText, { color: colors.muted }]}>No staff listed.</Text>
+              ? <Text style={[s.emptyText, { color: TEXT_MUTED }]}>No staff listed.</Text>
               : staff.map((member) => (
-                <Pressable key={member.localId} style={({ pressed }) => [s.staffCard, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.92 : 1 }]} onPress={() => setExpandedStaffId(expandedStaffId === member.localId ? null : member.localId)}>
+                <Pressable key={member.localId} style={({ pressed }) => [s.staffCard, { backgroundColor: CARD_BG, borderColor: CARD_BORDER, opacity: pressed ? 0.92 : 1 }]} onPress={() => setExpandedStaffId(expandedStaffId === member.localId ? null : member.localId)}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                    <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}20` }]}>
+                    <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}30` }]}>
                       {member.photoUri
                         ? <Image source={{ uri: member.photoUri }} style={{ width: 48, height: 48, borderRadius: 24 }} contentFit="cover" />
-                        : <Text style={{ fontSize: 20, fontWeight: "700", color: LIME_GREEN }}>{member.name.charAt(0).toUpperCase()}</Text>}
+                        : <Text style={{ fontSize: 20, fontWeight: "700", color: ACCENT }}>{member.name.charAt(0).toUpperCase()}</Text>}
                     </View>
                     <View style={[s.staffInfo, { flex: 1 }]}>
-                      <Text style={[s.staffName, { color: colors.foreground }]}>{member.name}</Text>
-                      {member.role && <Text style={[s.staffRole, { color: LIME_GREEN }]}>{member.role}</Text>}
-                      {member.bio && <Text style={[s.staffBio, { color: colors.muted }]} numberOfLines={expandedStaffId === member.localId ? 0 : 2}>{member.bio}</Text>}
+                      <Text style={[s.staffName, { color: TEXT_PRIMARY }]}>{member.name}</Text>
+                      {member.role && <Text style={[s.staffRole, { color: ACCENT }]}>{member.role}</Text>}
+                      {member.bio && <Text style={[s.staffBio, { color: TEXT_MUTED }]} numberOfLines={expandedStaffId === member.localId ? 0 : 2}>{member.bio}</Text>}
                     </View>
-                    <IconSymbol name={expandedStaffId === member.localId ? "chevron.up" : "chevron.down"} size={16} color={colors.muted} />
+                    <IconSymbol name={expandedStaffId === member.localId ? "chevron.up" : "chevron.down"} size={16} color={TEXT_MUTED} />
                   </View>
                   {expandedStaffId === member.localId && (
-                    <View style={{ marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border }}>
+                    <View style={{ marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: DIVIDER }}>
                       <Pressable
-                        style={({ pressed }) => ({ backgroundColor: LIME_GREEN, borderRadius: 12, paddingVertical: 12, alignItems: "center", opacity: pressed ? 0.85 : 1, flexDirection: "row", justifyContent: "center", gap: 8 })}
-                        onPress={() => router.push({ pathname: "/client-booking-wizard", params: { businessSlug: business.businessSlug ?? "", preStaffId: member.localId, preStaffName: member.name } })}
+                        style={({ pressed }) => ({ backgroundColor: ACCENT, borderRadius: 12, paddingVertical: 12, alignItems: "center", opacity: pressed ? 0.85 : 1, flexDirection: "row", justifyContent: "center", gap: 8 })}
+                        onPress={() => router.push({ pathname: "/client-booking-wizard", params: { slug, preStaffId: member.localId, preStaffName: member.name } } as any)}
                       >
                         <IconSymbol name="calendar.badge.plus" size={16} color="#FFFFFF" />
                         <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 15 }}>Book with {member.name}</Text>
@@ -418,31 +420,33 @@ export default function ClientBusinessDetailScreen() {
           </View>
         )}
 
-        {/* Hours Tab */}
+        {/* ── Hours Tab ── */}
         {activeTab === "hours" && (
           <View style={s.tabContent}>
             {locations.length > 1 ? (
-              // Multiple locations: show per-location hours
               locations.map((loc) => {
                 const locHours = parseWorkingHours(loc.workingHours);
                 return (
-                  <View key={loc.localId} style={[s.locationHoursCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <View key={loc.localId} style={[s.locationHoursCard]}>
                     <View style={s.locationHoursHeader}>
-                      <IconSymbol name="location.fill" size={14} color={LIME_GREEN} />
-                      <Text style={[s.locationHoursName, { color: colors.foreground }]}>{loc.name}</Text>
+                      <IconSymbol name="location.fill" size={14} color={ACCENT} />
+                      <Text style={s.locationHoursName}>{loc.name}</Text>
                     </View>
-                    {loc.address ? (
-                      <Text style={[{ color: colors.muted, fontSize: 12, marginBottom: 8 }]}>{loc.address}</Text>
+                    {loc.address ? <Text style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 4 }}>{loc.address}</Text> : null}
+                    {loc.phone ? (
+                      <Pressable onPress={() => Linking.openURL(`tel:${loc.phone}`)} style={{ marginBottom: 8 }}>
+                        <Text style={{ color: ACCENT, fontSize: 12 }}>{formatPhone(loc.phone)}</Text>
+                      </Pressable>
                     ) : null}
                     {loc.temporarilyClosed ? (
-                      <Text style={{ color: colors.error, fontSize: 13, fontWeight: "600" }}>Temporarily Closed</Text>
+                      <Text style={{ color: "#F87171", fontSize: 14, fontWeight: "600", textAlign: "center", paddingVertical: 12 }}>Temporarily Closed</Text>
                     ) : locHours.length === 0 ? (
-                      <Text style={{ color: colors.muted, fontSize: 13 }}>Hours not set</Text>
+                      <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>Hours not set</Text>
                     ) : (
                       locHours.map((h) => (
-                        <View key={h.day} style={[s.hoursRow, { borderBottomColor: colors.border }]}>
-                          <Text style={[s.hoursDay, { color: colors.foreground }]}>{h.day}</Text>
-                          <Text style={[s.hoursTime, { color: h.isOpen ? LIME_GREEN : colors.muted }]}>
+                        <View key={h.day} style={s.hoursRow}>
+                          <Text style={s.hoursDay}>{DAY_LABELS[h.day] ?? h.day}</Text>
+                          <Text style={[s.hoursTime, { color: h.isOpen ? ACCENT : TEXT_MUTED }]}>
                             {h.isOpen ? `${h.openTime} – ${h.closeTime}` : "Closed"}
                           </Text>
                         </View>
@@ -452,27 +456,32 @@ export default function ClientBusinessDetailScreen() {
                 );
               })
             ) : locations.length === 1 ? (
-              // Single location: show its hours (or fall back to business hours)
               (() => {
                 const loc = locations[0];
                 const locHours = parseWorkingHours(loc.workingHours ?? business?.workingHours);
                 return (
-                  <View>
+                  <View style={s.locationHoursCard}>
                     {loc.address ? (
-                      <View style={[s.metaRow, { marginBottom: 12 }]}>
-                        <IconSymbol name="location.fill" size={13} color={colors.muted} />
-                        <Text style={[s.metaText, { color: colors.muted }]}>{loc.address}</Text>
+                      <View style={[s.metaRow, { marginBottom: 8 }]}>
+                        <IconSymbol name="location.fill" size={13} color={TEXT_MUTED} />
+                        <Text style={[s.metaText, { color: TEXT_MUTED }]}>{loc.address}</Text>
                       </View>
                     ) : null}
+                    {loc.phone ? (
+                      <Pressable onPress={() => Linking.openURL(`tel:${loc.phone}`)} style={[s.metaRow, { marginBottom: 12 }]}>
+                        <IconSymbol name="phone.fill" size={13} color={TEXT_MUTED} />
+                        <Text style={[s.metaText, { color: ACCENT }]}>{formatPhone(loc.phone)}</Text>
+                      </Pressable>
+                    ) : null}
                     {loc.temporarilyClosed ? (
-                      <Text style={{ color: colors.error, fontSize: 14, fontWeight: "600", textAlign: "center", paddingVertical: 16 }}>Temporarily Closed</Text>
+                      <Text style={{ color: "#F87171", fontSize: 14, fontWeight: "600", textAlign: "center", paddingVertical: 16 }}>Temporarily Closed</Text>
                     ) : locHours.length === 0 ? (
-                      <Text style={[s.emptyText, { color: colors.muted }]}>Hours not available.</Text>
+                      <Text style={[s.emptyText, { color: TEXT_MUTED }]}>Hours not available.</Text>
                     ) : (
                       locHours.map((h) => (
-                        <View key={h.day} style={[s.hoursRow, { borderBottomColor: colors.border }]}>
-                          <Text style={[s.hoursDay, { color: colors.foreground }]}>{DAY_LABELS[h.day] ?? h.day}</Text>
-                          <Text style={[s.hoursTime, { color: h.isOpen ? LIME_GREEN : colors.muted }]}>
+                        <View key={h.day} style={s.hoursRow}>
+                          <Text style={s.hoursDay}>{DAY_LABELS[h.day] ?? h.day}</Text>
+                          <Text style={[s.hoursTime, { color: h.isOpen ? ACCENT : TEXT_MUTED }]}>
                             {h.isOpen ? `${h.openTime} – ${h.closeTime}` : "Closed"}
                           </Text>
                         </View>
@@ -482,71 +491,69 @@ export default function ClientBusinessDetailScreen() {
                 );
               })()
             ) : (
-              // No locations — fall back to business-level hours
-              hours.length === 0
-                ? <Text style={[s.emptyText, { color: colors.muted }]}>Hours not available.</Text>
-                : hours.map((h) => (
-                  <View key={h.day} style={[s.hoursRow, { borderBottomColor: colors.border }]}>
-                    <Text style={[s.hoursDay, { color: colors.foreground }]}>{DAY_LABELS[h.day] ?? h.day}</Text>
-                    <Text style={[s.hoursTime, { color: h.isOpen ? LIME_GREEN : colors.muted }]}>
-                      {h.isOpen ? `${h.openTime} – ${h.closeTime}` : "Closed"}
-                    </Text>
+              <View style={s.locationHoursCard}>
+                {business.address ? (
+                  <View style={[s.metaRow, { marginBottom: 8 }]}>
+                    <IconSymbol name="location.fill" size={13} color={TEXT_MUTED} />
+                    <Text style={[s.metaText, { color: TEXT_MUTED }]}>{business.address}</Text>
                   </View>
-                ))
+                ) : null}
+                {hours.length === 0
+                  ? <Text style={[s.emptyText, { color: TEXT_MUTED }]}>Hours not available.</Text>
+                  : hours.map((h) => (
+                    <View key={h.day} style={s.hoursRow}>
+                      <Text style={s.hoursDay}>{DAY_LABELS[h.day] ?? h.day}</Text>
+                      <Text style={[s.hoursTime, { color: h.isOpen ? ACCENT : TEXT_MUTED }]}>
+                        {h.isOpen ? `${h.openTime} – ${h.closeTime}` : "Closed"}
+                      </Text>
+                    </View>
+                  ))}
+              </View>
             )}
           </View>
         )}
 
-        {/* Reviews Tab */}
+        {/* ── Reviews Tab ── */}
         {activeTab === "reviews" && (
           <View style={s.tabContent}>
-            {/* Write a Review button */}
             {state.account && !reviews.some(r => r.clientName === (state.account?.name ?? "")) && (
-              <Pressable
-                onPress={() => setDetailReviewVisible(true)}
-                style={({ pressed }) => [s.writeReviewBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
-              >
+              <Pressable onPress={() => setDetailReviewVisible(true)} style={({ pressed }) => [s.writeReviewBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}>
                 <IconSymbol name="star.fill" size={15} color="#fff" />
                 <Text style={s.writeReviewBtnText}>Write a Review</Text>
               </Pressable>
             )}
             {reviews.length === 0
-              ? <Text style={[s.emptyText, { color: colors.muted }]}>No reviews yet.</Text>
+              ? <Text style={[s.emptyText, { color: TEXT_MUTED }]}>No reviews yet.</Text>
               : (() => {
-                  // Sort: client's own review first, then by date desc
-                  const clientPhone = state.account?.phone ?? "";
                   const clientName = state.account?.name ?? "";
                   const sorted = [...reviews].sort((a, b) => {
-                    const aIsOwn = clientPhone && a.clientName === clientName;
-                    const bIsOwn = clientPhone && b.clientName === clientName;
-                    if (aIsOwn && !bIsOwn) return -1;
-                    if (!aIsOwn && bIsOwn) return 1;
+                    const aOwn = clientName && a.clientName === clientName;
+                    const bOwn = clientName && b.clientName === clientName;
+                    if (aOwn && !bOwn) return -1;
+                    if (!aOwn && bOwn) return 1;
                     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
                   });
                   return sorted.map((rev, idx) => {
-                    const isOwnReview = clientName && rev.clientName === clientName;
+                    const isOwn = clientName && rev.clientName === clientName;
                     return (
-                      <View key={idx} style={[
-                        s.reviewCard,
-                        { backgroundColor: isOwnReview ? "rgba(74,124,89,0.12)" : colors.surface, borderColor: isOwnReview ? LIME_GREEN : colors.border },
-                      ]}>
+                      <View key={idx} style={[s.reviewCard, isOwn && { borderColor: ACCENT, backgroundColor: `${LIME_GREEN}15` }]}>
                         <View style={s.reviewHeader}>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1 }}>
-                            <Text style={[s.reviewerName, { color: colors.foreground }]}>{rev.clientName}</Text>
-                            {isOwnReview && (
-                              <View style={{ backgroundColor: `${LIME_GREEN}20`, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
-                                <Text style={{ color: LIME_GREEN, fontSize: 10, fontWeight: "700" }}>Your review</Text>
+                            <Text style={[s.reviewerName, { color: TEXT_PRIMARY }]}>{rev.clientName}</Text>
+                            {isOwn && (
+                              <View style={{ backgroundColor: `${ACCENT}25`, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                                <Text style={{ color: ACCENT, fontSize: 10, fontWeight: "700" }}>Your review</Text>
                               </View>
                             )}
                           </View>
                           <View style={s.reviewStars}>
                             {[1,2,3,4,5].map((star) => (
-                              <IconSymbol key={star} name="star.fill" size={12} color={star <= rev.rating ? colors.warning : colors.border} />
+                              <IconSymbol key={star} name="star.fill" size={12} color={star <= rev.rating ? "#F59E0B" : DIVIDER} />
                             ))}
                           </View>
                         </View>
-                        {rev.comment && <Text style={[s.reviewComment, { color: colors.muted }]}>{rev.comment}</Text>}
-                        <Text style={[s.reviewDate, { color: colors.muted }]}>{new Date(rev.createdAt).toLocaleDateString()}</Text>
+                        {rev.comment && <Text style={[s.reviewComment, { color: TEXT_MUTED }]}>{rev.comment}</Text>}
+                        <Text style={[s.reviewDate, { color: TEXT_MUTED }]}>{new Date(rev.createdAt).toLocaleDateString()}</Text>
                       </View>
                     );
                   });
@@ -555,7 +562,7 @@ export default function ClientBusinessDetailScreen() {
           </View>
         )}
 
-        {/* Gallery Tab */}
+        {/* ── Gallery Tab ── */}
         {activeTab === "gallery" && (
           <View style={{ paddingTop: 16 }}>
             <FlatList
@@ -576,14 +583,14 @@ export default function ClientBusinessDetailScreen() {
             {servicePhotos.length > 1 && (
               <View style={s.dotRow}>
                 {servicePhotos.map((_, i) => (
-                  <View key={i} style={[s.dot, { backgroundColor: i === galleryIndex ? LIME_GREEN : colors.border }]} />
+                  <View key={i} style={[s.dot, { backgroundColor: i === galleryIndex ? ACCENT : DIVIDER }]} />
                 ))}
               </View>
             )}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingTop: 12 }}>
               {servicePhotos.map((photo, idx) => (
                 <Pressable key={photo.id} onPress={() => { setLightboxIndex(idx); setLightboxVisible(true); }} style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
-                  <Image source={{ uri: photo.url }} style={[s.thumbnail, idx === galleryIndex && { borderColor: LIME_GREEN, borderWidth: 2 }]} contentFit="cover" transition={200} />
+                  <Image source={{ uri: photo.url }} style={[s.thumbnail, idx === galleryIndex && { borderColor: ACCENT, borderWidth: 2 }]} contentFit="cover" transition={200} />
                 </Pressable>
               ))}
             </ScrollView>
@@ -591,7 +598,7 @@ export default function ClientBusinessDetailScreen() {
         )}
       </ScrollView>
 
-      {/* Lightbox Modal */}
+      {/* ── Lightbox Modal ── */}
       <Modal visible={lightboxVisible} transparent animationType="fade" onRequestClose={() => setLightboxVisible(false)}>
         <View style={s.lightboxOverlay}>
           <Pressable style={s.lightboxClose} onPress={() => setLightboxVisible(false)}>
@@ -612,7 +619,7 @@ export default function ClientBusinessDetailScreen() {
         </View>
       </Modal>
 
-      {/* Service Image Lightbox */}
+      {/* ── Service Image Lightbox ── */}
       <Modal visible={!!serviceLightboxUri} transparent animationType="fade" onRequestClose={() => setServiceLightboxUri(null)}>
         <View style={s.lightboxOverlay}>
           <Pressable style={s.lightboxClose} onPress={() => setServiceLightboxUri(null)}>
@@ -626,32 +633,31 @@ export default function ClientBusinessDetailScreen() {
         </View>
       </Modal>
 
-      {/* Write a Review Modal */}
+      {/* ── Write a Review Modal ── */}
       <Modal visible={detailReviewVisible} transparent animationType="slide" onRequestClose={() => setDetailReviewVisible(false)}>
-        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <View style={[s.reviewModal, { backgroundColor: colors.surface }]}>
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
+          <View style={[s.reviewModal, { backgroundColor: "#1E3D2F" }]}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <Text style={[s.reviewModalTitle, { color: colors.foreground }]}>Write a Review</Text>
+              <Text style={[s.reviewModalTitle, { color: TEXT_PRIMARY }]}>Write a Review</Text>
               <Pressable onPress={() => setDetailReviewVisible(false)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-                <IconSymbol name="xmark" size={20} color={colors.muted} />
+                <IconSymbol name="xmark" size={20} color={TEXT_MUTED} />
               </Pressable>
             </View>
-            <Text style={[{ fontSize: 13, color: colors.muted, marginBottom: 8 }]}>{business?.businessName}</Text>
-            {/* Star rating */}
+            <Text style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 8 }}>{business?.businessName}</Text>
             <View style={{ flexDirection: "row", justifyContent: "center", gap: 10, marginBottom: 8 }}>
               {[1,2,3,4,5].map(star => (
                 <Pressable key={star} onPress={() => setDetailReviewRating(star)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.9 : 1 }] })}>
-                  <IconSymbol name="star.fill" size={36} color={star <= detailReviewRating ? colors.warning : colors.border} />
+                  <IconSymbol name="star.fill" size={36} color={star <= detailReviewRating ? "#F59E0B" : DIVIDER} />
                 </Pressable>
               ))}
             </View>
-            <Text style={{ textAlign: "center", color: LIME_GREEN, fontWeight: "700", fontSize: 14, marginBottom: 12 }}>
+            <Text style={{ textAlign: "center", color: ACCENT, fontWeight: "700", fontSize: 14, marginBottom: 12 }}>
               {["Terrible","Poor","Okay","Good","Excellent!"][detailReviewRating - 1]}
             </Text>
             <TextInput
-              style={[s.reviewInput, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+              style={[s.reviewInput, { backgroundColor: "rgba(255,255,255,0.08)", color: TEXT_PRIMARY, borderColor: CARD_BORDER }]}
               placeholder="Share your experience (optional)"
-              placeholderTextColor={colors.muted}
+              placeholderTextColor={TEXT_MUTED}
               multiline numberOfLines={3}
               value={detailReviewComment}
               onChangeText={setDetailReviewComment}
@@ -684,88 +690,102 @@ export default function ClientBusinessDetailScreen() {
           </View>
         </View>
       </Modal>
-      {/* Sticky Book Button */}
-      <View style={[s.stickyBook, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-        <Pressable
-          style={({ pressed }) => [s.stickyBookBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
-          onPress={() => {
-            if (!state.account) { router.push("/client-signin" as any); return; }
-            if (services.length > 0) handleBookService(services[0]);
-          }}
-        >
-          <IconSymbol name="calendar" size={18} color="#FFFFFF" />
-          <Text style={s.stickyBookBtnText}>Book an Appointment</Text>
-        </Pressable>
+
+      {/* ── Sticky Book Button ── */}
+      <View style={[s.stickyBook, { backgroundColor: PORTAL_BG, borderTopColor: DIVIDER }]}>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <Pressable
+            style={({ pressed }) => [s.stickyGiftBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+            onPress={() => {
+              if (!state.account) { router.push("/client-signin" as any); return; }
+              router.push({ pathname: "/client-buy-gift", params: { slug, businessName: business?.name ?? "" } } as any);
+            }}
+          >
+            <Text style={{ fontSize: 16 }}>🎁</Text>
+            <Text style={s.stickyGiftBtnText}>Gift</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [s.stickyBookBtn, { flex: 1 }, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+            onPress={() => {
+              if (!state.account) { router.push("/client-signin" as any); return; }
+              if (services.length > 0) handleBookService(services[0]);
+            }}
+          >
+            <IconSymbol name="calendar" size={18} color="#FFFFFF" />
+            <Text style={s.stickyBookBtnText}>Book an Appointment</Text>
+          </Pressable>
+        </View>
       </View>
     </ScreenContainer>
   );
 }
 
-const styles = (colors: ReturnType<typeof useColors>) =>
-  StyleSheet.create({
-    loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
-    banner: { height: 160, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingHorizontal: 16, paddingTop: 16 },
-    backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center" },
-    saveBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center" },
-    infoSection: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, alignItems: "center", gap: 6 },
-    logoCircle: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginTop: -36, borderWidth: 3 },
-    bizName: { fontSize: 22, fontWeight: "700", textAlign: "center" },
-    bizCategory: { fontSize: 13, fontWeight: "600" },
-    ratingRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-    ratingText: { fontSize: 12, marginLeft: 4 },
-    metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-    metaText: { fontSize: 13 },
-    description: { fontSize: 14, textAlign: "center", lineHeight: 20, marginTop: 4 },
-    tabBar: { flexDirection: "row", borderBottomWidth: 1, marginHorizontal: 0, paddingHorizontal: 8 },
-    tab: { flex: 1, alignItems: "center", paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: "transparent", paddingHorizontal: 4 },
-    tabText: { fontSize: 12, fontWeight: "600", textAlign: "center" },
-    tabContent: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
-    emptyText: { textAlign: "center", fontSize: 14, paddingVertical: 24 },
-    serviceCard: { flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1, padding: 14, gap: 12 },
-    catChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: LIME_GREEN, backgroundColor: "transparent" },
-    catChipText: { fontSize: 13, fontWeight: "600", color: LIME_GREEN },
-    serviceInfo: { flex: 1, gap: 4 },
-    serviceName: { fontSize: 15, fontWeight: "600" },
-    serviceDesc: { fontSize: 12, lineHeight: 17 },
-    serviceMeta: { flexDirection: "row", gap: 12 },
-    serviceDuration: { fontSize: 12 },
-    servicePrice: { fontSize: 13, fontWeight: "700" },
-    bookBtn: { backgroundColor: LIME_GREEN, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-    bookBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
-    staffCard: { flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1, padding: 14, gap: 12 },
-    staffAvatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
-    staffInfo: { flex: 1, gap: 3 },
-    staffName: { fontSize: 15, fontWeight: "600" },
-    staffRole: { fontSize: 12, fontWeight: "600" },
-    staffBio: { fontSize: 12, lineHeight: 17 },
-    hoursRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, borderBottomWidth: 1 },
-    hoursDay: { fontSize: 14, fontWeight: "600" },
-    hoursTime: { fontSize: 14 },
-    locationHoursCard: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 0, marginBottom: 4 },
-    locationHoursHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
-    locationHoursName: { fontSize: 15, fontWeight: "700" },
-    reviewCard: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 6 },
-    reviewHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    reviewerName: { fontSize: 14, fontWeight: "600" },
-    reviewStars: { flexDirection: "row", gap: 2 },
-    reviewComment: { fontSize: 13, lineHeight: 18 },
-    reviewDate: { fontSize: 11 },
-    writeReviewBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: LIME_GREEN, borderRadius: 12, paddingVertical: 12, marginBottom: 4 },
-    writeReviewBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
-    reviewModal: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, gap: 0 },
-    reviewModalTitle: { fontSize: 18, fontWeight: "700" },
-    reviewInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 14, minHeight: 80, textAlignVertical: "top", marginBottom: 16 },
-    reviewSubmitBtn: { backgroundColor: LIME_GREEN, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
-    reviewSubmitBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-    stickyBook: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 16, borderTopWidth: 1 },
-    stickyBookBtn: { backgroundColor: LIME_GREEN, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 14 },
-    stickyBookBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
-    photoCaptionBar: { position: "absolute", bottom: 0, left: 0, right: 0, paddingHorizontal: 16, paddingVertical: 8 },
-    photoCaptionText: { color: "#FFFFFF", fontSize: 13, fontWeight: "500" },
-    dotRow: { flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 10 },
-    dot: { width: 6, height: 6, borderRadius: 3 },
-    thumbnail: { width: 72, height: 72, borderRadius: 10, borderWidth: 0, borderColor: "transparent" },
-    lightboxOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.95)", justifyContent: "center" },
-    lightboxClose: { position: "absolute", top: 56, right: 20, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
-    lightboxCaption: { textAlign: "center", fontSize: 14, marginTop: 12, paddingHorizontal: 24 },
-  });
+const s = StyleSheet.create({
+  loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
+  banner: { height: 160, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingHorizontal: 16, paddingTop: 16 },
+  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center" },
+  saveBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center" },
+  infoSection: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, alignItems: "center", gap: 6 },
+  logoCircle: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginTop: -36, borderWidth: 3 },
+  bizName: { fontSize: 22, fontWeight: "700", textAlign: "center" },
+  bizCategory: { fontSize: 13, fontWeight: "600" },
+  ratingRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  ratingText: { fontSize: 12, marginLeft: 4 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  metaText: { fontSize: 13 },
+  description: { fontSize: 14, textAlign: "center", lineHeight: 20, marginTop: 4 },
+  tabBar: { flexDirection: "row", borderBottomWidth: 1, marginHorizontal: 0, paddingHorizontal: 8 },
+  tab: { flex: 1, alignItems: "center", paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: "transparent", paddingHorizontal: 4 },
+  tabText: { fontSize: 12, fontWeight: "600", textAlign: "center" },
+  tabContent: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
+  emptyText: { textAlign: "center", fontSize: 14, paddingVertical: 24 },
+  serviceCard: { borderRadius: 14, borderWidth: 1 },
+  catChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: ACCENT, backgroundColor: "transparent" },
+  catChipText: { fontSize: 13, fontWeight: "600", color: ACCENT },
+  serviceInfo: { flex: 1, gap: 4 },
+  serviceName: { fontSize: 15, fontWeight: "600" },
+  serviceDesc: { fontSize: 12, lineHeight: 17 },
+  serviceMeta: { flexDirection: "row", gap: 12 },
+  serviceDuration: { fontSize: 12 },
+  servicePrice: { fontSize: 13, fontWeight: "700" },
+  bookBtn: { backgroundColor: ACCENT, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  bookBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
+  staffCard: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 12 },
+  staffAvatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
+  staffInfo: { flex: 1, gap: 3 },
+  staffName: { fontSize: 15, fontWeight: "600" },
+  staffRole: { fontSize: 12, fontWeight: "600" },
+  staffBio: { fontSize: 12, lineHeight: 17 },
+  hoursRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: DIVIDER },
+  hoursDay: { fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY },
+  hoursTime: { fontSize: 14 },
+  locationHoursCard: { borderRadius: 14, borderWidth: 1, borderColor: CARD_BORDER, backgroundColor: CARD_BG, padding: 14, marginBottom: 4 },
+  locationHoursHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
+  locationHoursName: { fontSize: 15, fontWeight: "700", color: TEXT_PRIMARY },
+  reviewCard: { borderRadius: 14, borderWidth: 1, borderColor: CARD_BORDER, backgroundColor: CARD_BG, padding: 14, gap: 6 },
+  reviewHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  reviewerName: { fontSize: 14, fontWeight: "600" },
+  reviewStars: { flexDirection: "row", gap: 2 },
+  reviewComment: { fontSize: 13, lineHeight: 18 },
+  reviewDate: { fontSize: 11 },
+  writeReviewBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: ACCENT, borderRadius: 12, paddingVertical: 12, marginBottom: 4 },
+  writeReviewBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  reviewModal: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  reviewModalTitle: { fontSize: 18, fontWeight: "700" },
+  reviewInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 14, minHeight: 80, textAlignVertical: "top", marginBottom: 16 },
+  reviewSubmitBtn: { backgroundColor: ACCENT, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
+  reviewSubmitBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  stickyBook: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 16, borderTopWidth: 1 },
+  stickyGiftBtn: { backgroundColor: "rgba(255,255,255,0.10)", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 18, borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.18)" },
+  stickyGiftBtnText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
+  stickyBookBtn: { backgroundColor: LIME_GREEN, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 14 },
+  stickyBookBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  photoCaptionBar: { position: "absolute", bottom: 0, left: 0, right: 0, paddingHorizontal: 16, paddingVertical: 8 },
+  photoCaptionText: { color: "#FFFFFF", fontSize: 13, fontWeight: "500" },
+  dotRow: { flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 10 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  thumbnail: { width: 72, height: 72, borderRadius: 10, borderWidth: 0, borderColor: "transparent" },
+  lightboxOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.95)", justifyContent: "center" },
+  lightboxClose: { position: "absolute", top: 56, right: 20, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
+  lightboxCaption: { textAlign: "center", fontSize: 14, marginTop: 12, paddingHorizontal: 24 },
+});

@@ -21,8 +21,17 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { ClientPortalBackground } from "@/components/client-portal-background";
 import { apiCall } from "@/lib/_core/api";
-import * as Haptics from "expo-haptics";
+
+const PORTAL_BG    = "#1A3A28";
+const ACCENT       = "#8FBF6A";
+const TEXT_PRIMARY = "#FFFFFF";
+const TEXT_MUTED   = "rgba(255,255,255,0.65)";
+const CARD_BG      = "rgba(255,255,255,0.07)";
+const CARD_BORDER  = "rgba(255,255,255,0.12)";
+const DIVIDER      = "rgba(255,255,255,0.10)";
+
 
 interface Message {
   id: number;
@@ -123,16 +132,17 @@ export default function ClientMessageThreadBusinessScreen() {
 
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
+      <ClientPortalBackground />
       {/* Header */}
-      <View style={[s.header, { borderBottomColor: colors.border }]}>
+      <View style={[s.header, { borderBottomColor: DIVIDER }]}>
         <Pressable style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]} onPress={() => router.back()}>
-          <IconSymbol name="chevron.left" size={20} color={colors.foreground} />
+          <IconSymbol name="chevron.left" size={20} color={TEXT_PRIMARY} />
         </Pressable>
         <View style={s.headerInfo}>
-          <Text style={[s.headerName, { color: colors.foreground }]} numberOfLines={1}>
+          <Text style={[s.headerName, { color: TEXT_PRIMARY }]} numberOfLines={1}>
             {clientName ?? "Client"}
           </Text>
-          <Text style={[s.headerSub, { color: colors.muted }]}>Client message</Text>
+          <Text style={[s.headerSub, { color: TEXT_MUTED }]}>Client message</Text>
         </View>
         <View style={{ width: 32 }} />
       </View>
@@ -144,16 +154,15 @@ export default function ClientMessageThreadBusinessScreen() {
       >
         {loading ? (
           <View style={s.loadingContainer}>
-            <ActivityIndicator color={colors.primary} />
+            <ActivityIndicator color={ACCENT} />
           </View>
         ) : error ? (
           <View style={s.errorContainer}>
-            <IconSymbol name="exclamationmark.circle" size={32} color={colors.error} />
-            <Text style={{ color: colors.error, marginTop: 10, fontSize: 14 }}>{error}</Text>
+                 <IconSymbol name="exclamationmark.circle" size={32} color="#F87171" />
+            <Text style={{ color: "#F87171", marginTop: 10, fontSize: 14 }}>{error}</Text>
             <Pressable
               onPress={() => loadMessages()}
-              style={({ pressed }) => [s.retryBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}
-            >
+              style={({ pressed }) => [s.retryBtn, { backgroundColor: ACCENT, opacity: pressed ? 0.8 : 1 }]}>
               <Text style={{ color: "#fff", fontWeight: "600" }}>Retry</Text>
             </Pressable>
           </View>
@@ -166,8 +175,8 @@ export default function ClientMessageThreadBusinessScreen() {
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
             ListEmptyComponent={
               <View style={s.emptyContainer}>
-                <IconSymbol name="text.bubble" size={32} color={colors.muted} />
-                <Text style={[s.emptyText, { color: colors.muted }]}>
+                <IconSymbol name="text.bubble" size={32} color={TEXT_MUTED} />
+                <Text style={[s.emptyText, { color: TEXT_MUTED }]}>
                   No messages yet. Reply to start the conversation.
                 </Text>
               </View>
@@ -176,11 +185,11 @@ export default function ClientMessageThreadBusinessScreen() {
               if (item.type === "date") {
                 return (
                   <View style={s.dateSeparator}>
-                    <View style={[s.dateLine, { backgroundColor: colors.border }]} />
-                    <Text style={[s.dateLabel, { color: colors.muted, backgroundColor: colors.background }]}>
+                    <View style={[s.dateLine, { backgroundColor: DIVIDER }]} />
+                    <Text style={[s.dateLabel, { color: TEXT_MUTED, backgroundColor: PORTAL_BG }]}>
                       {(item as any).label}
                     </Text>
-                    <View style={[s.dateLine, { backgroundColor: colors.border }]} />
+                    <View style={[s.dateLine, { backgroundColor: DIVIDER }]} />
                   </View>
                 );
               }
@@ -189,8 +198,8 @@ export default function ClientMessageThreadBusinessScreen() {
               return (
                 <View style={[s.msgRow, isBusiness ? s.msgRowRight : s.msgRowLeft]}>
                   {!isBusiness && (
-                    <View style={[s.msgAvatar, { backgroundColor: colors.primary + "20" }]}>
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: colors.primary }}>
+                    <View style={[s.msgAvatar, { backgroundColor: ACCENT + "30" }]}>
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: ACCENT }}>
                         {(clientName ?? "C").charAt(0).toUpperCase()}
                       </Text>
                     </View>
@@ -198,13 +207,13 @@ export default function ClientMessageThreadBusinessScreen() {
                   <View style={[
                     s.msgBubble,
                     isBusiness
-                      ? { backgroundColor: colors.primary, borderBottomRightRadius: 4 }
-                      : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderBottomLeftRadius: 4 },
+                      ? { backgroundColor: ACCENT, borderBottomRightRadius: 4 }
+                      : { backgroundColor: CARD_BG, borderColor: CARD_BORDER, borderWidth: 1, borderBottomLeftRadius: 4 },
                   ]}>
-                    <Text style={[s.msgBody, { color: isBusiness ? "#FFFFFF" : colors.foreground }]}>
+                    <Text style={[s.msgBody, { color: "#FFFFFF" }]}>
                       {msg.body}
                     </Text>
-                    <Text style={[s.msgTime, { color: isBusiness ? "#FFFFFF99" : colors.muted }]}>
+                    <Text style={[s.msgTime, { color: "rgba(255,255,255,0.55)" }]}>
                       {formatTime(msg.createdAt)}
                       {isBusiness && msg.readAt && "  ✓"}
                     </Text>
@@ -216,11 +225,11 @@ export default function ClientMessageThreadBusinessScreen() {
         )}
 
         {/* Input Bar */}
-        <View style={[s.inputBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+        <View style={[s.inputBar, { backgroundColor: PORTAL_BG, borderTopColor: DIVIDER }]}>
           <TextInput
-            style={[s.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.foreground }]}
+            style={[s.input, { backgroundColor: CARD_BG, borderColor: CARD_BORDER, color: TEXT_PRIMARY }]}
             placeholder="Reply to client..."
-            placeholderTextColor={colors.muted}
+            placeholderTextColor={TEXT_MUTED}
             value={draft}
             onChangeText={setDraft}
             multiline
@@ -230,7 +239,7 @@ export default function ClientMessageThreadBusinessScreen() {
           <Pressable
             style={({ pressed }) => [
               s.sendBtn,
-              { backgroundColor: draft.trim() ? colors.primary : colors.border },
+              { backgroundColor: draft.trim() ? ACCENT : "rgba(255,255,255,0.15)" },
               pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] },
             ]}
             onPress={handleSend}

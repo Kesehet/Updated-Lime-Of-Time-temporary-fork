@@ -111,6 +111,12 @@ export default function ClientBookingWizardScreen() {
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId | null>(null);
   const [paymentConfirmationNumber, setPaymentConfirmationNumber] = useState("");
+  // Promo / discount state
+  const [promoInput, setPromoInput] = useState("");
+  const [promoApplied, setPromoApplied] = useState<{ localId: string; code: string; label: string; percentage: number | null; flatAmount: number | null } | null>(null);
+  const [promoError, setPromoError] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [discounts, setDiscounts] = useState<{ localId: string; name: string; percentage: number; serviceIds: string[] }[]>([]);
 
   const today = new Date();
   const [calYear, setCalYear] = useState(today.getFullYear());
@@ -132,9 +138,8 @@ export default function ClientBookingWizardScreen() {
 
   // Build the step list dynamically — Date & Time are merged into one step
   const STEPS = showLocationStep
-    ? ["Service", "Staff", "Location", "Date & Time", "Payment", "Confirm"]
-    : ["Service", "Staff", "Date & Time", "Payment", "Confirm"];
-
+    ? ["Service", "Staff", "Location", "Date & Time", "Payment", "Promo", "Confirm"]
+    : ["Service", "Staff", "Date & Time", "Payment", "Promo", "Confirm"];
   // Step indices (dynamic based on whether location step is shown)
   const STEP_SERVICE = 0;
   const STEP_STAFF = 1;
@@ -142,20 +147,24 @@ export default function ClientBookingWizardScreen() {
   const STEP_DATE = showLocationStep ? 3 : 2;   // merged Date+Time step
   const STEP_TIME = STEP_DATE;                   // same step as date
   const STEP_PAYMENT = showLocationStep ? 4 : 3;
-  const STEP_CONFIRM = showLocationStep ? 5 : 4;
+  const STEP_PROMO = showLocationStep ? 5 : 4;
+  const STEP_CONFIRM = showLocationStep ? 6 : 5;
 
-  // Load services, staff, and locations
+  // Load services, staff, locations, and discounts
   useEffect(() => {
     (async () => {
       try {
-        const [svcRes, staffRes, locRes] = await Promise.all([
+        const [svcRes, staffRes, locRes, discRes] = await Promise.all([
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/services`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/staff`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/locations`),
+          fetch(`${apiBase}/api/public/business/${effectiveSlug}/discounts`),
         ]);
         const svcData = svcRes.ok ? await svcRes.json() : [];
         const staffData = staffRes.ok ? await staffRes.json() : [];
         const locData = locRes.ok ? await locRes.json() : [];
+        const discData = discRes.ok ? await discRes.json() : [];
+        setDiscounts(Array.isArray(discData) ? discData : []);
         const svcList: PublicService[] = Array.isArray(svcData) ? svcData : [];
         const staffList: PublicStaff[] = Array.isArray(staffData) ? staffData : [];
         const locList: PublicLocation[] = Array.isArray(locData)
@@ -337,6 +346,32 @@ export default function ClientBookingWizardScreen() {
       const clientEmail = state.account?.email ?? undefined;
       const rawPhone = state.account?.phone ?? "";
       const clientPhone = rawPhone.startsWith("oauth:") ? undefined : rawPhone || undefined;
+      // Calculate promo/discount savings
+      const servicePrice = selectedService.price ? parseFloat(selectedService.price) : 0;
+      let finalPrice = servicePrice;
+      let discountName: string | undefined;
+      let discountPercentage: number | undefined;
+      let discountAmount: number | undefined;
+      // Check active discounts for this service
+      const activeDiscount = discounts.find(d =>
+        d.serviceIds.length === 0 || d.serviceIds.includes(selectedService.localId)
+      );
+      if (activeDiscount) {
+        discountName = activeDiscount.name;
+        discountPercentage = activeDiscount.percentage;
+        discountAmount = parseFloat((servicePrice * activeDiscount.percentage / 100).toFixed(2));
+        finalPrice -= discountAmount;
+      }
+      // Apply promo code on top
+      let promoSaving = 0;
+      if (promoApplied) {
+        if (promoApplied.flatAmount) {
+          promoSaving = Math.min(promoApplied.flatAmount, finalPrice);
+        } else if (promoApplied.percentage) {
+          promoSaving = parseFloat((finalPrice * promoApplied.percentage / 100).toFixed(2));
+        }
+        finalPrice = Math.max(0, finalPrice - promoSaving);
+      }
       const res = await fetch(`${apiBase}/api/public/business/${effectiveSlug}/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -353,6 +388,13 @@ export default function ClientBookingWizardScreen() {
           locationId: selectedLocation?.localId ?? undefined,
           paymentMethod,
           paymentConfirmationNumber: paymentMethod !== "cash" ? paymentConfirmationNumber.trim() : undefined,
+          promoCode: promoApplied?.code ?? undefined,
+          promoLocalId: promoApplied?.localId ?? undefined,
+          discountName,
+          discountPercentage,
+          discountAmount,
+          subtotal: servicePrice,
+          totalPrice: finalPrice,
         }),
       });
       if (!res.ok) {
@@ -382,7 +424,12 @@ export default function ClientBookingWizardScreen() {
           duration: String(selectedService.duration),
           businessName: effectiveSlug,
           businessSlug: effectiveSlug,
-          price: selectedService.price ?? "",
+          price: `$${finalPrice.toFixed(2)}`,
+          originalPrice: selectedService.price ?? "",
+          discountName: discountName ?? "",
+          discountAmount: discountAmount ? `$${discountAmount.toFixed(2)}` : "",
+          promoCode: promoApplied?.code ?? "",
+          promoSaving: promoSaving > 0 ? `$${promoSaving.toFixed(2)}` : "",
           paymentMethod: paymentMethod ?? "",
           paymentConfirmationNumber: paymentMethod !== "cash" ? paymentConfirmationNumber.trim() : "",
         },
@@ -794,51 +841,163 @@ export default function ClientBookingWizardScreen() {
           </View>
         )}
 
-        {/* Confirm step */}
-        {step === STEP_CONFIRM && selectedService && selectedDate && selectedSlot && (
+        {/* Promo / Discount step */}
+        {step === STEP_PROMO && selectedService && (
           <View style={s.stepContent}>
-            <Text style={[s.stepTitle, { color: colors.foreground }]}>Confirm Booking</Text>
-            <View style={[s.confirmCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Row label="Service" value={selectedService.name} colors={colors} />
-              <Row label="Duration" value={`${selectedService.duration} min`} colors={colors} />
-              <Row label="Price" value={formatPrice(selectedService.price)} colors={colors} />
-              <Row label="Date" value={formatDateLabel(selectedDate)} colors={colors} />
-              <Row label="Time" value={selectedSlot.time} colors={colors} />
-              {selectedLocation && (
-                <Row label="Location" value={selectedLocation.name} colors={colors} />
-              )}
-              {selectedStaffId !== "any" && (
-                <Row
-                  label="Staff"
-                  value={staff.find((m) => m.localId === selectedStaffId)?.name ?? selectedStaffId}
-                  colors={colors}
+            <Text style={[s.stepTitle, { color: colors.foreground }]}>Discounts & Promo</Text>
+            <Text style={[s.stepSubtitle, { color: colors.muted }]}>Apply a promo code or see active discounts. This step is optional.</Text>
+
+            {/* Active discounts for this service */}
+            {discounts.filter(d => d.serviceIds.length === 0 || d.serviceIds.includes(selectedService.localId)).map(d => (
+              <View key={d.localId} style={[s.discountBanner, { backgroundColor: `${LIME_GREEN}18`, borderColor: `${LIME_GREEN}40` }]}>
+                <Text style={{ fontSize: 20 }}>🏷️</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.discountName, { color: colors.foreground }]}>{d.name}</Text>
+                  <Text style={[s.discountPct, { color: LIME_GREEN }]}>{d.percentage}% off — saves ${((selectedService.price ? parseFloat(selectedService.price) : 0) * d.percentage / 100).toFixed(2)}</Text>
+                </View>
+                <View style={[s.discountBadge, { backgroundColor: LIME_GREEN }]}>
+                  <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>AUTO</Text>
+                </View>
+              </View>
+            ))}
+            {discounts.filter(d => d.serviceIds.length === 0 || d.serviceIds.includes(selectedService.localId)).length === 0 && (
+              <View style={[s.discountBanner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Text style={{ fontSize: 18 }}>💡</Text>
+                <Text style={[{ color: colors.muted, fontSize: 13, flex: 1 }]}>No active discounts for this service right now.</Text>
+              </View>
+            )}
+
+            {/* Promo code entry */}
+            <Text style={[s.notesLabel, { color: colors.foreground, marginTop: 8 }]}>Promo Code</Text>
+            {promoApplied ? (
+              <View style={[s.promoAppliedCard, { backgroundColor: `${LIME_GREEN}15`, borderColor: `${LIME_GREEN}50` }]}>
+                <Text style={{ fontSize: 20 }}>✅</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[{ color: colors.foreground, fontWeight: "700", fontSize: 15 }]}>{promoApplied.code}</Text>
+                  <Text style={[{ color: LIME_GREEN, fontSize: 13 }]}>
+                    {promoApplied.label} — saves {promoApplied.flatAmount ? `$${promoApplied.flatAmount.toFixed(2)}` : `${promoApplied.percentage}%`}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => { setPromoApplied(null); setPromoInput(""); setPromoError(""); }}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+                >
+                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Remove</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <TextInput
+                  style={[s.notesInput, { flex: 1, minHeight: 0, paddingVertical: 12, backgroundColor: colors.surface, borderColor: promoError ? "#F87171" : colors.border, color: colors.foreground }]}
+                  placeholder="e.g. SUMMER20"
+                  placeholderTextColor={colors.muted}
+                  value={promoInput}
+                  onChangeText={v => { setPromoInput(v.toUpperCase()); setPromoError(""); }}
+                  autoCapitalize="characters"
+                  returnKeyType="done"
                 />
-              )}
-              {paymentMethod && (
-                <Row
-                  label="Payment"
-                  value={PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.label ?? paymentMethod}
-                  colors={colors}
-                />
-              )}
-              {paymentMethod !== "cash" && paymentConfirmationNumber && (
-                <Row label="Confirmation #" value={paymentConfirmationNumber} colors={colors} />
-              )}
-            </View>
-            <Text style={[s.notesLabel, { color: colors.foreground }]}>Notes (optional)</Text>
-            <TextInput
-              style={[s.notesInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.foreground }]}
-              placeholder="Any special requests..."
-              placeholderTextColor={colors.muted}
-              value={notes}
-              onChangeText={setNotes}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              returnKeyType="done"
-            />
+                <Pressable
+                  style={({ pressed }) => [s.promoApplyBtn, { backgroundColor: LIME_GREEN, opacity: promoLoading || !promoInput.trim() ? 0.5 : pressed ? 0.85 : 1 }]}
+                  onPress={async () => {
+                    if (!promoInput.trim()) return;
+                    setPromoLoading(true);
+                    setPromoError("");
+                    try {
+                      const r = await fetch(`${apiBase}/api/public/business/${effectiveSlug}/promo/${encodeURIComponent(promoInput.trim())}`);
+                      if (!r.ok) {
+                        const e = await r.json().catch(() => ({}));
+                        setPromoError((e as any).error ?? "Invalid promo code");
+                      } else {
+                        const data = await r.json();
+                        setPromoApplied(data);
+                        if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      }
+                    } catch {
+                      setPromoError("Could not validate promo code");
+                    } finally {
+                      setPromoLoading(false);
+                    }
+                  }}
+                  disabled={promoLoading || !promoInput.trim()}
+                >
+                  {promoLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>Apply</Text>}
+                </Pressable>
+              </View>
+            )}
+            {promoError ? <Text style={{ color: "#F87171", fontSize: 13, marginTop: 4 }}>{promoError}</Text> : null}
           </View>
         )}
+
+        {/* Confirm step */}
+        {step === STEP_CONFIRM && selectedService && selectedDate && selectedSlot && (() => {
+          const svcPrice = selectedService.price ? parseFloat(selectedService.price) : 0;
+          const activeDiscount = discounts.find(d => d.serviceIds.length === 0 || d.serviceIds.includes(selectedService.localId));
+          const discSaving = activeDiscount ? parseFloat((svcPrice * activeDiscount.percentage / 100).toFixed(2)) : 0;
+          const afterDiscount = svcPrice - discSaving;
+          const promoSaving = promoApplied
+            ? promoApplied.flatAmount
+              ? Math.min(promoApplied.flatAmount, afterDiscount)
+              : parseFloat((afterDiscount * (promoApplied.percentage ?? 0) / 100).toFixed(2))
+            : 0;
+          const finalPrice = Math.max(0, afterDiscount - promoSaving);
+          return (
+            <View style={s.stepContent}>
+              <Text style={[s.stepTitle, { color: colors.foreground }]}>Confirm Booking</Text>
+              <View style={[s.confirmCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Row label="Service" value={selectedService.name} colors={colors} />
+                <Row label="Duration" value={`${selectedService.duration} min`} colors={colors} />
+                {discSaving > 0 ? (
+                  <>
+                    <Row label="Original Price" value={`$${svcPrice.toFixed(2)}`} colors={colors} />
+                    <Row label={`Discount (${activeDiscount!.percentage}%)`} value={`-$${discSaving.toFixed(2)}`} colors={colors} />
+                  </>
+                ) : (
+                  <Row label="Price" value={formatPrice(selectedService.price)} colors={colors} />
+                )}
+                {promoSaving > 0 && (
+                  <Row label={`Promo (${promoApplied!.code})`} value={`-$${promoSaving.toFixed(2)}`} colors={colors} />
+                )}
+                {(discSaving > 0 || promoSaving > 0) && (
+                  <Row label="Total" value={`$${finalPrice.toFixed(2)}`} colors={colors} />
+                )}
+                <Row label="Date" value={formatDateLabel(selectedDate)} colors={colors} />
+                <Row label="Time" value={selectedSlot.time} colors={colors} />
+                {selectedLocation && (
+                  <Row label="Location" value={selectedLocation.name} colors={colors} />
+                )}
+                {selectedStaffId !== "any" && (
+                  <Row
+                    label="Staff"
+                    value={staff.find((m) => m.localId === selectedStaffId)?.name ?? selectedStaffId}
+                    colors={colors}
+                  />
+                )}
+                {paymentMethod && (
+                  <Row
+                    label="Payment"
+                    value={PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.label ?? paymentMethod}
+                    colors={colors}
+                  />
+                )}
+                {paymentMethod !== "cash" && paymentConfirmationNumber && (
+                  <Row label="Confirmation #" value={paymentConfirmationNumber} colors={colors} />
+                )}
+              </View>
+              <Text style={[s.notesLabel, { color: colors.foreground }]}>Notes (optional)</Text>
+              <TextInput
+                style={[s.notesInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.foreground }]}
+                placeholder="Any special requests..."
+                placeholderTextColor={colors.muted}
+                value={notes}
+                onChangeText={setNotes}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+                returnKeyType="done"
+              />
+            </View>
+          );
+        })()}
       </ScrollView>
 
       {/* Bottom Action */}
@@ -904,6 +1063,7 @@ function canProceed(
     if (paymentMethod !== "cash" && !paymentConfirmationNumber?.trim()) return false;
     return true;
   }
+  // Promo step is always skippable (optional)
   return true;
 }
 
@@ -953,6 +1113,12 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     slotsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
     slotBtn: { borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 12, alignItems: "center", minWidth: 90 },
     confirmCard: { borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, paddingTop: 4, marginBottom: 16 },
+    discountBanner: { flexDirection: "row", alignItems: "center", borderRadius: 12, borderWidth: 1, padding: 12, gap: 10 },
+    discountName: { fontSize: 14, fontWeight: "600" },
+    discountPct: { fontSize: 12, marginTop: 2 },
+    discountBadge: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },
+    promoAppliedCard: { flexDirection: "row", alignItems: "center", borderRadius: 12, borderWidth: 1, padding: 12, gap: 10 },
+    promoApplyBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, alignItems: "center", justifyContent: "center", minWidth: 72 },
     notesLabel: { fontSize: 15, fontWeight: "600", marginBottom: 6 },
     notesInput: { borderRadius: 12, borderWidth: 1, padding: 12, fontSize: 14, minHeight: 80 },
     paymentCard: { flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1.5, padding: 14, gap: 12 },
