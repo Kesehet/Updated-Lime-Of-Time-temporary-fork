@@ -56,7 +56,8 @@ export default function PackageBrowserScreen() {
   const [detailPackage, setDetailPackage] = useState<ServicePackage | null>(null);
 
   const activePackages = useMemo(
-    () => (state.packages ?? []).filter((p) => p.active),
+    // Treat missing/undefined active field as true (backward compat with older data)
+    () => (state.packages ?? []).filter((p) => p.active !== false),
     [state.packages]
   );
 

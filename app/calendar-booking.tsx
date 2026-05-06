@@ -1472,8 +1472,11 @@ export default function CalendarBookingScreen() {
           >
             {/* ── Book a Package banner ─────────────────────────────────────── */}
             {(() => {
-              const activePackages = (state.packages ?? []).filter((p) => p.active);
+              const activePackages = (state.packages ?? []).filter((p) => p.active !== false);
               if (activePackages.length === 0) return null;
+              // Check if a package is already selected in this booking flow
+              const selectedPkgItem = selectedServices.find((s) => s.type === "package");
+              const selectedPkg = selectedPkgItem ? activePackages.find((p) => p.id === selectedPkgItem.packageId) : null;
               return (
                 <TouchableOpacity
                   activeOpacity={0.75}
@@ -1482,8 +1485,8 @@ export default function CalendarBookingScreen() {
                     params: { ...(selectedLocationId ? { locationId: selectedLocationId } : {}), fromCalendarBooking: '1' },
                   })}
                   style={{
-                    backgroundColor: colors.primary + "12",
-                    borderColor: colors.primary + "40",
+                    backgroundColor: selectedPkg ? colors.success + "12" : colors.primary + "12",
+                    borderColor: selectedPkg ? colors.success + "60" : colors.primary + "40",
                     borderWidth: 1.5,
                     borderRadius: 14,
                     paddingHorizontal: 14,
@@ -1498,9 +1501,18 @@ export default function CalendarBookingScreen() {
                     <Text style={{ fontSize: 18 }}>📦</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: "700", color: colors.primary }}>Book a Package</Text>
+                    <Text style={{ fontSize: 14, fontWeight: "700", color: selectedPkg ? colors.success : colors.primary }}>
+                      {selectedPkg ? `${selectedPkg.name} ✓` : "Book a Package"}
+                    </Text>
                     <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
-                      {activePackages.length} bundle{activePackages.length !== 1 ? "s" : ""} available — save more when you book together
+                      {selectedPkg
+                        ? `${selectedPkg.sessions} sessions · $${selectedPkg.price.toFixed(2)}`
+                        : (() => {
+                            const totalSessions = activePackages.reduce((sum, p) => sum + (p.sessions ?? 0), 0);
+                            const minPrice = Math.min(...activePackages.map((p) => p.price));
+                            return `${activePackages.length} bundle${activePackages.length !== 1 ? "s" : ""} · ${totalSessions} sessions · from $${minPrice.toFixed(2)}`;
+                          })()
+                      }
                     </Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color={colors.primary} />
@@ -1510,7 +1522,7 @@ export default function CalendarBookingScreen() {
 
             {/* ── Packages & Bundles section removed — accessible via Book a Package banner above ── */}
             {false && (() => {
-              const activePackages = (state.packages ?? []).filter((p) => p.active);
+              const activePackages = (state.packages ?? []).filter((p) => p.active !== false);
               if (activePackages.length === 0) return null;
               return (
                 <View style={{ marginBottom: 20 }}>
