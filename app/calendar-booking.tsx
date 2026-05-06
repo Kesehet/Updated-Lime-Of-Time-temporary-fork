@@ -1506,7 +1506,14 @@ export default function CalendarBookingScreen() {
                     </Text>
                     <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
                       {selectedPkg
-                        ? `${selectedPkg.sessions} sessions · $${selectedPkg.price.toFixed(2)}`
+                        ? (() => {
+                            const validityStr = selectedPkg.expiryDays
+                              ? selectedPkg.expiryDays % 30 === 0
+                                ? `Valid ${selectedPkg.expiryDays / 30} month${selectedPkg.expiryDays / 30 !== 1 ? "s" : ""}`
+                                : `Valid ${selectedPkg.expiryDays} days`
+                              : null;
+                            return `${selectedPkg.sessions ?? "?"} sessions · $${selectedPkg.price.toFixed(2)}${validityStr ? ` · ${validityStr}` : ""}`;
+                          })()
                         : (() => {
                             const totalSessions = activePackages.reduce((sum, p) => sum + (p.sessions ?? 0), 0);
                             const minPrice = Math.min(...activePackages.map((p) => p.price));
@@ -1515,7 +1522,14 @@ export default function CalendarBookingScreen() {
                       }
                     </Text>
                   </View>
-                  <IconSymbol name="chevron.right" size={16} color={colors.primary} />
+                  {selectedPkg ? (
+                    <View style={{ alignItems: "center", gap: 1 }}>
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: colors.success, letterSpacing: 0.2 }}>Change</Text>
+                      <IconSymbol name="chevron.right" size={13} color={colors.success} />
+                    </View>
+                  ) : (
+                    <IconSymbol name="chevron.right" size={16} color={colors.primary} />
+                  )}
                 </TouchableOpacity>
               );
             })()}
