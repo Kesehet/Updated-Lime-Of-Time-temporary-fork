@@ -31,8 +31,16 @@ import { getApiBaseUrl } from "@/constants/oauth";
 import { scheduleAppointmentReminders } from "@/lib/notifications";
 import * as Haptics from "expo-haptics";
 import { ClientPortalBackground } from "@/components/client-portal-background";
+import { Image } from "expo-image";
 
 const LIME_GREEN = "#4A7C59";
+// ─── Portal palette (same as business detail) ────────────────────────────────
+const PORTAL_BG    = "#1A3A28";
+const TEXT_PRIMARY = "#FFFFFF";
+const TEXT_MUTED   = "rgba(255,255,255,0.60)";
+const CARD_BG      = "rgba(255,255,255,0.07)";
+const CARD_BORDER  = "rgba(255,255,255,0.12)";
+const DIVIDER      = "rgba(255,255,255,0.10)";
 
 interface PublicService {
   localId: string;
@@ -449,7 +457,7 @@ export default function ClientBookingWizardScreen() {
         <ClientPortalBackground />
         <View style={s.loadingContainer}>
           <ActivityIndicator color={LIME_GREEN} size="large" />
-          <Text style={{ color: colors.muted, marginTop: 12 }}>Loading...</Text>
+          <Text style={{ color: TEXT_MUTED, marginTop: 12 }}>Loading...</Text>
         </View>
       </ScreenContainer>
     );
@@ -467,9 +475,9 @@ export default function ClientBookingWizardScreen() {
       {/* Header */}
       <View style={s.header}>
         <Pressable style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]} onPress={handleBack}>
-          <IconSymbol name="chevron.left" size={20} color={colors.foreground} />
+          <IconSymbol name="chevron.left" size={20} color={TEXT_PRIMARY} />
         </Pressable>
-        <Text style={[s.headerTitle, { color: colors.foreground }]}>Book Appointment</Text>
+        <Text style={[s.headerTitle, { color: TEXT_PRIMARY }]}>Book Appointment</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -477,35 +485,35 @@ export default function ClientBookingWizardScreen() {
       <View style={s.stepIndicator}>
         {STEPS.map((label, i) => (
           <View key={i} style={s.stepItem}>
-            <View style={[s.stepDot, { backgroundColor: i <= step ? LIME_GREEN : colors.border }]}>
+            <View style={[s.stepDot, { backgroundColor: i <= step ? LIME_GREEN : DIVIDER }]}>
               {i < step ? (
                 <IconSymbol name="checkmark" size={12} color="#FFFFFF" />
               ) : (
-                <Text style={{ color: i <= step ? "#FFFFFF" : colors.muted, fontSize: 11, fontWeight: "700" }}>{i + 1}</Text>
+                <Text style={{ color: i <= step ? "#FFFFFF" : TEXT_MUTED, fontSize: 11, fontWeight: "700" }}>{i + 1}</Text>
               )}
             </View>
             {i < STEPS.length - 1 && (
-              <View style={[s.stepLine, { backgroundColor: i < step ? LIME_GREEN : colors.border }]} />
+              <View style={[s.stepLine, { backgroundColor: i < step ? LIME_GREEN : DIVIDER }]} />
             )}
           </View>
         ))}
       </View>
-      <Text style={[s.stepLabel, { color: LIME_GREEN }]}>{STEPS[step]}</Text>
+      <Text style={[s.stepLabel, { color: TEXT_PRIMARY }]}>{STEPS[step]}</Text>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
 
         {/* Step 0: Service */}
         {step === STEP_SERVICE && (
           <View style={s.stepContent}>
-            <Text style={[s.stepTitle, { color: colors.foreground }]}>Choose a Service</Text>
+            <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Choose a Service</Text>
             {services.length === 0 ? (
-              <Text style={{ color: colors.muted, textAlign: "center", marginTop: 24 }}>No services available.</Text>
+              <Text style={{ color: TEXT_MUTED, textAlign: "center", marginTop: 24 }}>No services available.</Text>
             ) : services.map((svc) => (
               <Pressable
                 key={svc.localId}
                 style={({ pressed }) => [
                   s.optionCard,
-                  { backgroundColor: colors.surface, borderColor: selectedService?.localId === svc.localId ? LIME_GREEN : colors.border },
+                  { backgroundColor: CARD_BG, borderColor: selectedService?.localId === svc.localId ? LIME_GREEN : CARD_BORDER },
                   selectedService?.localId === svc.localId && { borderWidth: 2 },
                   pressed && { opacity: 0.85 },
                 ]}
@@ -518,8 +526,8 @@ export default function ClientBookingWizardScreen() {
                 }}
               >
                 <View style={s.optionLeft}>
-                  <Text style={[s.optionName, { color: colors.foreground }]}>{svc.name}</Text>
-                  {svc.description ? <Text style={[s.optionDesc, { color: colors.muted }]} numberOfLines={2}>{svc.description}</Text> : null}
+                  <Text style={[s.optionName, { color: TEXT_PRIMARY }]}>{svc.name}</Text>
+                  {svc.description ? <Text style={[s.optionDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{svc.description}</Text> : null}
                   <Text style={[s.optionMeta, { color: LIME_GREEN }]}>{svc.duration} min · {formatPrice(svc.price)}</Text>
                 </View>
                 {selectedService?.localId === svc.localId && (
@@ -535,11 +543,11 @@ export default function ClientBookingWizardScreen() {
         {/* Step 1: Staff */}
         {step === STEP_STAFF && (
           <View style={s.stepContent}>
-            <Text style={[s.stepTitle, { color: colors.foreground }]}>Choose a Staff Member</Text>
+            <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Choose a Staff Member</Text>
             <Pressable
               style={({ pressed }) => [
                 s.optionCard,
-                { backgroundColor: colors.surface, borderColor: selectedStaffId === "any" ? LIME_GREEN : colors.border },
+                { backgroundColor: CARD_BG, borderColor: selectedStaffId === "any" ? LIME_GREEN : CARD_BORDER },
                 selectedStaffId === "any" && { borderWidth: 2 },
                 pressed && { opacity: 0.85 },
               ]}
@@ -549,8 +557,8 @@ export default function ClientBookingWizardScreen() {
                 <IconSymbol name="person.3.fill" size={20} color={LIME_GREEN} />
               </View>
               <View style={s.optionLeft}>
-                <Text style={[s.optionName, { color: colors.foreground }]}>Any Available</Text>
-                <Text style={[s.optionDesc, { color: colors.muted }]}>First available staff member</Text>
+                <Text style={[s.optionName, { color: TEXT_PRIMARY }]}>Any Available</Text>
+                <Text style={[s.optionDesc, { color: TEXT_MUTED }]}>First available staff member</Text>
               </View>
               {selectedStaffId === "any" && (
                 <View style={[s.checkCircle, { backgroundColor: LIME_GREEN }]}>
@@ -563,18 +571,26 @@ export default function ClientBookingWizardScreen() {
                 key={member.localId}
                 style={({ pressed }) => [
                   s.optionCard,
-                  { backgroundColor: colors.surface, borderColor: selectedStaffId === member.localId ? LIME_GREEN : colors.border },
+                  { backgroundColor: CARD_BG, borderColor: selectedStaffId === member.localId ? LIME_GREEN : CARD_BORDER },
                   selectedStaffId === member.localId && { borderWidth: 2 },
                   pressed && { opacity: 0.85 },
                 ]}
                 onPress={() => setSelectedStaffId(member.localId)}
               >
-                <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}20` }]}>
-                  <Text style={{ fontSize: 16, fontWeight: "700", color: LIME_GREEN }}>{member.name.charAt(0)}</Text>
-                </View>
+                {member.photoUri && !member.photoUri.startsWith("file://") ? (
+                  <Image
+                    source={{ uri: member.photoUri }}
+                    style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}20` }]}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}25`, alignItems: "center", justifyContent: "center" }]}>
+                    <Text style={{ fontSize: 16, fontWeight: "700", color: LIME_GREEN }}>{member.name.charAt(0)}</Text>
+                  </View>
+                )}
                 <View style={s.optionLeft}>
-                  <Text style={[s.optionName, { color: colors.foreground }]}>{member.name}</Text>
-                  {member.role ? <Text style={[s.optionDesc, { color: colors.muted }]}>{member.role}</Text> : null}
+                  <Text style={[s.optionName, { color: TEXT_PRIMARY }]}>{member.name}</Text>
+                  {member.role ? <Text style={[s.optionDesc, { color: TEXT_MUTED }]}>{member.role}</Text> : null}
                 </View>
                 {selectedStaffId === member.localId && (
                   <View style={[s.checkCircle, { backgroundColor: LIME_GREEN }]}>
@@ -589,14 +605,14 @@ export default function ClientBookingWizardScreen() {
         {/* Step 2 (dynamic): Location — only shown when >1 location */}
         {step === STEP_LOCATION && showLocationStep && (
           <View style={s.stepContent}>
-            <Text style={[s.stepTitle, { color: colors.foreground }]}>Choose a Location</Text>
-            <Text style={[s.stepSubtitle, { color: colors.muted }]}>Select where you'd like your appointment.</Text>
+            <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Choose a Location</Text>
+            <Text style={[s.stepSubtitle, { color: TEXT_MUTED }]}>Select where you'd like your appointment.</Text>
             {locations.map((loc) => (
               <Pressable
                 key={loc.localId}
                 style={({ pressed }) => [
                   s.optionCard,
-                  { backgroundColor: colors.surface, borderColor: selectedLocation?.localId === loc.localId ? LIME_GREEN : colors.border },
+                  { backgroundColor: CARD_BG, borderColor: selectedLocation?.localId === loc.localId ? LIME_GREEN : CARD_BORDER },
                   selectedLocation?.localId === loc.localId && { borderWidth: 2 },
                   pressed && { opacity: 0.85 },
                 ]}
@@ -611,9 +627,9 @@ export default function ClientBookingWizardScreen() {
                   <IconSymbol name="location.fill" size={18} color={LIME_GREEN} />
                 </View>
                 <View style={s.optionLeft}>
-                  <Text style={[s.optionName, { color: colors.foreground }]}>{loc.name}</Text>
+                  <Text style={[s.optionName, { color: TEXT_PRIMARY }]}>{loc.name}</Text>
                   {loc.address ? (
-                    <Text style={[s.optionDesc, { color: colors.muted }]} numberOfLines={2}>{loc.address}</Text>
+                    <Text style={[s.optionDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{loc.address}</Text>
                   ) : null}
                   {loc.phone ? (
                     <Text style={[s.optionMeta, { color: LIME_GREEN }]}>{loc.phone}</Text>
@@ -632,7 +648,7 @@ export default function ClientBookingWizardScreen() {
         {/* Date & Time step — merged into one */}
         {step === STEP_DATE && (
           <View style={s.stepContent}>
-            <Text style={[s.stepTitle, { color: colors.foreground }]}>Pick a Date & Time</Text>
+            <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Pick a Date & Time</Text>
             {selectedLocation && (
               <View style={[s.locationBadge, { backgroundColor: `${LIME_GREEN}15`, borderColor: `${LIME_GREEN}40` }]}>
                 <IconSymbol name="location.fill" size={12} color={LIME_GREEN} />
@@ -646,26 +662,26 @@ export default function ClientBookingWizardScreen() {
                 style={({ pressed }) => [s.monthBtn, pressed && { opacity: 0.7 }]}
                 onPress={() => { if (calMonth === 0) { setCalMonth(11); setCalYear((y) => y - 1); } else setCalMonth((m) => m - 1); }}
               >
-                <IconSymbol name="chevron.left" size={18} color={colors.foreground} />
+                <IconSymbol name="chevron.left" size={18} color={TEXT_PRIMARY} />
               </Pressable>
-              <Text style={[s.monthLabel, { color: colors.foreground }]}>{monthLabel}</Text>
+              <Text style={[s.monthLabel, { color: TEXT_PRIMARY }]}>{monthLabel}</Text>
               <Pressable
                 style={({ pressed }) => [s.monthBtn, pressed && { opacity: 0.7 }]}
                 onPress={() => { if (calMonth === 11) { setCalMonth(0); setCalYear((y) => y + 1); } else setCalMonth((m) => m + 1); }}
               >
-                <IconSymbol name="chevron.right" size={18} color={colors.foreground} />
+                <IconSymbol name="chevron.right" size={18} color={TEXT_PRIMARY} />
               </Pressable>
             </View>
             <View style={s.dayHeaders}>
               {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-                <Text key={i} style={[s.dayHeader, { color: colors.muted }]}>{d}</Text>
+                <Text key={i} style={[s.dayHeader, { color: TEXT_MUTED }]}>{d}</Text>
               ))}
             </View>
             {/* Month-level availability loading indicator */}
             {loadingMonthAvail && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
                 <ActivityIndicator size="small" color={LIME_GREEN} />
-                <Text style={{ color: colors.muted, fontSize: 11 }}>Checking availability…</Text>
+                <Text style={{ color: TEXT_MUTED, fontSize: 11 }}>Checking availability…</Text>
               </View>
             )}
             <View style={s.calGrid}>
@@ -697,11 +713,11 @@ export default function ClientBookingWizardScreen() {
                     }}
                     disabled={isDisabled}
                   >
-                    <Text style={{ color: isSelected ? "#FFFFFF" : isUnavailable ? colors.muted : colors.foreground, fontSize: 14, fontWeight: isToday ? "700" : "400" }}>
+                    <Text style={{ color: isSelected ? "#FFFFFF" : isUnavailable ? TEXT_MUTED : TEXT_PRIMARY, fontSize: 14, fontWeight: isToday ? "700" : "400" }}>
                       {day.getDate()}
                     </Text>
                     {isUnavailable && !isPast && (
-                      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.muted, marginTop: 1 }} />
+                      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: TEXT_MUTED, marginTop: 1 }} />
                     )}
                     {!isUnavailable && !isPast && slotCounts[dateStr] != null && (
                       <Text style={{
@@ -724,7 +740,7 @@ export default function ClientBookingWizardScreen() {
               <View style={{ marginTop: 8 }}>
                 <View style={s.timeSectionHeader}>
                   <IconSymbol name="clock" size={15} color={LIME_GREEN} />
-                  <Text style={[s.timeSectionTitle, { color: colors.foreground, flex: 1 }]}>
+                  <Text style={[s.timeSectionTitle, { color: TEXT_PRIMARY, flex: 1 }]}>
                     Available Times · {formatDateLabel(selectedDate)}
                   </Text>
                   <Pressable
@@ -739,8 +755,8 @@ export default function ClientBookingWizardScreen() {
                   <ActivityIndicator color={LIME_GREEN} style={{ marginTop: 16 }} />
                 ) : slots.length === 0 ? (
                   <View style={s.noSlots}>
-                    <Text style={[s.noSlotsText, { color: colors.muted }]}>No available times on this date.</Text>
-                    <Text style={{ color: colors.muted, fontSize: 12 }}>Try selecting a different date above.</Text>
+                    <Text style={[s.noSlotsText, { color: TEXT_MUTED }]}>No available times on this date.</Text>
+                    <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Try selecting a different date above.</Text>
                   </View>
                 ) : (
                   <View style={s.slotsGrid}>
@@ -751,7 +767,7 @@ export default function ClientBookingWizardScreen() {
                           key={slot.time}
                           style={({ pressed }) => [
                             s.slotBtn,
-                            { backgroundColor: isSelected ? LIME_GREEN : colors.surface, borderColor: isSelected ? LIME_GREEN : colors.border },
+                            { backgroundColor: isSelected ? LIME_GREEN : CARD_BG, borderColor: isSelected ? LIME_GREEN : CARD_BORDER },
                             pressed && { opacity: 0.8 },
                           ]}
                           onPress={() => {
@@ -759,7 +775,7 @@ export default function ClientBookingWizardScreen() {
                             setSelectedSlot(slot);
                           }}
                         >
-                          <Text style={{ color: isSelected ? "#FFFFFF" : colors.foreground, fontSize: 14, fontWeight: "600" }}>
+                          <Text style={{ color: isSelected ? "#FFFFFF" : TEXT_PRIMARY, fontSize: 14, fontWeight: "600" }}>
                             {slot.time}
                           </Text>
                         </Pressable>
@@ -775,8 +791,8 @@ export default function ClientBookingWizardScreen() {
         {/* Payment step */}
         {step === STEP_PAYMENT && selectedService && (
           <View style={s.stepContent}>
-            <Text style={[s.stepTitle, { color: colors.foreground }]}>Payment</Text>
-            <Text style={[s.stepSubtitle, { color: colors.muted }]}>
+            <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Payment</Text>
+            <Text style={[s.stepSubtitle, { color: TEXT_MUTED }]}>
               Select how you'll pay for this appointment.
             </Text>
 
@@ -787,8 +803,8 @@ export default function ClientBookingWizardScreen() {
                   style={({ pressed }) => [
                     s.paymentCard,
                     {
-                      backgroundColor: paymentMethod === method.id ? LIME_GREEN + "20" : colors.surface,
-                      borderColor: paymentMethod === method.id ? LIME_GREEN : colors.border,
+                      backgroundColor: paymentMethod === method.id ? LIME_GREEN + "20" : CARD_BG,
+                      borderColor: paymentMethod === method.id ? LIME_GREEN : CARD_BORDER,
                     },
                     pressed && { opacity: 0.85 },
                   ]}
@@ -800,8 +816,8 @@ export default function ClientBookingWizardScreen() {
                 >
                   <Text style={{ fontSize: 22 }}>{method.icon}</Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={[s.paymentMethodLabel, { color: colors.foreground }]}>{method.label}</Text>
-                    <Text style={[s.paymentMethodHint, { color: colors.muted }]}>{method.hint}</Text>
+                    <Text style={[s.paymentMethodLabel, { color: TEXT_PRIMARY }]}>{method.label}</Text>
+                    <Text style={[s.paymentMethodHint, { color: TEXT_MUTED }]}>{method.hint}</Text>
                   </View>
                   {paymentMethod === method.id && (
                     <IconSymbol name="checkmark.circle.fill" size={22} color={LIME_GREEN} />
@@ -812,28 +828,28 @@ export default function ClientBookingWizardScreen() {
 
             {paymentMethod && paymentMethod !== "cash" && (
               <View style={{ marginTop: 16 }}>
-                <Text style={[s.notesLabel, { color: colors.foreground }]}>
+                <Text style={[s.notesLabel, { color: TEXT_PRIMARY }]}>
                   {paymentMethod === "zelle" ? "Zelle" : paymentMethod === "venmo" ? "Venmo" : "Cash App"} Confirmation Number
                 </Text>
                 <TextInput
-                  style={[s.notesInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.foreground }]}
+                  style={[s.notesInput, { backgroundColor: CARD_BG, borderColor: CARD_BORDER, color: TEXT_PRIMARY }]}
                   placeholder="Enter confirmation number..."
-                  placeholderTextColor={colors.muted}
+                  placeholderTextColor={TEXT_MUTED}
                   value={paymentConfirmationNumber}
                   onChangeText={setPaymentConfirmationNumber}
                   returnKeyType="done"
                   autoCapitalize="none"
                 />
-                <Text style={[{ color: colors.muted, fontSize: 12, marginTop: 6, lineHeight: 16 }]}>
+                <Text style={[{ color: TEXT_MUTED, fontSize: 12, marginTop: 6, lineHeight: 16 }]}>
                   After sending payment, enter the confirmation number here so the business can verify your payment.
                 </Text>
               </View>
             )}
 
             {paymentMethod === "cash" && (
-              <View style={[s.cashInfoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <IconSymbol name="info.circle.fill" size={18} color={colors.muted} />
-                <Text style={[{ color: colors.muted, fontSize: 13, flex: 1, lineHeight: 18 }]}>
+              <View style={[s.cashInfoCard, { backgroundColor: CARD_BG, borderColor: CARD_BORDER }]}>
+                <IconSymbol name="info.circle.fill" size={18} color={TEXT_MUTED} />
+                <Text style={[{ color: TEXT_MUTED, fontSize: 13, flex: 1, lineHeight: 18 }]}>
                   Cash payments are collected at your appointment. The business will confirm receipt from their side.
                 </Text>
               </View>
@@ -844,15 +860,15 @@ export default function ClientBookingWizardScreen() {
         {/* Promo / Discount step */}
         {step === STEP_PROMO && selectedService && (
           <View style={s.stepContent}>
-            <Text style={[s.stepTitle, { color: colors.foreground }]}>Discounts & Promo</Text>
-            <Text style={[s.stepSubtitle, { color: colors.muted }]}>Apply a promo code or see active discounts. This step is optional.</Text>
+            <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Discounts & Promo</Text>
+            <Text style={[s.stepSubtitle, { color: TEXT_MUTED }]}>Apply a promo code or see active discounts. This step is optional.</Text>
 
             {/* Active discounts for this service */}
             {discounts.filter(d => d.serviceIds.length === 0 || d.serviceIds.includes(selectedService.localId)).map(d => (
               <View key={d.localId} style={[s.discountBanner, { backgroundColor: `${LIME_GREEN}18`, borderColor: `${LIME_GREEN}40` }]}>
                 <Text style={{ fontSize: 20 }}>🏷️</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.discountName, { color: colors.foreground }]}>{d.name}</Text>
+                  <Text style={[s.discountName, { color: TEXT_PRIMARY }]}>{d.name}</Text>
                   <Text style={[s.discountPct, { color: LIME_GREEN }]}>{d.percentage}% off — saves ${((selectedService.price ? parseFloat(selectedService.price) : 0) * d.percentage / 100).toFixed(2)}</Text>
                 </View>
                 <View style={[s.discountBadge, { backgroundColor: LIME_GREEN }]}>
@@ -861,19 +877,19 @@ export default function ClientBookingWizardScreen() {
               </View>
             ))}
             {discounts.filter(d => d.serviceIds.length === 0 || d.serviceIds.includes(selectedService.localId)).length === 0 && (
-              <View style={[s.discountBanner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={[s.discountBanner, { backgroundColor: CARD_BG, borderColor: CARD_BORDER }]}>
                 <Text style={{ fontSize: 18 }}>💡</Text>
-                <Text style={[{ color: colors.muted, fontSize: 13, flex: 1 }]}>No active discounts for this service right now.</Text>
+                <Text style={[{ color: TEXT_MUTED, fontSize: 13, flex: 1 }]}>No active discounts for this service right now.</Text>
               </View>
             )}
 
             {/* Promo code entry */}
-            <Text style={[s.notesLabel, { color: colors.foreground, marginTop: 8 }]}>Promo Code</Text>
+            <Text style={[s.notesLabel, { color: TEXT_PRIMARY, marginTop: 8 }]}>Promo Code</Text>
             {promoApplied ? (
               <View style={[s.promoAppliedCard, { backgroundColor: `${LIME_GREEN}15`, borderColor: `${LIME_GREEN}50` }]}>
                 <Text style={{ fontSize: 20 }}>✅</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={[{ color: colors.foreground, fontWeight: "700", fontSize: 15 }]}>{promoApplied.code}</Text>
+                  <Text style={[{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }]}>{promoApplied.code}</Text>
                   <Text style={[{ color: LIME_GREEN, fontSize: 13 }]}>
                     {promoApplied.label} — saves {promoApplied.flatAmount ? `$${promoApplied.flatAmount.toFixed(2)}` : `${promoApplied.percentage}%`}
                   </Text>
@@ -882,15 +898,15 @@ export default function ClientBookingWizardScreen() {
                   onPress={() => { setPromoApplied(null); setPromoInput(""); setPromoError(""); }}
                   style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
                 >
-                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Remove</Text>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 13, fontWeight: "600" }}>Remove</Text>
                 </Pressable>
               </View>
             ) : (
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TextInput
-                  style={[s.notesInput, { flex: 1, minHeight: 0, paddingVertical: 12, backgroundColor: colors.surface, borderColor: promoError ? "#F87171" : colors.border, color: colors.foreground }]}
+                  style={[s.notesInput, { flex: 1, minHeight: 0, paddingVertical: 12, backgroundColor: CARD_BG, borderColor: promoError ? "#F87171" : CARD_BORDER, color: TEXT_PRIMARY }]}
                   placeholder="e.g. SUMMER20"
-                  placeholderTextColor={colors.muted}
+                  placeholderTextColor={TEXT_MUTED}
                   value={promoInput}
                   onChangeText={v => { setPromoInput(v.toUpperCase()); setPromoError(""); }}
                   autoCapitalize="characters"
@@ -942,9 +958,9 @@ export default function ClientBookingWizardScreen() {
           const finalPrice = Math.max(0, afterDiscount - promoSaving);
           return (
             <View style={s.stepContent}>
-              <Text style={[s.stepTitle, { color: colors.foreground }]}>Confirm Booking</Text>
-              <View style={[s.confirmCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Row label="Service" value={selectedService.name} colors={colors} />
+              <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Confirm Booking</Text>
+              <View style={[s.confirmCard, { backgroundColor: CARD_BG, borderColor: CARD_BORDER }]}>
+                <Row label="Service" value={selectedService.name} />
                 <Row label="Duration" value={`${selectedService.duration} min`} colors={colors} />
                 {discSaving > 0 ? (
                   <>
@@ -952,7 +968,7 @@ export default function ClientBookingWizardScreen() {
                     <Row label={`Discount (${activeDiscount!.percentage}%)`} value={`-$${discSaving.toFixed(2)}`} colors={colors} />
                   </>
                 ) : (
-                  <Row label="Price" value={formatPrice(selectedService.price)} colors={colors} />
+                  <Row label="Price" value={formatPrice(selectedService.price)} />
                 )}
                 {promoSaving > 0 && (
                   <Row label={`Promo (${promoApplied!.code})`} value={`-$${promoSaving.toFixed(2)}`} colors={colors} />
@@ -960,10 +976,10 @@ export default function ClientBookingWizardScreen() {
                 {(discSaving > 0 || promoSaving > 0) && (
                   <Row label="Total" value={`$${finalPrice.toFixed(2)}`} colors={colors} />
                 )}
-                <Row label="Date" value={formatDateLabel(selectedDate)} colors={colors} />
-                <Row label="Time" value={selectedSlot.time} colors={colors} />
+                <Row label="Date" value={formatDateLabel(selectedDate)} />
+                <Row label="Time" value={selectedSlot.time} />
                 {selectedLocation && (
-                  <Row label="Location" value={selectedLocation.name} colors={colors} />
+                  <Row label="Location" value={selectedLocation.name} />
                 )}
                 {selectedStaffId !== "any" && (
                   <Row
@@ -980,14 +996,14 @@ export default function ClientBookingWizardScreen() {
                   />
                 )}
                 {paymentMethod !== "cash" && paymentConfirmationNumber && (
-                  <Row label="Confirmation #" value={paymentConfirmationNumber} colors={colors} />
+                  <Row label="Confirmation #" value={paymentConfirmationNumber} />
                 )}
               </View>
-              <Text style={[s.notesLabel, { color: colors.foreground }]}>Notes (optional)</Text>
+              <Text style={[s.notesLabel, { color: TEXT_PRIMARY }]}>Notes (optional)</Text>
               <TextInput
-                style={[s.notesInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.foreground }]}
+                style={[s.notesInput, { backgroundColor: CARD_BG, borderColor: CARD_BORDER, color: TEXT_PRIMARY }]}
                 placeholder="Any special requests..."
-                placeholderTextColor={colors.muted}
+                placeholderTextColor={TEXT_MUTED}
                 value={notes}
                 onChangeText={setNotes}
                 multiline
@@ -1001,7 +1017,7 @@ export default function ClientBookingWizardScreen() {
       </ScrollView>
 
       {/* Bottom Action */}
-      <View style={[s.bottomAction, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+      <View style={[s.bottomAction, { backgroundColor: PORTAL_BG, borderTopColor: DIVIDER }]}>
         {step < STEPS.length - 1 ? (
           <Pressable
             style={({ pressed }) => [
@@ -1067,11 +1083,11 @@ function canProceed(
   return true;
 }
 
-function Row({ label, value, colors }: { label: string; value: string; colors: ReturnType<typeof useColors> }) {
+function Row({ label, value }: { label: string; value: string; colors?: ReturnType<typeof useColors> }) {
   return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-      <Text style={{ color: colors.muted, fontSize: 14 }}>{label}</Text>
-      <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600", flexShrink: 1, textAlign: "right", marginLeft: 12 }}>{value}</Text>
+    <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: DIVIDER }}>
+      <Text style={{ color: TEXT_MUTED, fontSize: 14 }}>{label}</Text>
+      <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "600", flexShrink: 1, textAlign: "right", marginLeft: 12 }}>{value}</Text>
     </View>
   );
 }
@@ -1081,7 +1097,7 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
     header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
     backBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-    headerTitle: { fontSize: 17, fontWeight: "600" },
+    headerTitle: { fontSize: 17, fontWeight: "600", color: TEXT_PRIMARY },
     stepIndicator: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingHorizontal: 16, paddingTop: 8 },
     stepItem: { flexDirection: "row", alignItems: "center" },
     stepDot: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
@@ -1096,7 +1112,7 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     optionDesc: { fontSize: 12, lineHeight: 17 },
     optionMeta: { fontSize: 12 },
     checkCircle: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-    staffAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+    staffAvatar: { width: 44, height: 44, borderRadius: 22, overflow: "hidden" },
     locationBadge: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, alignSelf: "flex-start", marginBottom: 4 },
     monthNav: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
     monthBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },

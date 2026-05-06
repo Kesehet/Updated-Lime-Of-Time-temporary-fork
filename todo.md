@@ -1879,12 +1879,14 @@
 - [x] Wire cover photo to business detail page banner
 - [x] Service "No image" category icon placeholder
 - [x] Staff card tap-to-expand with Book with Name button
-- [ ] Fix business detail page dark theme: white text, glass service cards, no scrollbar, dark sticky bar
-- [ ] Fix location display: single location prominent, multi-location sorted by distance, white text
-- [ ] Fix phone number formatting consistently across all client portal screens
-- [ ] Apply portal dark green theme to client-saved-businesses.tsx
-- [ ] Apply portal dark green theme to client-message-thread-business.tsx
-- [ ] Add promo code + discount step to client booking wizard
-- [ ] Polish confirmation page: show payment method, discount, gift card applied, add to calendar
-- [ ] Build client-buy-gift.tsx native 5-step gift card purchase screen
-- [ ] Wire Buy a Gift Card button to business detail page
+- [x] Fix business detail page dark theme: white text, glass service cards, no scrollbar, dark sticky bar
+- [x] Fix location display: single location prominent, multi-location sorted by distance, white text
+- [x] Fix phone number formatting consistently across all client portal screens
+- [x] Apply portal dark green theme to client-saved-businesses.tsx
+- [x] Apply portal dark green theme to client-message-thread-business.tsx
+- [x] Add promo code + discount step to client booking wizard
+- [x] Polish confirmation page: show payment method, discount, gift card applied, add to calendar
+- [x] Build client-buy-gift.tsx native 5-step gift card purchase screen
+- [x] Wire Buy a Gift Card button to business detail page
+- [x] Apply dark portal theme to all 7 booking wizard steps (white text, glass cards, no colors.*)
+- [x] Show staff member photos in booking wizard staff selection step
