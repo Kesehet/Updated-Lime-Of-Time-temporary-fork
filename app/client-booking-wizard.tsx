@@ -89,7 +89,7 @@ function formatDateLabel(d: Date): string {
 export default function ClientBookingWizardScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { slug, serviceLocalId } = useLocalSearchParams<{ slug: string; serviceLocalId?: string }>();
+  const { slug, serviceLocalId, preServiceName } = useLocalSearchParams<{ slug: string; serviceLocalId?: string; preServiceName?: string }>();
   const { state } = useClientStore();
   const apiBase = getApiBaseUrl();
 
@@ -173,6 +173,13 @@ export default function ClientBookingWizardScreen() {
             setSelectedService(found);
             setStep(1);
           }
+        } else if (preServiceName) {
+          // Book Again: pre-select service by name (case-insensitive match)
+          const found = svcList.find((s) => s.name.toLowerCase() === String(preServiceName).toLowerCase());
+          if (found) {
+            setSelectedService(found);
+            setStep(1); // skip service step, go to staff
+          }
         }
       } catch (err) {
         console.warn("[BookingWizard] load error:", err);
@@ -181,7 +188,7 @@ export default function ClientBookingWizardScreen() {
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, serviceLocalId, apiBase]);
+  }, [slug, serviceLocalId, preServiceName, apiBase]);
 
   // Fetch working-days info (weeklyDays + customDays) whenever slug/location changes
   useEffect(() => {

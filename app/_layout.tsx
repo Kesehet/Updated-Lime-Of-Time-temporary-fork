@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { Platform, StyleSheet, View } from "react-native";
@@ -78,8 +79,15 @@ function RootLayout() {
   const handleSplashFinish = useCallback(async () => {
     setSplashDone(true);
     try {
-      router.replace("/profile-select" as any);
+      // Check if a client session token exists — if so, skip profile-select and go straight to client portal
+      const clientToken = await AsyncStorage.getItem("client_session_token");
+      if (clientToken) {
+        router.replace("/(client-tabs)" as any);
+      } else {
+        router.replace("/profile-select" as any);
+      }
     } catch {
+      router.replace("/profile-select" as any);
     }
   }, [router]);
   const onLayoutRootView = useCallback(async () => {

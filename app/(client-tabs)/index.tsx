@@ -146,6 +146,11 @@ export default function ClientHomeScreen() {
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 5);
 
+  // Most recent completed appointment for "Book Again" shortcut
+  const lastCompleted = state.appointments
+    .filter((a) => a.status === "completed")
+    .sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
+
   // Entrance animations
   const headerOpacity = useSharedValue(0);
   const headerY = useSharedValue(-20);
@@ -264,6 +269,32 @@ export default function ClientHomeScreen() {
             </AnimCard>
           </View>
 
+          {/* Book Again Shortcut */}
+          {lastCompleted && (
+            <View style={[styles.section, { marginBottom: 0 }]}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Book Again</Text>
+              </View>
+              <AnimCard
+                onPress={() => router.push({ pathname: "/client-booking-wizard", params: { slug: lastCompleted.businessSlug, preServiceName: lastCompleted.serviceName } } as any)}
+                style={{ marginBottom: 12 }}
+              >
+                <View style={[styles.apptCard, { backgroundColor: GREEN_ACCENT + "18", borderRadius: 14, borderWidth: 1, borderColor: GREEN_ACCENT + "40" }]}>
+                  <View style={[styles.apptAccent, { backgroundColor: GREEN_ACCENT }]} />
+                  <View style={styles.apptLeft}>
+                    <Text style={[styles.apptService, { color: GREEN_ACCENT }]}>{lastCompleted.serviceName}</Text>
+                    <Text style={[styles.apptBusiness, { color: TEXT_MUTED }]}>{lastCompleted.businessName}</Text>
+                    <Text style={[styles.apptDate, { color: TEXT_MUTED }]}>Last visited {formatDate(lastCompleted.date)}</Text>
+                  </View>
+                  <View style={{ justifyContent: "center", paddingRight: 4 }}>
+                    <View style={{ backgroundColor: GREEN_ACCENT, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 }}>
+                      <Text style={{ color: "#1A3A28", fontWeight: "700", fontSize: 13 }}>Book Again</Text>
+                    </View>
+                  </View>
+                </View>
+              </AnimCard>
+            </View>
+          )}
           {/* Upcoming Appointments */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
