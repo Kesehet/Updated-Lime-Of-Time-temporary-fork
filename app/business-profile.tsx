@@ -78,6 +78,39 @@ export default function BusinessProfileScreen() {
   const [logoUri, setLogoUri] = useState<string>(profile.businessLogoUri ?? "");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const uploadImageMut = trpc.files.uploadImage.useMutation();
+  const [coverPhotoUri, setCoverPhotoUri] = useState<string>((profile as any).coverPhotoUri ?? "");
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const pickCoverPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission Required", "Please allow access to your photo library.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.9,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const localUri = result.assets[0].uri;
+      if (Platform.OS !== "web") {
+        try {
+          setUploadingCover(true);
+          const base64 = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+          const mimeType = result.assets[0].mimeType ?? "image/jpeg";
+          const { url } = await uploadImageMut.mutateAsync({ base64, mimeType, folder: "covers" });
+          setCoverPhotoUri(url);
+        } catch {
+          setCoverPhotoUri(localUri);
+        } finally {
+          setUploadingCover(false);
+        }
+      } else {
+        setCoverPhotoUri(localUri);
+      }
+    }
+  };
   const pickLogo = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -145,6 +178,7 @@ export default function BusinessProfileScreen() {
           website: website.trim(),
           description: description.trim(),
           businessLogoUri: logoUri.trim() || undefined,
+          coverPhotoUri: coverPhotoUri.trim() || undefined,
         },
       },
     };
@@ -430,6 +464,61 @@ export default function BusinessProfileScreen() {
               )}
             </Field>
 
+            {/* Cover Photo */}
+            <Field
+              label="Cover Photo (optional)"
+              errorColor={colors.error}
+              foregroundColor={colors.foreground}
+            >
+              <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 10 }}>
+                Shown as the banner image on your client portal page (16:9 ratio recommended)
+              </Text>
+              {coverPhotoUri ? (
+                <View style={{ borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
+                  <Image source={{ uri: coverPhotoUri }} style={{ width: "100%", height: 140 }} resizeMode="cover" />
+                </View>
+              ) : null}
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <Pressable
+                  onPress={pickCoverPhoto}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    backgroundColor: colors.primary + "18",
+                    borderColor: colors.primary + "40",
+                    borderWidth: 1,
+                    borderRadius: 10,
+                    paddingVertical: 9,
+                    paddingHorizontal: 14,
+                    alignItems: "center",
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  {uploadingCover ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.primary }}>
+                      {coverPhotoUri ? "Change Cover" : "Upload Cover Photo"}
+                    </Text>
+                  )}
+                </Pressable>
+                {coverPhotoUri ? (
+                  <Pressable
+                    onPress={() => setCoverPhotoUri("")}
+                    style={({ pressed }) => ({
+                      paddingVertical: 9,
+                      paddingHorizontal: 14,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: colors.error + "40",
+                      alignItems: "center",
+                      opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.error }}>Remove</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </Field>
             {/* Description */}
             <Field
               label="Description (optional)"

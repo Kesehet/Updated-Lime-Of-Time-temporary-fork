@@ -1855,23 +1855,27 @@
 - [x] Add "Clear Recently Viewed" button to Discover screen
 
 ## Phase: Discover Redesign & UX (May 2026)
-- [ ] Make Discover the default landing tab (index 0) in client portal
-- [ ] Add compact "Next Appointment / Book Again" card at top of Discover screen
-- [ ] Change clientPortalVisible default to true for new businesses
-- [ ] Fix: all businesses with clientPortalVisible=true should appear (currently only 1)
-- [ ] Prevent duplicate reviews - show "Reviewed" badge if already submitted
-- [ ] Show client's own review highlighted at top of Reviews tab
-- [ ] Add review count badge to Reviews tab label
-- [ ] Improve Discover screen visual design with dark green animations
-- [ ] Fix Wellness Suite DB: enable clientPortalVisible + set Pittsburgh 15237 coords
-- [ ] Add dark green background animation to all client portal screens
+- [x] Make Discover the default landing tab (index 0) in client portal
+- [x] Add compact "Next Appointment / Book Again" card at top of Discover screen
+- [x] Change clientPortalVisible default to true for new businesses
+- [x] Fix: all businesses with clientPortalVisible=true should appear (currently only 1)
+- [x] Prevent duplicate reviews - show "Reviewed" badge if already submitted
+- [x] Show client's own review highlighted at top of Reviews tab
+- [x] Add review count badge to Reviews tab label
+- [x] Improve Discover screen visual design with dark green animations
+- [x] Fix Wellness Suite DB: enable clientPortalVisible + set Pittsburgh 15237 coords
+- [x] Add dark green background animation to all client portal screens
 - [x] Add service category chips to business detail Services tab
 - [x] Add service images to Services tab cards
 - [x] Add Write a Review button on business detail page
-- [ ] Add sort by Most Reviews on Discover
+- [x] Add sort by Most Reviews on Discover
 - [x] Improve Recently Viewed/Visited card design (more professional)
 - [ ] Push notification after appointment completion (review prompt)
-- [ ] Center and evenly space Services/Staff/Hours/Reviews tab bar on business detail
-- [ ] Add full-screen image lightbox for service photos on business detail
-- [ ] Use app icon as fallback logo for businesses with no photo
-- [ ] Fix color consistency on business detail page (match dark green portal theme)
+- [x] Center and evenly space Services/Staff/Hours/Reviews tab bar on business detail
+- [x] Add full-screen image lightbox for service photos on business detail
+- [x] Use app icon as fallback logo for businesses with no photo
+- [x] Fix color consistency on business detail page (match dark green portal theme)
+- [x] Business cover photo upload in Settings → Branding
+- [x] Wire cover photo to business detail page banner
+- [x] Service "No image" category icon placeholder
+- [x] Staff card tap-to-expand with Book with Name button

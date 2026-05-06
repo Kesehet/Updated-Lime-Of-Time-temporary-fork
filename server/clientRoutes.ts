@@ -407,6 +407,7 @@ export function registerClientRoutes(app: Express) {
             businessName: owner?.businessName ?? "Unknown",
             businessSlug: owner?.customSlug ?? (owner?.businessName ?? "").toLowerCase().replace(/\s+/g, "-"),
             businessLogoUri: owner?.businessLogoUri ?? null,
+            coverPhotoUri: (owner as any)?.coverPhotoUri ?? null,
             businessCategory: owner?.businessCategory ?? null,
             serviceName: service?.name ?? appt.serviceLocalId,
             price: service?.price ?? null,
@@ -461,6 +462,7 @@ export function registerClientRoutes(app: Express) {
         businessName: owner?.businessName ?? "Unknown",
         businessSlug: owner?.customSlug ?? (owner?.businessName ?? "").toLowerCase().replace(/\s+/g, "-"),
         businessLogoUri: owner?.businessLogoUri ?? null,
+        coverPhotoUri: (owner as any)?.coverPhotoUri ?? null,
         businessCategory: owner?.businessCategory ?? null,
         serviceName: service?.name ?? appt.serviceLocalId,
         price: service?.price ?? null,
@@ -533,6 +535,7 @@ export function registerClientRoutes(app: Express) {
             ...item,
             businessName: business?.businessName ?? "Unknown",
             businessLogoUri: business?.businessLogoUri ?? null,
+            coverPhotoUri: (business as any)?.coverPhotoUri ?? null,
             businessSlug: business?.customSlug ?? business?.businessName?.toLowerCase().replace(/\s+/g, "-") ?? "",
           };
         })
@@ -583,6 +586,7 @@ export function registerClientRoutes(app: Express) {
             businessOwnerId: item.businessOwnerId,
             businessName: business?.businessName ?? "Unknown",
             businessLogoUri: business?.businessLogoUri ?? null,
+            coverPhotoUri: (business as any)?.coverPhotoUri ?? null,
             businessSlug: business?.customSlug ?? (business?.businessName ?? "").toLowerCase().replace(/\s+/g, "-"),
             serviceName: service?.name ?? (latestAppt?.serviceLocalId ?? ""),
             appointmentDate: latestAppt?.date ?? "",

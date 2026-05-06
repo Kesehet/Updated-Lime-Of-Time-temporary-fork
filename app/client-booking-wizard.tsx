@@ -89,7 +89,8 @@ function formatDateLabel(d: Date): string {
 export default function ClientBookingWizardScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { slug, serviceLocalId, preServiceName } = useLocalSearchParams<{ slug: string; serviceLocalId?: string; preServiceName?: string }>();
+  const { slug, businessSlug, serviceLocalId, preServiceName, preStaffId, preStaffName } = useLocalSearchParams<{ slug?: string; businessSlug?: string; serviceLocalId?: string; preServiceName?: string; preStaffId?: string; preStaffName?: string }>();
+  const effectiveSlug = slug || businessSlug || "";
   const { state } = useClientStore();
   const apiBase = getApiBaseUrl();
 
@@ -148,9 +149,9 @@ export default function ClientBookingWizardScreen() {
     (async () => {
       try {
         const [svcRes, staffRes, locRes] = await Promise.all([
-          fetch(`${apiBase}/api/public/business/${slug}/services`),
-          fetch(`${apiBase}/api/public/business/${slug}/staff`),
-          fetch(`${apiBase}/api/public/business/${slug}/locations`),
+          fetch(`${apiBase}/api/public/business/${effectiveSlug}/services`),
+          fetch(`${apiBase}/api/public/business/${effectiveSlug}/staff`),
+          fetch(`${apiBase}/api/public/business/${effectiveSlug}/locations`),
         ]);
         const svcData = svcRes.ok ? await svcRes.json() : [];
         const staffData = staffRes.ok ? await staffRes.json() : [];
@@ -181,6 +182,16 @@ export default function ClientBookingWizardScreen() {
             setStep(1); // skip service step, go to staff
           }
         }
+        // Pre-select staff from "Book with [Name]" on business detail
+        if (preStaffId) {
+          const foundStaff = staffList.find((m) => m.localId === preStaffId);
+          if (foundStaff) {
+            setSelectedStaffId(foundStaff.localId);
+          } else if (preStaffName) {
+            const byName = staffList.find((m) => m.name.toLowerCase() === String(preStaffName).toLowerCase());
+            if (byName) setSelectedStaffId(byName.localId);
+          }
+        }
       } catch (err) {
         console.warn("[BookingWizard] load error:", err);
       } finally {
@@ -188,15 +199,15 @@ export default function ClientBookingWizardScreen() {
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, serviceLocalId, preServiceName, apiBase]);
+  }, [effectiveSlug, serviceLocalId, preServiceName, preStaffId, preStaffName, apiBase]);
 
   // Fetch working-days info (weeklyDays + customDays) whenever slug/location changes
   useEffect(() => {
-    if (!slug) return;
+    if (!effectiveSlug) return;
     (async () => {
       try {
         const locParam = selectedLocation ? `?locationId=${encodeURIComponent(selectedLocation.localId)}` : "";
-        const res = await fetch(`${apiBase}/api/public/business/${slug}/working-days${locParam}`);
+        const res = await fetch(`${apiBase}/api/public/business/${effectiveSlug}/working-days${locParam}`);
         if (res.ok) {
           const data = await res.json();
           setWeeklyDays(data.weeklyDays ?? {});
@@ -206,12 +217,12 @@ export default function ClientBookingWizardScreen() {
         console.warn("[BookingWizard] working-days error:", err);
       }
     })();
-  }, [slug, selectedLocation, apiBase]);
+  }, [effectiveSlug, selectedLocation, apiBase]);
 
   // Fetch month-level availability: for each day in the visible month, check if any slots exist.
   // Uses the slots endpoint per day but only for the current calendar month when it changes.
   const fetchMonthAvailability = useCallback(async (year: number, month: number, service: typeof selectedService, location: typeof selectedLocation, staffId: string) => {
-    if (!service || !slug) return;
+    if (!service || !effectiveSlug) return;
     const fetchKey = `${year}-${String(month + 1).padStart(2, "0")}-${service.localId}-${location?.localId ?? "any"}-${staffId}`;
     if (lastAvailFetchKey.current === fetchKey) return; // already fetched
     lastAvailFetchKey.current = fetchKey;
@@ -230,7 +241,7 @@ export default function ClientBookingWizardScreen() {
       const dateStr = dateObj.toISOString().split("T")[0];
       const staffParam = staffId !== "any" ? `&staffId=${encodeURIComponent(staffId)}` : "";
       const locParam = location ? `&locationId=${encodeURIComponent(location.localId)}` : "";
-      const url = `${apiBase}/api/public/business/${slug}/slots?date=${dateStr}&duration=${service.duration}${staffParam}${locParam}&clientToday=${todayStr}&nowMinutes=${nowMinutes}`;
+      const url = `${apiBase}/api/public/business/${effectiveSlug}/slots?date=${dateStr}&duration=${service.duration}${staffParam}${locParam}&clientToday=${todayStr}&nowMinutes=${nowMinutes}`;
       promises.push(
         fetch(url)
           .then((r) => r.ok ? r.json() : { slots: [] })
@@ -249,7 +260,7 @@ export default function ClientBookingWizardScreen() {
     setUnavailableDates(newUnavailable);
     setSlotCounts(newSlotCounts);
     setLoadingMonthAvail(false);
-  }, [slug, apiBase]);
+  }, [effectiveSlug, apiBase]);
 
   // Trigger month availability fetch when calendar month or service changes
   useEffect(() => {
@@ -282,7 +293,7 @@ export default function ClientBookingWizardScreen() {
         const locParam = selectedLocation ? `&locationId=${encodeURIComponent(selectedLocation.localId)}` : "";
         const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
         const clientToday = new Date().toISOString().split("T")[0];
-        const url = `${apiBase}/api/public/business/${slug}/slots?date=${dateStr}&duration=${selectedService.duration}${staffParam}${locParam}&clientToday=${clientToday}&nowMinutes=${nowMinutes}`;
+        const url = `${apiBase}/api/public/business/${effectiveSlug}/slots?date=${dateStr}&duration=${selectedService.duration}${staffParam}${locParam}&clientToday=${clientToday}&nowMinutes=${nowMinutes}`;
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
@@ -296,7 +307,7 @@ export default function ClientBookingWizardScreen() {
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedService, selectedStaffId, selectedLocation, slug, apiBase, refreshCounter]);
+  }, [selectedDate, selectedService, selectedStaffId, selectedLocation, effectiveSlug, apiBase, refreshCounter]);
 
   const handleNext = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -326,7 +337,7 @@ export default function ClientBookingWizardScreen() {
       const clientEmail = state.account?.email ?? undefined;
       const rawPhone = state.account?.phone ?? "";
       const clientPhone = rawPhone.startsWith("oauth:") ? undefined : rawPhone || undefined;
-      const res = await fetch(`${apiBase}/api/public/business/${slug}/book`, {
+      const res = await fetch(`${apiBase}/api/public/business/${effectiveSlug}/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -353,7 +364,7 @@ export default function ClientBookingWizardScreen() {
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       scheduleAppointmentReminders(
         appointmentId,
-        slug,
+        effectiveSlug,
         selectedService.name,
         dateStr,
         selectedSlot.time
@@ -369,8 +380,8 @@ export default function ClientBookingWizardScreen() {
           date: dateStr,
           time: selectedSlot.time,
           duration: String(selectedService.duration),
-          businessName: slug,
-          businessSlug: slug,
+          businessName: effectiveSlug,
+          businessSlug: effectiveSlug,
           price: selectedService.price ?? "",
           paymentMethod: paymentMethod ?? "",
           paymentConfirmationNumber: paymentMethod !== "cash" ? paymentConfirmationNumber.trim() : "",

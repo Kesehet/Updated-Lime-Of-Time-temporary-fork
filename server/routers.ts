@@ -89,6 +89,7 @@ const businessRouter = router({
         website: z.string().optional(),
         description: z.string().optional(),
         businessLogoUri: z.string().optional(),
+        coverPhotoUri: z.string().optional().nullable(),
         defaultDuration: z.number().optional(),
         notificationsEnabled: z.boolean().optional(),
         themeMode: z.enum(["light", "dark", "system"]).optional(),

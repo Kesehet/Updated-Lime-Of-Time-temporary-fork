@@ -199,6 +199,7 @@ export function registerPublicRoutes(app: Express) {
         workingHours: owner.workingHours,
         cancellationPolicy: owner.cancellationPolicy,
         businessLogoUri: owner.businessLogoUri,
+        coverPhotoUri: (owner as any).coverPhotoUri ?? null,
         avgRating,
         reviewCount,
       });

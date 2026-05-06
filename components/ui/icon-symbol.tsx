@@ -108,6 +108,7 @@ const MAPPING = {
   "doc.on.doc.fill": "file-copy",
   "rectangle.stack.fill": "layers",
   "chevron.down": "expand-more",
+  "chevron.up": "expand-less",
   "calendar.badge.checkmark": "event-available",
   "arrow.down.right": "trending-down",
   "arrow.down.to.line": "save-alt",

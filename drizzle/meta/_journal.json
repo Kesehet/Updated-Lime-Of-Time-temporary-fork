@@ -393,6 +393,13 @@
       "when": 1778039227009,
       "tag": "0055_yummy_rogue",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "5",
+      "when": 1778091345048,
+      "tag": "0056_naive_blindfold",
+      "breakpoints": true
     }
   ]
 }

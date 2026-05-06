@@ -48,6 +48,8 @@ export const businessOwners = mysqlTable("business_owners", {
   description: text("description"),
   /** Business logo URI (S3 or local) */
   businessLogoUri: text("businessLogoUri"),
+  /** Business cover/banner photo URI for client portal detail page header */
+  coverPhotoUri: text("coverPhotoUri"),
   /** Default appointment duration in minutes */
   defaultDuration: int("defaultDuration").default(60).notNull(),
   /** Notifications enabled */

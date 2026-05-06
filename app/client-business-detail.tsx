@@ -31,6 +31,21 @@ function formatPhone(raw: string): string {
 
 const LIME_GREEN = "#4A7C59";
 
+function getCategoryEmoji(category?: string | null): string {
+  if (!category) return "✨";
+  const cat = category.toLowerCase();
+  if (cat.includes("hair")) return "✂️";
+  if (cat.includes("nail")) return "💅";
+  if (cat.includes("skin") || cat.includes("facial")) return "🧖";
+  if (cat.includes("massage") || cat.includes("body")) return "💆";
+  if (cat.includes("brow") || cat.includes("lash")) return "👁️";
+  if (cat.includes("wax")) return "🌿";
+  if (cat.includes("makeup") || cat.includes("beauty")) return "💄";
+  if (cat.includes("wellness") || cat.includes("spa")) return "🌸";
+  if (cat.includes("barber") || cat.includes("beard")) return "🪒";
+  return "✨";
+}
+
 interface ApiService {
   localId: string; name: string; description: string | null;
   duration: number; price: string | null; category: string | null; photoUri: string | null;
@@ -48,7 +63,7 @@ interface ApiBusiness {
   id: number; businessName: string; ownerName: string; description: string | null;
   address: string | null; phone: string | null; email: string | null;
   businessCategory?: string | null; category?: string | null;
-  avgRating?: number | null; reviewCount?: number; businessLogoUri?: string | null;
+  avgRating?: number | null; reviewCount?: number; businessLogoUri?: string | null; coverPhotoUri?: string | null;
   workingHours?: Record<string, { enabled: boolean; start: string; end: string }> | null;
 }
 interface ApiLocation {
@@ -110,6 +125,7 @@ export default function ClientBusinessDetailScreen() {
   const [lightboxVisible, setLightboxVisible] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [serviceLightboxUri, setServiceLightboxUri] = useState<string | null>(null);
+  const [expandedStaffId, setExpandedStaffId] = useState<string | null>(null);
 
   const SCREEN_WIDTH = Dimensions.get("window").width;
   const apiBase = getApiBaseUrl();
@@ -222,8 +238,8 @@ export default function ClientBusinessDetailScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header Banner */}
         <View style={[s.banner, { backgroundColor: "#1A3A2A", overflow: "hidden" }]}>
-          {logoUri ? (
-            <Image source={{ uri: logoUri }} style={StyleSheet.absoluteFillObject} contentFit="cover" transition={300} />
+          {(business.coverPhotoUri || logoUri) ? (
+            <Image source={{ uri: business.coverPhotoUri || logoUri }} style={StyleSheet.absoluteFillObject} contentFit="cover" transition={300} />
           ) : null}
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0,0,0,0.35)" }]} />
           <Pressable style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]} onPress={() => router.back()}>
@@ -320,7 +336,7 @@ export default function ClientBusinessDetailScreen() {
                 : filteredServices.map((svc) => (
                   <View key={svc.localId} style={[s.serviceCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: "column", padding: 0, overflow: "hidden" }]}>
                     {/* Service image — tap to preview */}
-                    {svc.photoUri && (
+                    {svc.photoUri ? (
                       <Pressable onPress={() => setServiceLightboxUri(svc.photoUri!)} style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}>
                         <Image
                           source={{ uri: svc.photoUri }}
@@ -332,6 +348,11 @@ export default function ClientBusinessDetailScreen() {
                           <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "600" }}>Preview</Text>
                         </View>
                       </Pressable>
+                    ) : (
+                      <View style={{ width: "100%", height: 80, backgroundColor: `${LIME_GREEN}15`, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 10 }}>
+                        <Text style={{ fontSize: 28 }}>{getCategoryEmoji(svc.category)}</Text>
+                        <Text style={{ fontSize: 13, fontWeight: "600", color: LIME_GREEN, opacity: 0.8 }}>{svc.category || "Service"}</Text>
+                      </View>
                     )}
                     <View style={{ padding: 14, flexDirection: "row", alignItems: "center", gap: 12 }}>
                       <View style={s.serviceInfo}>
@@ -361,18 +382,32 @@ export default function ClientBusinessDetailScreen() {
             {staff.length === 0
               ? <Text style={[s.emptyText, { color: colors.muted }]}>No staff listed.</Text>
               : staff.map((member) => (
-                <View key={member.localId} style={[s.staffCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}20` }]}>
-                    {member.photoUri
-                      ? <Image source={{ uri: member.photoUri }} style={{ width: 48, height: 48, borderRadius: 24 }} contentFit="cover" />
-                      : <Text style={{ fontSize: 20, fontWeight: "700", color: LIME_GREEN }}>{member.name.charAt(0).toUpperCase()}</Text>}
+                <Pressable key={member.localId} style={({ pressed }) => [s.staffCard, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.92 : 1 }]} onPress={() => setExpandedStaffId(expandedStaffId === member.localId ? null : member.localId)}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                    <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}20` }]}>
+                      {member.photoUri
+                        ? <Image source={{ uri: member.photoUri }} style={{ width: 48, height: 48, borderRadius: 24 }} contentFit="cover" />
+                        : <Text style={{ fontSize: 20, fontWeight: "700", color: LIME_GREEN }}>{member.name.charAt(0).toUpperCase()}</Text>}
+                    </View>
+                    <View style={[s.staffInfo, { flex: 1 }]}>
+                      <Text style={[s.staffName, { color: colors.foreground }]}>{member.name}</Text>
+                      {member.role && <Text style={[s.staffRole, { color: LIME_GREEN }]}>{member.role}</Text>}
+                      {member.bio && <Text style={[s.staffBio, { color: colors.muted }]} numberOfLines={expandedStaffId === member.localId ? 0 : 2}>{member.bio}</Text>}
+                    </View>
+                    <IconSymbol name={expandedStaffId === member.localId ? "chevron.up" : "chevron.down"} size={16} color={colors.muted} />
                   </View>
-                  <View style={s.staffInfo}>
-                    <Text style={[s.staffName, { color: colors.foreground }]}>{member.name}</Text>
-                    {member.role && <Text style={[s.staffRole, { color: LIME_GREEN }]}>{member.role}</Text>}
-                    {member.bio && <Text style={[s.staffBio, { color: colors.muted }]} numberOfLines={2}>{member.bio}</Text>}
-                  </View>
-                </View>
+                  {expandedStaffId === member.localId && (
+                    <View style={{ marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border }}>
+                      <Pressable
+                        style={({ pressed }) => ({ backgroundColor: LIME_GREEN, borderRadius: 12, paddingVertical: 12, alignItems: "center", opacity: pressed ? 0.85 : 1, flexDirection: "row", justifyContent: "center", gap: 8 })}
+                        onPress={() => router.push({ pathname: "/client-booking-wizard", params: { businessSlug: business.businessSlug ?? "", preStaffId: member.localId, preStaffName: member.name } })}
+                      >
+                        <IconSymbol name="calendar.badge.plus" size={16} color="#FFFFFF" />
+                        <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 15 }}>Book with {member.name}</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </Pressable>
               ))}
           </View>
         )}
