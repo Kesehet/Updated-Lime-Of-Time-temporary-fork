@@ -1817,3 +1817,4 @@
 - [x] Fix portal-visibility endpoint to also geocode location addresses as fallback
 - [x] Fix startup routing flash: opaque overlay hides stale routes until splash finishes
 - [ ] Fix initial routing flash: app briefly shows last visited page before landing on profile-select/login (white flash / stale route on app open)
+- [x] Fix "Failed to fetch" error on client profile onboarding Save & Continue
