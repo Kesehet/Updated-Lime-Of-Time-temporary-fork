@@ -2,7 +2,7 @@
  * Client Portal Tab Layout
  *
  * Dark forest-green tab bar matching the onboarding screen aesthetic.
- * 5-tab navigation: Home, Discover, Bookings, Messages, Profile
+ * 5-tab navigation: Discover (default), Home, Bookings, Messages, Profile
  */
 
 import { Tabs } from "expo-router";
@@ -48,18 +48,19 @@ export default function ClientTabLayout() {
         },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="house.fill" color={color} />,
-        }}
-      />
+      {/* Discover is the default landing tab (index 0) */}
       <Tabs.Screen
         name="discover"
         options={{
           title: "Discover",
           tabBarIcon: ({ color }) => <IconSymbol size={26} name="safari.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen

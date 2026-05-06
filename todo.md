@@ -1853,3 +1853,13 @@
 - [x] Recalculate avgRating on business after review submission (live from reviews table)
 - [x] Show review prompt after completed appointment on client appointments screen
 - [x] Add "Clear Recently Viewed" button to Discover screen
+
+## Phase: Discover Redesign & UX (May 2026)
+- [ ] Make Discover the default landing tab (index 0) in client portal
+- [ ] Add compact "Next Appointment / Book Again" card at top of Discover screen
+- [ ] Change clientPortalVisible default to true for new businesses
+- [ ] Fix: all businesses with clientPortalVisible=true should appear (currently only 1)
+- [ ] Prevent duplicate reviews - show "Reviewed" badge if already submitted
+- [ ] Show client's own review highlighted at top of Reviews tab
+- [ ] Add review count badge to Reviews tab label
+- [ ] Improve Discover screen visual design with dark green animations

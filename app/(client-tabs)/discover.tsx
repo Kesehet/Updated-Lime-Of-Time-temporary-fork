@@ -589,11 +589,26 @@ export default function DiscoverScreen() {
         });
       }
     }
-    return Array.from(map.values()).slice(0, 5);
+     return Array.from(map.values()).slice(0, 5);
+  }, [state.appointments, state.account]);
+
+  // Compact appointment card: next upcoming or most recent completed for Book Again
+  const nextUpcomingAppt = useMemo(() => {
+    if (!state.account) return null;
+    const today = new Date().toISOString().split("T")[0];
+    return state.appointments
+      .filter((a) => (a.status === "confirmed" || a.status === "pending") && a.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))[0] ?? null;
+  }, [state.appointments, state.account]);
+
+  const mostRecentCompleted = useMemo(() => {
+    if (!state.account) return null;
+    return state.appointments
+      .filter((a) => a.status === "completed")
+      .sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
   }, [state.appointments, state.account]);
 
   const s = styles(colors);
-
   return (
     <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
       <ClientPortalBackground />
@@ -657,6 +672,51 @@ export default function DiscoverScreen() {
         <View style={[s.locationBanner, { backgroundColor: "rgba(251,191,36,0.15)" }]}>
           <IconSymbol name="location.slash.fill" size={13} color="#FBBF24" />
           <Text style={{ color: "#FBBF24", fontSize: 12, flex: 1 }}>{locationError}</Text>
+        </View>
+      )}
+
+      {/* ── Compact Appointment / Book Again Card ──────────────────────── */}
+      {state.account && (nextUpcomingAppt || mostRecentCompleted) && (
+        <View style={[s.apptBannerCard, { backgroundColor: "rgba(74,124,89,0.18)", borderColor: "rgba(143,191,106,0.25)" }]}>
+          {nextUpcomingAppt ? (
+            /* Next Upcoming Appointment */
+            <Pressable
+              style={({ pressed }) => [s.apptBannerInner, pressed && { opacity: 0.85 }]}
+              onPress={() => router.push({ pathname: "/client-appointment-detail", params: { id: String(nextUpcomingAppt.id) } } as any)}
+            >
+              <View style={[s.apptBannerDot, { backgroundColor: "#8FBF6A" }]} />
+              <View style={s.apptBannerText}>
+                <Text style={{ color: TEXT_MUTED, fontSize: 10, fontWeight: "600", letterSpacing: 0.5, textTransform: "uppercase" }}>Next Appointment</Text>
+                <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700", marginTop: 1 }} numberOfLines={1}>
+                  {nextUpcomingAppt.serviceName} · {nextUpcomingAppt.businessName}
+                </Text>
+                <Text style={{ color: GREEN_ACCENT, fontSize: 11, marginTop: 1 }}>
+                  {new Date(nextUpcomingAppt.date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} at {nextUpcomingAppt.time}
+                </Text>
+              </View>
+              <IconSymbol name="chevron.right" size={14} color={TEXT_MUTED} />
+            </Pressable>
+          ) : mostRecentCompleted ? (
+            /* Book Again shortcut */
+            <Pressable
+              style={({ pressed }) => [s.apptBannerInner, pressed && { opacity: 0.85 }]}
+              onPress={() => {
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push({ pathname: "/client-booking-wizard", params: { slug: mostRecentCompleted.businessSlug, preServiceName: mostRecentCompleted.serviceName } } as any);
+              }}
+            >
+              <View style={[s.apptBannerDot, { backgroundColor: GREEN_ACCENT }]} />
+              <View style={s.apptBannerText}>
+                <Text style={{ color: TEXT_MUTED, fontSize: 10, fontWeight: "600", letterSpacing: 0.5, textTransform: "uppercase" }}>Book Again</Text>
+                <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700", marginTop: 1 }} numberOfLines={1}>
+                  {mostRecentCompleted.serviceName} · {mostRecentCompleted.businessName}
+                </Text>
+              </View>
+              <View style={[s.bookAgainBtn, { backgroundColor: "rgba(143,191,106,0.2)" }]}>
+                <Text style={{ color: GREEN_ACCENT, fontSize: 12, fontWeight: "700" }}>Book Again</Text>
+              </View>
+            </Pressable>
+          ) : null}
         </View>
       )}
 
@@ -1113,5 +1173,37 @@ const styles = (colors: ReturnType<typeof useColors>) =>
       letterSpacing: 0.5,
       textTransform: "uppercase",
       marginBottom: 4,
+    },
+    // Compact appointment / Book Again banner
+    apptBannerCard: {
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 2,
+      borderRadius: 14,
+      borderWidth: 1,
+      overflow: "hidden" as const,
+    },
+    apptBannerInner: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      gap: 10,
+    },
+    apptBannerDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      flexShrink: 0,
+    },
+    apptBannerText: {
+      flex: 1,
+      gap: 1,
+    },
+    bookAgainBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      flexShrink: 0,
     },
   });

@@ -265,7 +265,11 @@ export default function ClientBusinessDetailScreen() {
           {tabs.map((tab) => (
             <Pressable key={tab} style={[s.tab, activeTab === tab && { borderBottomColor: LIME_GREEN, borderBottomWidth: 2 }]} onPress={() => setActiveTab(tab)}>
               <Text style={[s.tabText, { color: activeTab === tab ? LIME_GREEN : colors.muted }]}>
-                {tab === "gallery" ? `Gallery (${servicePhotos.length})` : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab === "gallery"
+                ? `Gallery (${servicePhotos.length})`
+                : tab === "reviews" && reviews.length > 0
+                ? `Reviews (${reviews.length})`
+                : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </Text>
             </Pressable>
           ))}
@@ -400,20 +404,46 @@ export default function ClientBusinessDetailScreen() {
           <View style={s.tabContent}>
             {reviews.length === 0
               ? <Text style={[s.emptyText, { color: colors.muted }]}>No reviews yet.</Text>
-              : reviews.map((rev, idx) => (
-                <View key={idx} style={[s.reviewCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  <View style={s.reviewHeader}>
-                    <Text style={[s.reviewerName, { color: colors.foreground }]}>{rev.clientName}</Text>
-                    <View style={s.reviewStars}>
-                      {[1,2,3,4,5].map((star) => (
-                        <IconSymbol key={star} name="star.fill" size={12} color={star <= rev.rating ? colors.warning : colors.border} />
-                      ))}
-                    </View>
-                  </View>
-                  {rev.comment && <Text style={[s.reviewComment, { color: colors.muted }]}>{rev.comment}</Text>}
-                  <Text style={[s.reviewDate, { color: colors.muted }]}>{new Date(rev.createdAt).toLocaleDateString()}</Text>
-                </View>
-              ))}
+              : (() => {
+                  // Sort: client's own review first, then by date desc
+                  const clientPhone = state.account?.phone ?? "";
+                  const clientName = state.account?.name ?? "";
+                  const sorted = [...reviews].sort((a, b) => {
+                    const aIsOwn = clientPhone && a.clientName === clientName;
+                    const bIsOwn = clientPhone && b.clientName === clientName;
+                    if (aIsOwn && !bIsOwn) return -1;
+                    if (!aIsOwn && bIsOwn) return 1;
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                  });
+                  return sorted.map((rev, idx) => {
+                    const isOwnReview = clientName && rev.clientName === clientName;
+                    return (
+                      <View key={idx} style={[
+                        s.reviewCard,
+                        { backgroundColor: isOwnReview ? "rgba(74,124,89,0.12)" : colors.surface, borderColor: isOwnReview ? LIME_GREEN : colors.border },
+                      ]}>
+                        <View style={s.reviewHeader}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1 }}>
+                            <Text style={[s.reviewerName, { color: colors.foreground }]}>{rev.clientName}</Text>
+                            {isOwnReview && (
+                              <View style={{ backgroundColor: `${LIME_GREEN}20`, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                                <Text style={{ color: LIME_GREEN, fontSize: 10, fontWeight: "700" }}>Your review</Text>
+                              </View>
+                            )}
+                          </View>
+                          <View style={s.reviewStars}>
+                            {[1,2,3,4,5].map((star) => (
+                              <IconSymbol key={star} name="star.fill" size={12} color={star <= rev.rating ? colors.warning : colors.border} />
+                            ))}
+                          </View>
+                        </View>
+                        {rev.comment && <Text style={[s.reviewComment, { color: colors.muted }]}>{rev.comment}</Text>}
+                        <Text style={[s.reviewDate, { color: colors.muted }]}>{new Date(rev.createdAt).toLocaleDateString()}</Text>
+                      </View>
+                    );
+                  });
+                })()
+            }
           </View>
         )}
 

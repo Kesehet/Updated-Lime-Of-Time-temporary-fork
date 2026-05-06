@@ -92,6 +92,8 @@ export default function BookingsScreen() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  // Track which appointment IDs have already been reviewed
+  const [reviewedAppointmentIds, setReviewedAppointmentIds] = useState<Set<number>>(new Set());
 
   const loadAppointments = useCallback(async (silent = false) => {
     if (!state.account) return;
@@ -100,6 +102,20 @@ export default function BookingsScreen() {
       const raw = await apiCall<{ appointments: ClientAppointment[] } | ClientAppointment[]>("/api/client/appointments");
       const appts: ClientAppointment[] = Array.isArray(raw) ? raw : (raw as any).appointments ?? [];
       dispatch({ type: "SET_APPOINTMENTS", payload: appts });
+      // Check which completed appointments already have a review
+      const completedIds = appts.filter((a) => a.status === "completed").map((a) => a.id);
+      if (completedIds.length > 0) {
+        const checks = await Promise.allSettled(
+          completedIds.map((id) =>
+            apiCall<{ reviewed: boolean }>(`/api/client/reviews/check/${id}`).then((r) => ({ id, reviewed: r.reviewed }))
+          )
+        );
+        const reviewed = new Set<number>();
+        checks.forEach((c) => {
+          if (c.status === "fulfilled" && c.value.reviewed) reviewed.add(c.value.id);
+        });
+        setReviewedAppointmentIds(reviewed);
+      }
     } catch (err) {
       console.warn("[Bookings] load error:", err);
     } finally {
@@ -134,6 +150,10 @@ export default function BookingsScreen() {
       });
       if (!res.ok) throw new Error("Failed to submit review");
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Mark this appointment as reviewed in local state
+      if (reviewAppt) {
+        setReviewedAppointmentIds((prev) => new Set([...prev, reviewAppt.id]));
+      }
       setReviewModalVisible(false);
       Alert.alert("Thank you!", "Your review has been submitted.");
     } catch (err: any) {
@@ -330,19 +350,26 @@ export default function BookingsScreen() {
                   </Text>
                 </View>
               )}
-              {/* Leave a Review button for completed appointments */}
+              {/* Leave a Review button / Reviewed badge for completed appointments */}
               {item.status === "completed" && (
-                <Pressable
-                  style={({ pressed }) => [s.reviewBtn, pressed && { opacity: 0.75 }]}
-                  onPress={(e) => {
-                    e.stopPropagation?.();
-                    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    openReviewModal(item);
-                  }}
-                >
-                  <IconSymbol name="star" size={13} color="#4A7C59" />
-                  <Text style={s.reviewBtnText}>Leave a Review</Text>
-                </Pressable>
+                reviewedAppointmentIds.has(item.id) ? (
+                  <View style={[s.reviewBtn, { backgroundColor: "rgba(143,191,106,0.12)" }]}>
+                    <IconSymbol name="checkmark" size={13} color={GREEN_ACCENT} />
+                    <Text style={[s.reviewBtnText, { color: GREEN_ACCENT }]}>Reviewed</Text>
+                  </View>
+                ) : (
+                  <Pressable
+                    style={({ pressed }) => [s.reviewBtn, pressed && { opacity: 0.75 }]}
+                    onPress={(e) => {
+                      e.stopPropagation?.();
+                      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      openReviewModal(item);
+                    }}
+                  >
+                    <IconSymbol name="star" size={13} color="#4A7C59" />
+                    <Text style={s.reviewBtnText}>Leave a Review</Text>
+                  </Pressable>
+                )
               )}
             </Pressable>
           )}
