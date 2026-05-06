@@ -348,6 +348,75 @@ export default function BookingsScreen() {
           )}
         />
       )}
+
+      {/* ── Review Modal ──────────────────────────────────────────────────── */}
+      <Modal
+        visible={reviewModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setReviewModalVisible(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" }}
+          onPress={() => setReviewModalVisible(false)}
+        >
+          <Pressable
+            style={[s.modalSheet, { backgroundColor: "#1A2E22" }]}
+            onPress={(e) => e.stopPropagation?.()}
+          >
+            {/* Handle */}
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.2)", alignSelf: "center", marginBottom: 8 }} />
+            <Text style={[s.modalTitle, { color: TEXT_PRIMARY }]}>
+              Rate {reviewAppt?.businessName ?? "your experience"}
+            </Text>
+            <Text style={[s.modalBiz, { color: TEXT_MUTED }]}>
+              {reviewAppt?.serviceName} · {reviewAppt ? formatDate(reviewAppt.date) : ""}
+            </Text>
+            {/* Stars */}
+            <View style={s.starsRow}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Pressable
+                  key={star}
+                  style={s.starBtn}
+                  onPress={() => {
+                    setReviewRating(star);
+                    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                >
+                  <Text style={{ fontSize: 38, color: star <= reviewRating ? "#FFD200" : "rgba(255,255,255,0.2)" }}>
+                    ★
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={[s.ratingLabel, { color: TEXT_MUTED }]}>
+              {["Terrible", "Poor", "Okay", "Good", "Excellent!"][reviewRating - 1]}
+            </Text>
+            {/* Comment */}
+            <TextInput
+              style={[s.reviewInput, { color: TEXT_PRIMARY, borderColor: "rgba(255,255,255,0.15)", backgroundColor: "rgba(255,255,255,0.05)" }]}
+              placeholder="Add a comment (optional)"
+              placeholderTextColor={TEXT_MUTED}
+              value={reviewComment}
+              onChangeText={setReviewComment}
+              multiline
+              numberOfLines={3}
+              maxLength={500}
+              returnKeyType="done"
+            />
+            {/* Submit */}
+            <Pressable
+              style={({ pressed }) => [s.submitReviewBtn, pressed && { opacity: 0.8 }, submittingReview && { opacity: 0.6 }]}
+              onPress={submitReview}
+              disabled={submittingReview}
+            >
+              <Text style={s.submitReviewBtnText}>
+                {submittingReview ? "Submitting…" : "Submit Review"}
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

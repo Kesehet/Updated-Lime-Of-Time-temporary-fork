@@ -1844,3 +1844,12 @@
 - [x] Show star rating badge on Discover business cards
 - [x] Near Me button persists GPS coords to AsyncStorage
 - [x] Add Recently Viewed horizontal scroll section on Discover
+
+## Phase: Reviews & Rating (May 2026)
+- [x] Add star rating row to client-business-detail.tsx
+- [x] Create reviews DB table and migration (already existed)
+- [x] Add POST /api/client/reviews endpoint (already existed)
+- [x] Add GET /api/client/reviews/:businessId endpoint (already existed)
+- [x] Recalculate avgRating on business after review submission (live from reviews table)
+- [x] Show review prompt after completed appointment on client appointments screen
+- [x] Add "Clear Recently Viewed" button to Discover screen

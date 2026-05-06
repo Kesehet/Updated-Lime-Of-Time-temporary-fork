@@ -180,6 +180,12 @@ export function registerPublicRoutes(app: Express) {
         res.status(404).json({ error: "Business not found" });
         return;
       }
+      // Compute live avgRating and reviewCount from reviews table
+      const reviewsList = await db.getReviewsByOwner(owner.id);
+      const reviewCount = reviewsList.length;
+      const avgRating = reviewCount > 0
+        ? Math.round((reviewsList.reduce((sum, r) => sum + r.rating, 0) / reviewCount) * 10) / 10
+        : null;
       res.json({
         id: owner.id,
         businessName: owner.businessName,
@@ -193,6 +199,8 @@ export function registerPublicRoutes(app: Express) {
         workingHours: owner.workingHours,
         cancellationPolicy: owner.cancellationPolicy,
         businessLogoUri: owner.businessLogoUri,
+        avgRating,
+        reviewCount,
       });
     } catch (err) {
       console.error("[Public API] Error fetching business:", err);

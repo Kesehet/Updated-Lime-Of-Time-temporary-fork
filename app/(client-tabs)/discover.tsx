@@ -137,14 +137,18 @@ function kmToMiles(km: number): number {
 }
 
 // ─── Recently Viewed Section (tap-based) ────────────────────────────────────
-
-function RecentlyViewedSection({ items, router }: { items: RecentlyViewedBusiness[]; router: ReturnType<typeof useRouter> }) {
+function RecentlyViewedSection({ items, router, onClear }: { items: RecentlyViewedBusiness[]; router: ReturnType<typeof useRouter>; onClear: () => void }) {
   if (items.length === 0) return null;
   return (
     <View style={recentStyles.section}>
       <View style={recentStyles.header}>
         <Text style={[recentStyles.title, { color: TEXT_PRIMARY }]}>Recently Viewed</Text>
-        <Text style={[recentStyles.subtitle, { color: TEXT_MUTED }]}>Tap to visit</Text>
+        <Pressable
+          onPress={onClear}
+          style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, paddingHorizontal: 8, paddingVertical: 4 }]}
+        >
+          <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: "600" }}>Clear</Text>
+        </Pressable>
       </View>
       <ScrollView
         horizontal
@@ -381,6 +385,10 @@ export default function DiscoverScreen() {
   const [showRadiusPicker, setShowRadiusPicker] = useState(false);
   const [nearMeLoading, setNearMeLoading] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedBusiness[]>([]);
+  const clearRecentlyViewed = useCallback(async () => {
+    await AsyncStorage.removeItem(RECENTLY_VIEWED_KEY);
+    setRecentlyViewed([]);
+  }, []);
 
   const apiBase = getApiBaseUrl();
 
@@ -688,7 +696,7 @@ export default function DiscoverScreen() {
 
       {/* Recently Viewed (tap-based, persisted across sessions) */}
       {!loading && recentlyViewed.length > 0 && (
-        <RecentlyViewedSection items={recentlyViewed} router={router} />
+        <RecentlyViewedSection items={recentlyViewed} router={router} onClear={clearRecentlyViewed} />
       )}
 
       {/* Recently Visited (from appointment history) */}
