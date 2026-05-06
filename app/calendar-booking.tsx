@@ -2824,6 +2824,18 @@ export default function CalendarBookingScreen() {
                   <Text style={{ fontSize: 13, color: colors.success }}>-${promoDiscountAmount.toFixed(2)}</Text>
                 </View>
               )}
+              {/* Total savings line — only shown when 2+ discount types are stacked */}
+              {(() => {
+                const activeDiscountCount = [discountAmount > 0, manualDiscountAmount > 0, promoDiscountAmount > 0].filter(Boolean).length;
+                const totalSavings = discountAmount + manualDiscountAmount + promoDiscountAmount;
+                if (activeDiscountCount < 2 || totalSavings <= 0) return null;
+                return (
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 2, paddingTop: 4, borderTopWidth: 1, borderTopColor: colors.success + "30" }}>
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: colors.success }}>Total savings</Text>
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: colors.success }}>-${totalSavings.toFixed(2)}</Text>
+                  </View>
+                );
+              })()}
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4, borderTopWidth: 1, borderTopColor: colors.primary + "20", paddingTop: 6 }}>
                 <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>Amount Due</Text>
                 <Text style={{ fontSize: 16, fontWeight: "800", color: colors.primary }}>${totalPrice.toFixed(2)}</Text>
@@ -2912,7 +2924,18 @@ export default function CalendarBookingScreen() {
                 <Text style={{ fontSize: 13, fontWeight: "500", color: colors.success }}>-${promoDiscountAmount.toFixed(2)}</Text>
               </View>
             )}
-
+            {/* Total savings line — only shown when 2+ discount types are stacked */}
+            {(() => {
+              const activeDiscountCount = [discountAmount > 0, manualDiscountAmount > 0, promoDiscountAmount > 0].filter(Boolean).length;
+              const totalSavings = discountAmount + manualDiscountAmount + promoDiscountAmount;
+              if (activeDiscountCount < 2 || totalSavings <= 0) return null;
+              return (
+                <View style={[styles.cartItem, { borderTopWidth: 1, borderTopColor: colors.success + "30", marginTop: 2, paddingTop: 6 }]}>
+                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.success }}>Total savings</Text>
+                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.success }}>-${totalSavings.toFixed(2)}</Text>
+                </View>
+              );
+            })()}
             {/* Promo Code + Discount buttons — separate */}
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 10, marginTop: 6, marginBottom: 2 }}>
               <Pressable
