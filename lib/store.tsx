@@ -940,6 +940,9 @@ export function dbOwnerToSettings(owner: any): Partial<BusinessSettings> {
     instagramHandle: (owner as any).instagramHandle ?? "",
     facebookHandle: (owner as any).facebookHandle ?? "",
     tiktokHandle: (owner as any).tiktokHandle ?? "",
+    // Client portal
+    clientPortalVisible: (owner as any).clientPortalVisible ?? false,
+    businessCategory: (owner as any).businessCategory ?? null,
   };
 }
 
@@ -1875,6 +1878,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             if (settings.instagramHandle !== undefined) updateData.instagramHandle = settings.instagramHandle;
             if (settings.facebookHandle !== undefined) updateData.facebookHandle = settings.facebookHandle;
             if (settings.tiktokHandle !== undefined) updateData.tiktokHandle = settings.tiktokHandle;
+            // Client portal
+            if (settings.clientPortalVisible !== undefined) (updateData as any).clientPortalVisible = settings.clientPortalVisible;
+            if (settings.businessCategory !== undefined) (updateData as any).businessCategory = settings.businessCategory;
             // Only update if there's something besides id
             if (Object.keys(updateData).length > 1) {
               await updateBusinessMut.mutateAsync(updateData);

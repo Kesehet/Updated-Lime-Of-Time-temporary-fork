@@ -1796,3 +1796,10 @@
 - [x] Update components/ui/icon-symbol.tsx with missing icons
 - [x] TypeScript check passes
 - [x] All tests pass
+
+## Phase: Client Portal QA + Settings + Notifications (May 2026)
+- [ ] Audit and fix client booking flow end-to-end (profile-select → sign-in → discover → booking wizard → confirmation → appointment detail)
+- [x] Add clientPortalVisible toggle to Business Settings screen
+- [ ] Wire push notification deep-link: client_message type → navigate to client-message-thread-business screen
+- [ ] Wire push notification deep-link: business_message type → navigate to client-message-thread screen
+- [ ] TypeScript check passes after all changes

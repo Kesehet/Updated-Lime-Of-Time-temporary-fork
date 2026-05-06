@@ -36,6 +36,8 @@ export type NotificationData = {
     | "stripe_payout"
     | "subscription_renewal"
     | "waitlist"
+    | "client_message"
+    | "business_message"
     | "general";
   /** Appointment ID to navigate to */
   appointmentId?: string;
@@ -43,6 +45,12 @@ export type NotificationData = {
   filter?: "requests" | "cancelled" | "upcoming" | "completed";
   /** URL to navigate to (Expo Router path) */
   url?: string;
+  /** Client account ID for client portal message deep-links */
+  clientAccountId?: number;
+  /** Client name for display in the message thread */
+  clientName?: string;
+  /** Business owner ID for business message deep-links */
+  businessOwnerId?: number;
 };
 
 /**
@@ -197,6 +205,7 @@ export function useNotifications() {
       const notifType = data.type as string;
       const appointmentId = data.appointmentId as string | undefined;
       const filter = data.filter as string | undefined;
+      const clientAccountId = data.clientAccountId as number | undefined;
 
       switch (notifType) {
         // ── Actionable: go directly to the appointment so owner can accept/decline ──
@@ -269,6 +278,20 @@ export function useNotifications() {
 
         case "subscription_renewal":
           router.push({ pathname: "/subscription" });
+          break;
+
+        // ── Client message: business owner receives a message from a client ──────────────────
+        case "client_message":
+          if (clientAccountId) {
+            // Navigate to the staff-side message thread with this client
+            router.push({
+              pathname: "/client-message-thread-business" as any,
+              params: { clientAccountId: String(clientAccountId), clientName: (data.clientName as string | undefined) ?? "Client" },
+            });
+          } else {
+            // Fallback: open the Clients tab on the Messages sub-tab
+            router.push({ pathname: "/(tabs)/clients", params: { tab: "messages" } } as any);
+          }
           break;
 
         default:

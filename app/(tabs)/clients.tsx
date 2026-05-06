@@ -1,5 +1,5 @@
 import { FlatList, Text, View, Pressable, StyleSheet, TextInput, Alert, Platform, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { useStore, generateId } from "@/lib/store";
@@ -37,7 +37,13 @@ export default function ClientsScreen() {
   const { checkLimit } = usePlanLimitCheck();
 
   // ── Tab state ─────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<"clients" | "messages">("clients");
+  // Support deep-link from notification: ?tab=messages
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  const [activeTab, setActiveTab] = useState<"clients" | "messages">(tabParam === "messages" ? "messages" : "clients");
+  // Switch to messages tab if notification deep-link arrives while screen is mounted
+  useEffect(() => {
+    if (tabParam === "messages") setActiveTab("messages");
+  }, [tabParam]);
 
   // ── Clients tab state ─────────────────────────────────────────────────────
   const [search, setSearch] = useState("");

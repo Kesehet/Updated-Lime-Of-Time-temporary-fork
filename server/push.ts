@@ -29,6 +29,8 @@ export type PushNotificationData = {
   filter?: "requests" | "cancelled" | "upcoming" | "completed";
   /** Client account ID for client portal message deep-links */
   clientAccountId?: number;
+  /** Client name for display in the message thread (sent with client_message notifications) */
+  clientName?: string;
   /** Business owner ID for business message deep-links */
   businessOwnerId?: number;
 };

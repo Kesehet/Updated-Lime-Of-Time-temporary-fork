@@ -115,6 +115,9 @@ const businessRouter = router({
         instagramHandle: z.string().optional(),
         facebookHandle: z.string().optional(),
         tiktokHandle: z.string().optional(),
+        // Client portal visibility
+        clientPortalVisible: z.boolean().optional(),
+        businessCategory: z.string().optional().nullable(),
       })
     )
     .mutation(async ({ input }) => {

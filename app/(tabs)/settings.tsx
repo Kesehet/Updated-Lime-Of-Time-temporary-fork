@@ -157,6 +157,21 @@ export default function SettingsScreen() {
     { key: "system", label: "Auto",   icon: "gear" },
   ];
 
+  // ── Client Portal Visibility ──────────────────────────────────────────────────
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const PORTAL_CATEGORIES = ["Hair", "Nails", "Skin", "Massage", "Fitness", "Dental", "Medical", "Spa", "Barber", "Tattoo", "Other"];
+  const togglePortalVisible = useCallback((value: boolean) => {
+    const action = { type: "UPDATE_SETTINGS" as const, payload: { clientPortalVisible: value } };
+    dispatch(action);
+    syncToDb(action);
+  }, [dispatch, syncToDb]);
+  const setPortalCategory = useCallback((cat: string) => {
+    const action = { type: "UPDATE_SETTINGS" as const, payload: { businessCategory: cat } };
+    dispatch(action);
+    syncToDb(action);
+    setShowCategoryPicker(false);
+  }, [dispatch, syncToDb]);
+
   const handleLogout = useCallback(() => {
     Alert.alert("Log Out", "Are you sure you want to log out?", [
       { text: "Cancel", style: "cancel" },
@@ -505,6 +520,67 @@ export default function SettingsScreen() {
             status: activeCodes > 0 ? "ok" : undefined,
           },
         ])}
+
+        <SectionHeader label="Client Portal" accentColor="#8B5CF6" colors={colors} />
+        {/* Portal visibility toggle */}
+        <View style={{ backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.border, padding: 14, marginBottom: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: "#8B5CF620", alignItems: "center", justifyContent: "center" }}>
+              <IconSymbol name="eye.fill" size={20} color="#8B5CF6" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Visible in Client Portal</Text>
+              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+                {settings.clientPortalVisible ? "Clients can discover and book your business" : "Hidden from client discovery"}
+              </Text>
+            </View>
+            <Switch
+              value={settings.clientPortalVisible ?? false}
+              onValueChange={togglePortalVisible}
+              trackColor={{ false: colors.border, true: "#8B5CF6" }}
+              thumbColor="#fff"
+            />
+          </View>
+          {settings.clientPortalVisible && (
+            <>
+              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 12 }} />
+              <Pressable
+                onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+                style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, opacity: pressed ? 0.7 : 1 })}
+              >
+                <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: "#8B5CF620", alignItems: "center", justifyContent: "center" }}>
+                  <IconSymbol name="tag.fill" size={18} color="#8B5CF6" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>Business Category</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+                    {settings.businessCategory ?? "Tap to select a category"}
+                  </Text>
+                </View>
+                <IconSymbol name="chevron.right" size={16} color={colors.muted} />
+              </Pressable>
+              {showCategoryPicker && (
+                <View style={{ marginTop: 10, flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {PORTAL_CATEGORIES.map((cat) => (
+                    <Pressable
+                      key={cat}
+                      onPress={() => setPortalCategory(cat)}
+                      style={({ pressed }) => ({
+                        paddingHorizontal: 14,
+                        paddingVertical: 8,
+                        borderRadius: 20,
+                        backgroundColor: settings.businessCategory === cat ? "#8B5CF6" : colors.border,
+                        opacity: pressed ? 0.75 : 1,
+                      })}
+                    >
+                      <Text style={{ fontSize: 13, fontWeight: "600", color: settings.businessCategory === cat ? "#fff" : colors.foreground }}>{cat}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </>
+          )}
+        </View>
 
         <SectionHeader label="Organisation" accentColor="#10B981" colors={colors} />
         {renderNavList([

@@ -572,7 +572,7 @@ export function registerClientRoutes(app: Express) {
         await sendExpoPush(owner.expoPushToken, {
           title: `New message from ${clientAccount!.name ?? "a client"}`,
           body: body.trim().slice(0, 100),
-          data: { type: "client_message", clientAccountId: clientAccount!.id },
+          data: { type: "client_message", clientAccountId: clientAccount!.id, clientName: clientAccount!.name ?? "Client" },
         });
       }
 

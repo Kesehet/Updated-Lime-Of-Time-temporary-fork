@@ -514,6 +514,10 @@ export interface BusinessSettings {
   giftValidDays?: number;
   /** Custom emoji per category name. Key = category name, value = emoji string. */
   categoryEmojis?: Record<string, string>;
+  /** Whether this business is visible in the client portal Discover tab */
+  clientPortalVisible?: boolean;
+  /** Business category for client portal discovery (e.g. "Hair Salon", "Barbershop") */
+  businessCategory?: string | null;
 }
 
 /** A global reminder template that can be sent to clients for any appointment */
