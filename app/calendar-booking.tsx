@@ -416,15 +416,18 @@ export default function CalendarBookingScreen() {
   }, [availableStaff, state.appointments, preselectedDate, preselectedTime, totalDuration]);
 
   const appliedDiscount = useMemo(() => {
-    if (!selectedServiceId || !preselectedDate || !preselectedTime) return null;
+    // For package bookings, use the first session's date/time for discount eligibility
+    const effectiveDate = preselectedDate || (packageSessions.length > 0 ? packageSessions[0].date : null);
+    const effectiveTime = preselectedTime || (packageSessions.length > 0 ? packageSessions[0].time : null);
+    if (!selectedServiceId || !effectiveDate || !effectiveTime) return null;
     return getApplicableDiscount(
       state.discounts,
-      preselectedDate,
-      preselectedTime,
+      effectiveDate,
+      effectiveTime,
       selectedServiceId,
       state.appointments
     );
-  }, [state.discounts, preselectedDate, preselectedTime, selectedServiceId, state.appointments]);
+  }, [state.discounts, preselectedDate, preselectedTime, selectedServiceId, state.appointments, packageSessions]);
 
   const discountAmount = useMemo(() => {
     if (!appliedDiscount) return 0;
@@ -440,7 +443,10 @@ export default function CalendarBookingScreen() {
     return Math.min(appliedPromoCode.flatAmount ?? 0, subtotal);
   }, [appliedPromoCode, subtotal]);
 
-  const totalPrice = Math.max(0, subtotal - discountAmount - promoDiscountAmount);
+  const manualDiscountAmount = appliedManualDiscount && !appliedDiscount
+    ? subtotal * (appliedManualDiscount.percentage / 100)
+    : 0;
+  const totalPrice = Math.max(0, subtotal - discountAmount - promoDiscountAmount - manualDiscountAmount);
 
   // Available extra services (exclude all services already in selectedServices)
   const selectedServiceIds = useMemo(() => new Set(selectedServices.map((s) => s.id)), [selectedServices]);
@@ -2783,10 +2789,10 @@ export default function CalendarBookingScreen() {
                   <Text style={{ fontSize: 13, color: colors.warning }}>-${discountAmount.toFixed(2)}</Text>
                 </View>
               )}
-              {(appliedManualDiscount && !appliedDiscount) && (
+              {(appliedManualDiscount && manualDiscountAmount > 0) && (
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                   <Text style={{ fontSize: 13, color: colors.warning }}>{appliedManualDiscount.name} ({appliedManualDiscount.percentage}% off)</Text>
-                  <Text style={{ fontSize: 13, color: colors.warning }}>-${(subtotal * (appliedManualDiscount.percentage / 100)).toFixed(2)}</Text>
+                  <Text style={{ fontSize: 13, color: colors.warning }}>-${manualDiscountAmount.toFixed(2)}</Text>
                 </View>
               )}
               {appliedPromoCode && promoDiscountAmount > 0 && (
@@ -2855,16 +2861,24 @@ export default function CalendarBookingScreen() {
             ))}
 
             {/* Discount */}
-            {appliedDiscount && discountAmount > 0 && (
+            {((appliedDiscount && discountAmount > 0) || manualDiscountAmount > 0) && (
               <>
                 <View style={[styles.cartItem, { borderTopWidth: 1, borderTopColor: colors.border, marginTop: 4, paddingTop: 8 }]}>
                   <Text style={{ fontSize: 13, color: colors.muted }}>Subtotal</Text>
                   <Text style={{ fontSize: 13, color: colors.muted }}>${subtotal.toFixed(2)}</Text>
                 </View>
-                <View style={styles.cartItem}>
-                  <Text style={{ fontSize: 13, fontWeight: "500", color: colors.warning }}>{appliedDiscount.name} ({appliedDiscount.percentage}% off)</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "500", color: colors.warning }}>-${discountAmount.toFixed(2)}</Text>
-                </View>
+                {appliedDiscount && discountAmount > 0 && (
+                  <View style={styles.cartItem}>
+                    <Text style={{ fontSize: 13, fontWeight: "500", color: colors.warning }}>{appliedDiscount.name} ({appliedDiscount.percentage}% off)</Text>
+                    <Text style={{ fontSize: 13, fontWeight: "500", color: colors.warning }}>-${discountAmount.toFixed(2)}</Text>
+                  </View>
+                )}
+                {manualDiscountAmount > 0 && appliedManualDiscount && (
+                  <View style={styles.cartItem}>
+                    <Text style={{ fontSize: 13, fontWeight: "500", color: colors.warning }}>{appliedManualDiscount.name} ({appliedManualDiscount.percentage}% off)</Text>
+                    <Text style={{ fontSize: 13, fontWeight: "500", color: colors.warning }}>-${manualDiscountAmount.toFixed(2)}</Text>
+                  </View>
+                )}
               </>
             )}
 
