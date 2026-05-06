@@ -7,7 +7,7 @@
  * Design: dark forest-green portal aesthetic matching all other client portal screens.
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,8 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Modal,
+  TextInput,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ClientPortalBackground } from "@/components/client-portal-background";
@@ -72,11 +74,28 @@ export default function ClientAppointmentDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
 
+  // ── Review state ──────────────────────────────────────────────────────────
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+
   useEffect(() => {
     (async () => {
       try {
         const data = await apiCall<ClientAppointment>(`/api/client/appointments/${id}`);
         setAppt(data);
+        // Check if already reviewed (only for completed appointments)
+        if (data.status === "completed") {
+          try {
+            const check = await apiCall<{ reviewed: boolean }>(`/api/client/reviews/check/${id}`);
+            setAlreadyReviewed(check.reviewed);
+          } catch {
+            // Non-fatal — just don't show the review button
+          }
+        }
       } catch (err) {
         console.warn("[ApptDetail] load error:", err);
       } finally {
@@ -84,6 +103,33 @@ export default function ClientAppointmentDetailScreen() {
       }
     })();
   }, [id]);
+
+  const handleSubmitReview = useCallback(async () => {
+    if (!appt || reviewRating < 1) return;
+    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setSubmittingReview(true);
+    try {
+      await apiCall("/api/client/reviews", {
+        method: "POST",
+        body: JSON.stringify({
+          businessOwnerId: appt.businessOwnerId,
+          appointmentId: id,
+          rating: reviewRating,
+          comment: reviewComment.trim() || null,
+        }),
+      });
+      setReviewSuccess(true);
+      setAlreadyReviewed(true);
+      setTimeout(() => {
+        setReviewModalVisible(false);
+        setReviewSuccess(false);
+      }, 1800);
+    } catch (err: any) {
+      Alert.alert("Error", err?.message ?? "Could not submit review.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  }, [appt, id, reviewRating, reviewComment, apiCall]);
 
   const handleCancelRequest = () => {
     Alert.alert(
@@ -143,6 +189,7 @@ export default function ClientAppointmentDetailScreen() {
   const hasPendingCancel = appt.cancelRequest?.status === "pending";
   const hasPendingReschedule = appt.rescheduleRequest?.status === "pending";
   const statusColor = STATUS_COLORS[appt.status] ?? TEXT_MUTED;
+  const isCompleted = appt.status === "completed";
 
   return (
     <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
@@ -213,6 +260,41 @@ export default function ClientAppointmentDetailScreen() {
             <InfoRow icon="note.text" label="Notes" value={appt.notes} />
           ) : null}
         </View>
+
+        {/* ── Review Prompt (completed only) ───────────────────────────── */}
+        {isCompleted && !alreadyReviewed && (
+          <View style={styles.reviewPromptCard}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <Text style={{ fontSize: 22 }}>⭐</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: "700", color: TEXT_PRIMARY }}>
+                  How was your experience?
+                </Text>
+                <Text style={{ fontSize: 12, color: TEXT_MUTED, marginTop: 2 }}>
+                  Share your feedback with {appt.businessName}
+                </Text>
+              </View>
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.reviewBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+              onPress={() => {
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setReviewModalVisible(true);
+              }}
+            >
+              <Text style={styles.reviewBtnText}>Leave a Review</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {isCompleted && alreadyReviewed && (
+          <View style={[styles.reviewPromptCard, { flexDirection: "row", alignItems: "center", gap: 10 }]}>
+            <IconSymbol name="checkmark.circle.fill" size={20} color={GREEN_ACCENT} />
+            <Text style={{ fontSize: 14, color: GREEN_ACCENT, fontWeight: "600" }}>
+              You reviewed this appointment. Thank you!
+            </Text>
+          </View>
+        )}
 
         {/* ── Pending request banners ──────────────────────────────────── */}
         {hasPendingCancel && (
@@ -291,6 +373,126 @@ export default function ClientAppointmentDetailScreen() {
           ) : null}
         </View>
       </ScrollView>
+
+      {/* ── Review Modal ─────────────────────────────────────────────────── */}
+      <Modal
+        visible={reviewModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => !submittingReview && setReviewModalVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: GREEN_DARK, padding: 24 }}>
+          <ClientPortalBackground />
+
+          {/* Modal Header */}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 24, marginTop: 12 }}>
+            <Pressable
+              onPress={() => !submittingReview && setReviewModalVisible(false)}
+              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+            >
+              <Text style={{ fontSize: 16, color: TEXT_MUTED }}>Cancel</Text>
+            </Pressable>
+            <Text style={{ fontSize: 17, fontWeight: "700", color: TEXT_PRIMARY }}>Leave a Review</Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          {reviewSuccess ? (
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontSize: 56, marginBottom: 16 }}>🎉</Text>
+              <Text style={{ fontSize: 20, fontWeight: "700", color: GREEN_ACCENT, textAlign: "center" }}>
+                Thank you!
+              </Text>
+              <Text style={{ fontSize: 14, color: TEXT_MUTED, marginTop: 8, textAlign: "center" }}>
+                Your review has been submitted.
+              </Text>
+            </View>
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Business info */}
+              <View style={{ alignItems: "center", marginBottom: 8 }}>
+                <Text style={{ fontSize: 18, fontWeight: "700", color: TEXT_PRIMARY, textAlign: "center" }}>
+                  {appt?.businessName}
+                </Text>
+                <Text style={{ fontSize: 13, color: TEXT_MUTED, marginTop: 4, textAlign: "center" }}>
+                  {appt?.serviceName} · {appt ? formatDate(appt.date) : ""}
+                </Text>
+              </View>
+
+              {/* Star Rating */}
+              <Text style={{ fontSize: 13, color: TEXT_MUTED, textAlign: "center", marginTop: 16, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                Your Rating
+              </Text>
+              <View style={{ flexDirection: "row", gap: 8, justifyContent: "center", marginVertical: 12 }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Pressable
+                    key={star}
+                    onPress={() => {
+                      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setReviewRating(star);
+                    }}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+                  >
+                    <Text style={{ fontSize: 36, color: star <= reviewRating ? "#FBBF24" : "rgba(255,255,255,0.25)" }}>
+                      ★
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Rating label */}
+              <Text style={{ textAlign: "center", fontSize: 14, color: GREEN_ACCENT, fontWeight: "600", marginBottom: 20 }}>
+                {reviewRating === 1 ? "Poor" : reviewRating === 2 ? "Fair" : reviewRating === 3 ? "Good" : reviewRating === 4 ? "Very Good" : "Excellent"}
+              </Text>
+
+              {/* Comment */}
+              <Text style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                Comments (optional)
+              </Text>
+              <TextInput
+                value={reviewComment}
+                onChangeText={setReviewComment}
+                placeholder="Share your experience..."
+                placeholderTextColor="rgba(255,255,255,0.3)"
+                multiline
+                style={{
+                  backgroundColor: CARD_BG,
+                  borderRadius: 14,
+                  padding: 14,
+                  fontSize: 15,
+                  color: TEXT_PRIMARY,
+                  minHeight: 100,
+                  borderWidth: 1,
+                  borderColor: CARD_BORDER,
+                  textAlignVertical: "top",
+                }}
+              />
+
+              {/* Submit */}
+              <Pressable
+                style={({ pressed }) => ({
+                  backgroundColor: GREEN_ACCENT,
+                  borderRadius: 14,
+                  paddingVertical: 16,
+                  alignItems: "center",
+                  marginTop: 24,
+                  marginBottom: 32,
+                  opacity: pressed || submittingReview ? 0.8 : 1,
+                })}
+                onPress={handleSubmitReview}
+                disabled={submittingReview || reviewRating < 1}
+              >
+                {submittingReview ? (
+                  <ActivityIndicator size="small" color={GREEN_DARK} />
+                ) : (
+                  <Text style={{ fontSize: 16, fontWeight: "700", color: GREEN_DARK }}>
+                    Submit Review
+                  </Text>
+                )}
+              </Pressable>
+            </ScrollView>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -494,5 +696,25 @@ const styles = StyleSheet.create({
   actionBtnText: {
     fontSize: 15,
     fontWeight: "700",
+  },
+  reviewPromptCard: {
+    backgroundColor: "rgba(255,255,255,0.07)",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  reviewBtn: {
+    backgroundColor: "#4ADE80",
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center" as const,
+    marginTop: 4,
+  },
+  reviewBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0d2e1a",
   },
 });

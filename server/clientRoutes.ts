@@ -822,4 +822,44 @@ export function registerClientRoutes(app: Express) {
     }
   });
 
+  // ── POST /api/client/reviews ─────────────────────────────────────────────
+  // Submit a review for a completed appointment
+  app.post("/api/client/reviews", async (req: Request, res: Response) => {
+    try {
+      const { clientAccount } = await getClientAccount(req);
+      if (!clientAccount) { res.status(401).json({ error: "Unauthorized" }); return; }
+      const { businessOwnerId, appointmentId, rating, comment } = req.body;
+      if (!businessOwnerId || !rating || rating < 1 || rating > 5) {
+        res.status(400).json({ error: "businessOwnerId and rating (1-5) are required" });
+        return;
+      }
+      const localId = `client-review-${clientAccount.id}-${Date.now()}`;
+      await db.createReview({
+        businessOwnerId: Number(businessOwnerId),
+        localId,
+        clientLocalId: String(clientAccount.id),
+        appointmentLocalId: appointmentId ? String(appointmentId) : undefined,
+        rating: Number(rating),
+        comment: comment ?? null,
+      });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });
+    }
+  });
+
+  // ── GET /api/client/reviews/check/:appointmentId ─────────────────────────
+  // Check if the client has already reviewed a specific appointment
+  app.get("/api/client/reviews/check/:appointmentId", async (req: Request, res: Response) => {
+    try {
+      const { clientAccount } = await getClientAccount(req);
+      if (!clientAccount) { res.status(401).json({ error: "Unauthorized" }); return; }
+      const { appointmentId } = req.params;
+      const existing = await db.getClientReviewForAppointment(clientAccount.id, appointmentId);
+      res.json({ reviewed: !!existing, review: existing ?? null });
+    } catch (err: any) {
+      res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });
+    }
+  });
+
 }

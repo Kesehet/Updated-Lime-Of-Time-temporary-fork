@@ -35,18 +35,22 @@ export function getApiBaseUrl(): string {
     return API_BASE_URL.replace(/\/$/, "");
   }
 
-  // On web, derive from current hostname by replacing port 8081 with 3000
+  // On web, derive from current hostname
   if (ReactNative.Platform.OS === "web" && typeof window !== "undefined" && window.location) {
     const { protocol, hostname } = window.location;
-    // Pattern: 8081-sandboxid.region.domain -> 3000-sandboxid.region.domain
+    // Pattern 1: 8081-sandboxid.region.domain -> 3000-sandboxid.region.domain (dev tunnel)
     const apiHostname = hostname.replace(/^8081-/, "3000-");
     if (apiHostname !== hostname) {
       return `${protocol}//${apiHostname}`;
     }
+    // Pattern 2: production/published Manus domain (e.g. manussched-xxx.manus.space)
+    // The API server is deployed at lime-of-time.com (Cloudflare Worker → cloud PC).
+    if (hostname.includes("manus.space") || hostname.includes("manus.computer")) {
+      return "https://lime-of-time.com";
+    }
   }
 
-  // On native (iOS/Android) OR web fallback: use the deployed production domain
-  // so Expo Go users and web users not on a sandbox URL can always reach the API
+  // On native (iOS/Android) OR unknown web fallback: use the deployed production domain
   return "https://manussched-dw4mhfnu.manus.space";
 }
 

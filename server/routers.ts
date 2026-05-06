@@ -5,6 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { sendAppointmentConfirmationEmail, sendPaymentReceiptEmail } from "./email";
+import { sendExpoPush } from "./push";
 import {
   getPlatformConfig,
   getPublicPlans,
@@ -446,6 +447,53 @@ const appointmentsRouter = router({
           }
         } catch (smsErr) {
           console.error("[SMS] Failed to send status change SMS:", smsErr);
+        }
+      }
+
+      // ── Push notification to client portal user on status change ──────────────
+      if (data.status === "confirmed" || data.status === "cancelled" || data.status === "completed") {
+        try {
+          const enrichedAppt = await db.getEnrichedAppointment(localId, businessOwnerId);
+          if (enrichedAppt?.clientPhone) {
+            const rawDigits = enrichedAppt.clientPhone.replace(/\D/g, "");
+            const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
+            const clientAcc = await db.getClientAccountByPhone(normalizedPhone)
+              ?? await db.getClientAccountByPhone(enrichedAppt.clientPhone);
+            if (clientAcc?.expoPushToken) {
+              const businessOwner = await db.getBusinessOwnerById(businessOwnerId);
+              const bName = businessOwner?.businessName ?? "Your business";
+              const sName = enrichedAppt.serviceName ?? "appointment";
+              const dateStr = enrichedAppt.date ?? "";
+              const timeStr = enrichedAppt.time ?? "";
+              if (data.status === "confirmed") {
+                await sendExpoPush(clientAcc.expoPushToken, {
+                  title: `\u2705 Appointment Confirmed`,
+                  body: `Your ${sName} with ${bName} on ${dateStr} at ${timeStr} is confirmed. See you soon!`,
+                  data: { type: "appointment_confirmed" as any, appointmentId: localId, businessOwnerId },
+                  channelId: "appointments",
+                  sound: "default",
+                });
+              } else if (data.status === "cancelled") {
+                await sendExpoPush(clientAcc.expoPushToken, {
+                  title: `\u274c Appointment Cancelled`,
+                  body: `Your ${sName} with ${bName} on ${dateStr} has been cancelled. Please contact us to reschedule.`,
+                  data: { type: "appointment_cancelled" as any, appointmentId: localId, businessOwnerId },
+                  channelId: "appointments",
+                  sound: "default",
+                });
+              } else if (data.status === "completed") {
+                await sendExpoPush(clientAcc.expoPushToken, {
+                  title: `\u2b50 How was your visit?`,
+                  body: `Your ${sName} with ${bName} is complete. Tap to leave a review!`,
+                  data: { type: "appointment_completed" as any, appointmentId: localId, businessOwnerId },
+                  channelId: "appointments",
+                  sound: "default",
+                });
+              }
+            }
+          }
+        } catch (pushErr) {
+          console.error("[Push] Failed to send client push notification:", pushErr);
         }
       }
 

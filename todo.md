@@ -1803,3 +1803,11 @@
 - [ ] Wire push notification deep-link: client_message type → navigate to client-message-thread-business screen
 - [ ] Wire push notification deep-link: business_message type → navigate to client-message-thread screen
 - [ ] TypeScript check passes after all changes
+
+## Phase: Bug Fixes + Client Portal Features (May 2026)
+
+- [ ] Fix client sign-in "Failed to fetch" on web preview
+- [ ] Fix Discover "No businesses found" - ensure clientPortalVisible businesses appear
+- [x] Add appointment_confirmed push notification to client when business confirms
+- [ ] Wire servicePhotos to client business detail screen gallery
+- [x] Add review prompt sheet after appointment completion in client portal

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Platform,
   Image,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -18,9 +19,12 @@ import { useStore, generateId } from "@/lib/store";
 import { useColors } from "@/hooks/use-colors";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import type { ServicePhoto } from "@/lib/types";
 import { FuturisticBackground } from "@/components/futuristic-background";
-
+import { trpc } from "@/lib/trpc";
+import { getApiBaseUrl } from "@/constants/oauth";
+import * as Auth from "@/lib/_core/auth";
 
 type LabelKey = "before" | "after" | "other";
 
@@ -45,6 +49,10 @@ export default function ServiceGalleryScreen() {
   const [editingPhoto, setEditingPhoto] = useState<ServicePhoto | null>(null);
   const [editNote, setEditNote] = useState("");
   const [viewingPhoto, setViewingPhoto] = useState<ServicePhoto | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const uploadImageMut = trpc.files.uploadImage.useMutation();
+  // Map localId → server DB id for delete sync
+  const serverPhotoIds = useRef<Map<string, number>>(new Map());
 
   const filteredPhotos = activeFilter === "all" ? photos : photos.filter((p) => p.label === activeFilter);
 
@@ -62,24 +70,91 @@ export default function ServiceGalleryScreen() {
       quality: 0.8,
     });
     if (result.canceled || !result.assets[0]) return;
+    const localUri = result.assets[0].uri;
+    const localId = generateId();
     const photo: ServicePhoto = {
-      id: generateId(),
+      id: localId,
       serviceId: params.serviceId,
-      uri: result.assets[0].uri,
+      uri: localUri,
       label,
       note: "",
       takenAt: new Date().toISOString(),
     };
     dispatch({ type: "ADD_SERVICE_PHOTO", payload: photo });
-  }, [params.serviceId, dispatch]);
+
+    // Upload to S3 and register with server
+    setUploading(true);
+    try {
+      const mimeType = localUri.endsWith(".png") ? "image/png" : "image/jpeg";
+      let base64: string;
+      if (Platform.OS === "web") {
+        const resp = await fetch(localUri);
+        const blob = await resp.blob();
+        base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).split(",")[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } else {
+        base64 = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+      }
+      const { url } = await uploadImageMut.mutateAsync({ base64, mimeType, folder: "gallery" });
+      // Update local photo URI to the S3 URL so client portal can load it
+      dispatch({ type: "UPDATE_SERVICE_PHOTO", payload: { ...photo, uri: url } });
+      // Register with server
+      const token = await Auth.getSessionToken();
+      const apiBase = getApiBaseUrl();
+      const serverResp = await fetch(`${apiBase}/api/business/service-photos`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          serviceLocalId: params.serviceId,
+          uri: url,
+          label,
+          note: "",
+          sortOrder: photos.length,
+        }),
+      });
+      if (serverResp.ok) {
+        const { photo: serverPhoto } = await serverResp.json();
+        if (serverPhoto?.id) serverPhotoIds.current.set(localId, serverPhoto.id);
+      }
+    } catch (uploadErr) {
+      console.error("[Gallery] Failed to upload photo to server:", uploadErr);
+    } finally {
+      setUploading(false);
+    }
+  }, [params.serviceId, dispatch, photos.length, uploadImageMut]);
 
   const handleDeletePhoto = useCallback((photoId: string) => {
-    if (Platform.OS === "web") {
+    const doDelete = async () => {
       dispatch({ type: "DELETE_SERVICE_PHOTO", payload: photoId });
+      // Also delete from server if we have the server ID
+      const serverId = serverPhotoIds.current.get(photoId);
+      if (serverId) {
+        try {
+          const token = await Auth.getSessionToken();
+          const apiBase = getApiBaseUrl();
+          await fetch(`${apiBase}/api/business/service-photos/${serverId}`, {
+            method: "DELETE",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          serverPhotoIds.current.delete(photoId);
+        } catch (delErr) {
+          console.error("[Gallery] Failed to delete photo from server:", delErr);
+        }
+      }
+    };
+    if (Platform.OS === "web") {
+      doDelete();
     } else {
       Alert.alert("Delete Photo", "Remove this photo from the gallery?", [
         { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => dispatch({ type: "DELETE_SERVICE_PHOTO", payload: photoId }) },
+        { text: "Delete", style: "destructive", onPress: doDelete },
       ]);
     }
   }, [dispatch]);
@@ -121,7 +196,8 @@ export default function ServiceGalleryScreen() {
           </Text>
           <Text style={{ fontSize: 12, color: colors.muted }}>Before & After Gallery</Text>
         </View>
-        <View style={{ flexDirection: "row", gap: 6 }}>
+        <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+          {uploading && <ActivityIndicator size="small" color={colors.primary} />}
           {(["before", "after", "other"] as LabelKey[]).map((lbl) => (
             <Pressable
               key={lbl}
@@ -181,7 +257,7 @@ export default function ServiceGalleryScreen() {
             No {activeFilter === "all" ? "" : activeFilter + " "}photos yet
           </Text>
           <Text style={{ fontSize: 13, color: colors.muted, marginTop: 6, textAlign: "center" }}>
-            Tap + Before, + After, or + Other above to add photos to this service's gallery.
+            Tap + Before, + After, or + Other above to add photos to this service's gallery.{"\n"}Photos sync to the client portal automatically.
           </Text>
         </View>
       ) : (
@@ -272,11 +348,11 @@ export default function ServiceGalleryScreen() {
       >
         <View style={{ flex: 1, backgroundColor: colors.background, padding: 20 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-            <Pressable onPress={() => setEditingPhoto(null)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
-              <Text style={{ fontSize: 16, color: colors.muted }}>Cancel</Text>
+            <Pressable onPress={() => setEditingPhoto(null)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+              <Text style={{ fontSize: 16, color: colors.primary }}>Cancel</Text>
             </Pressable>
-            <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>Photo Note</Text>
-            <Pressable onPress={handleSaveNote} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
+            <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>Edit Note</Text>
+            <Pressable onPress={handleSaveNote} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
               <Text style={{ fontSize: 16, fontWeight: "700", color: colors.primary }}>Save</Text>
             </Pressable>
           </View>
@@ -290,59 +366,59 @@ export default function ServiceGalleryScreen() {
           <TextInput
             value={editNote}
             onChangeText={setEditNote}
-            placeholder="Add a note about this photo…"
+            placeholder="Add a note about this photo..."
             placeholderTextColor={colors.muted}
             multiline
             style={{
               backgroundColor: colors.surface,
               borderRadius: 12,
-              borderWidth: 1,
-              borderColor: colors.border,
               padding: 14,
               fontSize: 15,
               color: colors.foreground,
               minHeight: 100,
-              textAlignVertical: "top",
+              borderWidth: 1,
+              borderColor: colors.border,
             }}
           />
         </View>
       </Modal>
 
-      {/* Full-screen photo viewer */}
+      {/* Full-screen Photo Viewer Modal */}
       <Modal
         visible={viewingPhoto !== null}
         animationType="fade"
-        transparent
+        presentationStyle="fullScreen"
         onRequestClose={() => setViewingPhoto(null)}
       >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.92)", alignItems: "center", justifyContent: "center" }}>
+        <View style={{ flex: 1, backgroundColor: "#000" }}>
           <Pressable
             onPress={() => setViewingPhoto(null)}
-            style={{ position: "absolute", top: 50, right: 20, zIndex: 10 }}
+            style={({ pressed }) => ({
+              position: "absolute", top: 50, right: 20, zIndex: 10,
+              backgroundColor: "rgba(255,255,255,0.15)",
+              borderRadius: 20, width: 40, height: 40,
+              alignItems: "center", justifyContent: "center",
+              opacity: pressed ? 0.7 : 1,
+            })}
           >
-            <View style={{ backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 20, width: 36, height: 36, alignItems: "center", justifyContent: "center" }}>
-              <IconSymbol name="xmark" size={18} color="#FFF" />
-            </View>
+            <IconSymbol name="xmark" size={20} color="#FFF" />
           </Pressable>
           {viewingPhoto && (
             <ScrollView
-              contentContainerStyle={{ alignItems: "center", justifyContent: "center", flex: 1 }}
+              contentContainerStyle={{ flex: 1, alignItems: "center", justifyContent: "center" }}
               maximumZoomScale={3}
               minimumZoomScale={1}
             >
               <Image
                 source={{ uri: viewingPhoto.uri }}
-                style={{ width: 340, height: 400, borderRadius: 12 }}
+                style={{ width: "100%", height: 400 }}
                 resizeMode="contain"
               />
               {viewingPhoto.note ? (
-                <View style={{ marginTop: 16, paddingHorizontal: 24 }}>
-                  <Text style={{ color: "#FFF", fontSize: 14, textAlign: "center" }}>{viewingPhoto.note}</Text>
+                <View style={{ position: "absolute", bottom: 60, left: 20, right: 20, backgroundColor: "rgba(0,0,0,0.7)", borderRadius: 12, padding: 12 }}>
+                  <Text style={{ color: "#FFF", fontSize: 14 }}>{viewingPhoto.note}</Text>
                 </View>
               ) : null}
-              <View style={{ marginTop: 10, backgroundColor: LABEL_CONFIG[viewingPhoto.label].color + "CC", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 4 }}>
-                <Text style={{ color: "#FFF", fontSize: 13, fontWeight: "700" }}>{LABEL_CONFIG[viewingPhoto.label].label}</Text>
-              </View>
             </ScrollView>
           )}
         </View>
@@ -357,6 +433,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 0.5,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
 });

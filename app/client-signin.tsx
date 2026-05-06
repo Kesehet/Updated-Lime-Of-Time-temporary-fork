@@ -44,7 +44,7 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
 
 const { width, height } = Dimensions.get("window");
-const API_BASE = getApiBaseUrl();
+// API_BASE resolved at call time (not module load) so it picks up the correct runtime hostname
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatPhoneUS(raw: string): string {
@@ -178,7 +178,8 @@ export default function ClientSignInScreen() {
     try {
       const rawPhone = selectedCountry.dial === "+1" ? stripped : `${selectedCountry.dial.replace("+", "")}${stripped}`;
       // Directly sign in with phone number (no OTP required)
-      const res = await fetch(`${API_BASE}/api/client/phone-login`, {
+      const apiBase = getApiBaseUrl();
+      const res = await fetch(`${apiBase}/api/client/phone-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: rawPhone }),

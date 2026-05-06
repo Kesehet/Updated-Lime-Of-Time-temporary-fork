@@ -1337,3 +1337,20 @@ export async function getLocations(businessOwnerId: number) {
 export async function getReviews(businessOwnerId: number) {
   return getReviewsByOwner(businessOwnerId);
 }
+
+export async function getClientReviewForAppointment(clientAccountId: number, appointmentId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const clientLocalId = String(clientAccountId);
+  const results = await db
+    .select()
+    .from(reviews)
+    .where(
+      and(
+        eq(reviews.clientLocalId, clientLocalId),
+        eq(reviews.appointmentLocalId, appointmentId)
+      )
+    )
+    .limit(1);
+  return results[0] ?? null;
+}
