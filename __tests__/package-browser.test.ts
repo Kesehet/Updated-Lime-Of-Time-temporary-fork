@@ -72,29 +72,31 @@ describe("package-browser.tsx", () => {
 });
 
 // ─── 2. Calendar tab entry point ─────────────────────────────────────────────
+// NOTE: The inline Packages & Bundles preview row was intentionally removed
+// from calendar.tsx (see ui-changes-4.test.ts). These tests are skipped.
 
 describe("calendar.tsx — Packages & Bundles preview row", () => {
   const src = readFile("app/(tabs)/calendar.tsx");
 
-  it("renders a Packages & Bundles label", () => {
+  it.skip("renders a Packages & Bundles label", () => {
     expect(src).toContain("Packages & Bundles");
   });
 
-  it("has a View All button that navigates to package-browser", () => {
+  it.skip("has a View All button that navigates to package-browser", () => {
     expect(src).toContain("View All");
     expect(src).toContain("/package-browser");
   });
 
-  it("renders a horizontal ScrollView of package cards", () => {
+  it.skip("renders a horizontal ScrollView of package cards", () => {
     // The preview row uses a horizontal ScrollView
     expect(src).toContain("activePkgs.slice(0, 6).map");
   });
 
-  it("shows savings badge on preview cards", () => {
+  it.skip("shows savings badge on preview cards", () => {
     expect(src).toContain("Save $");
   });
 
-  it("passes calLocationFilter to package-browser navigation", () => {
+  it.skip("passes calLocationFilter to package-browser navigation", () => {
     expect(src).toContain("calLocationFilter !== null ? { locationId: calLocationFilter }");
   });
 });

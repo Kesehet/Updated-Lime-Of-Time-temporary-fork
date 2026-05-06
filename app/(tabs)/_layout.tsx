@@ -8,6 +8,7 @@ import { useResponsive } from "@/hooks/use-responsive";
 import { useEffect, useState, useMemo } from "react";
 import * as Notifications from "expo-notifications";
 import { useStore } from "@/lib/store";
+import { useBusinessUnreadCount } from "@/hooks/use-business-unread-count";
 
 /** Returns true when the OS push-notification permission has been denied. */
 function usePushPermissionDenied(): boolean {
@@ -43,11 +44,12 @@ export default function TabLayout() {
   const { isTablet, isLargeTablet, iconSize, tabBarBaseHeight } = useResponsive();
   const pushDenied = usePushPermissionDenied();
   const { state } = useStore();
+  const unreadMessageCount = useBusinessUnreadCount();
+
   const pendingCount = useMemo(
     () => state.appointments.filter((a) => a.status === "pending").length,
     [state.appointments]
   );
-
 
   const bottomPadding = Platform.OS === "web"
     ? (isTablet ? 16 : 12)
@@ -129,6 +131,19 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <IconSymbol size={iconSize} name="person.2.fill" color={color} />
           ),
+          // Show unread message count badge — clears when owner opens the Messages tab inside Clients
+          tabBarBadge: unreadMessageCount > 0
+            ? (unreadMessageCount > 99 ? "99+" : unreadMessageCount)
+            : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: colors.error,
+            color: "#FFFFFF",
+            fontSize: 10,
+            fontWeight: "700" as const,
+            minWidth: 16,
+            height: 16,
+            borderRadius: 8,
+          },
         }}
       />
       <Tabs.Screen

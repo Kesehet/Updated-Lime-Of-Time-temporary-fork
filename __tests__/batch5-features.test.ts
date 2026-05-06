@@ -163,7 +163,8 @@ describe("Pricing/Charges Display", () => {
 describe("Settings Restructure", () => {
   it("Settings is a hub screen with navigation cards", () => {
     const settings = readFile("app/(tabs)/settings.tsx");
-    expect(settings).toContain("navItems");
+    // renderNavList replaced navItems as the navigation card renderer
+    expect(settings).toContain("renderNavList");
     expect(settings).toContain("Schedule & Hours");
     expect(settings).toContain("Booking Policies");
     expect(settings).toContain("Client Reviews");

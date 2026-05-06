@@ -221,7 +221,8 @@ describe("Public Routes - Booking API Validation", () => {
 
   it("booking API should handle gift card redemption", () => {
     expect(content).toContain("getGiftCardByCode");
-    expect(content).toContain("updateGiftCard");
+    // atomicDeductGiftCardBalance replaced updateGiftCard for atomic balance deduction
+    expect(content).toContain("atomicDeductGiftCardBalance");
   });
 });
 

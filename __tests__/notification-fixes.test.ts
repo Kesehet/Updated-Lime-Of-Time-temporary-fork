@@ -110,7 +110,8 @@ describe("Notification Fixes", () => {
     });
 
     it("should navigate to calendar requests for waitlist notifications", () => {
-      expect(hookContent).toContain('pathname: "/(tabs)/calendar"');
+      // Waitlist notifications now route to bookings tab (requests filter) instead of calendar
+      expect(hookContent).toContain('pathname: "/(tabs)/bookings"');
       expect(hookContent).toContain('filter: "requests"');
     });
 
@@ -140,7 +141,8 @@ describe("Notification Fixes", () => {
     });
 
     it("should update activeFilter when filter param changes", () => {
-      expect(calendarContent).toContain("setActiveFilter(params.filter");
+      // setActiveFilterPersisted wraps setActiveFilter and also persists to AsyncStorage
+      expect(calendarContent).toContain("setActiveFilterPersisted(params.filter");
     });
   });
 });
