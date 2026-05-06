@@ -743,7 +743,7 @@ export function registerClientRoutes(app: Express) {
 
   // ── Saved Businesses ──────────────────────────────────────────────────────
 
-  /** GET /api/client/saved — list saved business IDs */
+  /** GET /api/client/saved — list saved business IDs (legacy) */
   app.get("/api/client/saved", async (req: Request, res: Response) => {
     try {
       const { clientAccount } = await getClientAccount(req);
@@ -754,7 +754,63 @@ export function registerClientRoutes(app: Express) {
     }
   });
 
-  /** POST /api/client/saved/:businessOwnerId — save a business */
+  /** GET /api/client/saved-businesses — list saved businesses with full details */
+  app.get("/api/client/saved-businesses", async (req: Request, res: Response) => {
+    try {
+      const { clientAccount } = await getClientAccount(req);
+      const savedIds = await db.getSavedBusinesses(clientAccount!.id);
+      const businesses = await Promise.all(
+        savedIds.map(async (businessOwnerId) => {
+          const owner = await db.getBusinessOwnerById(businessOwnerId);
+          if (!owner) return null;
+          const businessSlug = (owner as any).customSlug ?? (owner.businessName ?? "").toLowerCase().replace(/\s+/g, "-");
+          return {
+            id: owner.id,
+            businessOwnerId: owner.id,
+            businessName: owner.businessName,
+            businessSlug,
+            businessCategory: owner.businessCategory ?? null,
+            businessAddress: owner.address ?? null,
+            businessPhone: owner.phone ?? null,
+            savedAt: new Date().toISOString(),
+          };
+        })
+      );
+      res.json(businesses.filter(Boolean));
+    } catch (err: any) {
+      res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });
+    }
+  });
+
+  /** POST /api/client/saved-businesses — save a business by slug */
+  app.post("/api/client/saved-businesses", async (req: Request, res: Response) => {
+    try {
+      const { clientAccount } = await getClientAccount(req);
+      const { businessSlug } = req.body;
+      if (!businessSlug) { res.status(400).json({ error: "businessSlug required" }); return; }
+      const owner = await db.getBusinessOwnerBySlug(businessSlug);
+      if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
+      await db.saveBusinessForClient(clientAccount!.id, owner.id);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });
+    }
+  });
+
+  /** DELETE /api/client/saved-businesses/:slug — unsave a business by slug */
+  app.delete("/api/client/saved-businesses/:slug", async (req: Request, res: Response) => {
+    try {
+      const { clientAccount } = await getClientAccount(req);
+      const owner = await db.getBusinessOwnerBySlug(req.params.slug);
+      if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
+      await db.unsaveBusinessForClient(clientAccount!.id, owner.id);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });
+    }
+  });
+
+  /** POST /api/client/saved/:businessOwnerId — save a business by ID (legacy) */
   app.post("/api/client/saved/:businessOwnerId", async (req: Request, res: Response) => {
     try {
       const { clientAccount } = await getClientAccount(req);
@@ -766,7 +822,7 @@ export function registerClientRoutes(app: Express) {
     }
   });
 
-  /** DELETE /api/client/saved/:businessOwnerId — unsave a business */
+  /** DELETE /api/client/saved/:businessOwnerId — unsave a business by ID (legacy) */
   app.delete("/api/client/saved/:businessOwnerId", async (req: Request, res: Response) => {
     try {
       const { clientAccount } = await getClientAccount(req);

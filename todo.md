@@ -1824,3 +1824,12 @@
 - [x] Wire push notification deep-link: client_message type → navigate to client-message-thread-business (already working)
 - [x] Wire push notification deep-link: business_message type → navigate to client-message-thread (already working)
 - [x] Test client profile creation end-to-end and verify DB storage (phone login → PATCH → GET verified)
+
+## Phase: Client Portal Login & Data Loading Fixes (May 2026)
+- [x] Fix client portal login with phone 412-482-7733 (same as business owner phone - must not conflict)
+- [x] Verify client account is separate from business owner account (different DB tables - confirmed)
+- [x] Fix client appointments endpoint: match appointments by phone number correctly (confirmed working)
+- [x] Fix client portal home: unwrap {appointments:[]} response shape, fix unread count field (count vs unreadCount)
+- [x] Add /api/client/saved-businesses GET/POST/DELETE endpoints (slug-based, full business details)
+- [x] Deploy all fixes to production (lime-of-time.com)
+- [x] Ensure discover screen loads nearby businesses for logged-in client

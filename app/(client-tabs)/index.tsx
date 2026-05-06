@@ -118,14 +118,17 @@ export default function ClientHomeScreen() {
     if (!isSignedIn) return;
     if (!silent) setLoading(true);
     try {
-      const [appts, saved] = await Promise.all([
-        apiCall<ClientAppointment[]>("/api/client/appointments"),
-        apiCall<any[]>("/api/client/saved-businesses"),
+      const [rawAppts, saved] = await Promise.all([
+        apiCall<{ appointments: ClientAppointment[] } | ClientAppointment[]>("/api/client/appointments"),
+        apiCall<any>("/api/client/saved-businesses"),
       ]);
+      // API returns { appointments: [...] } — unwrap it
+      const appts: ClientAppointment[] = Array.isArray(rawAppts) ? rawAppts : (rawAppts as any).appointments ?? [];
       dispatch({ type: "SET_APPOINTMENTS", payload: appts });
-      dispatch({ type: "SET_SAVED_BUSINESSES", payload: saved });
-      const msgs = await apiCall<{ unreadCount: number }>("/api/client/messages/unread-count");
-      dispatch({ type: "SET_UNREAD_COUNT", payload: msgs.unreadCount });
+      // Saved businesses returns an array directly
+      dispatch({ type: "SET_SAVED_BUSINESSES", payload: Array.isArray(saved) ? saved : [] });
+      const msgs = await apiCall<{ count: number; unreadCount?: number }>("/api/client/messages/unread-count");
+      dispatch({ type: "SET_UNREAD_COUNT", payload: msgs.count ?? msgs.unreadCount ?? 0 });
     } catch (err) {
       console.warn("[ClientHome] load error:", err);
     } finally {
