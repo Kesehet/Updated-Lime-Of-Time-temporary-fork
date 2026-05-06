@@ -112,11 +112,21 @@ export function useClientNotifications() {
         switch (notifType) {
           case "appointment_confirmed":
           case "appointment_cancelled":
-          case "appointment_completed":
             if (appointmentId) {
               router.push({
                 pathname: "/client-appointment-detail",
                 params: { id: appointmentId },
+              } as any);
+            } else {
+              router.push("/(client-tabs)/bookings" as any);
+            }
+            break;
+          case "appointment_completed":
+            if (appointmentId) {
+              // Pass review=1 so the detail screen auto-opens the review modal
+              router.push({
+                pathname: "/client-appointment-detail",
+                params: { id: appointmentId, review: "1" },
               } as any);
             } else {
               router.push("/(client-tabs)/bookings" as any);

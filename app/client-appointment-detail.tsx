@@ -69,7 +69,7 @@ function statusLabel(status: ClientAppointment["status"]): string {
 export default function ClientAppointmentDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { id, new: isNew } = useLocalSearchParams<{ id: string; new?: string }>();
+  const { id, new: isNew, review: openReview } = useLocalSearchParams<{ id: string; new?: string; review?: string }>();
   const { apiCall } = useClientStore();
   const [appt, setAppt] = useState<ClientAppointment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,6 +104,13 @@ export default function ClientAppointmentDetailScreen() {
       }
     })();
   }, [id]);
+  // Auto-open review modal when navigated from push notification
+  useEffect(() => {
+    if (openReview === "1" && !loading && appt?.status === "completed" && !alreadyReviewed) {
+      setReviewModalVisible(true);
+    }
+  }, [openReview, loading, appt?.status, alreadyReviewed]);
+
 
   const handleSubmitReview = useCallback(async () => {
     if (!appt || reviewRating < 1) return;

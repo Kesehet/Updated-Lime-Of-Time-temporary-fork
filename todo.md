@@ -1903,3 +1903,10 @@
 - [x] Add Messages card to business owner Home page (3 recent conversations with unread badges)
 - [x] Fix Haptics import in client-message-thread-business.tsx
 - [x] Fix business?.name → business?.businessName in client-business-detail.tsx gift card button
+
+## Phase: Push Notifications & Payment Card (May 2026)
+- [x] Wire client-side business_message push handler (open correct thread when tapped)
+- [x] Server: trigger push to client when business owner sends a message (already done server-side, verified)
+- [x] Server: trigger push to business owner when client sends a message (already done server-side, verified)
+- [x] Send review prompt push to client after appointment is marked complete (server already sends push; client now auto-opens review modal via review=1 param)
+- [x] Add Paid/Unpaid payment breakdown card to business owner Home screen (PaymentSummaryCard already present with full breakdown)
