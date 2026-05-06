@@ -1988,7 +1988,7 @@ export function registerPublicRoutes(app: Express) {
 <script>
   const SESSION_ID = ${JSON.stringify(session_id || "")};
   const SLUG = ${JSON.stringify(req.params.slug)};
-  const API = window.location.origin + "/api/public/business/" + SLUG;
+  const API = window.location.origin + "/api/public/business/" + encodeURIComponent(SLUG);
 
   async function loadReceipt() {
     if (!SESSION_ID) { showError(); return; }
@@ -2848,6 +2848,7 @@ function buyGiftPage(slug: string, owner: any): string {
 
 <script>
 const SLUG = '${slug}';
+const SLUG_ENC = encodeURIComponent(SLUG);
 const BIZ_NAME = '${bizName}';
 const OWNER_ID = ${owner.id};
 let allServices = [], allProducts = [], paymentMethods = {};
@@ -2870,7 +2871,7 @@ const GIFT_DAYS_MAP = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Frida
 // ── Load data ──────────────────────────────────────────────────────────
 async function loadData() {
   try {
-    const r = await fetch('/api/public/business/' + SLUG + '/gift-info');
+    const r = await fetch('/api/public/business/' + SLUG_ENC + '/gift-info');
     if (!r.ok) throw new Error('Failed to load');
     const d = await r.json();
     allServices = d.services || [];
@@ -2890,7 +2891,7 @@ async function loadData() {
 // ── Gift staff functions ───────────────────────────────────────────────
 async function loadGiftStaff() {
   try {
-    const r = await fetch('/api/public/business/' + SLUG + '/staff-list');
+    const r = await fetch('/api/public/business/' + SLUG_ENC + '/staff-list');
     if (r.ok) {
       const d = await r.json();
       giftStaffMembers = d.staff || [];
@@ -2901,7 +2902,7 @@ async function loadGiftStaff() {
 
 async function loadGiftWorkingDays() {
   try {
-    const r = await fetch('/api/public/business/' + SLUG + '/working-days');
+    const r = await fetch('/api/public/business/' + SLUG_ENC + '/working-days');
     if (r.ok) {
       const d = await r.json();
       giftWorkingDays = Object.assign(d, { _loaded: true });
@@ -3017,7 +3018,7 @@ async function checkGiftStaffAvailability(eligible) {
     let hasSlots = false;
     for (const ds of checkDates) {
       try {
-        const r = await fetch('/api/public/business/' + SLUG + '/slots?date=' + ds + '&duration=' + dur + '&staffId=' + encodeURIComponent(s.localId) + '&clientToday=' + encodeURIComponent(todayStr) + '&nowMinutes=' + nowMinutes);
+        const r = await fetch('/api/public/business/' + SLUG_ENC + '/slots?date=' + ds + '&duration=' + dur + '&staffId=' + encodeURIComponent(s.localId) + '&clientToday=' + encodeURIComponent(todayStr) + '&nowMinutes=' + nowMinutes);
         const data = await r.json();
         if (data.slots && data.slots.length > 0) { hasSlots = true; break; }
       } catch(e) {}
@@ -3315,7 +3316,7 @@ async function checkGiftCalAvailability(dates) {
   const staffParam = giftSelectedStaff ? '&staffId=' + encodeURIComponent(giftSelectedStaff.localId) : '';
   const promises = dates.map(async function(ds) {
     try {
-      const r = await fetch('/api/public/business/' + SLUG + '/slots?date=' + ds + '&duration=' + dur + staffParam + '&clientToday=' + encodeURIComponent(todayStr) + '&nowMinutes=' + nowMinutes);
+      const r = await fetch('/api/public/business/' + SLUG_ENC + '/slots?date=' + ds + '&duration=' + dur + staffParam + '&clientToday=' + encodeURIComponent(todayStr) + '&nowMinutes=' + nowMinutes);
       const data = await r.json();
       return { date: ds, count: data.slots ? data.slots.length : 0 };
     } catch(e) { return { date: ds, count: 0 }; }
@@ -3476,7 +3477,7 @@ async function submitGift() {
   };
   try {
     // Step 1: Create the gift record in the database
-    const r = await fetch('/api/public/business/' + SLUG + '/buy-gift', {
+    const r = await fetch('/api/public/business/' + SLUG_ENC + '/buy-gift', {
       method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
     });
     const d = await r.json();
@@ -5179,7 +5180,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     }
 
     const SLUG = "${slug}";
-    const API = window.location.origin + "/api/public/business/" + SLUG;
+    const API = window.location.origin + "/api/public/business/" + encodeURIComponent(SLUG);
     const WEEKLY_DAYS = ${JSON.stringify(whJson)};
     const DAYS_MAP = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
     const CANCEL_POLICY = ${JSON.stringify(owner.cancellationPolicy || { enabled: false, hoursBeforeAppointment: 2, feePercentage: 50 })};
@@ -7628,7 +7629,7 @@ function reviewPage(slug: string, owner: any): string {
 
   <script>
     const SLUG = "${slug}";
-    const API = window.location.origin + "/api/public/business/" + SLUG;
+    const API = window.location.origin + "/api/public/business/" + encodeURIComponent(SLUG);
     let rating = 0;
 
     // Pre-fill name and phone from URL parameters
@@ -8357,6 +8358,7 @@ function manageAppointmentPage(slug: string, owner: any, appt: any, client: any,
 
   <script>
     const SLUG = '${slug.replace(/'/g, "\\'")}';
+    const SLUG_ENC = encodeURIComponent(SLUG);
     const APPT_ID = '${(appt.localId || "").replace(/'/g, "\\'")}';
     const APPT_LOCATION_ID = '${apptLocationId.replace(/'/g, "\\'")}';
     const API_BASE = '${apiBase}';
@@ -8423,7 +8425,7 @@ function manageAppointmentPage(slug: string, owner: any, appt: any, client: any,
         const _reschedClientToday = _reschedNow.toLocaleDateString('en-CA');
         const _reschedNowMinutes = _reschedNow.getHours() * 60 + _reschedNow.getMinutes();
         const clientTimeParams = '&clientToday=' + encodeURIComponent(_reschedClientToday) + '&nowMinutes=' + _reschedNowMinutes;
-        const res = await fetch(API_BASE + '/api/public/business/' + SLUG + '/slots?date=' + date + '&duration=${appt.duration || 60}' + locParam + clientTimeParams);
+        const res = await fetch(API_BASE + '/api/public/business/' + SLUG_ENC + '/slots?date=' + date + '&duration=${appt.duration || 60}' + locParam + clientTimeParams);
         const data = await res.json();
         if (data.slots && data.slots.length > 0) {
           container.innerHTML = '<div class="slot-grid">' + data.slots.map(function(s) {
