@@ -291,26 +291,40 @@ export default function DiscoverScreen() {
     }
   }, [apiBase, isLocationQuery]);
 
-  // Get user location on mount
+  // Track whether we've done the initial load so we don't double-fetch on focus
+  const initialLoadDone = useRef(false);
+
+  // On first mount: immediately load all businesses (no location filter),
+  // then silently upgrade to GPS-filtered results once permission is granted.
   useFocusEffect(useCallback(() => {
+    if (initialLoadDone.current) return; // only run once
+    initialLoadDone.current = true;
+
+    // Step 1: load immediately with no location filter so the list appears right away
+    fetchBusinesses(undefined, undefined, searchQuery, state.discoverCategory, state.discoverRadius);
+
+    // Step 2: request GPS in the background and silently refresh with coords
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
           setLocationError("Location access denied. Showing all businesses.");
-          fetchBusinesses(undefined, undefined, searchQuery, state.discoverCategory, state.discoverRadius);
-          return;
+          return; // already loaded above, nothing more to do
         }
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         setUserLat(loc.coords.latitude);
         setUserLng(loc.coords.longitude);
+        setLocationError(null);
+        // Silently refresh list with GPS coords
         fetchBusinesses(loc.coords.latitude, loc.coords.longitude, searchQuery, state.discoverCategory, state.discoverRadius);
       } catch {
         setLocationError("Could not get location. Showing all businesses.");
-        fetchBusinesses(undefined, undefined, searchQuery, state.discoverCategory, state.discoverRadius);
+        // Already loaded above, no further action needed
       }
     })();
-  }, []));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])); // intentionally empty — run once on first focus
+
 
   const handleSearch = () => {
     fetchBusinesses(userLat ?? undefined, userLng ?? undefined, searchQuery, state.discoverCategory, state.discoverRadius);
@@ -491,7 +505,7 @@ export default function DiscoverScreen() {
       {/* Divider between recently visited and results */}
       {!loading && recentlyVisited.length > 0 && businesses.length > 0 && (
         <View style={[s.sectionDivider, { borderTopColor: CARD_BORDER }]}>
-          <Text style={[s.sectionDividerText, { color: TEXT_MUTED }]}>All Businesses</Text>
+          <Text style={[s.sectionDividerText, { color: TEXT_MUTED }]}>{userLat != null ? "Nearby Businesses" : "All Businesses"}</Text>
         </View>
       )}
 
