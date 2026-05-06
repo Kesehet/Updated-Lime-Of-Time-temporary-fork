@@ -144,6 +144,14 @@ function RootLayout() {
 
   const content = (
     <View style={{ flex: 1 }}>
+    {/* Opaque blocking view that hides stale routes until splash finishes and routing completes.
+        This prevents the "last page flash" on app open. Removed once splashDone = true. */}
+    {!splashDone && (
+      <View
+        style={[StyleSheet.absoluteFill, { backgroundColor: "#0D2318", zIndex: 9998 }]}
+        pointerEvents="none"
+      />
+    )}
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>

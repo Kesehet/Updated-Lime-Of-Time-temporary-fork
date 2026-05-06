@@ -1811,3 +1811,9 @@
 - [x] Add appointment_confirmed push notification to client when business confirms
 - [ ] Wire servicePhotos to client business detail screen gallery
 - [x] Add review prompt sheet after appointment completion in client portal
+## Phase: Discover + Routing Fixes (May 2026)
+- [x] Fix Discover zip code / city search: accept `q` or `search` param, geocode `location` param for zip/city
+- [x] Fix Settings portal-visibility toggle to call geocoding endpoint (sets lat/lng so business appears in discovery)
+- [x] Fix portal-visibility endpoint to also geocode location addresses as fallback
+- [x] Fix startup routing flash: opaque overlay hides stale routes until splash finishes
+- [ ] Fix initial routing flash: app briefly shows last visited page before landing on profile-select/login (white flash / stale route on app open)

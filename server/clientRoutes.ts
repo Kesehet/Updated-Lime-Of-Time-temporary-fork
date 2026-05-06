@@ -208,36 +208,93 @@ export function registerClientRoutes(app: Express) {
 
   // ── Discovery ─────────────────────────────────────────────────────────────
 
-  /**
+   /**
    * GET /api/client/businesses/discover
-   * Query params: lat, lng, radiusMiles (default 25), category, search, page (default 0)
+   * Query params: lat, lng, radiusMiles (default 25), category, search (or q), location (zip/city for geocoding)
+   *
+   * Location search logic:
+   *  - If `location` param is provided (e.g. "15237" or "Pittsburgh"), geocode it and use as center point
+   *  - If `lat`/`lng` are provided, use them directly
+   *  - `search` (or `q`) filters by business name, description, address, city, zip
    */
   app.get("/api/client/businesses/discover", async (req: Request, res: Response) => {
     try {
-      const clientLat = req.query.lat ? parseFloat(req.query.lat as string) : null;
-      const clientLng = req.query.lng ? parseFloat(req.query.lng as string) : null;
+      // Accept both `q` and `search` param names
+      const rawSearch = ((req.query.search as string) || (req.query.q as string) || "").toLowerCase().trim();
+      const locationQuery = ((req.query.location as string) ?? "").trim();
+      const category = (req.query.category as string) ?? "";
       const radiusMiles = parseFloat((req.query.radiusMiles as string) ?? "25");
       const radiusKm = radiusMiles * 1.60934;
-      const category = (req.query.category as string) ?? "";
-      const search = ((req.query.search as string) ?? "").toLowerCase();
 
+      // Determine center coordinates
+      let clientLat: number | null = req.query.lat ? parseFloat(req.query.lat as string) : null;
+      let clientLng: number | null = req.query.lng ? parseFloat(req.query.lng as string) : null;
+
+      // If a location identifier (zip/city) is provided, geocode it
+      if (locationQuery && (clientLat === null || clientLng === null)) {
+        const coords = await geocodeAddress(locationQuery);
+        if (coords) {
+          clientLat = coords.lat;
+          clientLng = coords.lng;
+        }
+      }
+
+      // Load all discoverable businesses
       const businesses = await db.getDiscoverableBusinesses();
 
-      const results = businesses
+      // Build enriched list with location data for text search
+      const enriched = await Promise.all(
+        businesses.map(async (b) => {
+          const locs = await db.getLocationsByOwner(b.id);
+          // Collect all searchable text from locations
+          const locationText = locs
+            .map((l) => [l.address, l.city, l.state, l.zipCode, l.name].filter(Boolean).join(" "))
+            .join(" ")
+            .toLowerCase();
+          // Best coordinates: prefer business-level lat/lng, then first location with coords
+          let bizLat = b.lat ? parseFloat(b.lat as string) : null;
+          let bizLng = b.lng ? parseFloat(b.lng as string) : null;
+          if ((bizLat === null || bizLng === null) && locs.length > 0) {
+            const locWithCoords = locs.find((l) => l.lat && l.lng);
+            if (locWithCoords) {
+              bizLat = parseFloat(locWithCoords.lat as string);
+              bizLng = parseFloat(locWithCoords.lng as string);
+            }
+          }
+          // Primary location address for display
+          const primaryLoc = locs.find((l) => l.isDefault) ?? locs[0];
+          const displayAddress = primaryLoc
+            ? [primaryLoc.address, primaryLoc.city, primaryLoc.state, primaryLoc.zipCode].filter(Boolean).join(", ")
+            : (b.address ?? "");
+          return { ...b, locationText, bizLat, bizLng, displayAddress, locs };
+        })
+      );
+
+      const results = enriched
         .filter((b) => {
+          // Category filter
           if (category && b.businessCategory !== category) return false;
-          if (search && !b.businessName.toLowerCase().includes(search) && !(b.description ?? "").toLowerCase().includes(search)) return false;
+          // Text search: match business name, description, address, city, zip
+          if (rawSearch) {
+            const nameMatch = (b.businessName ?? "").toLowerCase().includes(rawSearch);
+            const descMatch = (b.description ?? "").toLowerCase().includes(rawSearch);
+            const addrMatch = (b.address ?? "").toLowerCase().includes(rawSearch);
+            const locMatch = b.locationText.includes(rawSearch);
+            if (!nameMatch && !descMatch && !addrMatch && !locMatch) return false;
+          }
           return true;
         })
         .map((b) => {
           let distanceKm: number | null = null;
-          if (clientLat !== null && clientLng !== null && b.lat && b.lng) {
-            distanceKm = haversineKm(clientLat, clientLng, parseFloat(b.lat as string), parseFloat(b.lng as string));
+          if (clientLat !== null && clientLng !== null && b.bizLat !== null && b.bizLng !== null) {
+            distanceKm = haversineKm(clientLat, clientLng, b.bizLat!, b.bizLng!);
           }
           const slug = b.customSlug ?? (b.businessName ?? "").toLowerCase().replace(/\s+/g, "-");
-          return { ...b, distanceKm, slug };
+          const { locationText: _lt, bizLat: _bl, bizLng: _bg, locs: _locs, ...rest } = b;
+          return { ...rest, distanceKm, slug };
         })
         .filter((b) => {
+          // Only apply radius filter when we have both client coords AND business coords
           if (clientLat !== null && b.distanceKm !== null) {
             return b.distanceKm <= radiusKm;
           }
@@ -253,9 +310,8 @@ export function registerClientRoutes(app: Express) {
       res.status(500).json({ error: err.message });
     }
   });
-
   /**
-   * GET /api/client/businesses/:slug — full business detail for client portal
+   * GET /api/client/businesses/:slugg — full business detail for client portal
    */
   app.get("/api/client/businesses/:slug", async (req: Request, res: Response) => {
     try {
@@ -795,27 +851,41 @@ export function registerClientRoutes(app: Express) {
         res.status(404).json({ error: "Business owner not found" });
         return;
       }
-      const { visible, businessCategory } = req.body;
-
+          const { visible, businessCategory } = req.body;
       let lat = owner.lat;
       let lng = owner.lng;
-
       // Auto-geocode if enabling and no coords yet
-      if (visible && (!lat || !lng) && owner.address) {
-        const coords = await geocodeAddress(owner.address);
-        if (coords) {
-          lat = coords.lat as any;
-          lng = coords.lng as any;
+      if (visible) {
+        if ((!lat || !lng) && owner.address) {
+          const coords = await geocodeAddress(owner.address);
+          if (coords) {
+            lat = coords.lat as any;
+            lng = coords.lng as any;
+          }
+        }
+        // Also geocode locations that have addresses but no coordinates
+        const locs = await db.getLocationsByOwner(owner.id);
+        for (const loc of locs) {
+          if ((!loc.lat || !loc.lng) && loc.address) {
+            const locAddr = [loc.address, loc.city, loc.state, loc.zipCode].filter(Boolean).join(", ");
+            const coords = await geocodeAddress(locAddr);
+            if (coords) {
+              await db.updateLocation(loc.localId, owner.id, { lat: coords.lat as any, lng: coords.lng as any });
+              // If business has no coords, use first location's coords
+              if (!lat || !lng) {
+                lat = coords.lat as any;
+                lng = coords.lng as any;
+              }
+            }
+          }
         }
       }
-
       await db.updateBusinessOwner(owner.id, {
         clientPortalVisible: visible ?? owner.clientPortalVisible,
         businessCategory: businessCategory ?? owner.businessCategory,
         lat: lat as any,
         lng: lng as any,
       });
-
       res.json({ success: true, lat, lng });
     } catch (err: any) {
       res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });

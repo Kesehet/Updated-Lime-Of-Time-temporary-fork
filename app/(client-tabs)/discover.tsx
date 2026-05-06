@@ -245,13 +245,35 @@ export default function DiscoverScreen() {
 
   const apiBase = getApiBaseUrl();
 
+  // Detect if query looks like a zip code or city name (location identifier)
+  const isLocationQuery = useCallback((q: string): boolean => {
+    if (!q) return false;
+    // Pure zip code (5 digits, optionally with dash extension)
+    if (/^\d{5}(-\d{4})?$/.test(q.trim())) return true;
+    // City, State pattern (e.g. "Pittsburgh, PA")
+    if (/^[a-zA-Z\s]+,\s*[a-zA-Z]{2}$/.test(q.trim())) return true;
+    return false;
+  }, []);
+
   const fetchBusinesses = useCallback(async (lat?: number, lng?: number, query?: string, category?: string | null, radius?: number) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (lat != null) params.set("lat", String(lat));
       if (lng != null) params.set("lng", String(lng));
-      if (query) params.set("q", query);
+      if (query) {
+        // Send as both `q` and `search` for compatibility
+        params.set("q", query);
+        params.set("search", query);
+        // If query looks like a location identifier (zip/city), also send as `location`
+        // so the server can geocode it and find nearby businesses
+        if (isLocationQuery(query)) {
+          params.set("location", query);
+          // Don't use device lat/lng when searching by location identifier
+          params.delete("lat");
+          params.delete("lng");
+        }
+      }
       if (category && category !== "All") params.set("category", category);
       if (radius) params.set("radiusMiles", String(radius));
       const res = await fetch(`${apiBase}/api/client/businesses/discover?${params.toString()}`);
@@ -266,7 +288,7 @@ export default function DiscoverScreen() {
     } finally {
       setLoading(false);
     }
-  }, [apiBase]);
+  }, [apiBase, isLocationQuery]);
 
   // Get user location on mount
   useFocusEffect(useCallback(() => {
@@ -348,7 +370,7 @@ export default function DiscoverScreen() {
           <IconSymbol name="magnifyingglass" size={16} color={colors.muted} />
           <TextInput
             style={[s.searchInput, { color: TEXT_PRIMARY }]}
-            placeholder="Search businesses..."
+            placeholder="Search by name, zip code, or city..."
             placeholderTextColor={TEXT_MUTED}
             value={searchQuery}
             onChangeText={setSearchQuery}

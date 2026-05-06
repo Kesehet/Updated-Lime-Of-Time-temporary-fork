@@ -19,7 +19,8 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useRouter } from "expo-router";
 import { useThemeContext } from "@/lib/theme-provider";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { removeSessionToken, clearUserInfo } from "@/lib/_core/auth";
+import { removeSessionToken, clearUserInfo, getSessionToken } from "@/lib/_core/auth";
+import { getApiBaseUrl } from "@/constants/oauth";
 import { formatPhoneNumber, getMapUrl, DEFAULT_NOTIFICATION_PREFERENCES } from "@/lib/types";
 import { trpc } from "@/lib/trpc";
 import { useAppLockContext } from "@/lib/app-lock-provider";
@@ -160,11 +161,25 @@ export default function SettingsScreen() {
   // ── Client Portal Visibility ──────────────────────────────────────────────────
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const PORTAL_CATEGORIES = ["Hair", "Nails", "Skin", "Massage", "Fitness", "Dental", "Medical", "Spa", "Barber", "Tattoo", "Other"];
-  const togglePortalVisible = useCallback((value: boolean) => {
+  const togglePortalVisible = useCallback(async (value: boolean) => {
+    // Update local state immediately for responsive UI
     const action = { type: "UPDATE_SETTINGS" as const, payload: { clientPortalVisible: value } };
     dispatch(action);
-    syncToDb(action);
-  }, [dispatch, syncToDb]);
+    // Call the portal-visibility endpoint which also geocodes the business address
+    // This ensures lat/lng are set so the business appears in location-based discovery
+    try {
+      const token = await getSessionToken();
+      const apiBase = getApiBaseUrl();
+      await fetch(`${apiBase}/api/business/portal-visibility`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ visible: value, businessCategory: settings.businessCategory ?? null }),
+      });
+    } catch {
+      // Fall back to standard syncToDb if the endpoint fails
+      syncToDb(action);
+    }
+  }, [dispatch, syncToDb, settings.businessCategory]);
   const setPortalCategory = useCallback((cat: string) => {
     const action = { type: "UPDATE_SETTINGS" as const, payload: { businessCategory: cat } };
     dispatch(action);
