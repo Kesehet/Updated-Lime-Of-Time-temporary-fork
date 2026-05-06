@@ -12,6 +12,7 @@ import {
   Alert,
   Image,
   Modal,
+  TouchableOpacity,
   useWindowDimensions,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -1474,12 +1475,13 @@ export default function CalendarBookingScreen() {
               const activePackages = (state.packages ?? []).filter((p) => p.active);
               if (activePackages.length === 0) return null;
               return (
-                <Pressable
+                <TouchableOpacity
+                  activeOpacity={0.75}
                   onPress={() => router.push({
                     pathname: "/package-browser" as any,
                     params: { ...(selectedLocationId ? { locationId: selectedLocationId } : {}), fromCalendarBooking: '1' },
                   })}
-                  style={({ pressed }) => ({
+                  style={{
                     backgroundColor: colors.primary + "12",
                     borderColor: colors.primary + "40",
                     borderWidth: 1.5,
@@ -1490,8 +1492,7 @@ export default function CalendarBookingScreen() {
                     flexDirection: "row",
                     alignItems: "center",
                     gap: 10,
-                    opacity: pressed ? 0.75 : 1,
-                  })}
+                  }}
                 >
                   <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: colors.primary + "20", alignItems: "center", justifyContent: "center" }}>
                     <Text style={{ fontSize: 18 }}>📦</Text>
@@ -1503,7 +1504,7 @@ export default function CalendarBookingScreen() {
                     </Text>
                   </View>
                   <IconSymbol name="chevron.right" size={16} color={colors.primary} />
-                </Pressable>
+                </TouchableOpacity>
               );
             })()}
 
