@@ -51,7 +51,7 @@ export function getApiBaseUrl(): string {
   }
 
   // On native (iOS/Android) OR unknown web fallback: use the deployed production domain
-  return "https://manussched-dw4mhfnu.manus.space";
+  return "https://lime-of-time.com";
 }
 
 export const SESSION_TOKEN_KEY = "app_session_token";

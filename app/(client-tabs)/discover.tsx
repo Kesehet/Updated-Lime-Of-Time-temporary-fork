@@ -36,7 +36,10 @@ import Animated, {
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiBaseUrl } from "@/constants/oauth";
+
+const DISCOVER_PREFS_KEY = "client_discover_prefs";
 
 const CATEGORIES = [
   { label: "All", emoji: "🔍" },
@@ -277,6 +280,8 @@ export default function DiscoverScreen() {
       }
       if (category && category !== "All") params.set("category", category);
       if (radius) params.set("radiusMiles", String(radius));
+      // When no GPS coords are provided, sort by rating so best businesses appear first
+      if (lat == null && lng == null) params.set("sortBy", "rating");
       const res = await fetch(`${apiBase}/api/client/businesses/discover?${params.toString()}`);
       if (res.ok) {
         const json = await res.json();
@@ -294,16 +299,30 @@ export default function DiscoverScreen() {
   // Track whether we've done the initial load so we don't double-fetch on focus
   const initialLoadDone = useRef(false);
 
-  // On first mount: immediately load all businesses (no location filter),
-  // then silently upgrade to GPS-filtered results once permission is granted.
+  // On first mount: load immediately (using persisted GPS if available),
+  // then silently upgrade to fresh GPS-filtered results once permission is granted.
   useFocusEffect(useCallback(() => {
     if (initialLoadDone.current) return; // only run once
     initialLoadDone.current = true;
 
-    // Step 1: load immediately with no location filter so the list appears right away
-    fetchBusinesses(undefined, undefined, searchQuery, state.discoverCategory, state.discoverRadius);
+    const persistedLat = state.lastDiscoverLat;
+    const persistedLng = state.lastDiscoverLng;
 
-    // Step 2: request GPS in the background and silently refresh with coords
+    // Step 1: load immediately — use persisted GPS if available, otherwise no location filter
+    // This ensures the list appears right away without waiting for GPS permission
+    fetchBusinesses(
+      persistedLat ?? undefined,
+      persistedLng ?? undefined,
+      searchQuery,
+      state.discoverCategory,
+      state.discoverRadius
+    );
+    if (persistedLat != null) {
+      setUserLat(persistedLat);
+      setUserLng(persistedLng);
+    }
+
+    // Step 2: request fresh GPS in the background and silently refresh with new coords
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -312,11 +331,24 @@ export default function DiscoverScreen() {
           return; // already loaded above, nothing more to do
         }
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        setUserLat(loc.coords.latitude);
-        setUserLng(loc.coords.longitude);
+        const { latitude, longitude } = loc.coords;
+        setUserLat(latitude);
+        setUserLng(longitude);
         setLocationError(null);
-        // Silently refresh list with GPS coords
-        fetchBusinesses(loc.coords.latitude, loc.coords.longitude, searchQuery, state.discoverCategory, state.discoverRadius);
+        // Persist fresh GPS coords + current prefs for next launch
+        dispatch({ type: "SET_DISCOVER_COORDS", payload: { lat: latitude, lng: longitude } });
+        AsyncStorage.setItem(DISCOVER_PREFS_KEY, JSON.stringify({
+          radius: state.discoverRadius,
+          category: state.discoverCategory,
+          lastLat: latitude,
+          lastLng: longitude,
+        })).catch(() => {});
+        // Only refresh if coords changed meaningfully (> ~0.5 miles)
+        const latDiff = Math.abs(latitude - (persistedLat ?? 0));
+        const lngDiff = Math.abs(longitude - (persistedLng ?? 0));
+        if (persistedLat == null || latDiff > 0.007 || lngDiff > 0.007) {
+          fetchBusinesses(latitude, longitude, searchQuery, state.discoverCategory, state.discoverRadius);
+        }
       } catch {
         setLocationError("Could not get location. Showing all businesses.");
         // Already loaded above, no further action needed
@@ -355,12 +387,22 @@ export default function DiscoverScreen() {
   const handleCategorySelect = (cat: string) => {
     const newCat = cat === "All" ? null : cat;
     dispatch({ type: "SET_DISCOVER_CATEGORY", payload: newCat });
+    // Persist updated category
+    AsyncStorage.getItem(DISCOVER_PREFS_KEY).then((json) => {
+      const prev = json ? JSON.parse(json) : {};
+      AsyncStorage.setItem(DISCOVER_PREFS_KEY, JSON.stringify({ ...prev, category: newCat })).catch(() => {});
+    }).catch(() => {});
     fetchBusinesses(userLat ?? undefined, userLng ?? undefined, searchQuery, newCat, state.discoverRadius);
   };
 
   const handleRadiusSelect = (r: number) => {
     dispatch({ type: "SET_DISCOVER_RADIUS", payload: r });
     setShowRadiusPicker(false);
+    // Persist updated radius
+    AsyncStorage.getItem(DISCOVER_PREFS_KEY).then((json) => {
+      const prev = json ? JSON.parse(json) : {};
+      AsyncStorage.setItem(DISCOVER_PREFS_KEY, JSON.stringify({ ...prev, radius: r })).catch(() => {});
+    }).catch(() => {});
     fetchBusinesses(userLat ?? undefined, userLng ?? undefined, searchQuery, state.discoverCategory, r);
   };
 

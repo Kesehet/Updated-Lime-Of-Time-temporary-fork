@@ -225,6 +225,7 @@ export function registerClientRoutes(app: Express) {
       const category = (req.query.category as string) ?? "";
       const radiusMiles = parseFloat((req.query.radiusMiles as string) ?? "25");
       const radiusKm = radiusMiles * 1.60934;
+      const sortBy = (req.query.sortBy as string) ?? "distance"; // "distance" | "rating"
 
       // Determine center coordinates
       let clientLat: number | null = req.query.lat ? parseFloat(req.query.lat as string) : null;
@@ -301,6 +302,15 @@ export function registerClientRoutes(app: Express) {
           return true;
         })
         .sort((a, b) => {
+          // When both have distance, always sort by distance first
+          if (sortBy !== "rating" && a.distanceKm !== null && b.distanceKm !== null) {
+            return a.distanceKm - b.distanceKm;
+          }
+          // Sort by rating (descending) when sortBy=rating or no distance available
+          const ratingA = (a as any).avgRating ?? 0;
+          const ratingB = (b as any).avgRating ?? 0;
+          if (ratingB !== ratingA) return ratingB - ratingA;
+          // Tie-break by distance if available
           if (a.distanceKm !== null && b.distanceKm !== null) return a.distanceKm - b.distanceKm;
           return 0;
         });

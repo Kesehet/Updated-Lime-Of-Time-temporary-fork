@@ -93,8 +93,10 @@ export interface ClientState {
   appointments: ClientAppointment[];
   savedBusinesses: SavedBusiness[];
   unreadMessageCount: number;
-  discoverRadius: number; // km
+  discoverRadius: number; // miles
   discoverCategory: string | null;
+  lastDiscoverLat: number | null;
+  lastDiscoverLng: number | null;
 }
 
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
@@ -102,6 +104,7 @@ export interface ClientState {
 const CLIENT_SESSION_KEY = "client_session_token";
 const CLIENT_ACCOUNT_KEY = "client_account_info";
 const CLIENT_PROFILE_MODE_KEY = "app_profile_mode"; // "business" | "client"
+const DISCOVER_PREFS_KEY = "client_discover_prefs"; // { radius, category, lastLat, lastLng }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
@@ -114,6 +117,7 @@ type ClientAction =
   | { type: "SET_UNREAD_COUNT"; payload: number }
   | { type: "SET_DISCOVER_RADIUS"; payload: number }
   | { type: "SET_DISCOVER_CATEGORY"; payload: string | null }
+  | { type: "SET_DISCOVER_COORDS"; payload: { lat: number; lng: number } | null }
   | { type: "TOGGLE_SAVE_BUSINESS"; payload: SavedBusiness }
   | { type: "ADD_SAVED_BUSINESS"; payload: SavedBusiness }
   | { type: "REMOVE_SAVED_BUSINESS"; payload: string | number };  // accepts slug or id
@@ -129,6 +133,8 @@ const initialState: ClientState = {
   unreadMessageCount: 0,
   discoverRadius: 25,
   discoverCategory: null,
+  lastDiscoverLat: null,
+  lastDiscoverLng: null,
 };
 
 function clientReducer(state: ClientState, action: ClientAction): ClientState {
@@ -154,6 +160,12 @@ function clientReducer(state: ClientState, action: ClientAction): ClientState {
       return { ...state, discoverRadius: action.payload };
     case "SET_DISCOVER_CATEGORY":
       return { ...state, discoverCategory: action.payload };
+    case "SET_DISCOVER_COORDS":
+      return {
+        ...state,
+        lastDiscoverLat: action.payload?.lat ?? null,
+        lastDiscoverLng: action.payload?.lng ?? null,
+      };
     case "TOGGLE_SAVE_BUSINESS": {
       const exists = state.savedBusinesses.some(
         (b) => b.businessOwnerId === action.payload.businessOwnerId
@@ -199,16 +211,31 @@ const ClientStoreContext = createContext<ClientStoreContextValue | null>(null);
 export function ClientStoreProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(clientReducer, initialState);
 
-  // Load persisted session on mount
+  // Load persisted session + discover prefs on mount
   useEffect(() => {
     (async () => {
       try {
-        const [token, accountJson] = await Promise.all([
+        const [token, accountJson, prefsJson] = await Promise.all([
           AsyncStorage.getItem(CLIENT_SESSION_KEY),
           AsyncStorage.getItem(CLIENT_ACCOUNT_KEY),
+          AsyncStorage.getItem(DISCOVER_PREFS_KEY),
         ]);
         const account = accountJson ? (JSON.parse(accountJson) as ClientAccount) : null;
         dispatch({ type: "LOAD_SESSION", payload: { account, sessionToken: token } });
+        // Restore discover preferences
+        if (prefsJson) {
+          const prefs = JSON.parse(prefsJson) as {
+            radius?: number;
+            category?: string | null;
+            lastLat?: number | null;
+            lastLng?: number | null;
+          };
+          if (prefs.radius) dispatch({ type: "SET_DISCOVER_RADIUS", payload: prefs.radius });
+          if (prefs.category !== undefined) dispatch({ type: "SET_DISCOVER_CATEGORY", payload: prefs.category ?? null });
+          if (prefs.lastLat != null && prefs.lastLng != null) {
+            dispatch({ type: "SET_DISCOVER_COORDS", payload: { lat: prefs.lastLat, lng: prefs.lastLng } });
+          }
+        }
       } catch {
         dispatch({ type: "LOAD_SESSION", payload: { account: null, sessionToken: null } });
       }

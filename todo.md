@@ -1833,3 +1833,9 @@
 - [x] Add /api/client/saved-businesses GET/POST/DELETE endpoints (slug-based, full business details)
 - [x] Deploy all fixes to production (lime-of-time.com)
 - [x] Ensure discover screen loads nearby businesses for logged-in client
+
+## Phase: Discover Improvements & Failed to Fetch Fix (May 2026)
+- [x] Fix "Failed to fetch" on client sign-in (production server)
+- [x] Discover: sort by rating when no GPS available
+- [x] Discover: persist last GPS coords in AsyncStorage for next launch
+- [x] Discover: persist discoverCategory and discoverRadius across sessions
