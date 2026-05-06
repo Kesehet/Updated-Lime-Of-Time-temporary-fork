@@ -254,20 +254,36 @@ export async function deleteProductById(id: number): Promise<void> {
   await db.delete(products).where(eq(products.id, id));
 }
 
+/** Sanitize a business name into a clean URL-safe slug (strips special chars like & # etc.). */
+export function sanitizeSlug(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")  // remove special chars
+    .trim()
+    .replace(/\s+/g, "-")           // spaces → dashes
+    .replace(/-+/g, "-");           // collapse multiple dashes
+}
+
 export async function getBusinessOwnerBySlug(slug: string): Promise<BusinessOwner | undefined> {
   const db = await getDb();
   if (!db) return undefined;
   // Get all business owners and match by customSlug first, then by auto-generated slug
   const result = await db.select().from(businessOwners);
   const lowerSlug = slug.toLowerCase();
-  // First check customSlug (exact match, return most recently created if multiple)
+  const sanitizedIncoming = sanitizeSlug(slug);
+  // First check customSlug (exact match)
   const byCustom = result
     .filter((owner) => (owner as any).customSlug && (owner as any).customSlug.toLowerCase() === lowerSlug)
     .sort((a, b) => b.id - a.id)[0];
   if (byCustom) return byCustom;
-  // Fallback to auto-generated slug from business name (return most recently created if multiple)
+  // Fallback: match by auto-generated slug from business name
+  // Try both raw slug (spaces → dashes) and sanitized slug (strips & # etc.)
   const byName = result
-    .filter((owner) => owner.businessName.toLowerCase().replace(/\s+/g, "-") === lowerSlug)
+    .filter((owner) => {
+      const rawSlug = owner.businessName.toLowerCase().replace(/\s+/g, "-");
+      const cleanSlug = sanitizeSlug(owner.businessName);
+      return rawSlug === lowerSlug || cleanSlug === sanitizedIncoming;
+    })
     .sort((a, b) => b.id - a.id)[0];
   return byName;
 }

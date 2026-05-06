@@ -290,7 +290,7 @@ export function registerClientRoutes(app: Express) {
           if (clientLat !== null && clientLng !== null && b.bizLat !== null && b.bizLng !== null) {
             distanceKm = haversineKm(clientLat, clientLng, b.bizLat!, b.bizLng!);
           }
-          const slug = b.customSlug ?? (b.businessName ?? "").toLowerCase().replace(/\s+/g, "-");
+          const slug = b.customSlug ?? db.sanitizeSlug(b.businessName ?? "");
           const { locationText: _lt, bizLat: _bl, bizLng: _bg, locs: _locs, ...rest } = b;
           return { ...rest, distanceKm, slug };
         })
@@ -405,7 +405,7 @@ export function registerClientRoutes(app: Express) {
           return {
             ...appt,
             businessName: owner?.businessName ?? "Unknown",
-            businessSlug: owner?.customSlug ?? (owner?.businessName ?? "").toLowerCase().replace(/\s+/g, "-"),
+            businessSlug: owner?.customSlug ?? db.sanitizeSlug(owner?.businessName ?? ""),
             businessLogoUri: owner?.businessLogoUri ?? null,
             coverPhotoUri: (owner as any)?.coverPhotoUri ?? null,
             businessCategory: owner?.businessCategory ?? null,
@@ -460,7 +460,7 @@ export function registerClientRoutes(app: Express) {
       res.json({
         ...appt,
         businessName: owner?.businessName ?? "Unknown",
-        businessSlug: owner?.customSlug ?? (owner?.businessName ?? "").toLowerCase().replace(/\s+/g, "-"),
+        businessSlug: owner?.customSlug ?? db.sanitizeSlug(owner?.businessName ?? ""),
         businessLogoUri: owner?.businessLogoUri ?? null,
         coverPhotoUri: (owner as any)?.coverPhotoUri ?? null,
         businessCategory: owner?.businessCategory ?? null,
@@ -536,7 +536,7 @@ export function registerClientRoutes(app: Express) {
             businessName: business?.businessName ?? "Unknown",
             businessLogoUri: business?.businessLogoUri ?? null,
             coverPhotoUri: (business as any)?.coverPhotoUri ?? null,
-            businessSlug: business?.customSlug ?? business?.businessName?.toLowerCase().replace(/\s+/g, "-") ?? "",
+            businessSlug: business?.customSlug ?? db.sanitizeSlug(business?.businessName ?? ""),
           };
         })
       );
@@ -587,7 +587,7 @@ export function registerClientRoutes(app: Express) {
             businessName: business?.businessName ?? "Unknown",
             businessLogoUri: business?.businessLogoUri ?? null,
             coverPhotoUri: (business as any)?.coverPhotoUri ?? null,
-            businessSlug: business?.customSlug ?? (business?.businessName ?? "").toLowerCase().replace(/\s+/g, "-"),
+            businessSlug: business?.customSlug ?? db.sanitizeSlug(business?.businessName ?? ""),
             serviceName: service?.name ?? (latestAppt?.serviceLocalId ?? ""),
             appointmentDate: latestAppt?.date ?? "",
             lastMessage: item.lastMessage,
@@ -786,7 +786,7 @@ export function registerClientRoutes(app: Express) {
         savedIds.map(async (businessOwnerId) => {
           const owner = await db.getBusinessOwnerById(businessOwnerId);
           if (!owner) return null;
-          const businessSlug = (owner as any).customSlug ?? (owner.businessName ?? "").toLowerCase().replace(/\s+/g, "-");
+          const businessSlug = (owner as any).customSlug ?? db.sanitizeSlug(owner.businessName ?? "");
           return {
             id: owner.id,
             businessOwnerId: owner.id,
