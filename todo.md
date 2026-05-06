@@ -1839,3 +1839,8 @@
 - [x] Discover: sort by rating when no GPS available
 - [x] Discover: persist last GPS coords in AsyncStorage for next launch
 - [x] Discover: persist discoverCategory and discoverRadius across sessions
+
+## Phase: Discover UX Polish (May 2026)
+- [x] Show star rating badge on Discover business cards
+- [x] Near Me button persists GPS coords to AsyncStorage
+- [x] Add Recently Viewed horizontal scroll section on Discover

@@ -40,6 +40,55 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiBaseUrl } from "@/constants/oauth";
 
 const DISCOVER_PREFS_KEY = "client_discover_prefs";
+const RECENTLY_VIEWED_KEY = "client_recently_viewed_businesses"; // last 5 tapped businesses
+
+// ─── Recently Viewed (tap-based) helpers ─────────────────────────────────────
+
+interface RecentlyViewedBusiness {
+  id: number;
+  businessName: string;
+  slug: string;
+  customSlug: string | null;
+  businessLogoUri: string | null;
+  logoUrl: string | null;
+  businessCategory: string | null;
+  avgRating: number | null;
+  reviewCount: number;
+  distanceKm: number | null;
+  viewedAt: number; // timestamp ms
+}
+
+async function trackRecentlyViewed(biz: DiscoverBusiness): Promise<void> {
+  try {
+    const raw = await AsyncStorage.getItem(RECENTLY_VIEWED_KEY);
+    const existing: RecentlyViewedBusiness[] = raw ? JSON.parse(raw) : [];
+    // Remove previous entry for same business
+    const filtered = existing.filter((b) => b.id !== biz.id);
+    const entry: RecentlyViewedBusiness = {
+      id: biz.id,
+      businessName: biz.businessName,
+      slug: biz.slug,
+      customSlug: biz.customSlug,
+      businessLogoUri: biz.businessLogoUri,
+      logoUrl: biz.logoUrl,
+      businessCategory: biz.businessCategory,
+      avgRating: biz.avgRating,
+      reviewCount: biz.reviewCount,
+      distanceKm: biz.distanceKm,
+      viewedAt: Date.now(),
+    };
+    // Prepend and keep only last 5
+    const updated = [entry, ...filtered].slice(0, 5);
+    await AsyncStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(updated));
+  } catch { /* silent */ }
+}
+
+async function loadRecentlyViewed(): Promise<RecentlyViewedBusiness[]> {
+  try {
+    const raw = await AsyncStorage.getItem(RECENTLY_VIEWED_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
 
 const CATEGORIES = [
   { label: "All", emoji: "🔍" },
@@ -85,6 +134,70 @@ const TEXT_MUTED = "rgba(255,255,255,0.6)";
 
 function kmToMiles(km: number): number {
   return km * 0.621371;
+}
+
+// ─── Recently Viewed Section (tap-based) ────────────────────────────────────
+
+function RecentlyViewedSection({ items, router }: { items: RecentlyViewedBusiness[]; router: ReturnType<typeof useRouter> }) {
+  if (items.length === 0) return null;
+  return (
+    <View style={recentStyles.section}>
+      <View style={recentStyles.header}>
+        <Text style={[recentStyles.title, { color: TEXT_PRIMARY }]}>Recently Viewed</Text>
+        <Text style={[recentStyles.subtitle, { color: TEXT_MUTED }]}>Tap to visit</Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={recentStyles.row}
+      >
+        {items.map((biz) => {
+          const accentColor = CATEGORY_COLORS[biz.businessCategory ?? "Other"] ?? GREEN_ACCENT;
+          const emoji = CATEGORIES.find((c) => c.label === biz.businessCategory)?.emoji ?? "🏢";
+          return (
+            <Pressable
+              key={biz.id}
+              style={({ pressed }) => [
+                recentStyles.card,
+                { backgroundColor: CARD_BG, borderColor: CARD_BORDER },
+                pressed && { opacity: 0.75, transform: [{ scale: 0.97 }] },
+              ]}
+              onPress={() => {
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push({ pathname: "/client-business-detail", params: { slug: biz.customSlug ?? biz.slug } } as any);
+              }}
+            >
+              {/* Logo */}
+              <View style={[recentStyles.logoWrap, { backgroundColor: accentColor + "18" }]}>
+                {(biz.businessLogoUri || biz.logoUrl) ? (
+                  <Image source={{ uri: biz.businessLogoUri ?? biz.logoUrl ?? "" }} style={recentStyles.logoImage} />
+                ) : (
+                  <Text style={{ fontSize: 22 }}>{emoji}</Text>
+                )}
+              </View>
+              {/* Name */}
+              <Text style={[recentStyles.name, { color: TEXT_PRIMARY }]} numberOfLines={2}>
+                {biz.businessName}
+              </Text>
+              {/* Rating badge */}
+              {biz.avgRating != null ? (
+                <View style={recentStyles.ratingBadge}>
+                  <Text style={recentStyles.ratingStar}>★</Text>
+                  <Text style={recentStyles.ratingBadgeText}>{biz.avgRating.toFixed(1)}</Text>
+                </View>
+              ) : (
+                <Text style={[recentStyles.service, { color: TEXT_MUTED }]}>New</Text>
+              )}
+              {/* View button */}
+              <View style={[recentStyles.rebookBtn, { backgroundColor: accentColor + "18", borderColor: accentColor + "40" }]}>
+                <Text style={[recentStyles.rebookText, { color: accentColor }]}>View</Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
 }
 
 // ─── Recently Visited Component ─────────────────────────────────────────────
@@ -228,6 +341,27 @@ const recentStyles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
+  ratingBadge: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 3,
+    backgroundColor: "rgba(255,210,0,0.12)",
+    borderRadius: 7,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: "rgba(255,210,0,0.25)",
+    alignSelf: "flex-start" as const,
+  },
+  ratingStar: {
+    fontSize: 10,
+    color: "#FFD200",
+  },
+  ratingBadgeText: {
+    fontSize: 11,
+    fontWeight: "700" as const,
+    color: "#FFD200",
+  },
 });
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
@@ -246,8 +380,14 @@ export default function DiscoverScreen() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showRadiusPicker, setShowRadiusPicker] = useState(false);
   const [nearMeLoading, setNearMeLoading] = useState(false);
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedBusiness[]>([]);
 
   const apiBase = getApiBaseUrl();
+
+  // Load recently viewed businesses from AsyncStorage on mount
+  useEffect(() => {
+    loadRecentlyViewed().then(setRecentlyViewed);
+  }, []);
 
   // Detect if query looks like a zip code or city name (location identifier)
   const isLocationQuery = useCallback((q: string): boolean => {
@@ -373,10 +513,17 @@ export default function DiscoverScreen() {
         return;
       }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setUserLat(loc.coords.latitude);
-      setUserLng(loc.coords.longitude);
+      const { latitude, longitude } = loc.coords;
+      setUserLat(latitude);
+      setUserLng(longitude);
       setSearchQuery("");
-      fetchBusinesses(loc.coords.latitude, loc.coords.longitude, "", state.discoverCategory, state.discoverRadius);
+      // Persist fresh GPS coords for next launch
+      dispatch({ type: "SET_DISCOVER_COORDS", payload: { lat: latitude, lng: longitude } });
+      AsyncStorage.getItem(DISCOVER_PREFS_KEY).then((json) => {
+        const prev = json ? JSON.parse(json) : {};
+        AsyncStorage.setItem(DISCOVER_PREFS_KEY, JSON.stringify({ ...prev, lastLat: latitude, lastLng: longitude })).catch(() => {});
+      }).catch(() => {});
+      fetchBusinesses(latitude, longitude, "", state.discoverCategory, state.discoverRadius);
     } catch {
       setLocationError("Could not get location.");
     } finally {
@@ -539,7 +686,12 @@ export default function DiscoverScreen() {
         </ScrollView>
       </View>
 
-      {/* Recently Visited */}
+      {/* Recently Viewed (tap-based, persisted across sessions) */}
+      {!loading && recentlyViewed.length > 0 && (
+        <RecentlyViewedSection items={recentlyViewed} router={router} />
+      )}
+
+      {/* Recently Visited (from appointment history) */}
       {!loading && recentlyVisited.length > 0 && (
         <RecentlyVisited items={recentlyVisited} router={router} />
       )}
@@ -589,7 +741,18 @@ export default function DiscoverScreen() {
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item, index }) => <BusinessCard item={item} router={router} index={index} />}
+          renderItem={({ item, index }) => (
+            <BusinessCard
+              item={item}
+              router={router}
+              index={index}
+              onTap={() => {
+                trackRecentlyViewed(item).then(() =>
+                  loadRecentlyViewed().then(setRecentlyViewed)
+                );
+              }}
+            />
+          )}
         />
       )}
     </View>
@@ -598,15 +761,16 @@ export default function DiscoverScreen() {
 
 // ─── Business Card Component ─────────────────────────────────────────────────
 
-function BusinessCard({ item, router, index }: { item: DiscoverBusiness; router: ReturnType<typeof useRouter>; index: number }) {
+function BusinessCard({ item, router, index, onTap }: { item: DiscoverBusiness; router: ReturnType<typeof useRouter>; index: number; onTap?: () => void }) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
 
   // Stable wrapper needed so runOnJS preserves the correct `this` context on iOS native
   const navigateToBusiness = useCallback(() => {
+    onTap?.();
     router.push({ pathname: "/client-business-detail", params: { slug: item.customSlug ?? item.slug, distanceKm: item.distanceKm != null ? String(item.distanceKm) : "" } } as any);
-  }, [router, item.customSlug, item.slug, item.distanceKm]);
+  }, [router, item.customSlug, item.slug, item.distanceKm, onTap]);
 
   useEffect(() => {
     const delay = index * 60;
@@ -664,21 +828,30 @@ function BusinessCard({ item, router, index }: { item: DiscoverBusiness; router:
               </Text>
             )}
             <View style={cardStyles.meta}>
-              {item.avgRating != null && (
-                <View style={cardStyles.ratingRow}>
-                  <Text style={{ fontSize: 11 }}>⭐</Text>
-                  <Text style={[cardStyles.ratingText, { color: TEXT_PRIMARY }]}>
+              {item.avgRating != null ? (
+                <View style={cardStyles.ratingBadge}>
+                  <Text style={cardStyles.ratingStar}>★</Text>
+                  <Text style={cardStyles.ratingBadgeText}>
                     {item.avgRating.toFixed(1)}
                   </Text>
-                  <Text style={[cardStyles.reviewCount, { color: TEXT_MUTED }]}>
-                    ({item.reviewCount})
-                  </Text>
+                  {item.reviewCount > 0 && (
+                    <Text style={[cardStyles.reviewCount, { color: TEXT_MUTED }]}>
+                      ({item.reviewCount})
+                    </Text>
+                  )}
+                </View>
+              ) : (
+                <View style={cardStyles.ratingBadge}>
+                  <Text style={cardStyles.ratingStarEmpty}>★</Text>
+                  <Text style={[cardStyles.reviewCount, { color: TEXT_MUTED }]}>New</Text>
                 </View>
               )}
               {distanceMiles != null && (
-                <Text style={[cardStyles.distance, { color: TEXT_MUTED }]}>
-                  {distanceMiles < 0.1 ? "< 0.1 mi" : `${distanceMiles.toFixed(1)} mi`}
-                </Text>
+                <View style={cardStyles.distanceBadge}>
+                  <Text style={[cardStyles.distance, { color: TEXT_MUTED }]}>
+                    📍 {distanceMiles < 0.1 ? "< 0.1 mi" : `${distanceMiles.toFixed(1)} mi`}
+                  </Text>
+                </View>
               )}
             </View>
           </View>
@@ -749,12 +922,40 @@ const cardStyles = StyleSheet.create({
     alignItems: "center",
     gap: 3,
   },
+  ratingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "rgba(255,210,0,0.12)",
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: "rgba(255,210,0,0.25)",
+  },
+  ratingStar: {
+    fontSize: 11,
+    color: "#FFD200",
+  },
+  ratingStarEmpty: {
+    fontSize: 11,
+    color: "rgba(255,255,255,0.3)",
+  },
+  ratingBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#FFD200",
+  },
   ratingText: {
     fontSize: 12,
     fontWeight: "700",
   },
   reviewCount: {
     fontSize: 11,
+  },
+  distanceBadge: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   distance: {
     fontSize: 12,
