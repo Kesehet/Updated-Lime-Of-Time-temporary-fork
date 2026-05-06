@@ -183,6 +183,15 @@ const config: ExpoConfig = {
       },
     ],
     [
+      "expo-location",
+      {
+        locationAlwaysAndWhenInUsePermission:
+          "Allow $(PRODUCT_NAME) to use your location to find nearby businesses.",
+        locationWhenInUsePermission:
+          "Allow $(PRODUCT_NAME) to use your location to find nearby businesses.",
+      },
+    ],
+    [
       "expo-calendar",
       {
         calendarPermission: "Allow $(PRODUCT_NAME) to access your calendar to add appointments.",

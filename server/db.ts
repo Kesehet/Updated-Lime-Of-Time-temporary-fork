@@ -1,4 +1,4 @@
-import { eq, and, sql, isNull, inArray } from "drizzle-orm";
+import { eq, and, sql, isNull, inArray, desc, or, gte, lte, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql2 from "mysql2/promise";
 import {
@@ -32,6 +32,17 @@ import {
   promoCodes,
   InsertPromoCode,
   DbPromoCode,
+  clientAccounts,
+  InsertClientAccount,
+  ClientAccount,
+  clientMessages,
+  InsertClientMessage,
+  ClientMessage,
+  clientSavedBusinesses,
+  InsertClientSavedBusiness,
+  servicePhotos,
+  InsertServicePhoto,
+  ServicePhoto,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1079,4 +1090,250 @@ export async function getBusinessUsageCounts(businessOwnerId: number): Promise<{
     services: Number(svcCount?.count ?? 0),
     products: Number(prodCount?.count ?? 0),
   };
+}
+// ─── Client Accounts ─────────────────────────────────────────────────
+
+export async function getClientAccountByPhone(phone: string): Promise<ClientAccount | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(clientAccounts).where(eq(clientAccounts.phone, phone)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getClientAccountById(id: number): Promise<ClientAccount | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(clientAccounts).where(eq(clientAccounts.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function upsertClientAccount(data: InsertClientAccount): Promise<ClientAccount> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await getClientAccountByPhone(data.phone);
+  if (existing) {
+    await db.update(clientAccounts).set({ ...data, updatedAt: new Date() }).where(eq(clientAccounts.id, existing.id));
+    return (await getClientAccountById(existing.id))!;
+  }
+  const result = await db.insert(clientAccounts).values(data);
+  const insertId = (result as any)[0]?.insertId ?? (result as any).insertId;
+  return (await getClientAccountById(insertId))!;
+}
+
+export async function updateClientAccount(id: number, data: Partial<InsertClientAccount>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(clientAccounts).set({ ...data, updatedAt: new Date() }).where(eq(clientAccounts.id, id));
+}
+
+// ─── Client Messages ──────────────────────────────────────────────────
+
+export async function getClientMessages(businessOwnerId: number, clientAccountId: number): Promise<ClientMessage[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(clientMessages)
+    .where(and(eq(clientMessages.businessOwnerId, businessOwnerId), eq(clientMessages.clientAccountId, clientAccountId)))
+    .orderBy(clientMessages.createdAt);
+}
+
+export async function insertClientMessage(data: InsertClientMessage): Promise<ClientMessage> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(clientMessages).values(data);
+  const insertId = (result as any)[0]?.insertId ?? (result as any).insertId;
+  const rows = await db.select().from(clientMessages).where(eq(clientMessages.id, insertId)).limit(1);
+  return rows[0];
+}
+
+export async function markClientMessagesRead(businessOwnerId: number, clientAccountId: number, senderType: "business" | "client"): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(clientMessages)
+    .set({ readAt: new Date() })
+    .where(
+      and(
+        eq(clientMessages.businessOwnerId, businessOwnerId),
+        eq(clientMessages.clientAccountId, clientAccountId),
+        eq(clientMessages.senderType, senderType),
+        isNull(clientMessages.readAt)
+      )
+    );
+}
+
+export async function getClientMessageInbox(clientAccountId: number): Promise<{ businessOwnerId: number; lastMessage: string; lastAt: Date; unreadCount: number }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  // Get distinct business conversations for this client
+  const rows = await db
+    .select()
+    .from(clientMessages)
+    .where(eq(clientMessages.clientAccountId, clientAccountId))
+    .orderBy(clientMessages.createdAt);
+  // Group by businessOwnerId
+  const map = new Map<number, { lastMessage: string; lastAt: Date; unreadCount: number }>();
+  for (const msg of rows) {
+    const existing = map.get(msg.businessOwnerId);
+    const isUnread = !msg.readAt && msg.senderType === "business";
+    if (!existing || msg.createdAt > existing.lastAt) {
+      map.set(msg.businessOwnerId, {
+        lastMessage: msg.body,
+        lastAt: msg.createdAt,
+        unreadCount: (existing?.unreadCount ?? 0) + (isUnread ? 1 : 0),
+      });
+    } else if (isUnread) {
+      existing.unreadCount++;
+    }
+  }
+  return Array.from(map.entries()).map(([businessOwnerId, v]) => ({ businessOwnerId, ...v }));
+}
+
+export async function getBusinessMessageInbox(businessOwnerId: number): Promise<{ clientAccountId: number; lastMessage: string; lastAt: Date; lastMessageAt: string; unreadCount: number; senderType: "client" | "business" }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select()
+    .from(clientMessages)
+    .where(eq(clientMessages.businessOwnerId, businessOwnerId))
+    .orderBy(clientMessages.createdAt);
+  const map = new Map<number, { lastMessage: string; lastAt: Date; unreadCount: number; senderType: "client" | "business" }>();
+  for (const msg of rows) {
+    const existing = map.get(msg.clientAccountId);
+    const isUnread = !msg.readAt && msg.senderType === "client";
+    if (!existing || msg.createdAt > existing.lastAt) {
+      map.set(msg.clientAccountId, {
+        lastMessage: msg.body,
+        lastAt: msg.createdAt,
+        unreadCount: (existing?.unreadCount ?? 0) + (isUnread ? 1 : 0),
+        senderType: msg.senderType,
+      });
+    } else if (isUnread) {
+      existing.unreadCount++;
+    }
+  }
+  return Array.from(map.entries()).map(([clientAccountId, v]) => ({
+    clientAccountId,
+    ...v,
+    lastMessageAt: v.lastAt.toISOString(),
+  }));
+}
+
+// ─── Client Saved Businesses ─────────────────────────────────────────
+
+export async function getSavedBusinesses(clientAccountId: number): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select().from(clientSavedBusinesses).where(eq(clientSavedBusinesses.clientAccountId, clientAccountId));
+  return rows.map((r) => r.businessOwnerId);
+}
+
+export async function saveBusinessForClient(clientAccountId: number, businessOwnerId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Upsert — ignore if already saved
+  try {
+    await db.insert(clientSavedBusinesses).values({ clientAccountId, businessOwnerId });
+  } catch {
+    // Already saved — ignore duplicate
+  }
+}
+
+export async function unsaveBusinessForClient(clientAccountId: number, businessOwnerId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .delete(clientSavedBusinesses)
+    .where(and(eq(clientSavedBusinesses.clientAccountId, clientAccountId), eq(clientSavedBusinesses.businessOwnerId, businessOwnerId)));
+}
+
+// ─── Service Photos ───────────────────────────────────────────────────
+
+export async function getServicePhotos(businessOwnerId: number, serviceLocalId?: string): Promise<ServicePhoto[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (serviceLocalId) {
+    return db
+      .select()
+      .from(servicePhotos)
+      .where(and(eq(servicePhotos.businessOwnerId, businessOwnerId), eq(servicePhotos.serviceLocalId, serviceLocalId)))
+      .orderBy(servicePhotos.sortOrder);
+  }
+  return db.select().from(servicePhotos).where(eq(servicePhotos.businessOwnerId, businessOwnerId)).orderBy(servicePhotos.sortOrder);
+}
+
+export async function insertServicePhoto(data: InsertServicePhoto): Promise<ServicePhoto> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(servicePhotos).values(data);
+  const insertId = (result as any)[0]?.insertId ?? (result as any).insertId;
+  const rows = await db.select().from(servicePhotos).where(eq(servicePhotos.id, insertId)).limit(1);
+  return rows[0];
+}
+
+export async function deleteServicePhoto(id: number, businessOwnerId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(servicePhotos).where(and(eq(servicePhotos.id, id), eq(servicePhotos.businessOwnerId, businessOwnerId)));
+}
+
+// ─── Business Discovery ───────────────────────────────────────────────
+
+export async function getDiscoverableBusinesses(): Promise<BusinessOwner[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(businessOwners).where(eq(businessOwners.clientPortalVisible, true));
+}
+
+// ─── Client Portal Extra Helpers ─────────────────────────────────────
+
+export async function getBusinessOwnerByOpenId(openId: string): Promise<BusinessOwner | undefined> {
+  const user = await getUserByOpenId(openId);
+  if (!user) return undefined;
+  // Business owner is linked via userId
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(businessOwners).where(eq(businessOwners.userId, user.id)).limit(1);
+  if (rows[0]) return rows[0];
+  // Fallback: match by phone (phone-only signup)
+  if (user.email) return getBusinessOwnerByEmail(user.email);
+  return undefined;
+}
+
+export async function getAppointmentsByClientPhone(phone: string) {
+  const db = await getDb();
+  if (!db) return [];
+  // Find all clients with this phone number across all businesses
+  const matchingClients = await db.select().from(clients).where(eq(clients.phone, phone));
+  if (matchingClients.length === 0) return [];
+  // Get appointments for each client
+  const allAppointments: (typeof appointments.$inferSelect)[] = [];
+  for (const client of matchingClients) {
+    const appts = await db
+      .select()
+      .from(appointments)
+      .where(and(eq(appointments.clientLocalId, client.localId), eq(appointments.businessOwnerId, client.businessOwnerId)))
+      .orderBy(sql`${appointments.date} DESC`);
+    allAppointments.push(...appts);
+  }
+  return allAppointments.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+export async function getServices(businessOwnerId: number) {
+  return getServicesByOwner(businessOwnerId);
+}
+
+export async function getStaffMembers(businessOwnerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(staffMembers).where(eq(staffMembers.businessOwnerId, businessOwnerId));
+}
+
+export async function getLocations(businessOwnerId: number) {
+  return getLocationsByOwner(businessOwnerId);
+}
+
+export async function getReviews(businessOwnerId: number) {
+  return getReviewsByOwner(businessOwnerId);
 }

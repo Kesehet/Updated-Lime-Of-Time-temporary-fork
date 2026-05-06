@@ -1,6 +1,6 @@
 import "@/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -20,6 +20,7 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { StoreProvider, useStore } from "@/lib/store";
+import { ClientStoreProvider } from "@/lib/client-store";
 import { AppLockProvider } from "@/lib/app-lock-provider";
 import { NotificationProvider } from "@/lib/notification-provider";
 import { initSentry, withSentryWrapper } from "@/lib/sentry";
@@ -66,13 +67,21 @@ const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
 
 export const unstable_settings = {
-  anchor: "(tabs)",
+  anchor: "profile-select",
 };
 
 function RootLayout() {
   // Use system fonts (SF Pro on iOS, Roboto on Android) — no external font package needed
   const fontsLoaded = true;
   const [splashDone, setSplashDone] = useState(false);
+  const router = useRouter();
+  const handleSplashFinish = useCallback(async () => {
+    setSplashDone(true);
+    try {
+      router.replace("/profile-select" as any);
+    } catch {
+    }
+  }, [router]);
   const onLayoutRootView = useCallback(async () => {
     // Hide the native splash immediately — we use our own animated splash instead
     await SplashScreen.hideAsync();
@@ -140,6 +149,7 @@ function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <StoreProvider>
             <LogoMigration />
+            <ClientStoreProvider>
             <AppLockProvider splashDone={splashDone}>
             <NotificationProvider>
             {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
@@ -201,10 +211,25 @@ function RootLayout() {
               <Stack.Screen name="payment-method-cashapp" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="payment-method-venmo" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="payment-method-zelle" options={{ presentation: "fullScreenModal" }} />
+              {/* Client Portal Screens */}
+              <Stack.Screen name="profile-select" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="client-signin" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="client-profile-onboarding" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="client-edit-profile" options={{ presentation: "modal", headerShown: false }} />
+              <Stack.Screen name="client-notifications" options={{ presentation: "modal", headerShown: false }} />
+              <Stack.Screen name="(client-tabs)" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="client-business-detail" options={{ presentation: "modal" }} />
+              <Stack.Screen name="client-booking-wizard" options={{ presentation: "modal", headerShown: false }} />
+              <Stack.Screen name="client-appointment-detail" options={{ presentation: "modal" }} />
+              <Stack.Screen name="client-booking-confirmation" options={{ presentation: "modal" }} />
+              <Stack.Screen name="client-message-thread" options={{ presentation: "modal" }} />
+              <Stack.Screen name="client-saved-businesses" options={{ presentation: "modal" }} />
+              <Stack.Screen name="client-message-thread-business" options={{ presentation: "modal" }} />
             </Stack>
             <StatusBar style="auto" />
             </NotificationProvider>
             </AppLockProvider>
+            </ClientStoreProvider>
           </StoreProvider>
         </QueryClientProvider>
       </trpc.Provider>
@@ -223,7 +248,7 @@ function RootLayout() {
               {content}
               {!splashDone && (
                 <View style={StyleSheet.absoluteFill} pointerEvents="none">
-                  <AnimatedSplash onFinish={() => setSplashDone(true)} />
+                  <AnimatedSplash onFinish={handleSplashFinish} />
                 </View>
               )}
             </SafeAreaInsetsContext.Provider>
@@ -239,7 +264,7 @@ function RootLayout() {
         {content}
         {!splashDone && (
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            <AnimatedSplash onFinish={() => setSplashDone(true)} />
+            <AnimatedSplash onFinish={handleSplashFinish} />
           </View>
         )}
       </SafeAreaProvider>

@@ -12,6 +12,7 @@ import { registerAdminStripeConnectRoutes } from "../adminStripeConnect";
 import { registerLegalRoutes } from "../legalRoutes";
 import { registerStripeRoutes } from "../stripeRoutes";
 import { registerStripeConnectRoutes } from "../stripeConnectRoutes";
+import { registerClientRoutes } from "../clientRoutes";
 import { startRenewalNotificationCron } from "../renewalNotificationCron";
 import { startAppointmentReminderCron } from "../appointmentReminderCron";
 import { startRequestExpiryCron } from "../requestExpiryCron";
@@ -90,6 +91,7 @@ async function startServer() {
 
   // Register public web pages (booking, review, gift card)
   registerPublicRoutes(app);
+  registerClientRoutes(app);
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);

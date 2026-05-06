@@ -133,6 +133,19 @@ export const businessOwners = mysqlTable("business_owners", {
   instagramHandle: varchar("instagramHandle", { length: 255 }),
   facebookHandle: varchar("facebookHandle", { length: 255 }),
   tiktokHandle: varchar("tiktokHandle", { length: 255 }),
+  // ─── Client Portal Discovery ─────────────────────────────────────────
+  /** Business category for client portal discovery (e.g. Hair, Nails, Massage) */
+  businessCategory: varchar("businessCategory", { length: 100 }),
+  /** Geocoded latitude of primary business address */
+  lat: decimal("lat", { precision: 10, scale: 7 }),
+  /** Geocoded longitude of primary business address */
+  lng: decimal("lng", { precision: 10, scale: 7 }),
+  /** Whether this business is visible in the client portal discovery feed */
+  clientPortalVisible: boolean("clientPortalVisible").default(false).notNull(),
+  /** iOS App Store URL for the App Share card */
+  appStoreUrl: varchar("appStoreUrl", { length: 500 }),
+  /** Google Play Store URL for the App Share card */
+  playStoreUrl: varchar("playStoreUrl", { length: 500 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -506,6 +519,10 @@ export const locations = mysqlTable("locations", {
   /** Optional cover photo URL for this location */
   photoUri: text("photoUri"),
   workingHours: json("workingHours"),
+  /** Geocoded latitude */
+  lat: decimal("lat", { precision: 10, scale: 7 }),
+  /** Geocoded longitude */
+  lng: decimal("lng", { precision: 10, scale: 7 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -656,3 +673,77 @@ export const promoCodes = mysqlTable("promo_codes", {
 });
 export type DbPromoCode = typeof promoCodes.$inferSelect;
 export type InsertPromoCode = typeof promoCodes.$inferInsert;
+
+// ─── Client Accounts (Client Portal) ─────────────────────────────────────
+export const clientAccounts = mysqlTable("client_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Normalized phone number (primary identifier, e.g. +14125551234) */
+  phone: varchar("phone", { length: 20 }).notNull().unique(),
+  /** Display name */
+  name: varchar("name", { length: 255 }),
+  /** Email address (optional) */
+  email: varchar("email", { length: 320 }),
+  /** Birthday MM/DD (optional, for birthday campaigns) */
+  birthday: varchar("birthday", { length: 5 }),
+  /** Profile photo S3 URL */
+  profilePhotoUri: varchar("profilePhotoUri", { length: 2048 }),
+  /** Expo push token for client-facing push notifications */
+  expoPushToken: varchar("expoPushToken", { length: 255 }),
+  /** Preferred discovery radius in miles */
+  preferredRadius: int("preferredRadius").default(25).notNull(),
+  /** Theme mode preference */
+  themeMode: mysqlEnum("themeMode", ["light", "dark", "system"]).default("system").notNull(),
+  /** Notification preferences JSON */
+  notificationPreferences: json("notificationPreferences"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ClientAccount = typeof clientAccounts.$inferSelect;
+export type InsertClientAccount = typeof clientAccounts.$inferInsert;
+// ─── Client Portal Messages ──────────────────────────────────────────────
+export const clientMessages = mysqlTable("client_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Foreign key to business_owners */
+  businessOwnerId: int("businessOwnerId").notNull(),
+  /** Foreign key to client_accounts */
+  clientAccountId: int("clientAccountId").notNull(),
+  /** Who sent this message */
+  senderType: mysqlEnum("senderType", ["business", "client"]).notNull(),
+  /** Message body */
+  body: text("body").notNull(),
+  /** When the recipient read this message (null = unread) */
+  readAt: timestamp("readAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ClientMessage = typeof clientMessages.$inferSelect;
+export type InsertClientMessage = typeof clientMessages.$inferInsert;
+// ─── Client Saved Businesses ───────────────────────────────────────────────
+export const clientSavedBusinesses = mysqlTable("client_saved_businesses", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Foreign key to client_accounts */
+  clientAccountId: int("clientAccountId").notNull(),
+  /** Foreign key to business_owners */
+  businessOwnerId: int("businessOwnerId").notNull(),
+  savedAt: timestamp("savedAt").defaultNow().notNull(),
+});
+export type ClientSavedBusiness = typeof clientSavedBusinesses.$inferSelect;
+export type InsertClientSavedBusiness = typeof clientSavedBusinesses.$inferInsert;
+// ─── Service Photos (Server-Synced) ──────────────────────────────────────────────
+export const servicePhotos = mysqlTable("service_photos", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Foreign key to business_owners */
+  businessOwnerId: int("businessOwnerId").notNull(),
+  /** Service localId this photo belongs to */
+  serviceLocalId: varchar("serviceLocalId", { length: 64 }).notNull(),
+  /** S3 URL of the photo */
+  uri: varchar("uri", { length: 2048 }).notNull(),
+  /** Photo label */
+  label: mysqlEnum("label", ["before", "after", "other"]).default("other").notNull(),
+  /** Optional caption/note */
+  note: text("note"),
+  /** Sort order */
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ServicePhoto = typeof servicePhotos.$inferSelect;
+export type InsertServicePhoto = typeof servicePhotos.$inferInsert;

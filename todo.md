@@ -1761,3 +1761,38 @@
 - [ ] Category editor: replace native Alert.prompt rename with custom modal that has live character counter (amber at 20+, red at 25+)
 - [ ] Public booking page: tooltip showing full category name on long-press for truncated tiles (step 3 and step 6)
 - [ ] Category editor: emoji picker per category — tappable emoji button on each row opens curated picker; emoji stored in categoryEmojis map in settings DB and shown on booking page tiles
+
+## Client Portal Restoration (from commit e4dac7c1)
+
+- [x] Install expo-location package
+- [x] Restore DB schema: clientAccounts, clientMessages, clientSavedBusinesses, servicePhotos tables + businessOwners lat/lng/businessCategory/clientPortalVisible
+- [x] Run db:push to apply schema changes
+- [x] Restore server/clientRoutes.ts (825 lines)
+- [x] Restore client DB functions in server/db.ts
+- [x] Register clientRoutes in server/_core/index.ts
+- [x] Restore lib/client-store.tsx
+- [x] Restore hooks/use-client-notifications.ts
+- [x] Restore components/client-portal-background.tsx
+- [x] Restore app/profile-select.tsx
+- [x] Restore app/client-signin.tsx
+- [x] Restore app/client-profile-onboarding.tsx
+- [x] Restore app/(client-tabs)/_layout.tsx
+- [x] Restore app/(client-tabs)/index.tsx (Home)
+- [x] Restore app/(client-tabs)/discover.tsx
+- [x] Restore app/(client-tabs)/bookings.tsx
+- [x] Restore app/(client-tabs)/messages.tsx
+- [x] Restore app/(client-tabs)/profile.tsx
+- [x] Restore app/client-appointment-detail.tsx
+- [x] Restore app/client-booking-wizard.tsx
+- [x] Restore app/client-booking-confirmation.tsx
+- [x] Restore app/client-business-detail.tsx
+- [x] Restore app/client-edit-profile.tsx
+- [x] Restore app/client-message-thread.tsx
+- [x] Restore app/client-message-thread-business.tsx
+- [x] Restore app/client-notifications.tsx
+- [x] Restore app/client-saved-businesses.tsx
+- [x] Update app/_layout.tsx: add ClientStoreProvider, anchor=profile-select, handleSplashFinish, client Stack.Screen entries
+- [x] Restore staff Messages tab in app/(tabs)/clients.tsx
+- [x] Update components/ui/icon-symbol.tsx with missing icons
+- [x] TypeScript check passes
+- [x] All tests pass

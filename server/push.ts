@@ -20,11 +20,17 @@ export type PushNotificationData = {
     | "payment_received"
     | "stripe_payout"
     | "subscription_renewal"
+    | "client_message"
+    | "business_message"
     | "general";
   /** Appointment local ID for navigating to the specific appointment */
   appointmentId?: string;
   /** Calendar tab filter to open (requests, cancelled, upcoming, completed) */
   filter?: "requests" | "cancelled" | "upcoming" | "completed";
+  /** Client account ID for client portal message deep-links */
+  clientAccountId?: number;
+  /** Business owner ID for business message deep-links */
+  businessOwnerId?: number;
 };
 
 export type PushPayload = {

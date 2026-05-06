@@ -52,6 +52,7 @@
     "expo-linear-gradient": "^55.0.13",
     "expo-linking": "~8.0.10",
     "expo-local-authentication": "~17.0.8",
+    "expo-location": "^55.1.9",
     "expo-notifications": "~0.32.15",
     "expo-print": "^55.0.13",
     "expo-router": "~6.0.19",
