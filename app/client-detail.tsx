@@ -546,12 +546,21 @@ export default function ClientDetailScreen() {
                 </View>
               </View>
             ) : null}
-            {client.phone ? (
-              <Pressable onPress={handleQuickMessage} style={({ pressed }) => [styles.quickMsgBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}>
-                <IconSymbol name="paperplane.fill" size={16} color="#FFF" />
-                <Text style={{ fontSize: 14, fontWeight: "600", color: "#FFF", marginLeft: 8 }}>Send Message</Text>
+<View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+              <Pressable
+                onPress={() => router.push({ pathname: "/calendar-booking", params: { clientId: client.id } } as any)}
+                style={({ pressed }) => [{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, borderRadius: 12, backgroundColor: colors.success, opacity: pressed ? 0.85 : 1 }]}
+              >
+                <IconSymbol name="calendar" size={16} color="#FFF" />
+                <Text style={{ fontSize: 14, fontWeight: "600", color: "#FFF", marginLeft: 8 }}>Book Appt</Text>
               </Pressable>
-            ) : null}
+              {client.phone ? (
+                <Pressable onPress={handleQuickMessage} style={({ pressed }) => [{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, borderRadius: 12, backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}>
+                  <IconSymbol name="paperplane.fill" size={16} color="#FFF" />
+                  <Text style={{ fontSize: 14, fontWeight: "600", color: "#FFF", marginLeft: 8 }}>Message</Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
         )}
 

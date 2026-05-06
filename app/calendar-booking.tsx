@@ -112,6 +112,7 @@ export default function CalendarBookingScreen() {
     preselectedLocationId?: string; // passed from Home page location filter
     eligibleLocationIds?: string; // comma-separated list of location IDs available at the selected time
     packageId?: string; // pre-select a package (from Package Browser)
+    clientId?: string; // pre-select a client (from Client Profile)
   }>();
 
   const sendSmsMutation = trpc.twilio.sendSms.useMutation();
@@ -201,7 +202,7 @@ export default function CalendarBookingScreen() {
   });
   // Derived: primary service ID is the first selected service
   const selectedServiceId = selectedServices.length > 0 ? selectedServices[0].id : null;
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(() => params.clientId ?? null);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [clientSearch, setClientSearch] = useState("");
@@ -1479,11 +1480,14 @@ export default function CalendarBookingScreen() {
               const selectedPkg = selectedPkgItem ? activePackages.find((p) => p.id === selectedPkgItem.packageId) : null;
               return (
                 <TouchableOpacity
-                  activeOpacity={0.75}
-                  onPress={() => router.push({
-                    pathname: "/package-browser" as any,
-                    params: { ...(selectedLocationId ? { locationId: selectedLocationId } : {}), fromCalendarBooking: '1' },
-                  })}
+                  activeOpacity={selectedPkg ? 1 : 0.75}
+                  onPress={() => {
+                    if (selectedPkg) return; // inner buttons handle navigation when selected
+                    router.push({
+                      pathname: "/package-browser" as any,
+                      params: { ...(selectedLocationId ? { locationId: selectedLocationId } : {}), fromCalendarBooking: '1' },
+                    });
+                  }}
                   style={{
                     backgroundColor: selectedPkg ? colors.success + "12" : colors.primary + "12",
                     borderColor: selectedPkg ? colors.success + "60" : colors.primary + "40",
@@ -1497,13 +1501,26 @@ export default function CalendarBookingScreen() {
                     gap: 10,
                   }}
                 >
-                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: colors.primary + "20", alignItems: "center", justifyContent: "center" }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: selectedPkg ? colors.success + "20" : colors.primary + "20", alignItems: "center", justifyContent: "center" }}>
                     <Text style={{ fontSize: 18 }}>📦</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: "700", color: selectedPkg ? colors.success : colors.primary }}>
-                      {selectedPkg ? `${selectedPkg.name} ✓` : "Book a Package"}
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <Text style={{ fontSize: 14, fontWeight: "700", color: selectedPkg ? colors.success : colors.primary }}>
+                        {selectedPkg ? `${selectedPkg.name} ✓` : "Book a Package"}
+                      </Text>
+                      {selectedPkg && (() => {
+                        const includedSvcs = (selectedPkg.serviceIds ?? []).map((sid: string) => state.services.find((sv: any) => sv.id === sid)).filter(Boolean) as any[];
+                        const retailTotal = includedSvcs.reduce((s: number, sv: any) => s + parseFloat(String(sv.price)), 0);
+                        const savings = retailTotal - selectedPkg.price;
+                        if (savings <= 0) return null;
+                        return (
+                          <View style={{ backgroundColor: colors.success + "20", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                            <Text style={{ fontSize: 10, fontWeight: "700", color: colors.success }}>Save ${savings.toFixed(2)}</Text>
+                          </View>
+                        );
+                      })()}
+                    </View>
                     <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
                       {selectedPkg
                         ? (() => {
@@ -1523,9 +1540,23 @@ export default function CalendarBookingScreen() {
                     </Text>
                   </View>
                   {selectedPkg ? (
-                    <View style={{ alignItems: "center", gap: 1 }}>
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: colors.success, letterSpacing: 0.2 }}>Change</Text>
-                      <IconSymbol name="chevron.right" size={13} color={colors.success} />
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <TouchableOpacity
+                        onPress={() => router.push({
+                          pathname: "/package-browser" as any,
+                          params: { ...(selectedLocationId ? { locationId: selectedLocationId } : {}), fromCalendarBooking: '1' },
+                        })}
+                        style={{ alignItems: "center", gap: 1, paddingHorizontal: 4 }}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: "700", color: colors.success, letterSpacing: 0.2 }}>Change</Text>
+                        <IconSymbol name="chevron.right" size={13} color={colors.success} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => setSelectedServices([])}
+                        style={{ padding: 6, borderRadius: 8, backgroundColor: colors.error + "15" }}
+                      >
+                        <Text style={{ fontSize: 13, fontWeight: "700", color: colors.error, lineHeight: 14 }}>✕</Text>
+                      </TouchableOpacity>
                     </View>
                   ) : (
                     <IconSymbol name="chevron.right" size={16} color={colors.primary} />
