@@ -1871,3 +1871,7 @@
 - [ ] Add sort by Most Reviews on Discover
 - [x] Improve Recently Viewed/Visited card design (more professional)
 - [ ] Push notification after appointment completion (review prompt)
+- [ ] Center and evenly space Services/Staff/Hours/Reviews tab bar on business detail
+- [ ] Add full-screen image lightbox for service photos on business detail
+- [ ] Use app icon as fallback logo for businesses with no photo
+- [ ] Fix color consistency on business detail page (match dark green portal theme)

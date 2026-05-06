@@ -109,6 +109,7 @@ export default function ClientBusinessDetailScreen() {
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [lightboxVisible, setLightboxVisible] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [serviceLightboxUri, setServiceLightboxUri] = useState<string | null>(null);
 
   const SCREEN_WIDTH = Dimensions.get("window").width;
   const apiBase = getApiBaseUrl();
@@ -220,7 +221,7 @@ export default function ClientBusinessDetailScreen() {
       <ClientPortalBackground />
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header Banner */}
-        <View style={[s.banner, { backgroundColor: LIME_GREEN, overflow: "hidden" }]}>
+        <View style={[s.banner, { backgroundColor: "#1A3A2A", overflow: "hidden" }]}>
           {logoUri ? (
             <Image source={{ uri: logoUri }} style={StyleSheet.absoluteFillObject} contentFit="cover" transition={300} />
           ) : null}
@@ -238,7 +239,7 @@ export default function ClientBusinessDetailScreen() {
           <View style={[s.logoCircle, { backgroundColor: `${LIME_GREEN}20`, borderColor: colors.background }]}>
             {logoUri
               ? <Image source={{ uri: logoUri }} style={{ width: 66, height: 66, borderRadius: 33 }} contentFit="cover" />
-              : <IconSymbol name="scissors" size={32} color={LIME_GREEN} />}
+              : <Image source={require("../assets/images/icon.png")} style={{ width: 66, height: 66, borderRadius: 33 }} contentFit="cover" />}
           </View>
           <Text style={[s.bizName, { color: colors.foreground }]}>{business.businessName}</Text>
           {category && <Text style={[s.bizCategory, { color: LIME_GREEN }]}>{category}</Text>}
@@ -276,10 +277,10 @@ export default function ClientBusinessDetailScreen() {
         </View>
 
         {/* Tab Bar */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.tabBar, { borderBottomColor: colors.border }]} contentContainerStyle={{ flexDirection: "row" }}>
+        <View style={[s.tabBar, { borderBottomColor: colors.border }]}>
           {tabs.map((tab) => (
             <Pressable key={tab} style={[s.tab, activeTab === tab && { borderBottomColor: LIME_GREEN, borderBottomWidth: 2 }]} onPress={() => setActiveTab(tab)}>
-              <Text style={[s.tabText, { color: activeTab === tab ? LIME_GREEN : colors.muted }]}>
+              <Text style={[s.tabText, { color: activeTab === tab ? LIME_GREEN : colors.muted }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 {tab === "gallery"
                 ? `Gallery (${servicePhotos.length})`
                 : tab === "reviews" && reviews.length > 0
@@ -288,7 +289,7 @@ export default function ClientBusinessDetailScreen() {
               </Text>
             </Pressable>
           ))}
-        </ScrollView>
+        </View>
 
         {/* Services Tab */}
         {activeTab === "services" && (
@@ -318,13 +319,19 @@ export default function ClientBusinessDetailScreen() {
                 ? <Text style={[s.emptyText, { color: colors.muted }]}>No services in this category.</Text>
                 : filteredServices.map((svc) => (
                   <View key={svc.localId} style={[s.serviceCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: "column", padding: 0, overflow: "hidden" }]}>
-                    {/* Service image */}
+                    {/* Service image — tap to preview */}
                     {svc.photoUri && (
-                      <Image
-                        source={{ uri: svc.photoUri }}
-                        style={{ width: "100%", height: 140 }}
-                        contentFit="cover"
-                      />
+                      <Pressable onPress={() => setServiceLightboxUri(svc.photoUri!)} style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}>
+                        <Image
+                          source={{ uri: svc.photoUri }}
+                          style={{ width: "100%", height: 160 }}
+                          contentFit="cover"
+                        />
+                        <View style={{ position: "absolute", bottom: 8, right: 8, backgroundColor: "rgba(0,0,0,0.45)", borderRadius: 14, paddingHorizontal: 8, paddingVertical: 4, flexDirection: "row", alignItems: "center", gap: 4 }}>
+                          <IconSymbol name="magnifyingglass" size={12} color="#FFFFFF" />
+                          <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "600" }}>Preview</Text>
+                        </View>
+                      </Pressable>
                     )}
                     <View style={{ padding: 14, flexDirection: "row", alignItems: "center", gap: 12 }}>
                       <View style={s.serviceInfo}>
@@ -564,6 +571,20 @@ export default function ClientBusinessDetailScreen() {
         </View>
       </Modal>
 
+      {/* Service Image Lightbox */}
+      <Modal visible={!!serviceLightboxUri} transparent animationType="fade" onRequestClose={() => setServiceLightboxUri(null)}>
+        <View style={s.lightboxOverlay}>
+          <Pressable style={s.lightboxClose} onPress={() => setServiceLightboxUri(null)}>
+            <IconSymbol name="xmark" size={22} color="#FFFFFF" />
+          </Pressable>
+          {serviceLightboxUri && (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+              <Image source={{ uri: serviceLightboxUri }} style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH * 1.2 }} contentFit="contain" transition={200} />
+            </View>
+          )}
+        </View>
+      </Modal>
+
       {/* Write a Review Modal */}
       <Modal visible={detailReviewVisible} transparent animationType="slide" onRequestClose={() => setDetailReviewVisible(false)}>
         <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" }}>
@@ -654,9 +675,9 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
     metaText: { fontSize: 13 },
     description: { fontSize: 14, textAlign: "center", lineHeight: 20, marginTop: 4 },
-    tabBar: { flexDirection: "row", borderBottomWidth: 1, marginHorizontal: 16 },
-    tab: { flex: 1, alignItems: "center", paddingVertical: 10, borderBottomWidth: 2, borderBottomColor: "transparent", minWidth: 72 },
-    tabText: { fontSize: 13, fontWeight: "600" },
+    tabBar: { flexDirection: "row", borderBottomWidth: 1, marginHorizontal: 0, paddingHorizontal: 8 },
+    tab: { flex: 1, alignItems: "center", paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: "transparent", paddingHorizontal: 4 },
+    tabText: { fontSize: 12, fontWeight: "600", textAlign: "center" },
     tabContent: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
     emptyText: { textAlign: "center", fontSize: 14, paddingVertical: 24 },
     serviceCard: { flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1, padding: 14, gap: 12 },
