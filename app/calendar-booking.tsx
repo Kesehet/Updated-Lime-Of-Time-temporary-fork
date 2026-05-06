@@ -443,7 +443,8 @@ export default function CalendarBookingScreen() {
     return Math.min(appliedPromoCode.flatAmount ?? 0, subtotal);
   }, [appliedPromoCode, subtotal]);
 
-  const manualDiscountAmount = appliedManualDiscount && !appliedDiscount
+  // Manual discount stacks on top of auto-discount (Happy Hour etc.)
+  const manualDiscountAmount = appliedManualDiscount
     ? subtotal * (appliedManualDiscount.percentage / 100)
     : 0;
   const totalPrice = Math.max(0, subtotal - discountAmount - promoDiscountAmount - manualDiscountAmount);
@@ -565,10 +566,21 @@ export default function CalendarBookingScreen() {
           status: "confirmed",
           notes: notes.trim() ? `[Package: ${pkgName} — Session ${idx + 1}/${sessionCount}] ${notes.trim()}` : `Package: ${pkgName} — Session ${idx + 1}/${sessionCount}`,
           createdAt: new Date().toISOString(),
-          totalPrice: idx === 0 ? pkgPrice : 0, // charge on first session only
+          totalPrice: idx === 0 ? Math.max(0, pkgPrice - discountAmount - promoDiscountAmount - manualDiscountAmount) : 0,
           staffId: selectedStaffId ?? undefined,
           locationId: effectiveLocationId ?? undefined,
-          paymentStatus: idx === 0 ? (pkgPrice <= 0 ? "paid" : "unpaid") : "paid",
+          discountPercent: idx === 0 ? (appliedDiscount?.percentage ?? appliedManualDiscount?.percentage) : undefined,
+          discountAmount: idx === 0 && (discountAmount + promoDiscountAmount + manualDiscountAmount) > 0
+            ? (discountAmount + promoDiscountAmount + manualDiscountAmount)
+            : undefined,
+          discountName: idx === 0 ? (() => {
+            const parts: string[] = [];
+            if (appliedDiscount) parts.push(appliedDiscount.name);
+            if (appliedManualDiscount) parts.push(appliedManualDiscount.name);
+            if (appliedPromoCode) parts.push(appliedPromoCode.code);
+            return parts.length > 0 ? parts.join(' + ') : undefined;
+          })() : undefined,
+          paymentStatus: idx === 0 ? (Math.max(0, pkgPrice - discountAmount - promoDiscountAmount - manualDiscountAmount) <= 0 ? "paid" : "unpaid") : "paid",
           paymentMethod: (selectedPaymentMethod ?? undefined) as "free" | "zelle" | "venmo" | "cashapp" | "cash" | "card" | "unpaid" | undefined,
           // Package metadata stored in extraItems
           extraItems: [{
@@ -600,9 +612,15 @@ export default function CalendarBookingScreen() {
       totalPrice,
       staffId: selectedStaffId ?? undefined,
       locationId: effectiveLocationId ?? undefined,
-      discountPercent: appliedDiscount?.percentage,
-      discountAmount: (discountAmount + promoDiscountAmount) > 0 ? (discountAmount + promoDiscountAmount) : undefined,
-      discountName: appliedPromoCode ? (appliedDiscount ? `${appliedDiscount.name} + ${appliedPromoCode.code}` : appliedPromoCode.code) : appliedDiscount?.name,
+      discountPercent: appliedDiscount?.percentage ?? appliedManualDiscount?.percentage,
+      discountAmount: (discountAmount + promoDiscountAmount + manualDiscountAmount) > 0 ? (discountAmount + promoDiscountAmount + manualDiscountAmount) : undefined,
+      discountName: (() => {
+        const parts: string[] = [];
+        if (appliedDiscount) parts.push(appliedDiscount.name);
+        if (appliedManualDiscount) parts.push(appliedManualDiscount.name);
+        if (appliedPromoCode) parts.push(appliedPromoCode.code);
+        return parts.length > 0 ? parts.join(' + ') : undefined;
+      })(),
       paymentStatus: totalPrice <= 0 ? "paid" : "unpaid",
       paymentMethod: (selectedPaymentMethod ?? undefined) as "free" | "zelle" | "venmo" | "cashapp" | "cash" | "card" | "unpaid" | undefined,
       extraItems: extraItems.length > 0 ? extraItems : undefined,
@@ -1535,7 +1553,12 @@ export default function CalendarBookingScreen() {
                                 ? `Valid ${selectedPkg.expiryDays / 30} month${selectedPkg.expiryDays / 30 !== 1 ? "s" : ""}`
                                 : `Valid ${selectedPkg.expiryDays} days`
                               : null;
-                            return `${selectedPkg.sessions ?? "?"} sessions · $${selectedPkg.price.toFixed(2)}${validityStr ? ` · ${validityStr}` : ""}`;
+                            const pkgDiscountTotal = discountAmount + promoDiscountAmount + manualDiscountAmount;
+                            const discountedPkgPrice = Math.max(0, selectedPkg.price - pkgDiscountTotal);
+                            const priceStr = pkgDiscountTotal > 0
+                              ? `$${selectedPkg.price.toFixed(2)} → $${discountedPkgPrice.toFixed(2)}`
+                              : `$${selectedPkg.price.toFixed(2)}`;
+                            return `${selectedPkg.sessions ?? "?"} sessions · ${priceStr}${validityStr ? ` · ${validityStr}` : ""}`;
                           })()
                         : (() => {
                             const totalSessions = activePackages.reduce((sum, p) => sum + (p.sessions ?? 0), 0);
@@ -3409,6 +3432,9 @@ export default function CalendarBookingScreen() {
             ))}
             {appliedDiscount && discountAmount > 0 && (
               <SummaryRow label={`Discount — ${appliedDiscount.name}`} value={`-$${discountAmount.toFixed(2)}`} colors={colors} valueColor={colors.success} />
+            )}
+            {appliedManualDiscount && manualDiscountAmount > 0 && (
+              <SummaryRow label={`Discount — ${appliedManualDiscount.name}`} value={`-$${manualDiscountAmount.toFixed(2)}`} colors={colors} valueColor={colors.success} />
             )}
             {appliedPromoCode && promoDiscountAmount > 0 && (
               <SummaryRow
