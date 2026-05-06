@@ -136,6 +136,12 @@ function kmToMiles(km: number): number {
   return km * 0.621371;
 }
 
+/** Returns true only for http/https URIs (safe to render on any device). */
+function isRemoteUri(uri: string | null | undefined): boolean {
+  if (!uri) return false;
+  return uri.startsWith("http://") || uri.startsWith("https://");
+}
+
 // ─── Recently Viewed Section (tap-based) ────────────────────────────────────
 function RecentlyViewedSection({ items, router, onClear }: { items: RecentlyViewedBusiness[]; router: ReturnType<typeof useRouter>; onClear: () => void }) {
   if (items.length === 0) return null;
@@ -173,10 +179,11 @@ function RecentlyViewedSection({ items, router, onClear }: { items: RecentlyView
             >
               {/* Cover image */}
               <View style={[recentStyles.logoWrap, { backgroundColor: accentColor + "22" }]}>
-                {(biz.businessLogoUri || biz.logoUrl) ? (
-                  <Image source={{ uri: biz.businessLogoUri ?? biz.logoUrl ?? "" }} style={recentStyles.logoImage} />
+                {isRemoteUri(biz.businessLogoUri) || isRemoteUri(biz.logoUrl) ? (
+                  <Image source={{ uri: (biz.businessLogoUri && isRemoteUri(biz.businessLogoUri) ? biz.businessLogoUri : biz.logoUrl) ?? "" }} style={recentStyles.logoImage} />
                 ) : (
-                  <Text style={{ fontSize: 32 }}>{emoji}</Text>
+                  // eslint-disable-next-line @typescript-eslint/no-require-imports
+                  <Image source={require("../../assets/images/icon.png")} style={recentStyles.logoImage} resizeMode="cover" />
                 )}
               </View>
               {/* Card body */}
@@ -248,10 +255,11 @@ function RecentlyVisited({ items, router }: { items: RecentBusiness[]; router: R
             >
               {/* Cover image */}
               <View style={[recentStyles.logoWrap, { backgroundColor: accentColor + "22" }]}>
-                {biz.businessLogoUri ? (
-                  <Image source={{ uri: biz.businessLogoUri }} style={recentStyles.logoImage} />
+                {isRemoteUri(biz.businessLogoUri) ? (
+                  <Image source={{ uri: biz.businessLogoUri! }} style={recentStyles.logoImage} />
                 ) : (
-                  <Text style={{ fontSize: 32 }}>{emoji}</Text>
+                  // eslint-disable-next-line @typescript-eslint/no-require-imports
+                  <Image source={require("../../assets/images/icon.png")} style={recentStyles.logoImage} resizeMode="cover" />
                 )}
               </View>
               {/* Card body */}
@@ -795,54 +803,11 @@ export default function DiscoverScreen() {
         })}
       </View>
 
-      {/* Recently Viewed (tap-based, persisted across sessions) */}
-      {!loading && recentlyViewed.length > 0 && (
-        <RecentlyViewedSection items={recentlyViewed} router={router} onClear={clearRecentlyViewed} />
-      )}
-
-      {/* Recently Visited (from appointment history) */}
-      {!loading && recentlyVisited.length > 0 && (
-        <RecentlyVisited items={recentlyVisited} router={router} />
-      )}
-
-      {/* Divider between recently visited and results */}
-      {!loading && recentlyVisited.length > 0 && businesses.length > 0 && (
-        <View style={[s.sectionDivider, { borderTopColor: CARD_BORDER }]}>
-          <Text style={[s.sectionDividerText, { color: TEXT_MUTED }]}>{userLat != null ? "Nearby Businesses" : "All Businesses"}</Text>
-        </View>
-      )}
-
-      {/* Results */}
+      {/* Results — FlatList with Recently Viewed/Visited in header so everything scrolls together */}
       {loading ? (
         <View style={s.loadingContainer}>
           <ActivityIndicator size="large" color={GREEN_ACCENT} />
           <Text style={[s.loadingText, { color: TEXT_MUTED }]}>Finding businesses near you...</Text>
-        </View>
-      ) : businesses.length === 0 ? (
-        <View style={s.emptyContainer}>
-          <Text style={s.emptyIcon}>📍</Text>
-          <Text style={[s.emptyTitle, { color: TEXT_PRIMARY }]}>
-            {userLat != null ? "No businesses nearby" : "No businesses found"}
-          </Text>
-          <Text style={[s.emptySubtitle, { color: TEXT_MUTED }]}>
-            {userLat != null
-              ? `No businesses available within ${state.discoverRadius} miles. Try increasing your range or changing the category.`
-              : "No businesses match your search. Try a different keyword or category."}
-          </Text>
-          {userLat != null && (
-            <Pressable
-              style={({ pressed }) => [s.expandBtn, pressed && { opacity: 0.7 }]}
-              onPress={() => {
-                const currentRadius = Number(state.discoverRadius);
-                const currentIdx = RADIUS_OPTIONS.indexOf(currentRadius);
-                const nextIdx = currentIdx === -1 ? 1 : Math.min(currentIdx + 1, RADIUS_OPTIONS.length - 1);
-                const nextRadius = RADIUS_OPTIONS[nextIdx];
-                handleRadiusSelect(nextRadius);
-              }}
-            >
-              <Text style={{ color: GREEN_ACCENT, fontWeight: "600", fontSize: 14 }}>Expand Range</Text>
-            </Pressable>
-          )}
         </View>
       ) : (
         <FlatList
@@ -850,6 +815,48 @@ export default function DiscoverScreen() {
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <>
+              {recentlyViewed.length > 0 && (
+                <RecentlyViewedSection items={recentlyViewed} router={router} onClear={clearRecentlyViewed} />
+              )}
+              {recentlyVisited.length > 0 && (
+                <RecentlyVisited items={recentlyVisited} router={router} />
+              )}
+              {(recentlyViewed.length > 0 || recentlyVisited.length > 0) && businesses.length > 0 && (
+                <View style={[s.sectionDivider, { borderTopColor: CARD_BORDER }]}>
+                  <Text style={[s.sectionDividerText, { color: TEXT_MUTED }]}>{userLat != null ? "Nearby Businesses" : "All Businesses"}</Text>
+                </View>
+              )}
+              {businesses.length === 0 && (
+                <View style={s.emptyContainer}>
+                  <Text style={s.emptyIcon}>📍</Text>
+                  <Text style={[s.emptyTitle, { color: TEXT_PRIMARY }]}>
+                    {userLat != null ? "No businesses nearby" : "No businesses found"}
+                  </Text>
+                  <Text style={[s.emptySubtitle, { color: TEXT_MUTED }]}>
+                    {userLat != null
+                      ? `No businesses available within ${state.discoverRadius} miles. Try increasing your range or changing the category.`
+                      : "No businesses match your search. Try a different keyword or category."}
+                  </Text>
+                  {userLat != null && (
+                    <Pressable
+                      style={({ pressed }) => [s.expandBtn, pressed && { opacity: 0.7 }]}
+                      onPress={() => {
+                        const currentRadius = Number(state.discoverRadius);
+                        const currentIdx = RADIUS_OPTIONS.indexOf(currentRadius);
+                        const nextIdx = currentIdx === -1 ? 1 : Math.min(currentIdx + 1, RADIUS_OPTIONS.length - 1);
+                        const nextRadius = RADIUS_OPTIONS[nextIdx];
+                        handleRadiusSelect(nextRadius);
+                      }}
+                    >
+                      <Text style={{ color: GREEN_ACCENT, fontWeight: "600", fontSize: 14 }}>Expand Range</Text>
+                    </Pressable>
+                  )}
+                </View>
+              )}
+            </>
+          }
           renderItem={({ item, index }) => (
             <BusinessCard
               item={item}
@@ -912,10 +919,11 @@ function BusinessCard({ item, router, index, onTap }: { item: DiscoverBusiness; 
         <View style={[cardStyles.card, { backgroundColor: CARD_BG, borderColor: CARD_BORDER }]}>
           {/* Logo / Cover */}
           <View style={[cardStyles.logoBox, { backgroundColor: accentColor + "18" }]}>
-            {(item.businessLogoUri || item.logoUrl) ? (
-              <Image source={{ uri: item.businessLogoUri ?? item.logoUrl ?? "" }} style={cardStyles.logoImage} resizeMode="cover" />
+            {isRemoteUri(item.businessLogoUri) || isRemoteUri(item.logoUrl) ? (
+              <Image source={{ uri: (item.businessLogoUri && isRemoteUri(item.businessLogoUri) ? item.businessLogoUri : item.logoUrl) ?? "" }} style={cardStyles.logoImage} resizeMode="cover" />
             ) : (
-              <Text style={cardStyles.logoEmoji}>{CATEGORIES.find(c => c.label === (item.businessCategory ?? item.category))?.emoji ?? "🏢"}</Text>
+              // eslint-disable-next-line @typescript-eslint/no-require-imports
+              <Image source={require("../../assets/images/icon.png")} style={cardStyles.logoImage} resizeMode="cover" />
             )}
           </View>
 

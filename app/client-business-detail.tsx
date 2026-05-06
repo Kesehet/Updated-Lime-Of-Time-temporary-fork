@@ -202,7 +202,13 @@ export default function ClientBusinessDetailScreen() {
   const s = styles(colors);
   const hours = parseWorkingHours(business?.workingHours);
   const category = business?.businessCategory ?? business?.category ?? null;
-  const logoUri = business?.businessLogoUri ?? null;
+  const rawLogoUri = business?.businessLogoUri ?? null;
+  const rawCoverUri = business?.coverPhotoUri ?? null;
+  // Only use URIs that are remote (http/https) — local file:// paths don't work cross-device
+  const isRemoteUri = (uri: string | null | undefined) =>
+    !!uri && (uri.startsWith("http://") || uri.startsWith("https://"));
+  const logoUri = isRemoteUri(rawLogoUri) ? rawLogoUri : null;
+  const coverUri = isRemoteUri(rawCoverUri) ? rawCoverUri : null;
 
   if (loading) {
     return (
@@ -238,8 +244,8 @@ export default function ClientBusinessDetailScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header Banner */}
         <View style={[s.banner, { backgroundColor: "#1A3A2A", overflow: "hidden" }]}>
-          {(business.coverPhotoUri || logoUri) ? (
-            <Image source={{ uri: business.coverPhotoUri || logoUri }} style={StyleSheet.absoluteFillObject} contentFit="cover" transition={300} />
+          {(coverUri || logoUri) ? (
+            <Image source={{ uri: coverUri || logoUri! }} style={StyleSheet.absoluteFillObject} contentFit="cover" transition={300} />
           ) : null}
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0,0,0,0.35)" }]} />
           <Pressable style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]} onPress={() => router.back()}>
@@ -337,7 +343,7 @@ export default function ClientBusinessDetailScreen() {
                   <View key={svc.localId} style={[s.serviceCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: "column", padding: 0, overflow: "hidden" }]}>
                     {/* Service image — tap to preview */}
                     {svc.photoUri ? (
-                      <Pressable onPress={() => setServiceLightboxUri(svc.photoUri!)} style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}>
+                      <Pressable onPress={() => setServiceLightboxUri(svc.photoUri!)} style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1, width: "100%", height: 160 })}>
                         <Image
                           source={{ uri: svc.photoUri }}
                           style={{ width: "100%", height: 160 }}
