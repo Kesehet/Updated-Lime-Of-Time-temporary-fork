@@ -19,6 +19,7 @@ import {
   Platform,
   Modal,
   TextInput,
+  Linking,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ClientPortalBackground } from "@/components/client-portal-background";
@@ -238,7 +239,7 @@ export default function ClientAppointmentDetailScreen() {
           <InfoRow icon="calendar" label="Date" value={formatDate(appt.date)} />
           <InfoRow icon="clock" label="Time" value={appt.time} />
           {appt.duration ? (
-            <InfoRow icon="timer" label="Duration" value={`${appt.duration} min`} />
+            <InfoRow icon="hourglass" label="Duration" value={`${appt.duration} min`} />
           ) : null}
           {appt.staffName ? (
             <InfoRow icon="person.fill" label="Staff" value={appt.staffName} />
@@ -251,10 +252,10 @@ export default function ClientAppointmentDetailScreen() {
             />
           ) : null}
           {appt.locationName ? (
-            <InfoRow icon="location" label="Location" value={appt.locationName} />
+            <InfoRow icon="building.2.fill" label="Business" value={appt.locationName} />
           ) : null}
           {appt.locationAddress ? (
-            <InfoRow icon="location" label="Address" value={appt.locationAddress} />
+            <AddressRow address={appt.locationAddress} />
           ) : null}
           {appt.notes ? (
             <InfoRow icon="note.text" label="Notes" value={appt.notes} />
@@ -508,6 +509,44 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
         <Text style={infoStyles.value}>{value}</Text>
       </View>
     </View>
+  );
+}
+
+function AddressRow({ address }: { address: string }) {
+  const openMaps = () => {
+    const encoded = encodeURIComponent(address);
+    const url = Platform.OS === "ios"
+      ? `maps://?q=${encoded}`
+      : `geo:0,0?q=${encoded}`;
+    Linking.canOpenURL(url).then((supported) => {
+      if (supported) {
+        Linking.openURL(url);
+      } else {
+        // Fallback to Google Maps web
+        Linking.openURL(`https://maps.google.com/?q=${encoded}`);
+      }
+    });
+  };
+
+  return (
+    <Pressable
+      style={({ pressed }) => [infoStyles.row, pressed && { opacity: 0.7 }]}
+      onPress={openMaps}
+    >
+      <View style={infoStyles.iconWrap}>
+        <IconSymbol name="mappin" size={14} color={GREEN_ACCENT} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={infoStyles.label}>Address</Text>
+        <Text style={[infoStyles.value, { color: "#8FBF6A", textDecorationLine: "underline" }]}>
+          {address}
+        </Text>
+        <Text style={{ fontSize: 11, color: "rgba(143,191,106,0.7)", marginTop: 2 }}>
+          Tap to open in Maps
+        </Text>
+      </View>
+      <IconSymbol name="arrow.up.right" size={14} color="rgba(143,191,106,0.6)" />
+    </Pressable>
   );
 }
 

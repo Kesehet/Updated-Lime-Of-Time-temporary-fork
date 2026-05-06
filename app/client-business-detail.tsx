@@ -698,7 +698,7 @@ export default function ClientBusinessDetailScreen() {
             style={({ pressed }) => [s.stickyGiftBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
             onPress={() => {
               if (!state.account) { router.push("/client-signin" as any); return; }
-              router.push({ pathname: "/client-buy-gift", params: { slug, businessName: business?.name ?? "" } } as any);
+              router.push({ pathname: "/client-buy-gift", params: { slug, businessName: business?.businessName ?? "" } } as any);
             }}
           >
             <Text style={{ fontSize: 16 }}>🎁</Text>

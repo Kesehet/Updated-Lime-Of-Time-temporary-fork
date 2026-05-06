@@ -4,9 +4,14 @@
  * 5-step native gift card purchase flow mirroring the web buy-gift page.
  * Steps: Items → Details → Date → Staff → Payment
  *
+ * Step 2 (Date) includes:
+ *   - Location selection (only if >1 active location; single location auto-selected)
+ *   - Working-days calendar grid (grays out closed/unavailable days)
+ *   - Time slot grid (pill buttons, fetched from /slots endpoint)
+ *
  * Design: dark forest-green portal aesthetic.
  */
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -53,6 +58,8 @@ interface GiftStaff {
 interface GiftLocation {
   localId: string;
   name: string;
+  address?: string;
+  phone?: string;
 }
 
 interface PaymentMethods {
@@ -66,6 +73,21 @@ const STEPS = ["Items", "Details", "Date", "Staff", "Payment"];
 
 function formatPrice(n: number) {
   return `$${n.toFixed(2)}`;
+}
+
+// Calendar helpers
+function getDaysInMonth(year: number, month: number): Date[] {
+  const days: Date[] = [];
+  const date = new Date(year, month, 1);
+  while (date.getMonth() === month) {
+    days.push(new Date(date));
+    date.setDate(date.getDate() + 1);
+  }
+  return days;
+}
+
+function formatDateLabel(d: Date): string {
+  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
 export default function ClientBuyGiftScreen() {
@@ -93,15 +115,26 @@ export default function ClientBuyGiftScreen() {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");
   const [personalMessage, setPersonalMessage] = useState("");
-  // Date
+  // Date step
   const [recipientChoosesDate, setRecipientChoosesDate] = useState(true);
-  const [preselectedDate, setPreselectedDate] = useState("");
-  const [preselectedTime, setPreselectedTime] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState<GiftLocation | null>(null);
+  const [calYear, setCalYear] = useState(() => new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(() => new Date().getMonth());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [unavailableDates, setUnavailableDates] = useState<Set<string>>(new Set());
+  const [slotCounts, setSlotCounts] = useState<Record<string, number>>({});
+  const [loadingMonthAvail, setLoadingMonthAvail] = useState(false);
+  const [slots, setSlots] = useState<string[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const lastAvailFetchKey = useRef<string>("");
   // Staff
   const [selectedStaffId, setSelectedStaffId] = useState<string>("any");
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [submitting, setSubmitting] = useState(false);
+
+  const today = new Date();
 
   // ── Load gift info ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -117,7 +150,10 @@ export default function ClientBuyGiftScreen() {
           setBusinessName(data.businessName ?? bizNameParam ?? "");
           setServices((data.services ?? []).map((s: any) => ({ ...s, type: "service" as const })));
           setProducts((data.products ?? []).map((p: any) => ({ ...p, type: "product" as const })));
-          setLocations(data.locations ?? []);
+          const locs: GiftLocation[] = data.locations ?? [];
+          setLocations(locs);
+          // Auto-select single location
+          if (locs.length === 1) setSelectedLocation(locs[0]);
           setPaymentMethods(data.paymentMethods ?? { zelle: null, cashApp: null, venmo: null, cashEnabled: true });
         }
         if (staffRes.ok) {
@@ -131,6 +167,80 @@ export default function ClientBuyGiftScreen() {
       }
     })();
   }, [slug, apiBase, bizNameParam]);
+
+  // ── Month availability fetch ───────────────────────────────────────────────
+  const fetchMonthAvailability = useCallback(async (year: number, month: number, location: GiftLocation | null) => {
+    if (!slug) return;
+    const fetchKey = `${year}-${String(month + 1).padStart(2, "0")}-${location?.localId ?? "any"}`;
+    if (lastAvailFetchKey.current === fetchKey) return;
+    lastAvailFetchKey.current = fetchKey;
+    setLoadingMonthAvail(true);
+    const newUnavailable = new Set<string>();
+    const newSlotCounts: Record<string, number> = {};
+    const todayStr = new Date().toISOString().split("T")[0];
+    const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayDate = new Date();
+    const promises: Promise<void>[] = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateObj = new Date(year, month, d);
+      if (dateObj < new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate())) continue;
+      const dateStr = dateObj.toISOString().split("T")[0];
+      const locParam = location ? `&locationId=${encodeURIComponent(location.localId)}` : "";
+      // Use duration=60 as a generic gift card duration for availability checking
+      const url = `${apiBase}/api/public/business/${slug}/slots?date=${dateStr}&duration=60${locParam}&clientToday=${todayStr}&nowMinutes=${nowMinutes}`;
+      promises.push(
+        fetch(url)
+          .then((r) => r.ok ? r.json() : { slots: [] })
+          .then((data) => {
+            const count = data.slots?.length ?? 0;
+            if (!count) {
+              newUnavailable.add(dateStr);
+            } else {
+              newSlotCounts[dateStr] = count;
+            }
+          })
+          .catch(() => {})
+      );
+    }
+    await Promise.all(promises);
+    setUnavailableDates(newUnavailable);
+    setSlotCounts(newSlotCounts);
+    setLoadingMonthAvail(false);
+  }, [slug, apiBase]);
+
+  // Trigger month availability when calendar changes or location changes
+  useEffect(() => {
+    if (!recipientChoosesDate) {
+      fetchMonthAvailability(calYear, calMonth, selectedLocation);
+    }
+  }, [calYear, calMonth, selectedLocation, recipientChoosesDate, fetchMonthAvailability]);
+
+  // ── Slots fetch ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!selectedDate || recipientChoosesDate) return;
+    (async () => {
+      setLoadingSlots(true);
+      setSlots([]);
+      setSelectedSlot(null);
+      try {
+        const dateStr = selectedDate.toISOString().split("T")[0];
+        const locParam = selectedLocation ? `&locationId=${encodeURIComponent(selectedLocation.localId)}` : "";
+        const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+        const clientToday = new Date().toISOString().split("T")[0];
+        const url = `${apiBase}/api/public/business/${slug}/slots?date=${dateStr}&duration=60${locParam}&clientToday=${clientToday}&nowMinutes=${nowMinutes}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setSlots(data.slots ?? []);
+        }
+      } catch (err) {
+        console.warn("[BuyGift] slots error:", err);
+      } finally {
+        setLoadingSlots(false);
+      }
+    })();
+  }, [selectedDate, selectedLocation, recipientChoosesDate, slug, apiBase]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const allItems: GiftItem[] = [...services, ...products];
@@ -161,7 +271,11 @@ export default function ClientBuyGiftScreen() {
   const canProceed = (): boolean => {
     if (step === 0) return selectedItems.size > 0;
     if (step === 1) return purchaserName.trim().length > 0 && recipientName.trim().length > 0;
-    if (step === 2) return recipientChoosesDate || preselectedDate.length > 0;
+    if (step === 2) {
+      if (recipientChoosesDate) return true;
+      // Must have selected a date; time slot is optional
+      return selectedDate !== null;
+    }
     return true; // staff and payment steps are always valid
   };
 
@@ -171,6 +285,7 @@ export default function ClientBuyGiftScreen() {
     try {
       const serviceIds = selectedItemsList.filter(i => i.type === "service").map(i => i.localId);
       const productIds = selectedItemsList.filter(i => i.type === "product").map(i => i.localId);
+      const preselectedDate = selectedDate ? selectedDate.toISOString().split("T")[0] : undefined;
       const body: any = {
         purchaserName: purchaserName.trim(),
         purchaserEmail: purchaserEmail.trim() || undefined,
@@ -183,8 +298,9 @@ export default function ClientBuyGiftScreen() {
         paymentMethod,
         recipientChoosesDate,
         preselectedDate: !recipientChoosesDate ? preselectedDate : undefined,
-        preselectedTime: !recipientChoosesDate && preselectedTime ? preselectedTime : undefined,
+        preselectedTime: !recipientChoosesDate && selectedSlot ? selectedSlot : undefined,
         staffId: selectedStaffId !== "any" ? selectedStaffId : undefined,
+        locationId: selectedLocation?.localId ?? undefined,
       };
       const res = await fetch(`${apiBase}/api/public/business/${slug}/buy-gift`, {
         method: "POST",
@@ -236,6 +352,10 @@ export default function ClientBuyGiftScreen() {
     paymentMethods.cashEnabled && { id: "cash", label: "Cash", icon: "💵", hint: "Pay in person" },
   ].filter(Boolean) as { id: string; label: string; icon: string; hint: string }[];
 
+  const calDays = getDaysInMonth(calYear, calMonth);
+  const monthLabel = new Date(calYear, calMonth, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const showLocationStep = locations.length > 1;
+
   return (
     <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
       <ClientPortalBackground />
@@ -264,14 +384,13 @@ export default function ClientBuyGiftScreen() {
               )}
             </View>
             {i < STEPS.length - 1 && (
-              <View style={[s.stepLine, { backgroundColor: i < step ? LIME : "rgba(255,255,255,0.15)" }]} />
+              <View style={[s.stepLine, { backgroundColor: i < step ? LIME : "rgba(255,255,255,0.12)" }]} />
             )}
           </View>
         ))}
       </View>
       <Text style={s.stepLabel}>{STEPS[step]}</Text>
 
-      {/* Content */}
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
@@ -279,20 +398,8 @@ export default function ClientBuyGiftScreen() {
         {/* ── Step 0: Items ─────────────────────────────────────────── */}
         {step === 0 && (
           <View style={s.stepContent}>
-            <Text style={s.stepTitle}>Choose Services or Products</Text>
-            <Text style={s.stepSub}>Select what you'd like to gift. Multiple items can be added.</Text>
-
-            {selectedItems.size > 0 && (
-              <View style={[s.totalBanner, { backgroundColor: `${LIME}20`, borderColor: `${LIME}40` }]}>
-                <Text style={{ fontSize: 18 }}>🎁</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 14 }}>
-                    {selectedItems.size} item{selectedItems.size > 1 ? "s" : ""} selected
-                  </Text>
-                  <Text style={{ color: GREEN_ACCENT, fontSize: 13 }}>Total value: {formatPrice(totalValue)}</Text>
-                </View>
-              </View>
-            )}
+            <Text style={s.stepTitle}>Choose Gift Items</Text>
+            <Text style={s.stepSub}>Select one or more services or products to include in the gift.</Text>
 
             {services.length > 0 && (
               <>
@@ -307,15 +414,13 @@ export default function ClientBuyGiftScreen() {
                     ]}
                     onPress={() => toggleItem(item.localId)}
                   >
+                    <View style={[s.checkBox, selectedItems.has(item.localId) && { backgroundColor: GREEN_ACCENT, borderColor: GREEN_ACCENT }]}>
+                      {selectedItems.has(item.localId) && <IconSymbol name="checkmark" size={14} color="#fff" />}
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={s.itemName}>{item.name}</Text>
-                      {item.description ? (
-                        <Text style={s.itemDesc} numberOfLines={2}>{item.description}</Text>
-                      ) : null}
+                      {item.description ? <Text style={s.itemDesc} numberOfLines={2}>{item.description}</Text> : null}
                       <Text style={s.itemPrice}>{formatPrice(item.price)}</Text>
-                    </View>
-                    <View style={[s.checkBox, selectedItems.has(item.localId) && { backgroundColor: GREEN_ACCENT, borderColor: GREEN_ACCENT }]}>
-                      {selectedItems.has(item.localId) && <IconSymbol name="checkmark" size={13} color="#fff" />}
                     </View>
                   </Pressable>
                 ))}
@@ -335,15 +440,13 @@ export default function ClientBuyGiftScreen() {
                     ]}
                     onPress={() => toggleItem(item.localId)}
                   >
+                    <View style={[s.checkBox, selectedItems.has(item.localId) && { backgroundColor: GREEN_ACCENT, borderColor: GREEN_ACCENT }]}>
+                      {selectedItems.has(item.localId) && <IconSymbol name="checkmark" size={14} color="#fff" />}
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={s.itemName}>{item.name}</Text>
-                      {item.description ? (
-                        <Text style={s.itemDesc} numberOfLines={2}>{item.description}</Text>
-                      ) : null}
+                      {item.description ? <Text style={s.itemDesc} numberOfLines={2}>{item.description}</Text> : null}
                       <Text style={s.itemPrice}>{formatPrice(item.price)}</Text>
-                    </View>
-                    <View style={[s.checkBox, selectedItems.has(item.localId) && { backgroundColor: GREEN_ACCENT, borderColor: GREEN_ACCENT }]}>
-                      {selectedItems.has(item.localId) && <IconSymbol name="checkmark" size={13} color="#fff" />}
                     </View>
                   </Pressable>
                 ))}
@@ -353,7 +456,21 @@ export default function ClientBuyGiftScreen() {
             {allItems.length === 0 && (
               <View style={s.emptyState}>
                 <Text style={{ fontSize: 32 }}>🎁</Text>
-                <Text style={{ color: TEXT_MUTED, textAlign: "center", marginTop: 8 }}>No services or products available for gifting at this time.</Text>
+                <Text style={{ color: TEXT_MUTED, textAlign: "center" }}>No gift items available yet.</Text>
+              </View>
+            )}
+
+            {selectedItems.size > 0 && (
+              <View style={[s.totalBanner, { backgroundColor: `${GREEN_ACCENT}15`, borderColor: `${GREEN_ACCENT}40` }]}>
+                <Text style={{ fontSize: 20 }}>🎁</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>
+                    {selectedItems.size} item{selectedItems.size > 1 ? "s" : ""} selected
+                  </Text>
+                  <Text style={{ color: GREEN_ACCENT, fontWeight: "600", fontSize: 14 }}>
+                    Total value: {formatPrice(totalValue)}
+                  </Text>
+                </View>
               </View>
             )}
           </View>
@@ -363,7 +480,7 @@ export default function ClientBuyGiftScreen() {
         {step === 1 && (
           <View style={s.stepContent}>
             <Text style={s.stepTitle}>Gift Details</Text>
-            <Text style={s.stepSub}>Tell us who this gift is from and who it's for.</Text>
+            <Text style={s.stepSub}>Who is this gift from, and who is it for?</Text>
 
             <Text style={s.fieldLabel}>Your Name *</Text>
             <TextInput
@@ -378,7 +495,7 @@ export default function ClientBuyGiftScreen() {
             <Text style={s.fieldLabel}>Your Email</Text>
             <TextInput
               style={s.input}
-              placeholder="your@email.com (for confirmation)"
+              placeholder="your@email.com (for receipt)"
               placeholderTextColor={TEXT_MUTED}
               value={purchaserEmail}
               onChangeText={setPurchaserEmail}
@@ -442,13 +559,18 @@ export default function ClientBuyGiftScreen() {
             <Text style={s.stepTitle}>Appointment Date</Text>
             <Text style={s.stepSub}>Let the recipient choose, or pre-select a date now.</Text>
 
+            {/* Option: recipient chooses */}
             <Pressable
               style={({ pressed }) => [
                 s.dateOptionCard,
                 recipientChoosesDate && { borderColor: GREEN_ACCENT, borderWidth: 2 },
                 pressed && { opacity: 0.85 },
               ]}
-              onPress={() => setRecipientChoosesDate(true)}
+              onPress={() => {
+                setRecipientChoosesDate(true);
+                setSelectedDate(null);
+                setSelectedSlot(null);
+              }}
             >
               <Text style={{ fontSize: 24 }}>📅</Text>
               <View style={{ flex: 1 }}>
@@ -462,6 +584,7 @@ export default function ClientBuyGiftScreen() {
               )}
             </Pressable>
 
+            {/* Option: pre-select */}
             <Pressable
               style={({ pressed }) => [
                 s.dateOptionCard,
@@ -482,26 +605,215 @@ export default function ClientBuyGiftScreen() {
               )}
             </Pressable>
 
+            {/* ── Calendar section (only when pre-select is chosen) ── */}
             {!recipientChoosesDate && (
-              <View style={{ gap: 12, marginTop: 8 }}>
-                <Text style={s.fieldLabel}>Date (YYYY-MM-DD)</Text>
-                <TextInput
-                  style={s.input}
-                  placeholder="e.g. 2026-06-15"
-                  placeholderTextColor={TEXT_MUTED}
-                  value={preselectedDate}
-                  onChangeText={setPreselectedDate}
-                  returnKeyType="next"
-                />
-                <Text style={s.fieldLabel}>Time (optional)</Text>
-                <TextInput
-                  style={s.input}
-                  placeholder="e.g. 10:30"
-                  placeholderTextColor={TEXT_MUTED}
-                  value={preselectedTime}
-                  onChangeText={setPreselectedTime}
-                  returnKeyType="done"
-                />
+              <View style={{ gap: 12, marginTop: 4 }}>
+
+                {/* Location selection — only if >1 location */}
+                {showLocationStep && (
+                  <View>
+                    <Text style={s.sectionHeader}>Location</Text>
+                    {locations.map(loc => (
+                      <Pressable
+                        key={loc.localId}
+                        style={({ pressed }) => [
+                          s.locationCard,
+                          selectedLocation?.localId === loc.localId && { borderColor: GREEN_ACCENT, borderWidth: 2 },
+                          pressed && { opacity: 0.85 },
+                        ]}
+                        onPress={() => {
+                          if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setSelectedLocation(loc);
+                          setSelectedDate(null);
+                          setSelectedSlot(null);
+                          // Reset availability cache so it re-fetches for new location
+                          lastAvailFetchKey.current = "";
+                        }}
+                      >
+                        <View style={s.locationIcon}>
+                          <IconSymbol name="location.fill" size={16} color={GREEN_ACCENT} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={s.locationName}>{loc.name}</Text>
+                          {loc.address ? <Text style={s.locationAddr} numberOfLines={1}>{loc.address}</Text> : null}
+                        </View>
+                        {selectedLocation?.localId === loc.localId && (
+                          <View style={[s.radioCheck, { backgroundColor: GREEN_ACCENT }]}>
+                            <IconSymbol name="checkmark" size={13} color="#fff" />
+                          </View>
+                        )}
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
+
+                {/* Single location info card */}
+                {!showLocationStep && selectedLocation && (
+                  <View style={[s.locationCard, { borderColor: `${GREEN_ACCENT}40` }]}>
+                    <View style={s.locationIcon}>
+                      <IconSymbol name="location.fill" size={16} color={GREEN_ACCENT} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.locationName}>{selectedLocation.name}</Text>
+                      {selectedLocation.address ? (
+                        <Text style={s.locationAddr} numberOfLines={1}>{selectedLocation.address}</Text>
+                      ) : null}
+                    </View>
+                  </View>
+                )}
+
+                {/* Calendar grid */}
+                <View>
+                  <Text style={s.sectionHeader}>Select a Date</Text>
+
+                  {/* Month navigation */}
+                  <View style={s.monthNav}>
+                    <Pressable
+                      style={({ pressed }) => [s.monthBtn, pressed && { opacity: 0.7 }]}
+                      onPress={() => {
+                        if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); }
+                        else setCalMonth(m => m - 1);
+                        lastAvailFetchKey.current = "";
+                      }}
+                    >
+                      <IconSymbol name="chevron.left" size={18} color={TEXT_PRIMARY} />
+                    </Pressable>
+                    <Text style={s.monthLabel}>{monthLabel}</Text>
+                    <Pressable
+                      style={({ pressed }) => [s.monthBtn, pressed && { opacity: 0.7 }]}
+                      onPress={() => {
+                        if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); }
+                        else setCalMonth(m => m + 1);
+                        lastAvailFetchKey.current = "";
+                      }}
+                    >
+                      <IconSymbol name="chevron.right" size={18} color={TEXT_PRIMARY} />
+                    </Pressable>
+                  </View>
+
+                  {/* Day headers */}
+                  <View style={s.dayHeaders}>
+                    {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+                      <Text key={i} style={s.dayHeader}>{d}</Text>
+                    ))}
+                  </View>
+
+                  {/* Loading indicator */}
+                  {loadingMonthAvail && (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                      <ActivityIndicator size="small" color={GREEN_ACCENT} />
+                      <Text style={{ color: TEXT_MUTED, fontSize: 11 }}>Checking availability…</Text>
+                    </View>
+                  )}
+
+                  {/* Calendar cells */}
+                  <View style={s.calGrid}>
+                    {Array.from({ length: new Date(calYear, calMonth, 1).getDay() }).map((_, i) => (
+                      <View key={`empty-${i}`} style={s.calCell} />
+                    ))}
+                    {calDays.map((day) => {
+                      const isPast = day < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                      const dateStr = day.toISOString().split("T")[0];
+                      const isUnavailable = !isPast && unavailableDates.has(dateStr);
+                      const isSelected = selectedDate?.toDateString() === day.toDateString();
+                      const isToday = day.toDateString() === today.toDateString();
+                      const isDisabled = isPast || isUnavailable;
+                      return (
+                        <Pressable
+                          key={day.toISOString()}
+                          style={({ pressed }) => [
+                            s.calCell,
+                            isSelected && { backgroundColor: LIME, borderRadius: 20 },
+                            isToday && !isSelected && { borderWidth: 1.5, borderColor: GREEN_ACCENT, borderRadius: 20 },
+                            (isPast || isUnavailable) && { opacity: 0.3 },
+                            pressed && !isDisabled && { opacity: 0.7 },
+                          ]}
+                          onPress={() => {
+                            if (isDisabled) return;
+                            if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setSelectedDate(day);
+                            setSelectedSlot(null);
+                          }}
+                          disabled={isDisabled}
+                        >
+                          <Text style={{
+                            color: isSelected ? "#FFFFFF" : isUnavailable ? TEXT_MUTED : TEXT_PRIMARY,
+                            fontSize: 14,
+                            fontWeight: isToday ? "700" : "400",
+                          }}>
+                            {day.getDate()}
+                          </Text>
+                          {isUnavailable && !isPast && (
+                            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: TEXT_MUTED, marginTop: 1 }} />
+                          )}
+                          {!isUnavailable && !isPast && slotCounts[dateStr] != null && (
+                            <Text style={{
+                              fontSize: 9,
+                              fontWeight: "700",
+                              color: isSelected ? "rgba(255,255,255,0.85)" : GREEN_ACCENT,
+                              marginTop: 1,
+                              lineHeight: 11,
+                            }}>
+                              {slotCounts[dateStr]}
+                            </Text>
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* Time slot grid — shown after a date is selected */}
+                {selectedDate && (
+                  <View>
+                    <View style={s.timeSectionHeader}>
+                      <IconSymbol name="clock" size={15} color={GREEN_ACCENT} />
+                      <Text style={s.timeSectionTitle}>
+                        Available Times · {formatDateLabel(selectedDate)}
+                      </Text>
+                    </View>
+                    {loadingSlots ? (
+                      <ActivityIndicator color={GREEN_ACCENT} style={{ marginTop: 12 }} />
+                    ) : slots.length === 0 ? (
+                      <View style={s.noSlots}>
+                        <Text style={s.noSlotsText}>No available times on this date.</Text>
+                        <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Try selecting a different date above.</Text>
+                      </View>
+                    ) : (
+                      <View style={s.slotsGrid}>
+                        {slots.map((time) => {
+                          const isSelected = selectedSlot === time;
+                          return (
+                            <Pressable
+                              key={time}
+                              style={({ pressed }) => [
+                                s.slotBtn,
+                                { backgroundColor: isSelected ? LIME : CARD_BG, borderColor: isSelected ? LIME : CARD_BORDER },
+                                pressed && { opacity: 0.8 },
+                              ]}
+                              onPress={() => {
+                                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setSelectedSlot(isSelected ? null : time);
+                              }}
+                            >
+                              <Text style={{ color: isSelected ? "#FFFFFF" : TEXT_PRIMARY, fontSize: 14, fontWeight: "600" }}>
+                                {time}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                    )}
+                    {selectedSlot && (
+                      <View style={[s.selectedTimeBanner, { backgroundColor: `${GREEN_ACCENT}15`, borderColor: `${GREEN_ACCENT}40` }]}>
+                        <IconSymbol name="checkmark.circle.fill" size={18} color={GREEN_ACCENT} />
+                        <Text style={{ color: GREEN_ACCENT, fontWeight: "600", fontSize: 14 }}>
+                          {formatDateLabel(selectedDate)} at {selectedSlot}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
             )}
           </View>
@@ -569,7 +881,7 @@ export default function ClientBuyGiftScreen() {
             <Text style={s.stepSub}>How would you like to pay for this gift?</Text>
 
             {/* Summary */}
-            <View style={[s.summaryCard]}>
+            <View style={s.summaryCard}>
               <Text style={s.summaryTitle}>Gift Summary</Text>
               {selectedItemsList.map(item => (
                 <View key={item.localId} style={s.summaryRow}>
@@ -577,6 +889,14 @@ export default function ClientBuyGiftScreen() {
                   <Text style={s.summaryItemPrice}>{formatPrice(item.price)}</Text>
                 </View>
               ))}
+              {!recipientChoosesDate && selectedDate && (
+                <View style={s.summaryRow}>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>Date</Text>
+                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13 }}>
+                    {formatDateLabel(selectedDate)}{selectedSlot ? ` at ${selectedSlot}` : ""}
+                  </Text>
+                </View>
+              )}
               <View style={[s.summaryRow, { borderTopWidth: 1, borderTopColor: CARD_BORDER, marginTop: 8, paddingTop: 8 }]}>
                 <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>Total</Text>
                 <Text style={{ color: GREEN_ACCENT, fontWeight: "800", fontSize: 16 }}>{formatPrice(totalValue)}</Text>
@@ -782,6 +1102,107 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  // Location
+  locationCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: CARD_BG,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: CARD_BORDER,
+    padding: 12,
+    gap: 10,
+  },
+  locationIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: `${GREEN_ACCENT}15`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  locationName: { color: TEXT_PRIMARY, fontSize: 14, fontWeight: "600" },
+  locationAddr: { color: TEXT_MUTED, fontSize: 12, marginTop: 2 },
+  // Calendar
+  monthNav: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  monthBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: CARD_BG,
+  },
+  monthLabel: {
+    color: TEXT_PRIMARY,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  dayHeaders: {
+    flexDirection: "row",
+    marginBottom: 4,
+  },
+  dayHeader: {
+    flex: 1,
+    textAlign: "center",
+    color: TEXT_MUTED,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  calGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  calCell: {
+    width: "14.28%",
+    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 2,
+  },
+  // Time slots
+  timeSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  timeSectionTitle: {
+    color: TEXT_PRIMARY,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  noSlots: { alignItems: "center", paddingVertical: 16, gap: 4 },
+  noSlotsText: { color: TEXT_MUTED, fontSize: 14, fontWeight: "600" },
+  slotsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  slotBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  selectedTimeBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    marginTop: 8,
+  },
+  // Staff
   staffCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -802,6 +1223,7 @@ const s = StyleSheet.create({
   },
   staffName: { color: TEXT_PRIMARY, fontSize: 15, fontWeight: "600" },
   staffRole: { color: TEXT_MUTED, fontSize: 12, marginTop: 2 },
+  // Payment
   summaryCard: {
     backgroundColor: CARD_BG,
     borderRadius: 14,

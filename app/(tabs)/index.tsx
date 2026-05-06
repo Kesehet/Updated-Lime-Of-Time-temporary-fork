@@ -346,6 +346,37 @@ export default function HomeScreen() {
   const [drillDownAppointments, setDrillDownAppointments] = useState<DrillDownAppointment[]>([]);
   const [drillDownRevenue, setDrillDownRevenue] = useState(0);
 
+  // ─── Recent Messages (business owner inbox preview) ─────────────────
+  interface HomeMessageThread {
+    clientAccountId: number;
+    clientName: string;
+    clientPhone: string | null;
+    lastMessage: string;
+    lastMessageAt: string;
+    unreadCount: number;
+    senderType: "client" | "business";
+  }
+  const [recentMessages, setRecentMessages] = useState<HomeMessageThread[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+
+  const loadRecentMessages = useCallback(async () => {
+    setMessagesLoading(true);
+    try {
+      const data = await apiCall<{ inbox: HomeMessageThread[] }>("/api/business/messages");
+      setRecentMessages((data.inbox ?? []).slice(0, 3));
+    } catch {
+      // silently fail — messages card is non-critical
+    } finally {
+      setMessagesLoading(false);
+    }
+  }, [apiCall]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadRecentMessages();
+    }, [loadRecentMessages])
+  );
+
   // ─── Push Permission Banner ──────────────────────────────────────────
   const [pushDenied, setPushDenied] = useState(false);
   useFocusEffect(
@@ -2623,7 +2654,99 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* ─── Schedule Card (Today + Upcoming) ─────────────────────── */}
+        {/* ─── Recent Messages Card ───────────────────────────────────── */}
+        <View style={{ marginTop: 24, marginBottom: 4 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <IconSymbol name="message.fill" size={16} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 0 }]}>Messages</Text>
+              {recentMessages.some(t => t.unreadCount > 0) && (
+                <View style={{ backgroundColor: colors.error, borderRadius: 8, minWidth: 18, height: 18, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}>
+                  <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>
+                    {recentMessages.reduce((s, t) => s + t.unreadCount, 0)}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Pressable
+              onPress={() => router.push("/(tabs)/clients?tab=messages" as any)}
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            >
+              <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "600" }}>View All</Text>
+            </Pressable>
+          </View>
+
+          {messagesLoading ? (
+            <ActivityIndicator color={colors.primary} style={{ marginVertical: 12 }} />
+          ) : recentMessages.length === 0 ? (
+            <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border, padding: 20, alignItems: "center", gap: 6 }]}>
+              <IconSymbol name="message.fill" size={28} color={colors.muted} />
+              <Text style={{ color: colors.muted, fontSize: 14, textAlign: "center" }}>No messages yet</Text>
+              <Text style={{ color: colors.muted, fontSize: 12, textAlign: "center" }}>Client messages will appear here</Text>
+            </View>
+          ) : (
+            <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border, padding: 0, overflow: "hidden" }]}>
+              {recentMessages.map((thread, idx) => {
+                const isUnread = thread.unreadCount > 0;
+                const timeAgo = (() => {
+                  const diff = Date.now() - new Date(thread.lastMessageAt).getTime();
+                  const mins = Math.floor(diff / 60000);
+                  if (mins < 1) return "just now";
+                  if (mins < 60) return `${mins}m ago`;
+                  const hrs = Math.floor(mins / 60);
+                  if (hrs < 24) return `${hrs}h ago`;
+                  return `${Math.floor(hrs / 24)}d ago`;
+                })();
+                return (
+                  <Pressable
+                    key={thread.clientAccountId}
+                    onPress={() => router.push({ pathname: "/client-message-thread-business" as any, params: { clientAccountId: String(thread.clientAccountId), clientName: thread.clientName } })}
+                    style={({ pressed }) => ([
+                      {
+                        flexDirection: "row",
+                        alignItems: "center",
+                        padding: 14,
+                        gap: 12,
+                        borderBottomWidth: idx < recentMessages.length - 1 ? 1 : 0,
+                        borderBottomColor: colors.border,
+                        backgroundColor: isUnread ? colors.primary + "08" : "transparent",
+                        opacity: pressed ? 0.8 : 1,
+                      },
+                    ])}
+                  >
+                    {/* Avatar */}
+                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary + "20", alignItems: "center", justifyContent: "center" }}>
+                      <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 16 }}>
+                        {thread.clientName.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                    {/* Content */}
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                        <Text style={{ color: colors.foreground, fontWeight: isUnread ? "700" : "600", fontSize: 14 }} numberOfLines={1}>
+                          {thread.clientName}
+                        </Text>
+                        <Text style={{ color: colors.muted, fontSize: 11 }}>{timeAgo}</Text>
+                      </View>
+                      <Text style={{ color: isUnread ? colors.foreground : colors.muted, fontSize: 13, lineHeight: 18 }} numberOfLines={1}>
+                        {thread.senderType === "business" ? "You: " : ""}{thread.lastMessage}
+                      </Text>
+                    </View>
+                    {/* Unread badge */}
+                    {isUnread && (
+                      <View style={{ backgroundColor: colors.primary, borderRadius: 10, minWidth: 20, height: 20, alignItems: "center", justifyContent: "center", paddingHorizontal: 5 }}>
+                        <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>{thread.unreadCount}</Text>
+                      </View>
+                    )}
+                    <IconSymbol name="chevron.right" size={14} color={colors.muted} />
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+        </View>
+
+        {/* ─── Schedule Card (Today + Upcoming) ───────────────── */}
         <ScheduleCard
           todayAppts={todayAppts}
           upcomingAppointments={upcomingAppointments}

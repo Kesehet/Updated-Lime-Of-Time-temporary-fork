@@ -1890,3 +1890,16 @@
 - [x] Wire Buy a Gift Card button to business detail page
 - [x] Apply dark portal theme to all 7 booking wizard steps (white text, glass cards, no colors.*)
 - [x] Show staff member photos in booking wizard staff selection step
+- [ ] Fix appointment detail: add icons for duration/business/address, rename Location to Business, tappable address opens maps
+- [ ] Replace gift card date step with real calendar (location selector, working-days, time slots)
+- [ ] Wire two-way messaging: client and business owner share same DB threads
+- [ ] Add Messages card to business owner Home page (3 recent conversations)
+- [ ] Push notifications when client or business owner sends a message
+
+## Phase: Messaging & Calendar Improvements (May 2026)
+- [x] Fix appointment detail: add icons for duration/business/address, rename Location to Business, tappable address opens maps
+- [x] Replace gift card date step with real calendar (location selector, working-days, time slots)
+- [x] Wire two-way messaging: client and business owner share same DB threads (already wired via clientMessages table)
+- [x] Add Messages card to business owner Home page (3 recent conversations with unread badges)
+- [x] Fix Haptics import in client-message-thread-business.tsx
+- [x] Fix business?.name → business?.businessName in client-business-detail.tsx gift card button
