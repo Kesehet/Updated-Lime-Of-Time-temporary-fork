@@ -789,7 +789,9 @@ export function registerClientRoutes(app: Express) {
         return;
       }
       const { serviceLocalId } = req.query;
-      const photos = await db.getServicePhotos(owner.id, serviceLocalId as string | undefined);
+      const rawPhotos = await db.getServicePhotos(owner.id, serviceLocalId as string | undefined);
+      // Map DB field `uri` → `url` and `note` → `caption` for the client gallery
+      const photos = rawPhotos.map((p) => ({ ...p, url: p.uri, caption: p.note ?? null }));
       res.json({ photos });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

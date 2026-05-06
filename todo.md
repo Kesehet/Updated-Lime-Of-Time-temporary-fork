@@ -1800,8 +1800,8 @@
 ## Phase: Client Portal QA + Settings + Notifications (May 2026)
 - [ ] Audit and fix client booking flow end-to-end (profile-select → sign-in → discover → booking wizard → confirmation → appointment detail)
 - [x] Add clientPortalVisible toggle to Business Settings screen
-- [ ] Wire push notification deep-link: client_message type → navigate to client-message-thread-business screen
-- [ ] Wire push notification deep-link: business_message type → navigate to client-message-thread screen
+- [x] Wire push notification deep-link: client_message type → navigate to client-message-thread-business screen
+- [x] Wire push notification deep-link: business_message type → navigate to client-message-thread screen
 - [ ] TypeScript check passes after all changes
 
 ## Phase: Bug Fixes + Client Portal Features (May 2026)
@@ -1809,12 +1809,18 @@
 - [ ] Fix client sign-in "Failed to fetch" on web preview
 - [ ] Fix Discover "No businesses found" - ensure clientPortalVisible businesses appear
 - [x] Add appointment_confirmed push notification to client when business confirms
-- [ ] Wire servicePhotos to client business detail screen gallery
+- [x] Wire servicePhotos to client business detail screen gallery
 - [x] Add review prompt sheet after appointment completion in client portal
 ## Phase: Discover + Routing Fixes (May 2026)
 - [x] Fix Discover zip code / city search: accept `q` or `search` param, geocode `location` param for zip/city
 - [x] Fix Settings portal-visibility toggle to call geocoding endpoint (sets lat/lng so business appears in discovery)
 - [x] Fix portal-visibility endpoint to also geocode location addresses as fallback
 - [x] Fix startup routing flash: opaque overlay hides stale routes until splash finishes
-- [ ] Fix initial routing flash: app briefly shows last visited page before landing on profile-select/login (white flash / stale route on app open)
+- [x] Fix initial routing flash: app briefly shows last visited page before landing on profile-select/login (white flash / stale route on app open)
 - [x] Fix "Failed to fetch" error on client profile onboarding Save & Continue
+## Phase: Service Photos + Near Me + Notification Deep-links (May 2026)
+- [x] Wire service photos to client business detail gallery screen (fix uri→url mapping + photos array parsing)
+- [x] Add GPS "Near me" button on Discover screen to auto-fill location
+- [x] Wire push notification deep-link: client_message type → navigate to client-message-thread-business (already working)
+- [x] Wire push notification deep-link: business_message type → navigate to client-message-thread (already working)
+- [x] Test client profile creation end-to-end and verify DB storage (phone login → PATCH → GET verified)

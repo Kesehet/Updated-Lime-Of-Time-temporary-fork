@@ -242,6 +242,7 @@ export default function DiscoverScreen() {
   const [userLng, setUserLng] = useState<number | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showRadiusPicker, setShowRadiusPicker] = useState(false);
+  const [nearMeLoading, setNearMeLoading] = useState(false);
 
   const apiBase = getApiBaseUrl();
 
@@ -315,6 +316,28 @@ export default function DiscoverScreen() {
     fetchBusinesses(userLat ?? undefined, userLng ?? undefined, searchQuery, state.discoverCategory, state.discoverRadius);
   };
 
+  const handleNearMe = async () => {
+    setNearMeLoading(true);
+    setLocationError(null);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setLocationError("Location access denied.");
+        setNearMeLoading(false);
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setUserLat(loc.coords.latitude);
+      setUserLng(loc.coords.longitude);
+      setSearchQuery("");
+      fetchBusinesses(loc.coords.latitude, loc.coords.longitude, "", state.discoverCategory, state.discoverRadius);
+    } catch {
+      setLocationError("Could not get location.");
+    } finally {
+      setNearMeLoading(false);
+    }
+  };
+
   const handleCategorySelect = (cat: string) => {
     const newCat = cat === "All" ? null : cat;
     dispatch({ type: "SET_DISCOVER_CATEGORY", payload: newCat });
@@ -377,9 +400,17 @@ export default function DiscoverScreen() {
             onSubmitEditing={handleSearch}
             returnKeyType="search"
           />
-          {searchQuery.length > 0 && (
+          {searchQuery.length > 0 ? (
             <Pressable onPress={() => { setSearchQuery(""); fetchBusinesses(userLat ?? undefined, userLng ?? undefined, "", state.discoverCategory, state.discoverRadius); }}>
               <IconSymbol name="xmark.circle.fill" size={15} color={TEXT_MUTED} />
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={handleNearMe}
+              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 10, backgroundColor: nearMeLoading ? "rgba(143,191,106,0.1)" : "rgba(143,191,106,0.15)" })}
+            >
+              <IconSymbol name="location.fill" size={12} color={GREEN_ACCENT} />
+              <Text style={{ color: GREEN_ACCENT, fontSize: 11, fontWeight: "600" }}>{nearMeLoading ? "..." : "Near me"}</Text>
             </Pressable>
           )}
         </View>

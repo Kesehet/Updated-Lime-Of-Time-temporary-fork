@@ -114,7 +114,7 @@ export default function ClientBusinessDetailScreen() {
         if (svcRes.ok) { const d = await svcRes.json(); setServices(Array.isArray(d) ? d : []); }
         if (staffRes.ok) { const d = await staffRes.json(); setStaff(Array.isArray(d) ? d : []); }
         if (revRes.ok) { const d = await revRes.json(); setReviews(Array.isArray(d) ? d : []); }
-        if (photosRes.ok) { const d = await photosRes.json(); setServicePhotos(Array.isArray(d) ? d : []); }
+        if (photosRes.ok) { const d = await photosRes.json(); setServicePhotos(Array.isArray(d.photos) ? d.photos : (Array.isArray(d) ? d : [])); }
         if (locRes.ok) { const d = await locRes.json(); setLocations(Array.isArray(d) ? d : []); }
       } catch (err) {
         console.warn("[BizDetail] fetch error:", err);
