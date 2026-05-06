@@ -1863,3 +1863,11 @@
 - [ ] Show client's own review highlighted at top of Reviews tab
 - [ ] Add review count badge to Reviews tab label
 - [ ] Improve Discover screen visual design with dark green animations
+- [ ] Fix Wellness Suite DB: enable clientPortalVisible + set Pittsburgh 15237 coords
+- [ ] Add dark green background animation to all client portal screens
+- [x] Add service category chips to business detail Services tab
+- [x] Add service images to Services tab cards
+- [x] Add Write a Review button on business detail page
+- [ ] Add sort by Most Reviews on Discover
+- [x] Improve Recently Viewed/Visited card design (more professional)
+- [ ] Push notification after appointment completion (review prompt)

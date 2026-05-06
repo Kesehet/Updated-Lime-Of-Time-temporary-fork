@@ -3,9 +3,9 @@
  * Fetches data from separate public API endpoints with null-safety guards.
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
-  View, Text, ScrollView, Pressable, StyleSheet,
+  View, Text, ScrollView, Pressable, StyleSheet, TextInput,
   ActivityIndicator, Alert, Platform, Linking, Dimensions, FlatList, Modal,
 } from "react-native";
 import { Image } from "expo-image";
@@ -16,7 +16,7 @@ import { useClientStore, SavedBusiness } from "@/lib/client-store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { getApiBaseUrl } from "@/constants/oauth";
 import * as Haptics from "expo-haptics";
-import { FuturisticBackground } from "@/components/futuristic-background";
+import { ClientPortalBackground } from "@/components/client-portal-background";
 
 function formatPhone(raw: string): string {
   const digits = (raw ?? "").replace(/\D/g, "");
@@ -91,6 +91,21 @@ export default function ClientBusinessDetailScreen() {
   const [isSaved, setIsSaved] = useState(false);
   const [savingToggle, setSavingToggle] = useState(false);
   const [activeTab, setActiveTab] = useState<"services"|"staff"|"hours"|"reviews"|"gallery">("services");
+  const [serviceCategory, setServiceCategory] = useState<string | null>(null);
+  const [detailReviewVisible, setDetailReviewVisible] = useState(false);
+  const [detailReviewRating, setDetailReviewRating] = useState(5);
+  const [detailReviewComment, setDetailReviewComment] = useState("");
+  const [detailReviewSubmitting, setDetailReviewSubmitting] = useState(false);
+  // Derived: unique categories from services
+  const serviceCategories = useMemo(() => {
+    const cats = services.map(s => s.category).filter(Boolean) as string[];
+    return Array.from(new Set(cats));
+  }, [services]);
+  // Derived: services filtered by selected category
+  const filteredServices = useMemo(() => {
+    if (!serviceCategory) return services;
+    return services.filter(s => s.category === serviceCategory);
+  }, [services, serviceCategory]);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [lightboxVisible, setLightboxVisible] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -175,7 +190,7 @@ export default function ClientBusinessDetailScreen() {
   if (loading) {
     return (
       <ScreenContainer>
-        <FuturisticBackground />
+        <ClientPortalBackground />
         <View style={s.loadingContainer}><ActivityIndicator size="large" color={LIME_GREEN} /></View>
       </ScreenContainer>
     );
@@ -184,7 +199,7 @@ export default function ClientBusinessDetailScreen() {
   if (!business) {
     return (
       <ScreenContainer className="px-6">
-        <FuturisticBackground />
+        <ClientPortalBackground />
         <View style={s.loadingContainer}>
           <Text style={{ color: colors.foreground, fontSize: 16 }}>Business not found.</Text>
           <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
@@ -202,7 +217,7 @@ export default function ClientBusinessDetailScreen() {
 
   return (
     <ScreenContainer>
-      <FuturisticBackground />
+      <ClientPortalBackground />
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header Banner */}
         <View style={[s.banner, { backgroundColor: LIME_GREEN, overflow: "hidden" }]}>
@@ -277,24 +292,59 @@ export default function ClientBusinessDetailScreen() {
 
         {/* Services Tab */}
         {activeTab === "services" && (
-          <View style={s.tabContent}>
-            {services.length === 0
-              ? <Text style={[s.emptyText, { color: colors.muted }]}>No services listed yet.</Text>
-              : services.map((svc) => (
-                <View key={svc.localId} style={[s.serviceCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  <View style={s.serviceInfo}>
-                    <Text style={[s.serviceName, { color: colors.foreground }]}>{svc.name}</Text>
-                    {svc.description && <Text style={[s.serviceDesc, { color: colors.muted }]} numberOfLines={2}>{svc.description}</Text>}
-                    <View style={s.serviceMeta}>
-                      <Text style={[s.serviceDuration, { color: colors.muted }]}>{svc.duration} min</Text>
-                      <Text style={[s.servicePrice, { color: colors.foreground }]}>{formatPrice(svc.price)}</Text>
+          <View>
+            {/* Category filter chips */}
+            {serviceCategories.length > 1 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, gap: 8, flexDirection: "row" }}>
+                <Pressable
+                  onPress={() => setServiceCategory(null)}
+                  style={[s.catChip, !serviceCategory && { backgroundColor: LIME_GREEN }]}
+                >
+                  <Text style={[s.catChipText, !serviceCategory && { color: "#fff" }]}>All</Text>
+                </Pressable>
+                {serviceCategories.map(cat => (
+                  <Pressable
+                    key={cat}
+                    onPress={() => setServiceCategory(serviceCategory === cat ? null : cat)}
+                    style={[s.catChip, serviceCategory === cat && { backgroundColor: LIME_GREEN }]}
+                  >
+                    <Text style={[s.catChipText, serviceCategory === cat && { color: "#fff" }]}>{cat}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            )}
+            <View style={s.tabContent}>
+              {filteredServices.length === 0
+                ? <Text style={[s.emptyText, { color: colors.muted }]}>No services in this category.</Text>
+                : filteredServices.map((svc) => (
+                  <View key={svc.localId} style={[s.serviceCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: "column", padding: 0, overflow: "hidden" }]}>
+                    {/* Service image */}
+                    {svc.photoUri && (
+                      <Image
+                        source={{ uri: svc.photoUri }}
+                        style={{ width: "100%", height: 140 }}
+                        contentFit="cover"
+                      />
+                    )}
+                    <View style={{ padding: 14, flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <View style={s.serviceInfo}>
+                        {svc.category && (
+                          <Text style={{ fontSize: 10, fontWeight: "700", color: LIME_GREEN, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>{svc.category}</Text>
+                        )}
+                        <Text style={[s.serviceName, { color: colors.foreground }]}>{svc.name}</Text>
+                        {svc.description && <Text style={[s.serviceDesc, { color: colors.muted }]} numberOfLines={2}>{svc.description}</Text>}
+                        <View style={s.serviceMeta}>
+                          <Text style={[s.serviceDuration, { color: colors.muted }]}>⏱ {svc.duration} min</Text>
+                          <Text style={[s.servicePrice, { color: colors.foreground }]}>{formatPrice(svc.price)}</Text>
+                        </View>
+                      </View>
+                      <Pressable style={({ pressed }) => [s.bookBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]} onPress={() => handleBookService(svc)}>
+                        <Text style={s.bookBtnText}>Book</Text>
+                      </Pressable>
                     </View>
                   </View>
-                  <Pressable style={({ pressed }) => [s.bookBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]} onPress={() => handleBookService(svc)}>
-                    <Text style={s.bookBtnText}>Book</Text>
-                  </Pressable>
-                </View>
-              ))}
+                ))}
+            </View>
           </View>
         )}
 
@@ -402,6 +452,16 @@ export default function ClientBusinessDetailScreen() {
         {/* Reviews Tab */}
         {activeTab === "reviews" && (
           <View style={s.tabContent}>
+            {/* Write a Review button */}
+            {state.account && !reviews.some(r => r.clientName === (state.account?.name ?? "")) && (
+              <Pressable
+                onPress={() => setDetailReviewVisible(true)}
+                style={({ pressed }) => [s.writeReviewBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+              >
+                <IconSymbol name="star.fill" size={15} color="#fff" />
+                <Text style={s.writeReviewBtnText}>Write a Review</Text>
+              </Pressable>
+            )}
             {reviews.length === 0
               ? <Text style={[s.emptyText, { color: colors.muted }]}>No reviews yet.</Text>
               : (() => {
@@ -504,6 +564,64 @@ export default function ClientBusinessDetailScreen() {
         </View>
       </Modal>
 
+      {/* Write a Review Modal */}
+      <Modal visible={detailReviewVisible} transparent animationType="slide" onRequestClose={() => setDetailReviewVisible(false)}>
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <View style={[s.reviewModal, { backgroundColor: colors.surface }]}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <Text style={[s.reviewModalTitle, { color: colors.foreground }]}>Write a Review</Text>
+              <Pressable onPress={() => setDetailReviewVisible(false)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                <IconSymbol name="xmark" size={20} color={colors.muted} />
+              </Pressable>
+            </View>
+            <Text style={[{ fontSize: 13, color: colors.muted, marginBottom: 8 }]}>{business?.businessName}</Text>
+            {/* Star rating */}
+            <View style={{ flexDirection: "row", justifyContent: "center", gap: 10, marginBottom: 8 }}>
+              {[1,2,3,4,5].map(star => (
+                <Pressable key={star} onPress={() => setDetailReviewRating(star)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.9 : 1 }] })}>
+                  <IconSymbol name="star.fill" size={36} color={star <= detailReviewRating ? colors.warning : colors.border} />
+                </Pressable>
+              ))}
+            </View>
+            <Text style={{ textAlign: "center", color: LIME_GREEN, fontWeight: "700", fontSize: 14, marginBottom: 12 }}>
+              {["Terrible","Poor","Okay","Good","Excellent!"][detailReviewRating - 1]}
+            </Text>
+            <TextInput
+              style={[s.reviewInput, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+              placeholder="Share your experience (optional)"
+              placeholderTextColor={colors.muted}
+              multiline numberOfLines={3}
+              value={detailReviewComment}
+              onChangeText={setDetailReviewComment}
+            />
+            <Pressable
+              style={({ pressed }) => [s.reviewSubmitBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }, detailReviewSubmitting && { opacity: 0.6 }]}
+              onPress={async () => {
+                if (!state.account || detailReviewSubmitting) return;
+                setDetailReviewSubmitting(true);
+                try {
+                  const res = await apiCall<any>("/api/client/reviews", {
+                    method: "POST",
+                    body: JSON.stringify({ businessOwnerId: business?.id, rating: detailReviewRating, comment: detailReviewComment.trim() || null }),
+                  });
+                  if (res) {
+                    const newRev = { clientName: state.account.name ?? "You", rating: detailReviewRating, comment: detailReviewComment.trim() || null, createdAt: new Date().toISOString() };
+                    setReviews(prev => [newRev as any, ...prev]);
+                    setDetailReviewVisible(false);
+                    setDetailReviewComment("");
+                    setDetailReviewRating(5);
+                    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  }
+                } catch (err) { console.warn("[DetailReview]", err); }
+                finally { setDetailReviewSubmitting(false); }
+              }}
+              disabled={detailReviewSubmitting}
+            >
+              <Text style={s.reviewSubmitBtnText}>{detailReviewSubmitting ? "Submitting..." : "Submit Review"}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
       {/* Sticky Book Button */}
       <View style={[s.stickyBook, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
         <Pressable
@@ -542,6 +660,8 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     tabContent: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
     emptyText: { textAlign: "center", fontSize: 14, paddingVertical: 24 },
     serviceCard: { flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1, padding: 14, gap: 12 },
+    catChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: LIME_GREEN, backgroundColor: "transparent" },
+    catChipText: { fontSize: 13, fontWeight: "600", color: LIME_GREEN },
     serviceInfo: { flex: 1, gap: 4 },
     serviceName: { fontSize: 15, fontWeight: "600" },
     serviceDesc: { fontSize: 12, lineHeight: 17 },
@@ -568,6 +688,13 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     reviewStars: { flexDirection: "row", gap: 2 },
     reviewComment: { fontSize: 13, lineHeight: 18 },
     reviewDate: { fontSize: 11 },
+    writeReviewBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: LIME_GREEN, borderRadius: 12, paddingVertical: 12, marginBottom: 4 },
+    writeReviewBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+    reviewModal: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, gap: 0 },
+    reviewModalTitle: { fontSize: 18, fontWeight: "700" },
+    reviewInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 14, minHeight: 80, textAlignVertical: "top", marginBottom: 16 },
+    reviewSubmitBtn: { backgroundColor: LIME_GREEN, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
+    reviewSubmitBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
     stickyBook: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 16, borderTopWidth: 1 },
     stickyBookBtn: { backgroundColor: LIME_GREEN, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 14 },
     stickyBookBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },

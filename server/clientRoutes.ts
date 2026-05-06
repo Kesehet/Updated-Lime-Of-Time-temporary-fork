@@ -302,6 +302,15 @@ export function registerClientRoutes(app: Express) {
           return true;
         })
         .sort((a, b) => {
+          // Sort by review count (most reviews first)
+          if (sortBy === "reviews") {
+            const rcA = (a as any).reviewCount ?? 0;
+            const rcB = (b as any).reviewCount ?? 0;
+            if (rcB !== rcA) return rcB - rcA;
+            const rA = (a as any).avgRating ?? 0;
+            const rB = (b as any).avgRating ?? 0;
+            return rB - rA;
+          }
           // When both have distance, always sort by distance first
           if (sortBy !== "rating" && a.distanceKm !== null && b.distanceKm !== null) {
             return a.distanceKm - b.distanceKm;

@@ -30,7 +30,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { scheduleAppointmentReminders } from "@/lib/notifications";
 import * as Haptics from "expo-haptics";
-import { FuturisticBackground } from "@/components/futuristic-background";
+import { ClientPortalBackground } from "@/components/client-portal-background";
 
 const LIME_GREEN = "#4A7C59";
 
@@ -388,7 +388,7 @@ export default function ClientBookingWizardScreen() {
   if (loadingData) {
     return (
       <ScreenContainer>
-        <FuturisticBackground />
+        <ClientPortalBackground />
         <View style={s.loadingContainer}>
           <ActivityIndicator color={LIME_GREEN} size="large" />
           <Text style={{ color: colors.muted, marginTop: 12 }}>Loading...</Text>
@@ -405,7 +405,7 @@ export default function ClientBookingWizardScreen() {
 
   return (
     <ScreenContainer>
-      <FuturisticBackground />
+      <ClientPortalBackground />
       {/* Header */}
       <View style={s.header}>
         <Pressable style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]} onPress={handleBack}>

@@ -171,30 +171,31 @@ function RecentlyViewedSection({ items, router, onClear }: { items: RecentlyView
                 router.push({ pathname: "/client-business-detail", params: { slug: biz.customSlug ?? biz.slug } } as any);
               }}
             >
-              {/* Logo */}
-              <View style={[recentStyles.logoWrap, { backgroundColor: accentColor + "18" }]}>
+              {/* Cover image */}
+              <View style={[recentStyles.logoWrap, { backgroundColor: accentColor + "22" }]}>
                 {(biz.businessLogoUri || biz.logoUrl) ? (
                   <Image source={{ uri: biz.businessLogoUri ?? biz.logoUrl ?? "" }} style={recentStyles.logoImage} />
                 ) : (
-                  <Text style={{ fontSize: 22 }}>{emoji}</Text>
+                  <Text style={{ fontSize: 32 }}>{emoji}</Text>
                 )}
               </View>
-              {/* Name */}
-              <Text style={[recentStyles.name, { color: TEXT_PRIMARY }]} numberOfLines={2}>
-                {biz.businessName}
-              </Text>
-              {/* Rating badge */}
-              {biz.avgRating != null ? (
-                <View style={recentStyles.ratingBadge}>
-                  <Text style={recentStyles.ratingStar}>★</Text>
-                  <Text style={recentStyles.ratingBadgeText}>{biz.avgRating.toFixed(1)}</Text>
+              {/* Card body */}
+              <View style={recentStyles.cardBody}>
+                <Text style={[recentStyles.name, { color: TEXT_PRIMARY }]} numberOfLines={1}>
+                  {biz.businessName}
+                </Text>
+                {biz.avgRating != null ? (
+                  <View style={recentStyles.ratingBadge}>
+                    <Text style={recentStyles.ratingStar}>★</Text>
+                    <Text style={recentStyles.ratingBadgeText}>{biz.avgRating.toFixed(1)}</Text>
+                    {biz.reviewCount > 0 && <Text style={[recentStyles.service, { color: TEXT_MUTED }]}>({biz.reviewCount})</Text>}
+                  </View>
+                ) : (
+                  <Text style={[recentStyles.service, { color: TEXT_MUTED }]}>New</Text>
+                )}
+                <View style={[recentStyles.rebookBtn, { backgroundColor: accentColor + "18", borderColor: accentColor + "40" }]}>
+                  <Text style={[recentStyles.rebookText, { color: accentColor }]}>View</Text>
                 </View>
-              ) : (
-                <Text style={[recentStyles.service, { color: TEXT_MUTED }]}>New</Text>
-              )}
-              {/* View button */}
-              <View style={[recentStyles.rebookBtn, { backgroundColor: accentColor + "18", borderColor: accentColor + "40" }]}>
-                <Text style={[recentStyles.rebookText, { color: accentColor }]}>View</Text>
               </View>
             </Pressable>
           );
@@ -245,25 +246,25 @@ function RecentlyVisited({ items, router }: { items: RecentBusiness[]; router: R
                 router.push({ pathname: "/client-business-detail", params: { slug: biz.businessSlug } } as any);
               }}
             >
-              {/* Logo */}
-              <View style={[recentStyles.logoWrap, { backgroundColor: accentColor + "18" }]}>
+              {/* Cover image */}
+              <View style={[recentStyles.logoWrap, { backgroundColor: accentColor + "22" }]}>
                 {biz.businessLogoUri ? (
                   <Image source={{ uri: biz.businessLogoUri }} style={recentStyles.logoImage} />
                 ) : (
-                  <Text style={{ fontSize: 22 }}>{emoji}</Text>
+                  <Text style={{ fontSize: 32 }}>{emoji}</Text>
                 )}
               </View>
-              {/* Name */}
-              <Text style={[recentStyles.name, { color: TEXT_PRIMARY }]} numberOfLines={2}>
-                {biz.businessName}
-              </Text>
-              {/* Last service */}
-              <Text style={[recentStyles.service, { color: TEXT_MUTED }]} numberOfLines={1}>
-                {biz.lastService}
-              </Text>
-              {/* Rebook button */}
-              <View style={[recentStyles.rebookBtn, { backgroundColor: accentColor + "18", borderColor: accentColor + "40" }]}>
-                <Text style={[recentStyles.rebookText, { color: accentColor }]}>Rebook</Text>
+              {/* Card body */}
+              <View style={recentStyles.cardBody}>
+                <Text style={[recentStyles.name, { color: TEXT_PRIMARY }]} numberOfLines={1}>
+                  {biz.businessName}
+                </Text>
+                <Text style={[recentStyles.service, { color: TEXT_MUTED }]} numberOfLines={1}>
+                  {biz.lastService}
+                </Text>
+                <View style={[recentStyles.rebookBtn, { backgroundColor: accentColor + "18", borderColor: accentColor + "40" }]}>
+                  <Text style={[recentStyles.rebookText, { color: accentColor }]}>Rebook</Text>
+                </View>
               </View>
             </Pressable>
           );
@@ -275,8 +276,8 @@ function RecentlyVisited({ items, router }: { items: RecentBusiness[]; router: R
 
 const recentStyles = StyleSheet.create({
   section: {
-    marginTop: 4,
-    marginBottom: 2,
+    marginTop: 8,
+    marginBottom: 4,
   },
   header: {
     flexDirection: "row",
@@ -300,30 +301,37 @@ const recentStyles = StyleSheet.create({
     paddingBottom: 2,
   },
   card: {
-    width: 130,
-    borderRadius: 16,
+    width: 150,
+    borderRadius: 18,
     borderWidth: 1,
-    padding: 12,
-    gap: 6,
+    padding: 0,
+    gap: 0,
     alignItems: "flex-start",
+    overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
   },
   logoWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 150,
+    height: 90,
+    borderRadius: 0,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
   },
   logoImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 150,
+    height: 90,
+    borderRadius: 0,
+    resizeMode: "cover",
+  },
+  cardBody: {
+    padding: 10,
+    gap: 4,
+    width: "100%",
   },
   name: {
     fontSize: 13,
@@ -384,6 +392,7 @@ export default function DiscoverScreen() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showRadiusPicker, setShowRadiusPicker] = useState(false);
   const [nearMeLoading, setNearMeLoading] = useState(false);
+  const [sortMode, setSortMode] = useState<"default" | "rating" | "reviews">("default");
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedBusiness[]>([]);
   const clearRecentlyViewed = useCallback(async () => {
     await AsyncStorage.removeItem(RECENTLY_VIEWED_KEY);
@@ -429,7 +438,9 @@ export default function DiscoverScreen() {
       if (category && category !== "All") params.set("category", category);
       if (radius) params.set("radiusMiles", String(radius));
       // When no GPS coords are provided, sort by rating so best businesses appear first
-      if (lat == null && lng == null) params.set("sortBy", "rating");
+      if (sortMode === "rating") params.set("sortBy", "rating");
+      else if (sortMode === "reviews") params.set("sortBy", "reviews");
+      else if (lat == null && lng == null) params.set("sortBy", "rating");
       const res = await fetch(`${apiBase}/api/client/businesses/discover?${params.toString()}`);
       if (res.ok) {
         const json = await res.json();
@@ -752,6 +763,36 @@ export default function DiscoverScreen() {
             );
           })}
         </ScrollView>
+      </View>
+
+      {/* Sort toggle row */}
+      <View style={{ flexDirection: "row", paddingHorizontal: 16, gap: 8, marginBottom: 4 }}>
+        {(["default", "rating", "reviews"] as const).map((mode) => {
+          const labels = { default: "Best Match", rating: "Top Rated", reviews: "Most Reviews" };
+          const active = sortMode === mode;
+          return (
+            <Pressable
+              key={mode}
+              onPress={() => {
+                setSortMode(mode);
+                fetchBusinesses(userLat ?? undefined, userLng ?? undefined, searchQuery, state.discoverCategory, state.discoverRadius);
+              }}
+              style={({ pressed }) => ({
+                paddingHorizontal: 12,
+                paddingVertical: 5,
+                borderRadius: 20,
+                borderWidth: 1,
+                backgroundColor: active ? "rgba(143,191,106,0.2)" : CARD_BG,
+                borderColor: active ? GREEN_ACCENT : CARD_BORDER,
+                opacity: pressed ? 0.75 : 1,
+              })}
+            >
+              <Text style={{ color: active ? GREEN_ACCENT : TEXT_MUTED, fontSize: 12, fontWeight: active ? "700" : "500" }}>
+                {labels[mode]}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       {/* Recently Viewed (tap-based, persisted across sessions) */}
