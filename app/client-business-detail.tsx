@@ -15,6 +15,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useClientStore, SavedBusiness } from "@/lib/client-store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { getApiBaseUrl } from "@/constants/oauth";
+import { getCategoryDef, ALL_CATEGORY } from "@/constants/categories";
 import * as Haptics from "expo-haptics";
 import { ClientPortalBackground } from "@/components/client-portal-background";
 
@@ -357,14 +358,28 @@ export default function ClientBusinessDetailScreen() {
           <View>
             {serviceCategories.length > 1 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, gap: 8, flexDirection: "row" }}>
-                <Pressable onPress={() => setServiceCategory(null)} style={[s.catChip, !serviceCategory && { backgroundColor: ACCENT }]}>
-                  <Text style={[s.catChipText, !serviceCategory && { color: "#fff" }]}>All</Text>
+                {/* All chip */}
+                <Pressable
+                  onPress={() => setServiceCategory(null)}
+                  style={[s.catChip, !serviceCategory && { backgroundColor: ALL_CATEGORY.color + "30", borderColor: ALL_CATEGORY.color }]}
+                >
+                  <Text style={{ fontSize: 14, lineHeight: 18 }}>{ALL_CATEGORY.emoji}</Text>
+                  <Text style={[s.catChipText, !serviceCategory && { color: ALL_CATEGORY.color }]}>All</Text>
                 </Pressable>
-                {serviceCategories.map(cat => (
-                  <Pressable key={cat} onPress={() => setServiceCategory(serviceCategory === cat ? null : cat)} style={[s.catChip, serviceCategory === cat && { backgroundColor: ACCENT }]}>
-                    <Text style={[s.catChipText, serviceCategory === cat && { color: "#fff" }]}>{cat}</Text>
-                  </Pressable>
-                ))}
+                {serviceCategories.map(cat => {
+                  const catDef = getCategoryDef(cat);
+                  const isActive = serviceCategory === cat;
+                  return (
+                    <Pressable
+                      key={cat}
+                      onPress={() => setServiceCategory(isActive ? null : cat)}
+                      style={[s.catChip, isActive && { backgroundColor: catDef.color + "30", borderColor: catDef.color }]}
+                    >
+                      <Text style={{ fontSize: 14, lineHeight: 18 }}>{catDef.emoji}</Text>
+                      <Text style={[s.catChipText, isActive && { color: catDef.color }]}>{cat}</Text>
+                    </Pressable>
+                  );
+                })}
               </ScrollView>
             )}
             <View style={s.tabContent}>
@@ -788,7 +803,7 @@ const s = StyleSheet.create({
   tabContent: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
   emptyText: { textAlign: "center", fontSize: 14, paddingVertical: 24 },
   serviceCard: { borderRadius: 14, borderWidth: 1 },
-  catChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: ACCENT, backgroundColor: "transparent" },
+  catChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: ACCENT, backgroundColor: "transparent", flexDirection: "row", alignItems: "center", gap: 5 },
   catChipText: { fontSize: 13, fontWeight: "600", color: ACCENT },
   serviceInfo: { flex: 1, gap: 4 },
   serviceName: { fontSize: 15, fontWeight: "600" },

@@ -166,6 +166,12 @@ function RecentlyViewedSection({ items, router, onClear }: { items: RecentlyView
                 <Text style={[recentStyles.name, { color: TEXT_PRIMARY }]} numberOfLines={1}>
                   {biz.businessName}
                 </Text>
+                {biz.businessCategory ? (
+                  <View style={[recentStyles.categoryBadge, { backgroundColor: accentColor + "18", borderColor: accentColor + "40" }]}>
+                    <Text style={{ fontSize: 10, lineHeight: 13 }}>{emoji}</Text>
+                    <Text style={[recentStyles.categoryBadgeText, { color: accentColor }]} numberOfLines={1}>{biz.businessCategory}</Text>
+                  </View>
+                ) : null}
                 {biz.avgRating != null ? (
                   <View style={recentStyles.ratingBadge}>
                     <Text style={recentStyles.ratingStar}>★</Text>
@@ -242,6 +248,12 @@ function RecentlyVisited({ items, router }: { items: RecentBusiness[]; router: R
                 <Text style={[recentStyles.name, { color: TEXT_PRIMARY }]} numberOfLines={1}>
                   {biz.businessName}
                 </Text>
+                {biz.businessCategory ? (
+                  <View style={[recentStyles.categoryBadge, { backgroundColor: accentColor + "18", borderColor: accentColor + "40" }]}>
+                    <Text style={{ fontSize: 10, lineHeight: 13 }}>{emoji}</Text>
+                    <Text style={[recentStyles.categoryBadgeText, { color: accentColor }]} numberOfLines={1}>{biz.businessCategory}</Text>
+                  </View>
+                ) : null}
                 <Text style={[recentStyles.service, { color: TEXT_MUTED }]} numberOfLines={1}>
                   {biz.lastService}
                 </Text>
@@ -356,6 +368,21 @@ const recentStyles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700" as const,
     color: "#FFD200",
+  },
+  categoryBadge: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 3,
+    borderRadius: 7,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    alignSelf: "flex-start" as const,
+  },
+  categoryBadgeText: {
+    fontSize: 10,
+    fontWeight: "600" as const,
+    lineHeight: 13,
   },
 });
 
