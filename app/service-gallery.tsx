@@ -159,6 +159,31 @@ export default function ServiceGalleryScreen() {
     }
   }, [dispatch]);
 
+  const handleSetCover = useCallback(async (photoId: string) => {
+    const serverId = serverPhotoIds.current.get(photoId);
+    if (!serverId) {
+      Alert.alert("Not synced", "This photo hasn't synced to the server yet. Please wait a moment and try again.");
+      return;
+    }
+    try {
+      const token = await Auth.getSessionToken();
+      const apiBase = getApiBaseUrl();
+      const resp = await fetch(`${apiBase}/api/business/service-photos/${serverId}/set-cover`, {
+        method: "PATCH",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (resp.ok) {
+        Alert.alert("Cover set", "This photo is now the cover for the service.");
+      } else {
+        const body = await resp.json().catch(() => ({}));
+        Alert.alert("Error", body.error ?? "Failed to set cover photo.");
+      }
+    } catch (err) {
+      console.error("[Gallery] Failed to set cover:", err);
+      Alert.alert("Error", "Could not set cover photo. Please try again.");
+    }
+  }, []);
+
   const handleSaveNote = useCallback(() => {
     if (!editingPhoto) return;
     dispatch({ type: "UPDATE_SERVICE_PHOTO", payload: { ...editingPhoto, note: editNote } });
@@ -308,6 +333,20 @@ export default function ServiceGalleryScreen() {
                   })}
                 >
                   <IconSymbol name="xmark" size={12} color="#FFF" />
+                </Pressable>
+                {/* Set as Cover button */}
+                <Pressable
+                  onPress={() => handleSetCover(item.id)}
+                  style={({ pressed }) => ({
+                    position: "absolute", top: 38, right: 8,
+                    backgroundColor: "rgba(0,0,0,0.55)",
+                    borderRadius: 10,
+                    paddingHorizontal: 7, paddingVertical: 3,
+                    opacity: pressed ? 0.7 : 1,
+                    flexDirection: "row", alignItems: "center", gap: 3,
+                  })}
+                >
+                  <Text style={{ fontSize: 10, color: "#FFD700", fontWeight: "700" }}>⭐ Cover</Text>
                 </Pressable>
                 {/* Note area */}
                 <View style={{ padding: 8 }}>

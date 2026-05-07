@@ -64,6 +64,7 @@ export interface SavedBusiness {
   businessCategory: string | null;
   businessAddress: string | null;
   businessPhone: string | null;
+  businessLogoUri: string | null;
   savedAt: string;
 }
 

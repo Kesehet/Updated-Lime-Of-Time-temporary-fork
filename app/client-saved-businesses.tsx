@@ -13,6 +13,7 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -129,7 +130,11 @@ export default function ClientSavedBusinessesScreen() {
                         onPress={() => router.push({ pathname: "/client-business-detail", params: { slug: item.businessSlug } } as any)}
                       >
                         <View style={s.bizLogo}>
-                          <IconSymbol name="scissors" size={22} color={ACCENT} />
+                          {item.businessLogoUri ? (
+                            <Image source={{ uri: item.businessLogoUri }} style={s.bizLogoImg} resizeMode="cover" />
+                          ) : (
+                            <IconSymbol name="scissors" size={22} color={ACCENT} />
+                          )}
                         </View>
                         <View style={s.bizInfo}>
                           <Text style={s.bizName}>{item.businessName}</Text>
@@ -179,7 +184,11 @@ export default function ClientSavedBusinessesScreen() {
               onPress={() => router.push({ pathname: "/client-business-detail", params: { slug: item.businessSlug } } as any)}
             >
               <View style={s.bizLogo}>
-                <IconSymbol name="scissors" size={22} color={ACCENT} />
+                {item.businessLogoUri ? (
+                  <Image source={{ uri: item.businessLogoUri }} style={s.bizLogoImg} resizeMode="cover" />
+                ) : (
+                  <IconSymbol name="scissors" size={22} color={ACCENT} />
+                )}
               </View>
               <View style={s.bizInfo}>
                 <Text style={s.bizName}>{item.businessName}</Text>
@@ -222,7 +231,8 @@ const s = StyleSheet.create({
   discoverBtn: { backgroundColor: ACCENT, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, marginTop: 8 },
   discoverBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
   bizCard: { flexDirection: "row", alignItems: "center", borderRadius: 16, borderWidth: 1, borderColor: CARD_BORDER, backgroundColor: CARD_BG, padding: 14, marginBottom: 10, gap: 12 },
-  bizLogo: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(143,191,106,0.15)" },
+  bizLogo: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(143,191,106,0.15)", overflow: "hidden" },
+  bizLogoImg: { width: 48, height: 48, borderRadius: 24 },
   bizInfo: { flex: 1, gap: 3 },
   bizName: { fontSize: 15, fontWeight: "700", color: TEXT_PRIMARY },
   bizCategory: { fontSize: 12, fontWeight: "600", color: ACCENT },

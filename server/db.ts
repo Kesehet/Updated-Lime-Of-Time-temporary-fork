@@ -1307,6 +1307,21 @@ export async function deleteServicePhoto(id: number, businessOwnerId: number): P
   if (!db) throw new Error("Database not available");
   await db.delete(servicePhotos).where(and(eq(servicePhotos.id, id), eq(servicePhotos.businessOwnerId, businessOwnerId)));
 }
+export async function setServicePhotoCover(coverId: number, businessOwnerId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const allPhotos = await db.select().from(servicePhotos)
+    .where(eq(servicePhotos.businessOwnerId, businessOwnerId))
+    .orderBy(servicePhotos.sortOrder);
+  const target = allPhotos.find((p) => p.id === coverId);
+  if (!target) throw new Error("Photo not found");
+  const siblings = allPhotos.filter((p) => p.serviceLocalId === target.serviceLocalId);
+  let order = 1;
+  for (const p of siblings) {
+    const newOrder = p.id === coverId ? 0 : order++;
+    await db.update(servicePhotos).set({ sortOrder: newOrder }).where(eq(servicePhotos.id, p.id));
+  }
+}
 
 // ─── Business Discovery ───────────────────────────────────────────────
 

@@ -994,6 +994,14 @@ function BusinessCard({ item, router, index, onTap }: { item: DiscoverBusiness; 
                 <Image source={{ uri: item.businessLogoUri! }} style={cardStyles.logoPillImage} resizeMode="cover" />
               </View>
             )}
+            {/* Distance pill overlay */}
+            {distanceMiles != null && (
+              <View style={cardStyles.distancePill}>
+                <Text style={cardStyles.distancePillText}>
+                  {distanceMiles < 0.1 ? "< 0.1 mi" : `${distanceMiles.toFixed(1)} mi`}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Info row */}
@@ -1106,6 +1114,21 @@ const cardStyles = StyleSheet.create({
   logoPillImage: {
     width: 36,
     height: 36,
+  },
+  distancePill: {
+    position: "absolute",
+    top: 8,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  distancePillText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.2,
   },
   logoBox: {
     width: 56,

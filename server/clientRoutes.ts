@@ -1018,6 +1018,23 @@ export function registerClientRoutes(app: Express) {
     }
   });
 
+  /** PATCH /api/business/service-photos/:id/set-cover — set a photo as the cover (sortOrder=0) */
+  app.patch("/api/business/service-photos/:id/set-cover", async (req: Request, res: Response) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      const owner = await db.getBusinessOwnerByOpenId(user.openId);
+      if (!owner) {
+        res.status(404).json({ error: "Business owner not found" });
+        return;
+      }
+      const photoId = parseInt(req.params.id);
+      await db.setServicePhotoCover(photoId, owner.id);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });
+    }
+  });
+
   // ── Business Portal Visibility Toggle ────────────────────────────────────
 
   /** POST /api/business/portal-visibility — toggle clientPortalVisible + geocode address */
