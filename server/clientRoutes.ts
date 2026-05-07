@@ -243,10 +243,14 @@ export function registerClientRoutes(app: Express) {
       // Load all discoverable businesses
       const businesses = await db.getDiscoverableBusinesses();
 
-      // Build enriched list with location data for text search
+      // Build enriched list with location data, ratings, and service categories
       const enriched = await Promise.all(
         businesses.map(async (b) => {
-          const locs = await db.getLocationsByOwner(b.id);
+          const [locs, reviewsList, servicesList] = await Promise.all([
+            db.getLocationsByOwner(b.id),
+            db.getReviewsByOwner(b.id),
+            db.getServicesByOwner(b.id),
+          ]);
           // Collect all searchable text from locations
           const locationText = locs
             .map((l) => [l.address, l.city, l.state, l.zipCode, l.name].filter(Boolean).join(" "))
@@ -267,7 +271,22 @@ export function registerClientRoutes(app: Express) {
           const displayAddress = primaryLoc
             ? [primaryLoc.address, primaryLoc.city, primaryLoc.state, primaryLoc.zipCode].filter(Boolean).join(", ")
             : (b.address ?? "");
-          return { ...b, locationText, bizLat, bizLng, displayAddress, locs };
+          // Compute live avgRating and reviewCount from reviews table
+          const reviewCount = reviewsList.length;
+          const avgRating = reviewCount > 0
+            ? Math.round((reviewsList.reduce((sum, r) => sum + r.rating, 0) / reviewCount) * 10) / 10
+            : null;
+          // Collect unique non-empty service categories
+          const serviceCategories: string[] = [];
+          const seen = new Set<string>();
+          for (const svc of servicesList) {
+            const cat = (svc.category ?? "").trim();
+            if (cat && !seen.has(cat.toLowerCase())) {
+              seen.add(cat.toLowerCase());
+              serviceCategories.push(cat);
+            }
+          }
+          return { ...b, locationText, bizLat, bizLng, displayAddress, locs, avgRating, reviewCount, serviceCategories };
         })
       );
 
@@ -306,7 +325,7 @@ export function registerClientRoutes(app: Express) {
           }
           const slug = b.customSlug ?? db.sanitizeSlug(b.businessName ?? "");
           const { locationText: _lt, bizLat: _bl, bizLng: _bg, locs: _locs, ...rest } = b;
-          return { ...rest, distanceKm, slug };
+          return { ...rest, distanceKm, slug, avgRating: b.avgRating, reviewCount: b.reviewCount, serviceCategories: b.serviceCategories };
         })
         .filter((b) => {
           // Only apply radius filter when we have both client coords AND business coords

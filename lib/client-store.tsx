@@ -84,6 +84,7 @@ export interface DiscoverBusiness {
   description: string | null;
   businessCategory: string | null;
   customSlug: string | null;
+  serviceCategories?: string[];
 }
 
 export interface ClientState {

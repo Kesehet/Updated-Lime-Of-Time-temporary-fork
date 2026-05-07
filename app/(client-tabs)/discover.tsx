@@ -936,45 +936,67 @@ function BusinessCard({ item, router, index, onTap }: { item: DiscoverBusiness; 
             <Text style={[cardStyles.name, { color: TEXT_PRIMARY }]} numberOfLines={1}>
               {item.businessName}
             </Text>
-            {displayCategory && (
-              <View style={[cardStyles.categoryBadge, { backgroundColor: accentColor + "18" }]}>
-                <Text style={[cardStyles.categoryBadgeText, { color: accentColor }]}>
-                  {CATEGORIES.find(c => c.label === displayCategory)?.emoji ?? ""} {displayCategory}
+
+            {/* Professional 5-star rating row */}
+            <View style={cardStyles.starRow}>
+              {Array.from({ length: 5 }, (_, i) => {
+                const rating = item.avgRating ?? 0;
+                const filled = item.avgRating != null && i < Math.floor(rating);
+                const half = item.avgRating != null && !filled && i < rating;
+                return (
+                  <Text key={i} style={filled || half ? cardStyles.starFilled : cardStyles.starEmpty}>
+                    {filled || half ? "★" : "☆"}
+                  </Text>
+                );
+              })}
+              {item.avgRating != null ? (
+                <>
+                  <Text style={cardStyles.ratingValue}>{item.avgRating.toFixed(1)}</Text>
+                  {item.reviewCount > 0 && (
+                    <Text style={[cardStyles.reviewCountText, { color: TEXT_MUTED }]}>
+                      ({item.reviewCount})
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <Text style={[cardStyles.reviewCountText, { color: TEXT_MUTED, marginLeft: 2 }]}>New</Text>
+              )}
+              {distanceMiles != null && (
+                <Text style={[cardStyles.distanceText, { color: TEXT_MUTED }]}>
+                  · {distanceMiles < 0.1 ? "< 0.1 mi" : `${distanceMiles.toFixed(1)} mi`}
                 </Text>
-              </View>
-            )}
+              )}
+            </View>
+
+            {/* Multi-category service chips */}
+            {((): React.ReactNode => {
+              const cats: string[] =
+                item.serviceCategories && item.serviceCategories.length > 0
+                  ? item.serviceCategories
+                  : displayCategory ? [displayCategory] : [];
+              if (cats.length === 0) return null;
+              return (
+                <View style={cardStyles.chipsRow}>
+                  {cats.slice(0, 4).map((cat) => {
+                    const chipColor = CATEGORY_COLORS[cat] ?? GREEN_ACCENT;
+                    const catEmoji = CATEGORIES.find((c) => c.label === cat)?.emoji ?? "";
+                    return (
+                      <View key={cat} style={[cardStyles.chip, { backgroundColor: chipColor + "1A", borderColor: chipColor + "40" }]}>
+                        <Text style={[cardStyles.chipText, { color: chipColor }]}>
+                          {catEmoji ? `${catEmoji} ${cat}` : cat}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              );
+            })()}
+
             {item.address && (
               <Text style={[cardStyles.address, { color: TEXT_MUTED }]} numberOfLines={1}>
                 📍 {item.address}
               </Text>
             )}
-            <View style={cardStyles.meta}>
-              {item.avgRating != null ? (
-                <View style={cardStyles.ratingBadge}>
-                  <Text style={cardStyles.ratingStar}>★</Text>
-                  <Text style={cardStyles.ratingBadgeText}>
-                    {item.avgRating.toFixed(1)}
-                  </Text>
-                  {item.reviewCount > 0 && (
-                    <Text style={[cardStyles.reviewCount, { color: TEXT_MUTED }]}>
-                      ({item.reviewCount})
-                    </Text>
-                  )}
-                </View>
-              ) : (
-                <View style={cardStyles.ratingBadge}>
-                  <Text style={cardStyles.ratingStarEmpty}>★</Text>
-                  <Text style={[cardStyles.reviewCount, { color: TEXT_MUTED }]}>New</Text>
-                </View>
-              )}
-              {distanceMiles != null && (
-                <View style={cardStyles.distanceBadge}>
-                  <Text style={[cardStyles.distance, { color: TEXT_MUTED }]}>
-                    📍 {distanceMiles < 0.1 ? "< 0.1 mi" : `${distanceMiles.toFixed(1)} mi`}
-                  </Text>
-                </View>
-              )}
-            </View>
           </View>
 
           <IconSymbol name="chevron.right" size={15} color={TEXT_MUTED} />
@@ -987,7 +1009,7 @@ function BusinessCard({ item, router, index, onTap }: { item: DiscoverBusiness; 
 const cardStyles = StyleSheet.create({
   card: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     borderRadius: 16,
     borderWidth: 1,
     padding: 12,
@@ -1080,6 +1102,55 @@ const cardStyles = StyleSheet.create({
   },
   distance: {
     fontSize: 12,
+  },
+  // Star rating row
+  starRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 1,
+    marginTop: 2,
+    flexWrap: "nowrap" as const,
+  },
+  starFilled: {
+    fontSize: 13,
+    color: "#FFD200",
+    lineHeight: 17,
+  },
+  starEmpty: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.22)",
+    lineHeight: 17,
+  },
+  ratingValue: {
+    fontSize: 12,
+    fontWeight: "700" as const,
+    color: "#FFD200",
+    marginLeft: 4,
+  },
+  reviewCountText: {
+    fontSize: 11,
+    marginLeft: 2,
+  },
+  distanceText: {
+    fontSize: 11,
+    marginLeft: 4,
+  },
+  // Service category chips
+  chipsRow: {
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+    gap: 5,
+    marginTop: 5,
+  },
+  chip: {
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  chipText: {
+    fontSize: 11,
+    fontWeight: "600" as const,
   },
 });
 
