@@ -2,6 +2,7 @@ import { Platform } from "react-native";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { logger } from "@/lib/logger";
 import * as Auth from "./auth";
+import { emitSessionExpired } from "./session-events";
 
 type ApiResponse<T> = {
   data?: T;
@@ -52,6 +53,11 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
     if (!response.ok) {
       const errorText = await response.text();
       logger.error("[API] Error response:", errorText);
+      // 401 Unauthorized — session expired or invalid; emit global event
+      if (response.status === 401) {
+        const isClientEndpoint = endpoint.includes("/client/");
+        emitSessionExpired(isClientEndpoint ? "client" : "business");
+      }
       let errorMessage = errorText;
       try {
         const errorJson = JSON.parse(errorText);

@@ -4,6 +4,7 @@ import superjson from "superjson";
 import type { AppRouter } from "@/server/routers";
 import { getApiBaseUrl } from "@/constants/oauth";
 import * as Auth from "@/lib/_core/auth";
+import { emitSessionExpired } from "@/lib/_core/session-events";
 
 /**
  * tRPC React client for type-safe API calls.
@@ -29,12 +30,16 @@ export function createTRPCClient() {
           const token = await Auth.getSessionToken();
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        // Custom fetch to include credentials for cookie-based auth
-        fetch(url, options) {
-          return fetch(url, {
+        // Custom fetch to include credentials and handle 401 session expiry
+        async fetch(url, options) {
+          const response = await globalThis.fetch(url, {
             ...options,
             credentials: "include",
           });
+          if (response.status === 401) {
+            emitSessionExpired("business"); // tRPC is used by business portal
+          }
+          return response;
         },
       }),
     ],

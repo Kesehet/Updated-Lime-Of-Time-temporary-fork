@@ -27,6 +27,8 @@ import { NotificationProvider } from "@/lib/notification-provider";
 import { initSentry, withSentryWrapper } from "@/lib/sentry";
 import { AnimatedSplash } from "@/components/animated-splash";
 import * as FileSystem from "expo-file-system/legacy";
+import * as Auth from "@/lib/_core/auth";
+import { SessionExpiredToast } from "@/components/session-expired-toast";
 
 /**
  * One-time migration: if businessLogoUri is a local file:/// path (from a
@@ -91,11 +93,22 @@ function RootLayout() {
       }
     };
     try {
-      // Returning business owner: skip portal selector and go straight to dashboard
+      // Returning business owner: validate session token expiry before auto-routing
       const storedOwnerId = await AsyncStorage.getItem("@bookease_business_owner_id");
       if (storedOwnerId) {
-        router.replace("/(tabs)" as any);
-        return;
+        const businessToken = await Auth.getSessionToken();
+        if (businessToken && isTokenExpired(businessToken)) {
+          // Business session token expired — clear stale session and show portal selector
+          await Auth.removeSessionToken();
+          await AsyncStorage.multiRemove([
+            "@bookease_business_owner_id",
+            "@bookease_business_name",
+            "@bookease_settings",
+          ]);
+        } else {
+          router.replace("/(tabs)" as any);
+          return;
+        }
       }
       // Returning client: validate token expiry before auto-routing
       const clientToken = await AsyncStorage.getItem("client_session_token");
@@ -265,6 +278,7 @@ function RootLayout() {
               <Stack.Screen name="client-message-thread-business" options={{ presentation: "modal" }} />
             </Stack>
             <StatusBar style="auto" />
+            <SessionExpiredToast />
             </NotificationProvider>
             </AppLockProvider>
             </ClientStoreProvider>
