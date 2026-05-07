@@ -5124,7 +5124,10 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         </div>
       </div>
       <div id="manageLink" style="margin-bottom:12px;display:none;">
-        <a id="manageLinkHref" href="#" style="color:var(--accent);font-size:14px;text-decoration:none;font-weight:600;">Manage or Cancel This Appointment →</a>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <a id="manageLinkHref" href="#" style="flex:1;display:inline-block;padding:10px 0;text-align:center;background:var(--bg-card);border:1.5px solid var(--border);border-radius:10px;color:var(--accent);font-size:13px;text-decoration:none;font-weight:600;">🗓️ Manage / Cancel</a>
+          <a id="rescheduleHref" href="#" style="flex:1;display:inline-block;padding:10px 0;text-align:center;background:var(--accent-bg);border:1.5px solid var(--accent);border-radius:10px;color:var(--accent);font-size:13px;text-decoration:none;font-weight:600;">🔄 Request Reschedule</a>
+        </div>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:10px;">
         <button class="btn btn-secondary" onclick="saveReceipt()" style="flex:1">📥 Save Receipt</button>
@@ -5755,6 +5758,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       document.querySelectorAll("#staffListStep3 .service-item").forEach(el => el.classList.remove("selected"));
       const el = document.getElementById(id ? "staff-" + id : "staff-any");
       if (el) el.classList.add("selected");
+      // Auto-advance to Date step after a short visual confirmation delay
+      setTimeout(function() { goToStep(4); }, 350);
     }
 
     var selectedPaymentMethod = null; // 'zelle' | 'venmo' | 'cashapp' | 'cash'
@@ -6898,6 +6903,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         // Show manage link
         if (data.manageUrl) {
           document.getElementById('manageLinkHref').href = data.manageUrl;
+          const reschedEl = document.getElementById('rescheduleHref');
+          if (reschedEl) reschedEl.href = data.manageUrl + '#reschedule';
           document.getElementById('manageLink').style.display = 'block';
         }
         window.scrollTo(0, 0);
@@ -7523,6 +7530,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
             if (a.manageUrl) {
               const ml = document.getElementById('manageLinkHref');
               if (ml) ml.href = a.manageUrl;
+              const reschedEl2 = document.getElementById('rescheduleHref');
+              if (reschedEl2) reschedEl2.href = a.manageUrl + '#reschedule';
               const mlWrap = document.getElementById('manageLink');
               if (mlWrap) mlWrap.style.display = 'block';
             }

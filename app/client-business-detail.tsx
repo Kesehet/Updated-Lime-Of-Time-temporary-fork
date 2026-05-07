@@ -405,14 +405,18 @@ export default function ClientBusinessDetailScreen() {
                     <IconSymbol name={expandedStaffId === member.localId ? "chevron.up" : "chevron.down"} size={16} color={TEXT_MUTED} />
                   </View>
                   {expandedStaffId === member.localId && (
-                    <View style={{ marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: DIVIDER }}>
-                      <Pressable
-                        style={({ pressed }) => ({ backgroundColor: ACCENT, borderRadius: 12, paddingVertical: 12, alignItems: "center", opacity: pressed ? 0.85 : 1, flexDirection: "row", justifyContent: "center", gap: 8 })}
-                        onPress={() => router.push({ pathname: "/client-booking-wizard", params: { slug, preStaffId: member.localId, preStaffName: member.name } } as any)}
-                      >
-                        <IconSymbol name="calendar.badge.plus" size={16} color="#FFFFFF" />
-                        <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 15 }}>Book with {member.name}</Text>
-                      </Pressable>
+                    <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: DIVIDER, gap: 6 }}>
+                      {member.role ? (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                          <IconSymbol name="person.fill" size={13} color={ACCENT} />
+                          <Text style={{ fontSize: 13, color: ACCENT, fontWeight: "600" }}>{member.role}</Text>
+                        </View>
+                      ) : null}
+                      {member.bio ? (
+                        <Text style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 19 }}>{member.bio}</Text>
+                      ) : (
+                        <Text style={{ fontSize: 13, color: TEXT_MUTED, fontStyle: "italic" }}>No bio available.</Text>
+                      )}
                     </View>
                   )}
                 </Pressable>
