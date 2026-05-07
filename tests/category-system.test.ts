@@ -58,10 +58,10 @@ describe("getCategoryDef", () => {
     expect(def.label).toBe("Other");
   });
 
-  it("returns custom def for unknown category label", () => {
+  it("returns Other def for unknown category label (non-standard labels normalize to Other)", () => {
     const def = getCategoryDef("Lash Extensions");
-    expect(def.label).toBe("Lash Extensions");
-    expect(def.emoji).toBe("📍"); // fallback emoji
+    expect(def.label).toBe("Other"); // unknown labels fall back to Other
+    expect(def.emoji).toBe("✦"); // Other emoji
   });
 });
 
@@ -77,9 +77,11 @@ describe("Discovery category filter logic", () => {
     const svcCats = serviceCategories.map((c) => c.toLowerCase());
 
     if (filterCat === "other") {
-      const hasStandardCat = bizCat && bizCat !== "other";
-      const hasStandardSvc = svcCats.some((c) => c && c !== "other");
-      return !hasStandardCat && !hasStandardSvc;
+      // Match businesses that have at least one service category normalized to "Other"
+      // OR have no category at all
+      const hasOtherSvc = svcCats.some((c) => c === "other");
+      const hasNoCat = !bizCat && svcCats.length === 0;
+      return hasOtherSvc || hasNoCat;
     } else {
       const bizCatMatch = bizCat && (bizCat.includes(filterCat) || filterCat.includes(bizCat));
       const svcCatMatch = svcCats.some(
@@ -108,8 +110,13 @@ describe("Discovery category filter logic", () => {
   it("Other filter matches businesses with no category", () => {
     expect(matchesCategory("Other", null, [])).toBe(true);
     expect(matchesCategory("Other", "", [])).toBe(true);
-    expect(matchesCategory("Other", "Hair", [])).toBe(false);
-    expect(matchesCategory("Other", null, ["Nails"])).toBe(false);
+  });
+
+  it("Other filter matches businesses with Other service categories (Wellness Suite case)", () => {
+    // Wellness Suite: bizCat=Spa, svcCats=[Other] — should appear under Other chip
+    expect(matchesCategory("Other", "Spa", ["other"])).toBe(true);
+    // Lime Cut & Wellness: all standard svcCats — should NOT appear under Other
+    expect(matchesCategory("Other", "Hair", ["hair", "nails", "massage"])).toBe(false);
   });
 
   it("custom category matches correctly", () => {

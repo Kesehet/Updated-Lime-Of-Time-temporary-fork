@@ -34,7 +34,7 @@ export const SERVICE_CATEGORIES: CategoryDef[] = [
   { label: "Teeth Whitening",   emoji: "🦷",  icon: "mouth.fill",                  color: "#67E8F9" },
   { label: "Tanning",           emoji: "☀️",  icon: "sun.max.fill",                color: "#FDE68A" },
   { label: "Holistic",          emoji: "🌿",  icon: "leaf.fill",                   color: "#4ADE80" },
-  { label: "Other",             emoji: "📍",  icon: "ellipsis.circle.fill",        color: "#9CA3AF" },
+  { label: "Other",             emoji: "✦",   icon: "ellipsis.circle.fill",        color: "#9CA3AF" },
 ];
 
 /** The "All" chip shown at the start of the filter row. */
@@ -50,13 +50,36 @@ export const CATEGORY_MAP: Record<string, CategoryDef> = Object.fromEntries(
   [...SERVICE_CATEGORIES, ALL_CATEGORY].map((c) => [c.label, c])
 );
 
-/** Returns the CategoryDef for a given label, falling back to "Other". */
+/**
+ * Set of all standard category labels (lowercase) for quick membership checks.
+ * Any service category NOT in this set is treated as "Other".
+ */
+export const STANDARD_LABELS: Set<string> = new Set(
+  SERVICE_CATEGORIES.map((c) => c.label.toLowerCase())
+);
+
+/**
+ * Returns the CategoryDef for a given label.
+ * Unknown / non-standard labels fall back to "Other" so they are grouped correctly.
+ */
 export function getCategoryDef(label: string | null | undefined): CategoryDef {
   if (!label) return CATEGORY_MAP["Other"];
-  return CATEGORY_MAP[label] ?? {
-    label,
-    emoji: "📍",
-    icon: "ellipsis.circle.fill",
-    color: "#9CA3AF",
-  };
+  return CATEGORY_MAP[label] ?? CATEGORY_MAP["Other"];
+}
+
+/**
+ * Normalizes a raw service category string to a standard label.
+ * If the label is not in the standard list, returns "Other".
+ */
+export function normalizeCategory(label: string | null | undefined): string {
+  if (!label) return "Other";
+  const trimmed = label.trim();
+  if (STANDARD_LABELS.has(trimmed.toLowerCase())) {
+    // Return the properly-cased standard label
+    const found = SERVICE_CATEGORIES.find(
+      (c) => c.label.toLowerCase() === trimmed.toLowerCase()
+    );
+    return found ? found.label : "Other";
+  }
+  return "Other";
 }

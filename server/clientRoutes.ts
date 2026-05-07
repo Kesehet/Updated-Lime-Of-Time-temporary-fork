@@ -11,6 +11,7 @@ import { Express, Request, Response } from "express";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
 import { sendExpoPush } from "./push";
+import { STANDARD_LABELS, normalizeCategory } from "../constants/categories";
 
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
@@ -216,15 +217,23 @@ export function registerClientRoutes(app: Express) {
     try {
       const businesses = await db.getDiscoverableBusinesses();
       const catSet = new Set<string>();
+      let hasOther = false;
       for (const biz of businesses) {
-        if (biz.businessCategory) catSet.add(biz.businessCategory.trim());
+        // Normalize business-level category
+        const bizCat = biz.businessCategory ? normalizeCategory(biz.businessCategory) : null;
+        if (bizCat && bizCat !== "Other") catSet.add(bizCat);
+        else if (bizCat === "Other") hasOther = true;
+        // Normalize service-level categories
         const services = await db.getServicesByOwner(biz.id);
         for (const svc of services) {
-          if (svc.category) catSet.add(svc.category.trim());
+          const normalized = normalizeCategory(svc.category);
+          if (normalized !== "Other") catSet.add(normalized);
+          else hasOther = true;
         }
       }
-      catSet.delete("");
-      res.json({ categories: Array.from(catSet).sort() });
+      const sorted = Array.from(catSet).sort();
+      if (hasOther) sorted.push("Other"); // Other always last
+      res.json({ categories: sorted });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -298,14 +307,14 @@ export function registerClientRoutes(app: Express) {
           const avgRating = reviewCount > 0
             ? Math.round((reviewsList.reduce((sum, r) => sum + r.rating, 0) / reviewCount) * 10) / 10
             : null;
-          // Collect unique non-empty service categories
+          // Collect unique normalized service categories (unknown → "Other")
           const serviceCategories: string[] = [];
           const seen = new Set<string>();
           for (const svc of servicesList) {
-            const cat = (svc.category ?? "").trim();
-            if (cat && !seen.has(cat.toLowerCase())) {
-              seen.add(cat.toLowerCase());
-              serviceCategories.push(cat);
+            const normalized = normalizeCategory(svc.category);
+            if (!seen.has(normalized.toLowerCase())) {
+              seen.add(normalized.toLowerCase());
+              serviceCategories.push(normalized);
             }
           }
           return { ...b, locationText, bizLat, bizLng, displayAddress, locs, avgRating, reviewCount, serviceCategories };
@@ -322,10 +331,11 @@ export function registerClientRoutes(app: Express) {
             const svcCats = (b.serviceCategories ?? []).map((c: string) => c.toLowerCase());
 
             if (filterCat === "other") {
-              // "Other" chip: match businesses with no standard category AND no standard service categories
-              const hasStandardCat = bizCat && bizCat !== "other";
-              const hasStandardSvc = svcCats.some((c: string) => c && c !== "other");
-              if (hasStandardCat || hasStandardSvc) return false;
+              // "Other" chip: match businesses that have at least one service category normalized to "Other"
+              // OR have no category at all
+              const hasOtherSvc = svcCats.some((c: string) => c === "other");
+              const hasNoCat = !bizCat && svcCats.length === 0;
+              if (!hasOtherSvc && !hasNoCat) return false;
             } else {
               // Match if businessCategory matches
               const bizCatMatch = bizCat && (bizCat.includes(filterCat) || filterCat.includes(bizCat));
