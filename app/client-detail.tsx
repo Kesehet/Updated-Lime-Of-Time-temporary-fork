@@ -619,6 +619,30 @@ export default function ClientDetailScreen() {
                 </Pressable>
               ) : null}
             </View>
+
+            {/* No-phone hint — shown only when client has no phone number */}
+            {!client.phone && (
+              <Pressable
+                onPress={() => setEditing(true)}
+                style={({ pressed }) => [{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  marginTop: 10,
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
+                  borderRadius: 10,
+                  backgroundColor: colors.muted + "14",
+                  opacity: pressed ? 0.7 : 1,
+                }]}
+              >
+                <IconSymbol name="phone.fill" size={13} color={colors.muted} />
+                <Text style={{ fontSize: 12, color: colors.muted, fontStyle: "italic" }}>
+                  Add phone to unlock Call &amp; Message
+                </Text>
+              </Pressable>
+            )}
           </View>
         )}
 
