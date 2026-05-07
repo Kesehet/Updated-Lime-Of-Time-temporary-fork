@@ -199,6 +199,7 @@ type Action =
   | { type: "UPDATE_PROMO_CODE"; payload: PromoCode }
   | { type: "DELETE_PROMO_CODE"; payload: string }
   | { type: "ADD_INBOX_NOTIFICATION"; payload: InboxNotification }
+  | { type: "SYNC_INBOX_FROM_APPOINTMENTS" }
   | { type: "MARK_INBOX_READ" }
   | { type: "DISMISS_INBOX_NOTIFICATION"; payload: string }
   | { type: "CLEAR_OLD_INBOX_NOTIFICATIONS" }
@@ -470,6 +471,78 @@ function reducer(state: AppState, action: Action): AppState {
       const existing = state.inboxNotifications ?? [];
       if (existing.some((n) => n.id === action.payload.id)) return state;
       return { ...state, inboxNotifications: [action.payload, ...existing] };
+    }
+    case "SYNC_INBOX_FROM_APPOINTMENTS": {
+      // Generate inbox entries from appointments for the last 30 days
+      // This ensures the inbox is populated even when push notifications were missed
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 30);
+      const existingInbox = state.inboxNotifications ?? [];
+      const existingIds = new Set(existingInbox.map((n) => n.id));
+      const generated: InboxNotification[] = [];
+      for (const appt of state.appointments) {
+        // Only consider recent appointments
+        const apptDate = new Date(appt.createdAt ?? appt.date);
+        if (apptDate < cutoffDate) continue;
+        const client = state.clients.find((c) => c.id === appt.clientId);
+        const service = state.services.find((s) => s.id === appt.serviceId);
+        const clientName = client?.name ?? "A client";
+        const serviceName = service?.name ?? "an appointment";
+        // New booking (pending status)
+        if (appt.status === "pending") {
+          const id = `nb_${appt.id}`;
+          if (!existingIds.has(id)) {
+            generated.push({
+              id,
+              type: "new_booking",
+              title: "New Booking Request",
+              body: `${clientName} requested ${serviceName} on ${appt.date} at ${appt.time}`,
+              appointmentId: appt.id,
+              clientName,
+              timestamp: appt.createdAt ?? new Date(appt.date + 'T' + appt.time).toISOString(),
+              read: false,
+            });
+          }
+        }
+        // Pending cancel request
+        if (appt.cancelRequest?.status === "pending") {
+          const id = `cr_${appt.id}`;
+          if (!existingIds.has(id)) {
+            generated.push({
+              id,
+              type: "cancelled_by_client",
+              title: "Cancellation Request",
+              body: `${clientName} wants to cancel ${serviceName} on ${appt.date}`,
+              appointmentId: appt.id,
+              clientName,
+              timestamp: appt.cancelRequest.submittedAt,
+              read: false,
+            });
+          }
+        }
+        // Pending reschedule request
+        if (appt.rescheduleRequest?.status === "pending") {
+          const id = `rr_${appt.id}`;
+          if (!existingIds.has(id)) {
+            generated.push({
+              id,
+              type: "rescheduled_by_client",
+              title: "Reschedule Request",
+              body: `${clientName} wants to reschedule ${serviceName} to ${appt.rescheduleRequest.requestedDate} at ${appt.rescheduleRequest.requestedTime}`,
+              appointmentId: appt.id,
+              clientName,
+              timestamp: appt.rescheduleRequest.submittedAt,
+              read: false,
+            });
+          }
+        }
+      }
+      if (generated.length === 0) return state;
+      // Merge new entries with existing, sorted newest first
+      const merged = [...generated, ...existingInbox].sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+      return { ...state, inboxNotifications: merged };
     }
     case "MARK_INBOX_READ":
       return {
@@ -1179,6 +1252,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                   promoCodes: (fullData.promoCodes || []).map(dbPromoCodeToLocal),
                 },
               });
+              // Sync inbox from appointments (populates inbox even when push notifications were missed)
+              dispatch({ type: "SYNC_INBOX_FROM_APPOINTMENTS" });
               // Restore active location from AsyncStorage (or auto-set default)
               const storedActiveLoc = await AsyncStorage.getItem(STORAGE_KEYS.activeLocationId);
               const loadedLocations = dbLocations;
@@ -1272,6 +1347,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                         promoCodes: (fullData2.promoCodes || []).map(dbPromoCodeToLocal),
                       },
                     });
+                    dispatch({ type: "SYNC_INBOX_FROM_APPOINTMENTS" });
                     return;
                   }
                 } catch (e2) {
@@ -1539,6 +1615,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           promoCodes: (fullData.promoCodes || []).map(dbPromoCodeToLocal),
         },
       });
+      dispatch({ type: "SYNC_INBOX_FROM_APPOINTMENTS" });
       // Restore active location if it still exists, else pick default
       const activeLocations = dbLocations.filter((l) => l.active);
       if (activeLocations.length === 1) {
