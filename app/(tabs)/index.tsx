@@ -45,6 +45,7 @@ import { ChartDrillDownSheet, type DrillDownAppointment } from "@/components/cha
 import { ScheduleCard } from "@/components/schedule-card";
 import { OverviewDayWeekCard } from "@/components/overview-day-week-card";
 import { apiCall } from "@/lib/_core/api";
+import * as Auth from "@/lib/_core/auth";
 import { trpc } from "@/lib/trpc";
 import * as Notifications from "expo-notifications";
 import * as Linking from "expo-linking";
@@ -360,6 +361,9 @@ export default function HomeScreen() {
   const [messagesLoading, setMessagesLoading] = useState(false);
 
   const loadRecentMessages = useCallback(async () => {
+    // Guard: only fetch if we have a valid session token
+    const token = await Auth.getSessionToken();
+    if (!token) return;
     setMessagesLoading(true);
     try {
       const data = await apiCall<{ inbox: HomeMessageThread[] }>("/api/business/messages");

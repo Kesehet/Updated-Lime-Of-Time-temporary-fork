@@ -126,8 +126,16 @@ function RootLayout() {
     router.replace("/profile-select" as any);
   }, [router]);
   const onLayoutRootView = useCallback(async () => {
-    // Hide the native splash immediately — we use our own animated splash instead
-    await SplashScreen.hideAsync();
+    // Hide the native splash immediately — we use our own animated splash instead.
+    // Wrapped in try/catch because Expo Go sometimes throws
+    // "No native splash screen registered for given view controller"
+    // when the view controller changes before hideAsync completes — this is
+    // harmless and can be safely ignored.
+    try {
+      await SplashScreen.hideAsync();
+    } catch {
+      // Ignore — harmless Expo Go timing issue
+    }
   }, []);
 
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;

@@ -15,6 +15,7 @@ import { usePlanLimitCheck } from "@/hooks/use-plan-limit-check";
 import { UpgradePlanSheet } from "@/components/upgrade-plan-sheet";
 import { BirthdayPicker } from "@/components/birthday-picker";
 import { apiCall } from "@/lib/_core/api";
+import * as Auth from "@/lib/_core/auth";
 import { useFocusEffect } from "expo-router";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -62,6 +63,9 @@ export default function ClientsScreen() {
   const [threadsError, setThreadsError] = useState<string | null>(null);
 
   const loadThreads = useCallback(async () => {
+    // Guard: only fetch if we have a valid session token
+    const token = await Auth.getSessionToken();
+    if (!token) return;
     setThreadsLoading(true);
     setThreadsError(null);
     try {
