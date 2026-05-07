@@ -92,6 +92,7 @@ const MAPPING = {
   "safari.fill": "explore",
   "text.bubble.fill": "chat-bubble",
   "bookmark.fill": "bookmark",
+  "bookmark": "bookmark-border",
   "heart.fill": "favorite",
   "heart": "favorite-border",
   "map.fill": "map",

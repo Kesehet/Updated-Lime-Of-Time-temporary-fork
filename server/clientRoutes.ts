@@ -277,11 +277,13 @@ export function registerClientRoutes(app: Express) {
       // Build enriched list with location data, ratings, and service categories
       const enriched = await Promise.all(
         businesses.map(async (b) => {
-          const [locs, reviewsList, servicesList] = await Promise.all([
+          const [locs, reviewsList, servicesList, servicePhotosList] = await Promise.all([
             db.getLocationsByOwner(b.id),
             db.getReviewsByOwner(b.id),
             db.getServicesByOwner(b.id),
+            db.getServicePhotos(b.id),
           ]);
+          const firstServicePhotoUri: string | null = servicePhotosList.length > 0 ? servicePhotosList[0].uri : null;
           // Collect all searchable text from locations
           const locationText = locs
             .map((l) => [l.address, l.city, l.state, l.zipCode, l.name].filter(Boolean).join(" "))
@@ -317,7 +319,7 @@ export function registerClientRoutes(app: Express) {
               serviceCategories.push(normalized);
             }
           }
-          return { ...b, locationText, bizLat, bizLng, displayAddress, locs, avgRating, reviewCount, serviceCategories };
+          return { ...b, locationText, bizLat, bizLng, displayAddress, locs, avgRating, reviewCount, serviceCategories, firstServicePhotoUri };
         })
       );
 

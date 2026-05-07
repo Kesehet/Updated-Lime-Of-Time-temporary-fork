@@ -971,22 +971,33 @@ function BusinessCard({ item, router, index, onTap }: { item: DiscoverBusiness; 
   const accentColor = CATEGORY_COLORS[displayCategory ?? "Other"] ?? GREEN_ACCENT;
   const distanceMiles = item.distanceKm != null ? kmToMiles(item.distanceKm) : null;
 
+  const bannerUri = isRemoteUri(item.firstServicePhotoUri) ? item.firstServicePhotoUri
+    : isRemoteUri(item.businessLogoUri) ? item.businessLogoUri
+    : isRemoteUri(item.logoUrl) ? item.logoUrl
+    : null;
+
   return (
     <GestureDetector gesture={tap}>
       <Animated.View style={[animStyle, { marginBottom: 12 }]}>
-        <View style={[cardStyles.card, { backgroundColor: CARD_BG, borderColor: CARD_BORDER }]}>
-          {/* Logo / Cover */}
-          <View style={[cardStyles.logoBox, { backgroundColor: accentColor + "18" }]}>
-            {isRemoteUri(item.businessLogoUri) || isRemoteUri(item.logoUrl) ? (
-              <Image source={{ uri: (item.businessLogoUri && isRemoteUri(item.businessLogoUri) ? item.businessLogoUri : item.logoUrl) ?? "" }} style={cardStyles.logoImage} resizeMode="cover" />
+        <View style={[cardStyles.card, { backgroundColor: CARD_BG, borderColor: CARD_BORDER, flexDirection: "column", padding: 0, overflow: "hidden" }]}>
+          {/* Service / Logo Banner */}
+          <View style={[cardStyles.bannerBox, { backgroundColor: accentColor + "22" }]}>
+            {bannerUri ? (
+              <Image source={{ uri: bannerUri }} style={cardStyles.bannerImage} resizeMode="cover" />
             ) : (
               // eslint-disable-next-line @typescript-eslint/no-require-imports
-              <Image source={require("../../assets/images/icon.png")} style={cardStyles.logoImage} resizeMode="cover" />
+              <Image source={require("../../assets/images/icon.png")} style={[cardStyles.bannerImage, { opacity: 0.35 }]} resizeMode="contain" />
+            )}
+            {/* Logo pill overlay */}
+            {isRemoteUri(item.businessLogoUri) && bannerUri !== item.businessLogoUri && (
+              <View style={cardStyles.logoPill}>
+                <Image source={{ uri: item.businessLogoUri! }} style={cardStyles.logoPillImage} resizeMode="cover" />
+              </View>
             )}
           </View>
 
-          {/* Info */}
-          <View style={cardStyles.info}>
+          {/* Info row */}
+          <View style={[cardStyles.info, { padding: 12, paddingTop: 10 }]}>
             <Text style={[cardStyles.name, { color: TEXT_PRIMARY }]} numberOfLines={1}>
               {item.businessName}
             </Text>
@@ -1052,8 +1063,6 @@ function BusinessCard({ item, router, index, onTap }: { item: DiscoverBusiness; 
               </Text>
             )}
           </View>
-
-          <IconSymbol name="chevron.right" size={15} color={TEXT_MUTED} />
         </View>
       </Animated.View>
     </GestureDetector>
@@ -1068,6 +1077,35 @@ const cardStyles = StyleSheet.create({
     borderWidth: 1,
     padding: 12,
     gap: 12,
+  },
+  bannerBox: {
+    width: "100%",
+    height: 140,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bannerImage: {
+    width: "100%",
+    height: 140,
+  },
+  logoPill: {
+    position: "absolute",
+    bottom: 8,
+    left: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    overflow: "hidden",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "#fff",
+  },
+  logoPillImage: {
+    width: 36,
+    height: 36,
   },
   logoBox: {
     width: 56,
