@@ -277,16 +277,27 @@ export default function ClientBusinessDetailScreen() {
               <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>{distanceMiles} mi away</Text>
             </View>
           ) : null}
-          {business.avgRating != null && (
-            <View style={s.ratingRow}>
-              {[1,2,3,4,5].map((star) => (
-                <IconSymbol key={star} name="star.fill" size={14} color={star <= Math.round(Number(business.avgRating)) ? "#F59E0B" : DIVIDER} />
-              ))}
-              <Text style={[s.ratingText, { color: TEXT_MUTED }]}>
-                {Number(business.avgRating).toFixed(1)} ({business.reviewCount ?? 0} reviews)
+          {/* ── Prominent star rating ── */}
+          <View style={s.ratingRow}>
+            {Array.from({ length: 5 }, (_, i) => {
+              const rating = Number(business.avgRating ?? 0);
+              const filled = business.avgRating != null && i < Math.floor(rating);
+              const half = business.avgRating != null && !filled && i < rating;
+              return (
+                <Text key={i} style={filled || half ? s.starFilled : s.starEmpty}>
+                  {filled || half ? "★" : "☆"}
+                </Text>
+              );
+            })}
+            {business.avgRating != null ? (
+              <Text style={s.ratingValue}>
+                {Number(business.avgRating).toFixed(1)}
+                <Text style={[s.ratingCount, { color: TEXT_MUTED }]}> ({business.reviewCount ?? 0} reviews)</Text>
               </Text>
-            </View>
-          )}
+            ) : (
+              <Text style={[s.ratingCount, { color: TEXT_MUTED }]}>No reviews yet</Text>
+            )}
+          </View>
           {/* Show primary location address if only 1 location, else use business.address */}
           {(locations.length === 1 ? locations[0].address : business.address) ? (
             <View style={s.metaRow}>
@@ -733,8 +744,12 @@ const s = StyleSheet.create({
   logoCircle: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginTop: -36, borderWidth: 3 },
   bizName: { fontSize: 22, fontWeight: "700", textAlign: "center" },
   bizCategory: { fontSize: 13, fontWeight: "600" },
-  ratingRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  ratingRow: { flexDirection: "row", alignItems: "center", gap: 2, marginTop: 2 },
   ratingText: { fontSize: 12, marginLeft: 4 },
+  starFilled: { fontSize: 16, color: "#FFD200", lineHeight: 20 },
+  starEmpty: { fontSize: 16, color: "rgba(255,255,255,0.22)", lineHeight: 20 },
+  ratingValue: { fontSize: 14, fontWeight: "700", color: "#FFD200", marginLeft: 6 },
+  ratingCount: { fontSize: 12, fontWeight: "400" },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   metaText: { fontSize: 13 },
   description: { fontSize: 14, textAlign: "center", lineHeight: 20, marginTop: 4 },
