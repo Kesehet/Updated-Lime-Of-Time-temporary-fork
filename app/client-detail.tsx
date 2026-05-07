@@ -549,15 +549,38 @@ export default function ClientDetailScreen() {
 <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
               <Pressable
                 onPress={() => router.push({ pathname: "/calendar-booking", params: { clientId: client.id } } as any)}
-                style={({ pressed }) => [{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, borderRadius: 12, backgroundColor: colors.success, opacity: pressed ? 0.85 : 1 }]}
+                style={({ pressed }) => [{
+                  flex: 1,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 46,
+                  borderRadius: 14,
+                  backgroundColor: colors.success,
+                  opacity: pressed ? 0.82 : 1,
+                  gap: 7,
+                }]}
               >
-                <IconSymbol name="calendar" size={16} color="#FFF" />
-                <Text style={{ fontSize: 14, fontWeight: "600", color: "#FFF", marginLeft: 8 }}>Book Appt</Text>
+                <IconSymbol name="calendar" size={17} color="#FFF" />
+                <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Book Appt</Text>
               </Pressable>
               {client.phone ? (
-                <Pressable onPress={handleQuickMessage} style={({ pressed }) => [{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, borderRadius: 12, backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}>
-                  <IconSymbol name="paperplane.fill" size={16} color="#FFF" />
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: "#FFF", marginLeft: 8 }}>Message</Text>
+                <Pressable
+                  onPress={handleQuickMessage}
+                  style={({ pressed }) => [{
+                    flex: 1,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: 46,
+                    borderRadius: 14,
+                    backgroundColor: colors.primary,
+                    opacity: pressed ? 0.82 : 1,
+                    gap: 7,
+                  }]}
+                >
+                  <IconSymbol name="paperplane.fill" size={17} color="#FFF" />
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Message</Text>
                 </Pressable>
               ) : null}
             </View>
