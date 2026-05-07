@@ -514,6 +514,10 @@ export default function OnboardingScreen() {
       try {
         dispatch({ type: "SET_BUSINESS_OWNER_ID", payload: pendingExistingId });
         await AsyncStorage.setItem("@bookease_business_owner_id", String(pendingExistingId));
+        // Store business name separately so client portal can show it in Switch confirmation
+        if (pendingFullData?.owner?.businessName) {
+          await AsyncStorage.setItem("@bookease_business_name", pendingFullData.owner.businessName);
+        }
         if (pendingFullData && pendingFullData.owner) {
           const settingsFromDb = dbOwnerToSettings(pendingFullData.owner);
           dispatch({
@@ -941,6 +945,8 @@ export default function OnboardingScreen() {
       });
       dispatch({ type: "SET_BUSINESS_OWNER_ID", payload: newOwner.id });
       await AsyncStorage.setItem("@bookease_business_owner_id", String(newOwner.id));
+      // Store business name separately so client portal can show it in Switch confirmation
+      await AsyncStorage.setItem("@bookease_business_name", businessName.trim());
       dispatch({
         type: "UPDATE_SETTINGS",
         payload: {

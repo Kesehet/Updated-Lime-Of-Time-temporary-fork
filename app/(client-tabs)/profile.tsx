@@ -24,6 +24,7 @@ import { ClientPortalBackground } from "@/components/client-portal-background";
 import { formatPhone } from "@/lib/utils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const GREEN_ACCENT = "#8FBF6A";
 const GREEN_DARK = "#1A3A28";
@@ -97,23 +98,50 @@ export default function ClientProfileScreen() {
     );
   };
 
-  const handleSwitchToBusiness = () => {
-    Alert.alert(
-      "Switch to Business Profile",
-      "This will take you to the business owner app. Your client account will remain active.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Switch",
-          onPress: async () => {
-            const { setProfileMode } = await import("@/lib/client-store");
-            await setProfileMode("business");
-            // Go to profile-select so auto-routing can kick in for returning business owners
-            router.replace("/profile-select" as any);
+  const handleSwitchToBusiness = async () => {
+    // Check if a business account is already saved on this device
+    const savedOwnerId = await AsyncStorage.getItem("@bookease_business_owner_id");
+    const savedBusinessName = await AsyncStorage.getItem("@bookease_business_name");
+
+    if (savedOwnerId) {
+      // Returning business owner — show confirmation with their business name
+      const displayName = savedBusinessName ?? "your business";
+      Alert.alert(
+        "Switch to Business Portal",
+        `Switch to ${displayName}? Your client account will remain active.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Switch",
+            onPress: async () => {
+              if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              const { setProfileMode } = await import("@/lib/client-store");
+              await setProfileMode("business");
+              // Auto-routing in _layout.tsx will send them straight to the dashboard
+              router.replace("/profile-select" as any);
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } else {
+      // No business account — go to onboarding to create/login
+      Alert.alert(
+        "Switch to Business Portal",
+        "Set up or log into a business account to manage appointments, clients, and more.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Get Started",
+            onPress: async () => {
+              if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              const { setProfileMode } = await import("@/lib/client-store");
+              await setProfileMode("business");
+              router.replace("/profile-select" as any);
+            },
+          },
+        ]
+      );
+    }
   };
 
   if (!state.account) {
@@ -134,6 +162,7 @@ export default function ClientProfileScreen() {
                 <Text style={styles.brandByLineText}>CLIENT PORTAL</Text>
                 <View style={styles.brandByLineDash} />
               </View>
+              <Text style={styles.brandByInnovancio}>BY INNOVANCIO</Text>
             </View>
           </View>
           <View style={[styles.guestContainer, { paddingTop: 0 }]}>
@@ -176,6 +205,7 @@ export default function ClientProfileScreen() {
               <Text style={styles.brandByLineText}>CLIENT PORTAL</Text>
               <View style={styles.brandByLineDash} />
             </View>
+            <Text style={styles.brandByInnovancio}>BY INNOVANCIO</Text>
           </View>
         </View>
         {/* Profile Header */}
@@ -387,6 +417,13 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.4)",
     letterSpacing: 1.5,
     textTransform: "uppercase",
+  },
+  brandByInnovancio: {
+    fontSize: 9,
+    color: "rgba(255,255,255,0.28)",
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    marginTop: 4,
   },
   guestContainer: {
     flex: 1,

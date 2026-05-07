@@ -211,6 +211,7 @@ export default function SettingsScreen() {
               "@bookease_locations","@bookease_active_location_id",
               "@bookease_client_photos","@bookease_packages","@bookease_service_photos",
               "@bookease_biometric_enabled",
+              "@bookease_business_name",
               "@lime_tutorial_seen","@lime_tour_analytics","@lime_first_action_shown",
             ]);
           } catch {}
@@ -244,9 +245,10 @@ export default function SettingsScreen() {
                 "@bookease_location_custom_schedule","@bookease_products","@bookease_staff",
                 "@bookease_locations","@bookease_active_location_id",
                 "@bookease_client_photos","@bookease_packages","@bookease_service_photos",
-                "@bookease_biometric_enabled",
-                "@lime_tutorial_seen","@lime_tour_analytics","@lime_first_action_shown",
-              ]);
+              "@bookease_biometric_enabled",
+              "@bookease_business_name",
+              "@lime_tutorial_seen","@lime_tour_analytics","@lime_first_action_shown",
+            ]);
             } catch {}
             try { await removeSessionToken(); } catch {}
             try { await clearUserInfo(); } catch {}

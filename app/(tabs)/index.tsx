@@ -1566,6 +1566,11 @@ export default function HomeScreen() {
                 {state.settings.businessName}
               </Text>
               <Text style={[styles.greetingText, { color: colors.muted }]}>{greeting}</Text>
+              {/* Portal indicator pill */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 }}>
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
+                <Text style={{ fontSize: 10, fontWeight: "700", color: colors.primary, letterSpacing: 0.8, textTransform: "uppercase" }}>Business Portal</Text>
+              </View>
             </View>
             {/* Bell icon + Live clock widget — right side of header */}
             <View style={{ alignItems: "flex-end", gap: 2 }}>
