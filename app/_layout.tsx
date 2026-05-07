@@ -78,6 +78,18 @@ function RootLayout() {
   const router = useRouter();
   const handleSplashFinish = useCallback(async () => {
     setSplashDone(true);
+    // Helper: decode JWT payload and check if token is expired (client-side only, no verification)
+    const isTokenExpired = (token: string): boolean => {
+      try {
+        const parts = token.split(".");
+        if (parts.length !== 3) return true;
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+        if (!payload.exp) return false; // no expiry = never expires
+        return Date.now() / 1000 > payload.exp;
+      } catch {
+        return true; // malformed token — treat as expired
+      }
+    };
     try {
       // Returning business owner: skip portal selector and go straight to dashboard
       const storedOwnerId = await AsyncStorage.getItem("@bookease_business_owner_id");
@@ -85,11 +97,16 @@ function RootLayout() {
         router.replace("/(tabs)" as any);
         return;
       }
-      // Returning client: skip portal selector and go straight to client portal
+      // Returning client: validate token expiry before auto-routing
       const clientToken = await AsyncStorage.getItem("client_session_token");
       if (clientToken) {
-        router.replace("/(client-tabs)" as any);
-        return;
+        if (isTokenExpired(clientToken)) {
+          // Token expired — clear stale session and show portal selector
+          await AsyncStorage.multiRemove(["client_session_token", "client_account_info"]);
+        } else {
+          router.replace("/(client-tabs)" as any);
+          return;
+        }
       }
     } catch { /* ignore */ }
     // First-time or logged-out user: show portal selector
