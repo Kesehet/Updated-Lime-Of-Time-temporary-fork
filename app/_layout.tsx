@@ -78,17 +78,8 @@ function RootLayout() {
   const router = useRouter();
   const handleSplashFinish = useCallback(async () => {
     setSplashDone(true);
-    try {
-      // Check if a client session token exists — if so, skip profile-select and go straight to client portal
-      const clientToken = await AsyncStorage.getItem("client_session_token");
-      if (clientToken) {
-        router.replace("/(client-tabs)" as any);
-      } else {
-        router.replace("/profile-select" as any);
-      }
-    } catch {
-      router.replace("/profile-select" as any);
-    }
+    // Always land on profile-select so the user can choose Business or Client portal
+    router.replace("/profile-select" as any);
   }, [router]);
   const onLayoutRootView = useCallback(async () => {
     // Hide the native splash immediately — we use our own animated splash instead
@@ -179,7 +170,7 @@ function RootLayout() {
               <Stack.Screen name="client-detail" options={{ presentation: "card" }} />
               <Stack.Screen name="service-form" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="booking" options={{ presentation: "fullScreenModal" }} />
-              <Stack.Screen name="onboarding" options={{ presentation: "card" }} />
+              <Stack.Screen name="onboarding" options={{ presentation: "card", gestureEnabled: false }} />
               <Stack.Screen name="analytics-detail" options={{ presentation: "card" }} />
               <Stack.Screen name="discounts" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="gift-cards" options={{ presentation: "fullScreenModal" }} />
@@ -228,7 +219,7 @@ function RootLayout() {
               <Stack.Screen name="payment-method-venmo" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="payment-method-zelle" options={{ presentation: "fullScreenModal" }} />
               {/* Client Portal Screens */}
-              <Stack.Screen name="profile-select" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="profile-select" options={{ presentation: "card" }} />
               <Stack.Screen name="client-signin" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="client-profile-onboarding" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="client-edit-profile" options={{ presentation: "modal", headerShown: false }} />
