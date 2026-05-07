@@ -41,6 +41,7 @@ import { getApiBaseUrl } from "@/constants/oauth";
 import { SERVICE_CATEGORIES, ALL_CATEGORY, CATEGORY_MAP, getCategoryDef } from "@/constants/categories";
 
 const DISCOVER_PREFS_KEY = "client_discover_prefs";
+const PINNED_CATS_KEY = "client_pinned_categories";  // persisted list of pinned category labels
 const RECENTLY_VIEWED_KEY = "client_recently_viewed_businesses"; // last 5 tapped businesses
 
 // ─── Recently Viewed (tap-based) helpers ─────────────────────────────────────
@@ -406,6 +407,8 @@ export default function DiscoverScreen() {
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedBusiness[]>([]);
   // Dynamic categories fetched from API (includes custom categories from all businesses)
   const [dynamicCategories, setDynamicCategories] = useState<string[]>([]);
+  // Pinned categories — long-press a chip to pin/unpin; pinned chips float to the front
+  const [pinnedCategories, setPinnedCategories] = useState<string[]>([]);
   const clearRecentlyViewed = useCallback(async () => {
     await AsyncStorage.removeItem(RECENTLY_VIEWED_KEY);
     setRecentlyViewed([]);
@@ -416,6 +419,10 @@ export default function DiscoverScreen() {
   // Load recently viewed businesses from AsyncStorage on mount
   useEffect(() => {
     loadRecentlyViewed().then(setRecentlyViewed);
+    // Load pinned categories from AsyncStorage
+    AsyncStorage.getItem(PINNED_CATS_KEY).then((raw) => {
+      if (raw) setPinnedCategories(JSON.parse(raw));
+    }).catch(() => {});
     // Fetch all available categories from the server (includes custom ones)
     fetch(`${getApiBaseUrl()}/api/client/businesses/categories`)
       .then((r) => r.json())
@@ -568,6 +575,18 @@ export default function DiscoverScreen() {
       setNearMeLoading(false);
     }
   };
+
+  const handlePinCategory = useCallback((label: string) => {
+    if (label === "All") return; // "All" chip cannot be pinned
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setPinnedCategories((prev) => {
+      const next = prev.includes(label)
+        ? prev.filter((c) => c !== label)  // unpin
+        : [...prev, label];                // pin
+      AsyncStorage.setItem(PINNED_CATS_KEY, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, []);
 
   const handleCategorySelect = (cat: string) => {
     const newCat = cat === "All" ? null : cat;
@@ -764,9 +783,16 @@ export default function DiscoverScreen() {
             const customCats = dynamicCategories
               .filter((c) => !standardLabels.has(c))
               .map((c) => getCategoryDef(c));
+            // Float pinned chips to the front (after "All"), preserve original order otherwise
             const allChips = [...STANDARD_CATEGORIES, ...customCats];
-            return allChips.map(({ label, emoji, color }) => {
+            const [allChip, ...restChips] = allChips;
+            const pinnedSet = new Set(pinnedCategories);
+            const pinned = restChips.filter((c) => pinnedSet.has(c.label));
+            const unpinned = restChips.filter((c) => !pinnedSet.has(c.label));
+            const orderedChips = [allChip, ...pinned, ...unpinned];
+            return orderedChips.map(({ label, emoji, color }) => {
               const isActive = activeCategory === label;
+              const isPinned = pinnedCategories.includes(label);
               const accentColor = color ?? GREEN_ACCENT;
               return (
                 <Pressable
@@ -775,16 +801,21 @@ export default function DiscoverScreen() {
                     s.categoryChip,
                     {
                       backgroundColor: isActive ? accentColor + "30" : CARD_BG,
-                      borderColor: isActive ? accentColor : CARD_BORDER,
+                      borderColor: isActive ? accentColor : isPinned ? accentColor + "70" : CARD_BORDER,
                     },
                     pressed && { opacity: 0.75 },
                   ]}
                   onPress={() => handleCategorySelect(label)}
+                  onLongPress={() => handlePinCategory(label)}
+                  delayLongPress={400}
                 >
                   <Text style={s.categoryEmoji}>{emoji}</Text>
-                  <Text style={[s.categoryLabel, { color: isActive ? accentColor : TEXT_PRIMARY }]}>
+                  <Text style={[s.categoryLabel, { color: isActive ? accentColor : isPinned ? accentColor : TEXT_PRIMARY }]}>
                     {label}
                   </Text>
+                  {isPinned && (
+                    <Text style={{ fontSize: 8, color: accentColor, lineHeight: 10, marginLeft: -2 }}>📌</Text>
+                  )}
                 </Pressable>
               );
             });

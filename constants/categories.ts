@@ -34,7 +34,7 @@ export const SERVICE_CATEGORIES: CategoryDef[] = [
   { label: "Teeth Whitening",   emoji: "🦷",  icon: "mouth.fill",                  color: "#67E8F9" },
   { label: "Tanning",           emoji: "☀️",  icon: "sun.max.fill",                color: "#FDE68A" },
   { label: "Holistic",          emoji: "🌿",  icon: "leaf.fill",                   color: "#4ADE80" },
-  { label: "Other",             emoji: "📍",  icon: "ellipsis.circle.fill",        color: "rgba(255,255,255,0.5)" },
+  { label: "Other",             emoji: "📍",  icon: "ellipsis.circle.fill",        color: "#9CA3AF" },
 ];
 
 /** The "All" chip shown at the start of the filter row. */
@@ -57,6 +57,6 @@ export function getCategoryDef(label: string | null | undefined): CategoryDef {
     label,
     emoji: "📍",
     icon: "ellipsis.circle.fill",
-    color: "rgba(255,255,255,0.5)",
+    color: "#9CA3AF",
   };
 }

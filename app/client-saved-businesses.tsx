@@ -21,6 +21,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ClientPortalBackground } from "@/components/client-portal-background";
 import * as Haptics from "expo-haptics";
 import { Platform } from "react-native";
+import { getCategoryDef } from "@/constants/categories";
 
 const ACCENT       = "#8FBF6A";
 const TEXT_PRIMARY = "#FFFFFF";
@@ -106,9 +107,15 @@ export default function ClientSavedBusinessesScreen() {
               </View>
               <View style={s.bizInfo}>
                 <Text style={s.bizName}>{item.businessName}</Text>
-                {item.businessCategory && (
-                  <Text style={s.bizCategory}>{item.businessCategory}</Text>
-                )}
+                {item.businessCategory && (() => {
+                  const catDef = getCategoryDef(item.businessCategory);
+                  return (
+                    <View style={[s.categoryBadge, { backgroundColor: catDef.color + "18", borderColor: catDef.color + "40" }]}>
+                      <Text style={{ fontSize: 11, lineHeight: 14 }}>{catDef.emoji}</Text>
+                      <Text style={[s.categoryBadgeText, { color: catDef.color }]}>{item.businessCategory}</Text>
+                    </View>
+                  );
+                })()}
                 {item.businessAddress && (
                   <Text style={s.bizAddress} numberOfLines={1}>{item.businessAddress}</Text>
                 )}
@@ -143,5 +150,7 @@ const s = StyleSheet.create({
   bizInfo: { flex: 1, gap: 3 },
   bizName: { fontSize: 15, fontWeight: "700", color: TEXT_PRIMARY },
   bizCategory: { fontSize: 12, fontWeight: "600", color: ACCENT },
+  categoryBadge: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3, borderWidth: 1, alignSelf: "flex-start" },
+  categoryBadgeText: { fontSize: 11, fontWeight: "600", lineHeight: 14 },
   bizAddress: { fontSize: 12, color: TEXT_MUTED },
 });
