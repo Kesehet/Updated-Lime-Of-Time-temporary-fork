@@ -3,7 +3,7 @@
  * Full dark-green portal theme with white text, glass cards, no scrollbar.
  */
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   View, Text, ScrollView, Pressable, StyleSheet, TextInput,
   ActivityIndicator, Alert, Platform, Linking, Dimensions, FlatList, Modal,
@@ -56,6 +56,7 @@ interface ApiService {
 }
 interface ApiStaff {
   localId: string; name: string; role: string | null; bio?: string | null; photoUri: string | null;
+  avgRating?: number | null; reviewCount?: number;
 }
 interface ApiReview {
   rating: number; comment: string | null; clientName: string; createdAt: string;
@@ -117,6 +118,7 @@ export default function ClientBusinessDetailScreen() {
   const [isSaved, setIsSaved] = useState(false);
   const [savingToggle, setSavingToggle] = useState(false);
   const [activeTab, setActiveTab] = useState<"services"|"staff"|"hours"|"reviews"|"gallery">("services");
+  const reviewsTabRef = useRef<any>(null);
   const [serviceCategory, setServiceCategory] = useState<string | null>(null);
   const [detailReviewVisible, setDetailReviewVisible] = useState(false);
   const [detailReviewRating, setDetailReviewRating] = useState(5);
@@ -277,8 +279,16 @@ export default function ClientBusinessDetailScreen() {
               <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>{distanceMiles} mi away</Text>
             </View>
           ) : null}
-          {/* ── Prominent star rating ── */}
-          <View style={s.ratingRow}>
+          {/* ── Prominent star rating (tappable → jumps to Reviews tab) ── */}
+          <Pressable
+            style={({ pressed }) => [s.ratingRow, pressed && { opacity: 0.7 }]}
+            onPress={() => {
+              if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setActiveTab("reviews");
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="View all reviews"
+          >
             {Array.from({ length: 5 }, (_, i) => {
               const rating = Number(business.avgRating ?? 0);
               const filled = business.avgRating != null && i < Math.floor(rating);
@@ -297,7 +307,10 @@ export default function ClientBusinessDetailScreen() {
             ) : (
               <Text style={[s.ratingCount, { color: TEXT_MUTED }]}>No reviews yet</Text>
             )}
-          </View>
+            {business.avgRating != null && (
+              <IconSymbol name="chevron.right" size={12} color={TEXT_MUTED} style={{ marginLeft: 2 }} />
+            )}
+          </Pressable>
           {/* Show primary location address if only 1 location, else use business.address */}
           {(locations.length === 1 ? locations[0].address : business.address) ? (
             <View style={s.metaRow}>
@@ -411,6 +424,22 @@ export default function ClientBusinessDetailScreen() {
                     <View style={[s.staffInfo, { flex: 1 }]}>
                       <Text style={[s.staffName, { color: TEXT_PRIMARY }]}>{member.name}</Text>
                       {member.role && <Text style={[s.staffRole, { color: ACCENT }]}>{member.role}</Text>}
+                      {/* Per-staff star rating */}
+                      {member.avgRating != null ? (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 2, marginTop: 2 }}>
+                          {[1,2,3,4,5].map((i) => (
+                            <Text key={i} style={{ fontSize: 11, color: i <= Math.round(member.avgRating!) ? "#FFD200" : "rgba(255,255,255,0.2)", lineHeight: 14 }}>
+                              {i <= Math.round(member.avgRating!) ? "★" : "☆"}
+                            </Text>
+                          ))}
+                          <Text style={{ fontSize: 11, color: "#FFD200", fontWeight: "700", marginLeft: 3 }}>
+                            {Number(member.avgRating).toFixed(1)}
+                          </Text>
+                          <Text style={{ fontSize: 10, color: TEXT_MUTED, marginLeft: 1 }}>
+                            ({member.reviewCount ?? 0})
+                          </Text>
+                        </View>
+                      ) : null}
                       {member.bio && <Text style={[s.staffBio, { color: TEXT_MUTED }]} numberOfLines={expandedStaffId === member.localId ? 0 : 2}>{member.bio}</Text>}
                     </View>
                     <IconSymbol name={expandedStaffId === member.localId ? "chevron.up" : "chevron.down"} size={16} color={TEXT_MUTED} />

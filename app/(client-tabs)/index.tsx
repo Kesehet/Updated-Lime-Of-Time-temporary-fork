@@ -16,10 +16,12 @@ import {
   Platform,
   Image,
   Dimensions,
+  Pressable,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useColors } from "@/hooks/use-colors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useClientStore, ClientAppointment } from "@/lib/client-store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ClientPortalBackground } from "@/components/client-portal-background";
@@ -111,6 +113,7 @@ export default function ClientHomeScreen() {
   const { state, dispatch, apiCall } = useClientStore();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [reviewPromptAppt, setReviewPromptAppt] = useState<ClientAppointment | null>(null);
 
   const isSignedIn = !!state.account;
 
@@ -125,6 +128,32 @@ export default function ClientHomeScreen() {
       // API returns { appointments: [...] } — unwrap it
       const appts: ClientAppointment[] = Array.isArray(rawAppts) ? rawAppts : (rawAppts as any).appointments ?? [];
       dispatch({ type: "SET_APPOINTMENTS", payload: appts });
+      // ── Review prompt: find a recently completed appointment (within 48h) not yet reviewed ──
+      try {
+        const dismissed = await AsyncStorage.getItem("dismissed_review_prompts");
+        const dismissedIds: number[] = dismissed ? JSON.parse(dismissed) : [];
+        const now = Date.now();
+        const TWO_DAYS_MS = 48 * 60 * 60 * 1000;
+        const candidates = appts.filter((a) => {
+          if (a.status !== "completed") return false;
+          if (dismissedIds.includes(a.id)) return false;
+          // Check if appointment was within the last 48 hours
+          const apptDate = new Date(a.date + "T" + (a.time || "00:00") + ":00");
+          return (now - apptDate.getTime()) <= TWO_DAYS_MS && (now - apptDate.getTime()) >= 0;
+        });
+        if (candidates.length > 0) {
+          // Check if already reviewed
+          const candidate = candidates[0];
+          try {
+            const checkRes = await apiCall<{ reviewed: boolean }>(`/api/client/reviews/check/${candidate.id}`);
+            if (!checkRes.reviewed) {
+              setReviewPromptAppt(candidate);
+            }
+          } catch { /* ignore */ }
+        } else {
+          setReviewPromptAppt(null);
+        }
+      } catch { /* ignore */ }
       // Saved businesses returns an array directly
       dispatch({ type: "SET_SAVED_BUSINESSES", payload: Array.isArray(saved) ? saved : [] });
       const msgs = await apiCall<{ count: number; unreadCount?: number }>("/api/client/messages/unread-count");
@@ -247,6 +276,43 @@ export default function ClientHomeScreen() {
           </Animated.View>
         )}
 
+        {/* ── Review Prompt Banner ── */}
+        {reviewPromptAppt && (
+          <Animated.View style={[{ paddingHorizontal: 16, marginBottom: 4 }, headerStyle]}>
+            <Pressable
+              style={({ pressed }) => [styles.reviewBanner, pressed && { opacity: 0.85 }]}
+              onPress={() => {
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push({ pathname: "/client-appointment-detail", params: { id: String(reviewPromptAppt.id) } } as any);
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                <Text style={{ fontSize: 20 }}>⭐</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.reviewBannerTitle}>How was your visit?</Text>
+                  <Text style={styles.reviewBannerSub} numberOfLines={1}>
+                    {reviewPromptAppt.serviceName} at {reviewPromptAppt.businessName}
+                  </Text>
+                </View>
+                <IconSymbol name="chevron.right" size={14} color={GREEN_ACCENT} />
+              </View>
+              <Pressable
+                style={{ padding: 6, marginRight: -4 }}
+                onPress={async (e) => {
+                  e.stopPropagation?.();
+                  const dismissed = await AsyncStorage.getItem("dismissed_review_prompts");
+                  const ids: number[] = dismissed ? JSON.parse(dismissed) : [];
+                  ids.push(reviewPromptAppt.id);
+                  await AsyncStorage.setItem("dismissed_review_prompts", JSON.stringify(ids));
+                  setReviewPromptAppt(null);
+                }}
+                hitSlop={8}
+              >
+                <IconSymbol name="xmark" size={12} color="rgba(255,255,255,0.5)" />
+              </Pressable>
+            </Pressable>
+          </Animated.View>
+        )}
         <Animated.View style={contentStyle}>
           {/* Quick Actions */}
           <View style={styles.quickActions}>
@@ -544,6 +610,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: GREEN_ACCENT,
+  },
+  reviewBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    backgroundColor: "rgba(255,210,0,0.1)",
+    borderColor: "rgba(255,210,0,0.3)",
+  },
+  reviewBannerTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  reviewBannerSub: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.65)",
+    marginTop: 1,
   },
   quickActions: {
     flexDirection: "row",

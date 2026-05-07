@@ -272,6 +272,22 @@ export function registerPublicRoutes(app: Express) {
       const staffList = await db.getStaffByOwner(owner.id);
       // Load services so we can convert numeric DB ids → localId UUID strings
       const servicesList = await db.getServicesByOwner(owner.id);
+      // Load reviews + appointments to compute per-staff ratings
+      const [reviewsList, appointmentsList] = await Promise.all([
+        db.getReviewsByOwner(owner.id),
+        db.getAppointmentsByOwner(owner.id),
+      ]);
+      // Build a map: staffLocalId → { sum, count }
+      const staffRatingMap = new Map<string, { sum: number; count: number }>();
+      for (const review of reviewsList) {
+        if (!review.appointmentLocalId) continue;
+        const appt = appointmentsList.find((a: any) => a.localId === review.appointmentLocalId);
+        if (!appt?.staffId) continue;
+        const entry = staffRatingMap.get(appt.staffId) ?? { sum: 0, count: 0 };
+        entry.sum += review.rating;
+        entry.count += 1;
+        staffRatingMap.set(appt.staffId, entry);
+      }
       // Only return active staff with their name, services, and working hours
       res.json(staffList.filter((s: any) => s.active !== false).map((s: any) => {
         // serviceIds in the DB are stored as numeric DB primary keys (from staff-form.tsx svc.id).
@@ -296,6 +312,8 @@ export function registerPublicRoutes(app: Express) {
           serviceIds: serviceLocalIds,
           locationIds: Array.isArray(s.locationIds) ? s.locationIds : (s.locationIds ? JSON.parse(s.locationIds) : null),
           workingHours: s.workingHours ? (typeof s.workingHours === 'object' ? s.workingHours : JSON.parse(s.workingHours)) : null,
+          avgRating: staffRatingMap.has(s.localId) ? Math.round((staffRatingMap.get(s.localId)!.sum / staffRatingMap.get(s.localId)!.count) * 10) / 10 : null,
+          reviewCount: staffRatingMap.get(s.localId)?.count ?? 0,
         };
       }));
     } catch (err) {
