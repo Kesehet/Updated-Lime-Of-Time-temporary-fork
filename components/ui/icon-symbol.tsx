@@ -153,6 +153,14 @@ const MAPPING = {
   "face.smiling": "face",
   "figure.stand": "accessibility",
   "paintbrush": "brush",
+  "comb.fill": "content-cut",
+  "drop.fill": "water-drop",
+  "figure.strengthtraining.traditional": "fitness-center",
+  "pencil.tip": "edit",
+  "mouth.fill": "sentiment-satisfied",
+  "leaf.fill": "eco",
+  "ellipsis.circle.fill": "more-horiz",
+  "eyebrow": "face-retouching-natural",
 } as unknown as IconMapping;
 
 export function IconSymbol({

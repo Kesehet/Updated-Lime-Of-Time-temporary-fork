@@ -17,6 +17,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { trpc } from "@/lib/trpc";
+import { SERVICE_CATEGORIES, getCategoryDef } from "@/constants/categories";
 
 export default function ServiceFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -244,26 +245,47 @@ export default function ServiceFormScreen() {
           />
 
           <Text style={[styles.fieldLabel, { color: colors.muted, marginTop: 16 }]}>Category (optional)</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
-            placeholder="e.g. Hair, Nails, Massage…"
-            placeholderTextColor={colors.muted}
-            value={category}
-            onChangeText={setCategory}
-            returnKeyType="done"
-          />
-          {existingCategories.length > 0 && !category && (
-            <View style={styles.chipRow}>
-              {existingCategories.map((cat) => (
+          {/* Standard category grid */}
+          <View style={styles.categoryGrid}>
+            {SERVICE_CATEGORIES.map((cat) => {
+              const isSelected = category === cat.label;
+              return (
                 <Pressable
-                  key={cat}
-                  onPress={() => setCategory(cat)}
-                  style={({ pressed }) => [styles.chip, { backgroundColor: colors.background, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
+                  key={cat.label}
+                  onPress={() => setCategory(isSelected ? "" : cat.label)}
+                  style={({ pressed }) => [
+                    styles.categoryTile,
+                    {
+                      backgroundColor: isSelected ? cat.color + "22" : colors.surface,
+                      borderColor: isSelected ? cat.color : colors.border,
+                      opacity: pressed ? 0.75 : 1,
+                    },
+                  ]}
                 >
-                  <Text style={[styles.chipText, { color: colors.foreground }]}>{cat}</Text>
+                  <Text style={styles.categoryTileEmoji}>{cat.emoji}</Text>
+                  <Text
+                    style={[
+                      styles.categoryTileLabel,
+                      { color: isSelected ? cat.color : colors.foreground },
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {cat.label}
+                  </Text>
                 </Pressable>
-              ))}
-            </View>
+              );
+            })}
+          </View>
+          {/* Custom category input — shown when "Other" is selected or a non-standard value exists */}
+          {(category === "Other" || (category && !SERVICE_CATEGORIES.find(c => c.label === category))) && (
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border, marginTop: 8 }]}
+              placeholder="Enter custom category name…"
+              placeholderTextColor={colors.muted}
+              value={category === "Other" ? "" : category}
+              onChangeText={(text) => setCategory(text || "Other")}
+              returnKeyType="done"
+            />
           )}
 
           <Text style={[styles.fieldLabel, { color: colors.muted, marginTop: 16 }]}>Description (optional)</Text>
@@ -485,6 +507,32 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 12,
     fontWeight: "500",
+  },
+  categoryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
+  },
+  categoryTile: {
+    width: "30%",
+    minWidth: 90,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: "center",
+    gap: 4,
+  },
+  categoryTileEmoji: {
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  categoryTileLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 14,
   },
   colorRow: {
     flexDirection: "row",

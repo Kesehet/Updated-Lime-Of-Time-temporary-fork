@@ -208,6 +208,28 @@ export function registerClientRoutes(app: Express) {
 
   // ── Discovery ─────────────────────────────────────────────────────────────
 
+  /**
+   * GET /api/client/businesses/categories
+   * Returns all unique service categories from discoverable businesses.
+   */
+  app.get("/api/client/businesses/categories", async (req: Request, res: Response) => {
+    try {
+      const businesses = await db.getDiscoverableBusinesses();
+      const catSet = new Set<string>();
+      for (const biz of businesses) {
+        if (biz.businessCategory) catSet.add(biz.businessCategory.trim());
+        const services = await db.getServicesByOwner(biz.id);
+        for (const svc of services) {
+          if (svc.category) catSet.add(svc.category.trim());
+        }
+      }
+      catSet.delete("");
+      res.json({ categories: Array.from(catSet).sort() });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
    /**
    * GET /api/client/businesses/discover
    * Query params: lat, lng, radiusMiles (default 25), category, search (or q), location (zip/city for geocoding)
@@ -292,20 +314,26 @@ export function registerClientRoutes(app: Express) {
 
       const results = enriched
         .filter((b) => {
-          // Category filter — case-insensitive, partial match
-          // e.g. "Hair" matches "Hair Salon", "hair", "HAIR & Nails"
-          // Businesses with null/empty category are treated as "Other"
+          // Category filter — checks both businessCategory AND serviceCategories
+          // A business matches if its primary category OR any of its service categories match
           if (category) {
             const filterCat = category.toLowerCase();
             const bizCat = (b.businessCategory ?? "").toLowerCase();
+            const svcCats = (b.serviceCategories ?? []).map((c: string) => c.toLowerCase());
+
             if (filterCat === "other") {
-              // "Other" chip: match only businesses with no category or explicit "other"
-              if (bizCat && bizCat !== "other") return false;
+              // "Other" chip: match businesses with no standard category AND no standard service categories
+              const hasStandardCat = bizCat && bizCat !== "other";
+              const hasStandardSvc = svcCats.some((c: string) => c && c !== "other");
+              if (hasStandardCat || hasStandardSvc) return false;
             } else {
-              // Skip businesses with no category set (they appear under "Other")
-              if (!bizCat) return false;
-              // Partial match in either direction
-              if (!bizCat.includes(filterCat) && !filterCat.includes(bizCat)) return false;
+              // Match if businessCategory matches
+              const bizCatMatch = bizCat && (bizCat.includes(filterCat) || filterCat.includes(bizCat));
+              // Match if any serviceCategory matches
+              const svcCatMatch = svcCats.some((c: string) =>
+                c && (c.includes(filterCat) || filterCat.includes(c))
+              );
+              if (!bizCatMatch && !svcCatMatch) return false;
             }
           }
           // Text search: match business name, description, address, city, zip

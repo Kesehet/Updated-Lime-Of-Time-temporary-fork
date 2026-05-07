@@ -38,6 +38,7 @@ import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiBaseUrl } from "@/constants/oauth";
+import { SERVICE_CATEGORIES, ALL_CATEGORY, CATEGORY_MAP, getCategoryDef } from "@/constants/categories";
 
 const DISCOVER_PREFS_KEY = "client_discover_prefs";
 const RECENTLY_VIEWED_KEY = "client_recently_viewed_businesses"; // last 5 tapped businesses
@@ -90,41 +91,15 @@ async function loadRecentlyViewed(): Promise<RecentlyViewedBusiness[]> {
   } catch { return []; }
 }
 
-const CATEGORIES = [
-  { label: "All", emoji: "🔍" },
-  { label: "Hair", emoji: "✂️" },
-  { label: "Nails", emoji: "💅" },
-  { label: "Skin", emoji: "✨" },
-  { label: "Massage", emoji: "💆" },
-  { label: "Fitness", emoji: "🏋️" },
-  { label: "Dental", emoji: "🦷" },
-  { label: "Medical", emoji: "🏥" },
-  { label: "Spa", emoji: "🧖" },
-  { label: "Barber", emoji: "💈" },
-  { label: "Tattoo", emoji: "🎨" },
-  { label: "Other", emoji: "📍" },
-];
-
+// CATEGORIES and CATEGORY_COLORS are derived from the shared constants/categories.ts
+// This ensures the service form picker and discover filter chips always stay in sync.
+const STANDARD_CATEGORIES = [ALL_CATEGORY, ...SERVICE_CATEGORIES];
 // Radius options in miles
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
-
-// Category accent colors
-// Green-toned category colors for dark background
-const CATEGORY_COLORS: Record<string, string> = {
-  Hair: "#8FBF6A",
-  Nails: "#F9A8D4",
-  Skin: "#FCD34D",
-  Massage: "#6EE7B7",
-  Fitness: "#93C5FD",
-  Dental: "#67E8F9",
-  Medical: "#FCA5A5",
-  Spa: "#C4B5FD",
-  Barber: "#8FBF6A",
-  Tattoo: "#FDBA74",
-  Other: "rgba(255,255,255,0.5)",
-  All: "#8FBF6A",
-};
-
+// Accent color lookup — falls back to getCategoryDef for unknowns
+const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
+  STANDARD_CATEGORIES.map((c) => [c.label, c.color])
+);
 const GREEN_ACCENT = "#8FBF6A";
 const GREEN_DARK = "#1A3A28";
 const CARD_BG = "rgba(255,255,255,0.09)";
@@ -163,7 +138,7 @@ function RecentlyViewedSection({ items, router, onClear }: { items: RecentlyView
       >
         {items.map((biz) => {
           const accentColor = CATEGORY_COLORS[biz.businessCategory ?? "Other"] ?? GREEN_ACCENT;
-          const emoji = CATEGORIES.find((c) => c.label === biz.businessCategory)?.emoji ?? "🏢";
+          const emoji = getCategoryDef(biz.businessCategory).emoji;
           return (
             <Pressable
               key={biz.id}
@@ -239,7 +214,7 @@ function RecentlyVisited({ items, router }: { items: RecentBusiness[]; router: R
       >
         {items.map((biz) => {
           const accentColor = CATEGORY_COLORS[biz.businessCategory ?? "Other"] ?? "#8B5CF6";
-          const emoji = CATEGORIES.find((c) => c.label === biz.businessCategory)?.emoji ?? "🏢";
+          const emoji = getCategoryDef(biz.businessCategory).emoji;
           return (
             <Pressable
               key={biz.businessOwnerId}
@@ -402,6 +377,8 @@ export default function DiscoverScreen() {
   const [nearMeLoading, setNearMeLoading] = useState(false);
   const [sortMode, setSortMode] = useState<"default" | "rating" | "reviews">("default");
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedBusiness[]>([]);
+  // Dynamic categories fetched from API (includes custom categories from all businesses)
+  const [dynamicCategories, setDynamicCategories] = useState<string[]>([]);
   const clearRecentlyViewed = useCallback(async () => {
     await AsyncStorage.removeItem(RECENTLY_VIEWED_KEY);
     setRecentlyViewed([]);
@@ -412,6 +389,13 @@ export default function DiscoverScreen() {
   // Load recently viewed businesses from AsyncStorage on mount
   useEffect(() => {
     loadRecentlyViewed().then(setRecentlyViewed);
+    // Fetch all available categories from the server (includes custom ones)
+    fetch(`${getApiBaseUrl()}/api/client/businesses/categories`)
+      .then((r) => r.json())
+      .then((data: { categories: string[] }) => {
+        if (data?.categories) setDynamicCategories(data.categories);
+      })
+      .catch(() => {});
   }, []);
 
   // Detect if query looks like a zip code or city name (location identifier)
@@ -747,29 +731,37 @@ export default function DiscoverScreen() {
           contentContainerStyle={s.categoryRow}
           style={s.categoryScroll}
         >
-          {CATEGORIES.map(({ label, emoji }) => {
-            const isActive = activeCategory === label;
-            const accentColor = CATEGORY_COLORS[label] ?? GREEN_ACCENT;
-            return (
-              <Pressable
-                key={label}
-                style={({ pressed }) => [
-                  s.categoryChip,
-                  {
-                    backgroundColor: isActive ? accentColor + "30" : CARD_BG,
-                    borderColor: isActive ? accentColor : CARD_BORDER,
-                  },
-                  pressed && { opacity: 0.75 },
-                ]}
-                onPress={() => handleCategorySelect(label)}
-              >
-                <Text style={s.categoryEmoji}>{emoji}</Text>
-                <Text style={[s.categoryLabel, { color: isActive ? accentColor : TEXT_PRIMARY }]}>
-                  {label}
-                </Text>
-              </Pressable>
-            );
-          })}
+          {(() => {
+            // Merge standard categories with any custom categories from the API
+            const standardLabels = new Set(STANDARD_CATEGORIES.map((c) => c.label));
+            const customCats = dynamicCategories
+              .filter((c) => !standardLabels.has(c))
+              .map((c) => getCategoryDef(c));
+            const allChips = [...STANDARD_CATEGORIES, ...customCats];
+            return allChips.map(({ label, emoji, color }) => {
+              const isActive = activeCategory === label;
+              const accentColor = color ?? GREEN_ACCENT;
+              return (
+                <Pressable
+                  key={label}
+                  style={({ pressed }) => [
+                    s.categoryChip,
+                    {
+                      backgroundColor: isActive ? accentColor + "30" : CARD_BG,
+                      borderColor: isActive ? accentColor : CARD_BORDER,
+                    },
+                    pressed && { opacity: 0.75 },
+                  ]}
+                  onPress={() => handleCategorySelect(label)}
+                >
+                  <Text style={s.categoryEmoji}>{emoji}</Text>
+                  <Text style={[s.categoryLabel, { color: isActive ? accentColor : TEXT_PRIMARY }]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            });
+          })()}
         </ScrollView>
       </View>
 
@@ -979,7 +971,7 @@ function BusinessCard({ item, router, index, onTap }: { item: DiscoverBusiness; 
                 <View style={cardStyles.chipsRow}>
                   {cats.slice(0, 4).map((cat) => {
                     const chipColor = CATEGORY_COLORS[cat] ?? GREEN_ACCENT;
-                    const catEmoji = CATEGORIES.find((c) => c.label === cat)?.emoji ?? "";
+                    const catEmoji = getCategoryDef(cat).emoji;
                     return (
                       <View key={cat} style={[cardStyles.chip, { backgroundColor: chipColor + "1A", borderColor: chipColor + "40" }]}>
                         <Text style={[cardStyles.chipText, { color: chipColor }]}>
