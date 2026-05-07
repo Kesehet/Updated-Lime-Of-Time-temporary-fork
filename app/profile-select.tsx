@@ -31,6 +31,7 @@ import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { setProfileMode } from "@/lib/client-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { recordBusinessActivity, recordClientActivity } from "@/hooks/use-app-lock";
 
 const { width, height } = Dimensions.get("window");
 
@@ -230,12 +231,16 @@ export default function ProfileSelectScreen() {
       try {
         const storedOwnerId = await AsyncStorage.getItem("@bookease_business_owner_id");
         if (storedOwnerId) {
+          // Record activity so the 24h re-auth timer resets on each portal entry
+          await recordBusinessActivity();
           router.replace("/(tabs)" as any);
           return;
         }
       } catch { /* ignore */ }
       router.push("/onboarding");
     } else {
+      // Record client activity on portal entry
+      await recordClientActivity();
       // Go directly to the Discover tab — location permission is requested on mount there.
       // Clients can sign in later when they try to book.
       router.replace("/(client-tabs)/discover" as any);

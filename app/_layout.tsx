@@ -29,6 +29,12 @@ import { AnimatedSplash } from "@/components/animated-splash";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Auth from "@/lib/_core/auth";
 import { SessionExpiredToast } from "@/components/session-expired-toast";
+import {
+  businessNeedsReauth,
+  clientNeedsLogout,
+  CLIENT_LAST_ACTIVE_KEY,
+  BUSINESS_LAST_ACTIVE_KEY,
+} from "@/hooks/use-app-lock";
 
 /**
  * One-time migration: if businessLogoUri is a local file:/// path (from a
@@ -93,36 +99,58 @@ function RootLayout() {
       }
     };
     try {
-      // Returning business owner: validate session token expiry before auto-routing
+      // ── Business portal ──────────────────────────────────────────────────
+      // Always land on Portal Selector first. If a valid business session exists,
+      // the user still taps "Business Portal" — but we skip the onboarding flow
+      // and go straight to the dashboard (handled in profile-select.tsx).
+      // Exception: if biometric lock is enabled AND the owner was away < 24 h,
+      // we auto-route to the dashboard (Face ID lock overlay will appear on top).
       const storedOwnerId = await AsyncStorage.getItem("@bookease_business_owner_id");
       if (storedOwnerId) {
         const businessToken = await Auth.getSessionToken();
-        if (businessToken && isTokenExpired(businessToken)) {
-          // Business session token expired — clear stale session and show portal selector
+        if (!businessToken || isTokenExpired(businessToken)) {
+          // JWT expired — clear stale session, fall through to portal selector
           await Auth.removeSessionToken();
           await AsyncStorage.multiRemove([
             "@bookease_business_owner_id",
             "@bookease_business_name",
             "@bookease_settings",
+            BUSINESS_LAST_ACTIVE_KEY,
           ]);
         } else {
-          router.replace("/(tabs)" as any);
-          return;
+          // Valid session. Check if biometric is enabled and owner was away > 24 h.
+          // If so, auto-route to dashboard — the AppLockProvider will show Face ID.
+          // If biometric is NOT enabled, always show portal selector (user must tap).
+          const biometricEnabled = await AsyncStorage.getItem("@bookease_biometric_enabled");
+          const needsReauth = await businessNeedsReauth();
+          if (biometricEnabled === "true" && !needsReauth) {
+            // Recently used AND biometric enabled → auto-route, Face ID will guard
+            router.replace("/(tabs)" as any);
+            return;
+          }
+          // Otherwise: show portal selector. User taps Business Portal → goes to dashboard.
+          // (profile-select.tsx already handles the "storedOwnerId exists" fast-path)
         }
       }
-      // Returning client: validate token expiry before auto-routing
+
+      // ── Client portal ────────────────────────────────────────────────────
       const clientToken = await AsyncStorage.getItem("client_session_token");
       if (clientToken) {
         if (isTokenExpired(clientToken)) {
-          // Token expired — clear stale session and show portal selector
-          await AsyncStorage.multiRemove(["client_session_token", "client_account_info"]);
+          // JWT expired — clear stale session
+          await AsyncStorage.multiRemove(["client_session_token", "client_account_info", CLIENT_LAST_ACTIVE_KEY]);
         } else {
-          router.replace("/(client-tabs)" as any);
-          return;
+          // Check 30-day inactivity
+          const needsLogout = await clientNeedsLogout();
+          if (needsLogout) {
+            // Inactive for > 30 days — clear session and show portal selector
+            await AsyncStorage.multiRemove(["client_session_token", "client_account_info", CLIENT_LAST_ACTIVE_KEY]);
+          }
+          // Either way, always show portal selector for clients — no auto-routing
         }
       }
     } catch { /* ignore */ }
-    // First-time or logged-out user: show portal selector
+    // Always show portal selector on cold launch
     router.replace("/profile-select" as any);
   }, [router]);
   const onLayoutRootView = useCallback(async () => {

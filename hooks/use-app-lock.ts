@@ -5,10 +5,70 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BIOMETRIC_ENABLED_KEY = "@bookease_biometric_enabled";
 
+// Key to track the last time the business owner actively used the app
+export const BUSINESS_LAST_ACTIVE_KEY = "@bookease_business_last_active";
+// Key to track the last time the client actively used the app
+export const CLIENT_LAST_ACTIVE_KEY = "@bookease_client_last_active";
+
+// Business: require Face ID re-auth if away for more than 24 hours
+export const BUSINESS_REAUTH_MS = 24 * 60 * 60 * 1000; // 24 hours
+// Client: auto-logout after 30 days of inactivity
+export const CLIENT_INACTIVITY_LOGOUT_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+/**
+ * Records the current timestamp as the business owner's last-active time.
+ * Call this whenever the business portal is actively used.
+ */
+export async function recordBusinessActivity(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(BUSINESS_LAST_ACTIVE_KEY, Date.now().toString());
+  } catch { /* ignore */ }
+}
+
+/**
+ * Records the current timestamp as the client's last-active time.
+ * Call this whenever the client portal is actively used.
+ */
+export async function recordClientActivity(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(CLIENT_LAST_ACTIVE_KEY, Date.now().toString());
+  } catch { /* ignore */ }
+}
+
+/**
+ * Returns true if the business owner has been away for more than 24 hours
+ * AND biometric lock is enabled. In that case the app should require Face ID.
+ */
+export async function businessNeedsReauth(): Promise<boolean> {
+  try {
+    const lastActive = await AsyncStorage.getItem(BUSINESS_LAST_ACTIVE_KEY);
+    if (!lastActive) return false; // first launch — no history yet
+    const elapsed = Date.now() - parseInt(lastActive, 10);
+    return elapsed > BUSINESS_REAUTH_MS;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Returns true if the client has been inactive for more than 30 days.
+ * In that case the client session should be cleared and they must sign in again.
+ */
+export async function clientNeedsLogout(): Promise<boolean> {
+  try {
+    const lastActive = await AsyncStorage.getItem(CLIENT_LAST_ACTIVE_KEY);
+    if (!lastActive) return false; // first launch — no history yet
+    const elapsed = Date.now() - parseInt(lastActive, 10);
+    return elapsed > CLIENT_INACTIVITY_LOGOUT_MS;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Hook that manages app lock with biometric authentication.
  * When enabled, prompts Face ID / fingerprint ONLY on initial app launch (cold start).
- * Does NOT re-lock on every foreground transition to avoid the lock loop issue.
+ * Also re-prompts if the business owner has been away for more than 24 hours.
  */
 export function useAppLock(splashDone: boolean = true) {
   const [isLocked, setIsLocked] = useState(false);
@@ -89,6 +149,8 @@ export function useAppLock(splashDone: boolean = true) {
 
       if (result.success) {
         setIsLocked(false);
+        // Record activity so the 24h timer resets after successful unlock
+        await recordBusinessActivity();
         return true;
       }
 
@@ -125,8 +187,7 @@ export function useAppLock(splashDone: boolean = true) {
   );
 
   // Initial authentication on first mount AFTER settings are loaded AND splash is done.
-  // This is the ONLY time we auto-prompt — on cold start.
-  // splashDone prevents the Face ID system dialog from appearing mid-splash.
+  // Also re-prompts if biometric is enabled and the owner has been away > 24 hours.
   useEffect(() => {
     if (Platform.OS === "web") return;
     if (!settingsLoaded) return;
@@ -138,13 +199,10 @@ export function useAppLock(splashDone: boolean = true) {
     // isLocked was already set to true during load, now prompt
     const timer = setTimeout(async () => {
       await authenticate();
-    }, 300); // shorter delay now that splash already finished
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [settingsLoaded, biometricEnabled, splashDone, authenticate]);
-
-  // NOTE: Removed the AppState listener that re-locked on every foreground transition.
-  // This was causing the "non-stop locking" issue. Now Face ID only prompts on cold launch.
 
   return {
     isLocked,

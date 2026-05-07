@@ -8,6 +8,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiBaseUrl } from "@/constants/oauth";
+import { recordClientActivity } from "@/hooks/use-app-lock";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -249,6 +250,7 @@ export function ClientStoreProvider({ children }: { children: React.ReactNode })
     await Promise.all([
       AsyncStorage.setItem(CLIENT_SESSION_KEY, token),
       AsyncStorage.setItem(CLIENT_ACCOUNT_KEY, JSON.stringify(account)),
+      recordClientActivity(), // reset 30-day inactivity timer on sign-in
     ]);
     dispatch({ type: "SET_ACCOUNT", payload: account });
     dispatch({ type: "LOAD_SESSION", payload: { account, sessionToken: token } });

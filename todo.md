@@ -1923,3 +1923,7 @@
 - [ ] Single location: auto-select and skip location step entirely (go straight to Step 2)
 - [ ] Support ?location=<id> URL param to pre-fill location and skip selector
 - [ ] Surface per-location booking URLs in Settings > Locations screen in the mobile app
+- [x] Always open Portal Selector on cold launch (fix Expo Go last-page issue)
+- [x] Business portal: require Face ID re-auth if last activity > 24 hours ago
+- [x] Client portal: auto-logout after 30 days of inactivity
+- [x] Profile-select: show quick-login button for returning business/client users instead of auto-routing

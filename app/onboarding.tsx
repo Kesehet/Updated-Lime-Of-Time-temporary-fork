@@ -65,6 +65,7 @@ import * as Notifications from "expo-notifications";
 import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
 import * as Auth from "@/lib/_core/auth";
+import { recordBusinessActivity } from "@/hooks/use-app-lock";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Step = 1 | "otp" | 2 | "subscription" | 3 | "socialPhone";
@@ -514,6 +515,7 @@ export default function OnboardingScreen() {
       try {
         dispatch({ type: "SET_BUSINESS_OWNER_ID", payload: pendingExistingId });
         await AsyncStorage.setItem("@bookease_business_owner_id", String(pendingExistingId));
+        await recordBusinessActivity(); // start 24h re-auth timer from this login
         // Store business name separately so client portal can show it in Switch confirmation
         if (pendingFullData?.owner?.businessName) {
           await AsyncStorage.setItem("@bookease_business_name", pendingFullData.owner.businessName);
@@ -945,6 +947,7 @@ export default function OnboardingScreen() {
       });
       dispatch({ type: "SET_BUSINESS_OWNER_ID", payload: newOwner.id });
       await AsyncStorage.setItem("@bookease_business_owner_id", String(newOwner.id));
+      await recordBusinessActivity(); // start 24h re-auth timer from first login
       // Store business name separately so client portal can show it in Switch confirmation
       await AsyncStorage.setItem("@bookease_business_name", businessName.trim());
       dispatch({
