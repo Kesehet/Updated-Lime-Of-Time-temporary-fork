@@ -1,6 +1,7 @@
 import { logger } from "@/lib/logger";
 import { useEffect, useCallback, useRef } from "react";
 import { Platform } from "react-native";
+import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
@@ -450,6 +451,8 @@ export function useNotifications() {
             read: false,
           },
         });
+        // Haptic pulse: new booking arrival
+        if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else if (data?.type === "appointment_cancelled") {
         const content = notification.request.content;
         dispatch({
@@ -464,6 +467,8 @@ export function useNotifications() {
             read: false,
           },
         });
+        // Haptic pulse: cancellation alert
+        if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       } else if (data?.type === "appointment_rescheduled") {
         const content = notification.request.content;
         dispatch({
@@ -478,6 +483,8 @@ export function useNotifications() {
             read: false,
           },
         });
+        // Haptic pulse: reschedule alert
+        if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       }
     });
 

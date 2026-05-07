@@ -1,0 +1,85 @@
+{
+  "query": "SELECT configKey, configValue, isSensitive FROM platform_config WHERE configKey LIKE '%TWILIO%' OR configKey LIKE '%OTP%' ORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, configValue, isSensitive FROM platform_config WHERE configKey LIKE '%TWILIO%' OR configKey LIKE '%OTP%' ORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "TWILIO_ACCOUNT_SID",
+      "configValue": "VA7348fcb20a15c8ebd03d1f789d1b005b",
+      "isSensitive": "1"
+    },
+    {
+      "configKey": "TWILIO_AUTH_TOKEN",
+      "configValue": "7d157dfaa5f33ea090bdecbf8eb68130",
+      "isSensitive": "1"
+    },
+    {
+      "configKey": "TWILIO_FROM_NUMBER",
+      "configValue": "+18556074585",
+      "isSensitive": "0"
+    },
+    {
+      "configKey": "TWILIO_LIVE_ACCOUNT_SID",
+      "configValue": "AC0eb74aa2bc903683b21defa8c07e763e",
+      "isSensitive": "1"
+    },
+    {
+      "configKey": "TWILIO_LIVE_AUTH_TOKEN",
+      "configValue": "7bf97543f4142ac84364fc863b6c7e4a",
+      "isSensitive": "1"
+    },
+    {
+      "configKey": "TWILIO_LIVE_FROM_NUMBER",
+      "configValue": "+18556074585",
+      "isSensitive": "0"
+    },
+    {
+      "configKey": "TWILIO_LIVE_VERIFY_SERVICE_SID",
+      "configValue": "",
+      "isSensitive": "1"
+    },
+    {
+      "configKey": "TWILIO_PER_PHONE_OTP",
+      "configValue": "{}",
+      "isSensitive": "0"
+    },
+    {
+      "configKey": "TWILIO_TEST_ACCOUNT_SID",
+      "configValue": "VA7348fcb20a15c8ebd03d1f789d1b005b",
+      "isSensitive": "1"
+    },
+    {
+      "configKey": "TWILIO_TEST_AUTH_TOKEN",
+      "configValue": "7d157dfaa5f33ea090bdecbf8eb68130",
+      "isSensitive": "1"
+    },
+    {
+      "configKey": "TWILIO_TEST_FROM_NUMBER",
+      "configValue": "",
+      "isSensitive": "0"
+    },
+    {
+      "configKey": "TWILIO_TEST_MODE",
+      "configValue": "true",
+      "isSensitive": "0"
+    },
+    {
+      "configKey": "TWILIO_TEST_OTP",
+      "configValue": "123456",
+      "isSensitive": "0"
+    },
+    {
+      "configKey": "TWILIO_TEST_VERIFY_SERVICE_SID",
+      "configValue": "",
+      "isSensitive": "1"
+    },
+    {
+      "configKey": "TWILIO_VERIFY_SERVICE_SID",
+      "configValue": "",
+      "isSensitive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tconfigValue\tisSensitive\nTWILIO_ACCOUNT_SID\tVA7348fcb20a15c8ebd03d1f789d1b005b\t1\nTWILIO_AUTH_TOKEN\t7d157dfaa5f33ea090bdecbf8eb68130\t1\nTWILIO_FROM_NUMBER\t+18556074585\t0\nTWILIO_LIVE_ACCOUNT_SID\tAC0eb74aa2bc903683b21defa8c07e763e\t1\nTWILIO_LIVE_AUTH_TOKEN\t7bf97543f4142ac84364fc863b6c7e4a\t1\nTWILIO_LIVE_FROM_NUMBER\t+18556074585\t0\nTWILIO_LIVE_VERIFY_SERVICE_SID\t\t1\nTWILIO_PER_PHONE_OTP\t{}\t0\nTWILIO_TEST_ACCOUNT_SID\tVA7348fcb20a15c8ebd03d1f789d1b005b\t1\nTWILIO_TEST_AUTH_TOKEN\t7d157dfaa5f33ea090bdecbf8eb68130\t1\nTWILIO_TEST_FROM_NUMBER\t\t0\nTWILIO_TEST_MODE\ttrue\t0\nTWILIO_TEST_OTP\t123456\t0\nTWILIO_TEST_VERIFY_SERVICE_SID\t\t1\nTWILIO_VERIFY_SERVICE_SID\t\t1\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}
