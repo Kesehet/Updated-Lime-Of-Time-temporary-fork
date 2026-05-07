@@ -64,6 +64,7 @@ import { GoogleLogo, MicrosoftLogo, AppleLogo } from "@/components/brand-icons";
 import * as Notifications from "expo-notifications";
 import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
+import * as Auth from "@/lib/_core/auth";
 
 type Step = 1 | "otp" | 2 | "subscription" | 3 | "socialPhone";
 
@@ -482,6 +483,10 @@ export default function OnboardingScreen() {
       const stripped = stripPhoneFormat(phone);
       const rawPhone = selectedCountry.dial === "+1" ? stripped : `${selectedCountry.dial.replace("+", "")}${stripped}`;
       const result = await verifyOtpMut.mutateAsync({ phone: rawPhone, code: code.trim() });
+      // Store session token for native API calls (avoids "Invalid session cookie" error)
+      if (result.success && result.sessionToken) {
+        try { await Auth.setSessionToken(result.sessionToken); } catch {}
+      }
       if (!result.success) {
         setOtpError(result.error ?? "Incorrect code. Please try again.");
         // Shake all boxes

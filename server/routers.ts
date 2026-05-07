@@ -4,6 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
+import { sdk } from "./_core/sdk";
 import { sendAppointmentConfirmationEmail, sendPaymentReceiptEmail } from "./email";
 import { sendExpoPush } from "./push";
 import {
@@ -1229,12 +1230,39 @@ const otpRouter = router({
       return { success: true, testMode: false };
     }),
 
-  /** Verify OTP for a phone number. */
+  /** Verify OTP for a phone number. Returns a session token on success for native clients. */
   verify: publicProcedure
     .input(z.object({ phone: z.string().min(7), code: z.string().length(6) }))
     .mutation(async ({ input }) => {
       const globalTestMode = (await getPlatformConfig("TWILIO_TEST_MODE")) === "true";
       const testOtp = (await getPlatformConfig("TWILIO_TEST_OTP")) || "123456";
+
+      // Helper: create a session token for the verified phone number
+      const createPhoneSession = async (): Promise<string | null> => {
+        try {
+          const normalizedPhone = db.normalizePhone(input.phone);
+          const openId = `phone:${normalizedPhone}`;
+          // Upsert a users record for this phone-based owner
+          await db.upsertUser({
+            openId,
+            name: null,
+            loginMethod: "otp",
+            lastSignedIn: new Date(),
+          });
+          // Link userId on the business owner if not already linked
+          const owner = await db.getBusinessOwnerByPhone(normalizedPhone);
+          if (owner && !owner.userId) {
+            const userRecord = await db.getUserByOpenId(openId);
+            if (userRecord) {
+              await db.updateBusinessOwner(owner.id, { userId: userRecord.id });
+            }
+          }
+          return sdk.createSessionToken(openId, { name: normalizedPhone });
+        } catch (err) {
+          console.error("[OTP] Failed to create phone session:", err);
+          return null;
+        }
+      };
 
       // Check per-phone override first
       let perPhoneOverrides: Record<string, string> = {};
@@ -1245,14 +1273,16 @@ const otpRouter = router({
       )?.[1];
       if (perPhoneCode && input.code === perPhoneCode) {
         otpStore.delete(input.phone);
-        return { success: true };
+        const sessionToken = await createPhoneSession();
+        return { success: true, sessionToken };
       }
 
       // Global test mode — check local store
       if (globalTestMode) {
         if (input.code === testOtp) {
           otpStore.delete(input.phone);
-          return { success: true };
+          const sessionToken = await createPhoneSession();
+          return { success: true, sessionToken };
         }
         return { success: false, error: "Incorrect code. Please try again." };
       }
@@ -1265,7 +1295,8 @@ const otpRouter = router({
           // Don't return error yet — try Twilio Verify below
         } else if (entry.code === input.code) {
           otpStore.delete(input.phone);
-          return { success: true };
+          const sessionToken = await createPhoneSession();
+          return { success: true, sessionToken };
         }
       }
 
@@ -1280,7 +1311,10 @@ const otpRouter = router({
       };
       const e164PhoneV = toE164v(input.phone);
       const result = await checkOtpViaTwilioVerify(e164PhoneV, input.code);
-      if (result.valid) return { success: true };
+      if (result.valid) {
+        const sessionToken = await createPhoneSession();
+        return { success: true, sessionToken };
+      }
       return { success: false, error: result.error ?? "Incorrect code. Please try again." };
     }),
 

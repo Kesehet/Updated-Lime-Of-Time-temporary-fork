@@ -179,7 +179,7 @@ function RootLayout() {
               <Stack.Screen name="client-detail" options={{ presentation: "card" }} />
               <Stack.Screen name="service-form" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="booking" options={{ presentation: "fullScreenModal" }} />
-              <Stack.Screen name="onboarding" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="onboarding" options={{ presentation: "card" }} />
               <Stack.Screen name="analytics-detail" options={{ presentation: "card" }} />
               <Stack.Screen name="discounts" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="gift-cards" options={{ presentation: "fullScreenModal" }} />
