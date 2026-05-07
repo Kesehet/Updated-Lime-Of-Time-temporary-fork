@@ -778,13 +778,17 @@ export default function DiscoverScreen() {
           style={s.categoryScroll}
         >
           {(() => {
-            // Merge standard categories with any custom categories from the API
+            // "Other" chip is only shown when the API confirms at least one business has non-standard categories
+            const apiHasOther = dynamicCategories.includes("Other");
             const standardLabels = new Set(STANDARD_CATEGORIES.map((c) => c.label));
             const customCats = dynamicCategories
               .filter((c) => !standardLabels.has(c))
               .map((c) => getCategoryDef(c));
+            // Include all standard categories; exclude "Other" unless API says it exists
+            const baseStandard = STANDARD_CATEGORIES.filter((c) => c.label !== "Other");
+            const otherChip = apiHasOther ? STANDARD_CATEGORIES.find((c) => c.label === "Other") : null;
             // Float pinned chips to the front (after "All"), preserve original order otherwise
-            const allChips = [...STANDARD_CATEGORIES, ...customCats];
+            const allChips = [...baseStandard, ...customCats, ...(otherChip ? [otherChip] : [])];
             const [allChip, ...restChips] = allChips;
             const pinnedSet = new Set(pinnedCategories);
             const pinned = restChips.filter((c) => pinnedSet.has(c.label));
