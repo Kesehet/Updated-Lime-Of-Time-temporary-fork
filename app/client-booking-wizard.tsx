@@ -32,6 +32,7 @@ import { scheduleAppointmentReminders } from "@/lib/notifications";
 import * as Haptics from "expo-haptics";
 import { ClientPortalBackground } from "@/components/client-portal-background";
 import { Image } from "expo-image";
+import { getCategoryDef, ALL_CATEGORY } from "@/constants/categories";
 
 const LIME_GREEN = "#4A7C59";
 // ─── Portal palette (same as business detail) ────────────────────────────────
@@ -48,6 +49,7 @@ interface PublicService {
   duration: number;
   price: string | null;
   description: string | null;
+  category?: string | null;
 }
 interface PublicStaff {
   localId: string;
@@ -125,6 +127,8 @@ export default function ClientBookingWizardScreen() {
   const [promoError, setPromoError] = useState("");
   const [promoLoading, setPromoLoading] = useState(false);
   const [discounts, setDiscounts] = useState<{ localId: string; name: string; percentage: number; serviceIds: string[] }[]>([]);
+  // Category filter for the service selection step
+  const [wizardCatFilter, setWizardCatFilter] = useState<string | null>(null);
 
   const today = new Date();
   const [calYear, setCalYear] = useState(today.getFullYear());
@@ -503,42 +507,102 @@ export default function ClientBookingWizardScreen() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
 
         {/* Step 0: Service */}
-        {step === STEP_SERVICE && (
-          <View style={s.stepContent}>
-            <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Choose a Service</Text>
-            {services.length === 0 ? (
-              <Text style={{ color: TEXT_MUTED, textAlign: "center", marginTop: 24 }}>No services available.</Text>
-            ) : services.map((svc) => (
-              <Pressable
-                key={svc.localId}
-                style={({ pressed }) => [
-                  s.optionCard,
-                  { backgroundColor: CARD_BG, borderColor: selectedService?.localId === svc.localId ? LIME_GREEN : CARD_BORDER },
-                  selectedService?.localId === svc.localId && { borderWidth: 2 },
-                  pressed && { opacity: 0.85 },
-                ]}
-                onPress={() => {
-                  if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedService(svc);
-                  setSelectedStaffId("any");
-                  setSelectedDate(null);
-                  setSelectedSlot(null);
-                }}
-              >
-                <View style={s.optionLeft}>
-                  <Text style={[s.optionName, { color: TEXT_PRIMARY }]}>{svc.name}</Text>
-                  {svc.description ? <Text style={[s.optionDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{svc.description}</Text> : null}
-                  <Text style={[s.optionMeta, { color: LIME_GREEN }]}>{svc.duration} min · {formatPrice(svc.price)}</Text>
-                </View>
-                {selectedService?.localId === svc.localId && (
-                  <View style={[s.checkCircle, { backgroundColor: LIME_GREEN }]}>
-                    <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
+        {step === STEP_SERVICE && (() => {
+          // Derive unique categories from the service list
+          const svcCats = Array.from(new Set(services.map((s) => s.category).filter(Boolean) as string[]));
+          const filteredServices = wizardCatFilter
+            ? services.filter((s) => s.category === wizardCatFilter)
+            : services;
+          return (
+            <View style={s.stepContent}>
+              <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Choose a Service</Text>
+              {/* Category filter chips */}
+              {svcCats.length > 1 && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: 0, paddingBottom: 12, gap: 8, flexDirection: "row", alignItems: "center" }}
+                >
+                  {[null, ...svcCats].map((cat) => {
+                    const isAll = cat === null;
+                    const isActive = wizardCatFilter === cat;
+                    const def = isAll ? ALL_CATEGORY : getCategoryDef(cat);
+                    const accentColor = def.color;
+                    return (
+                      <Pressable
+                        key={cat ?? "__all__"}
+                        style={({ pressed }) => [{
+                          flexDirection: "row" as const,
+                          alignItems: "center" as const,
+                          gap: 5,
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                          borderRadius: 20,
+                          borderWidth: 1,
+                          height: 34,
+                          backgroundColor: isActive ? accentColor + "30" : CARD_BG,
+                          borderColor: isActive ? accentColor : CARD_BORDER,
+                          opacity: pressed ? 0.75 : 1,
+                        }]}
+                        onPress={() => {
+                          if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setWizardCatFilter(isAll ? null : cat);
+                        }}
+                      >
+                        <Text style={{ fontSize: 13, lineHeight: 16 }}>{def.emoji}</Text>
+                        <Text style={{ fontSize: 13, fontWeight: "600", color: isActive ? accentColor : TEXT_PRIMARY }}>
+                          {isAll ? "All" : cat}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              )}
+              {filteredServices.length === 0 ? (
+                <Text style={{ color: TEXT_MUTED, textAlign: "center", marginTop: 24 }}>No services in this category.</Text>
+              ) : filteredServices.map((svc) => (
+                <Pressable
+                  key={svc.localId}
+                  style={({ pressed }) => [
+                    s.optionCard,
+                    { backgroundColor: CARD_BG, borderColor: selectedService?.localId === svc.localId ? LIME_GREEN : CARD_BORDER },
+                    selectedService?.localId === svc.localId && { borderWidth: 2 },
+                    pressed && { opacity: 0.85 },
+                  ]}
+                  onPress={() => {
+                    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedService(svc);
+                    setSelectedStaffId("any");
+                    setSelectedDate(null);
+                    setSelectedSlot(null);
+                  }}
+                >
+                  <View style={s.optionLeft}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <Text style={[s.optionName, { color: TEXT_PRIMARY }]}>{svc.name}</Text>
+                      {svc.category && (() => {
+                        const def = getCategoryDef(svc.category);
+                        return (
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: def.color + "20", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                            <Text style={{ fontSize: 10, lineHeight: 13 }}>{def.emoji}</Text>
+                            <Text style={{ fontSize: 10, fontWeight: "600", color: def.color }}>{svc.category}</Text>
+                          </View>
+                        );
+                      })()}
+                    </View>
+                    {svc.description ? <Text style={[s.optionDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{svc.description}</Text> : null}
+                    <Text style={[s.optionMeta, { color: LIME_GREEN }]}>{svc.duration} min · {formatPrice(svc.price)}</Text>
                   </View>
-                )}
-              </Pressable>
-            ))}
-          </View>
-        )}
+                  {selectedService?.localId === svc.localId && (
+                    <View style={[s.checkCircle, { backgroundColor: LIME_GREEN }]}>
+                      <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
+                    </View>
+                  )}
+                </Pressable>
+              ))}
+            </View>
+          );
+        })()}
 
         {/* Step 1: Staff */}
         {step === STEP_STAFF && (

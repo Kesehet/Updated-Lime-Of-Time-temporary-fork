@@ -9,6 +9,7 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
   Pressable,
   StyleSheet,
   ActivityIndicator,
@@ -23,6 +24,7 @@ import * as Haptics from "expo-haptics";
 import { Platform } from "react-native";
 import { getCategoryDef } from "@/constants/categories";
 
+
 const ACCENT       = "#8FBF6A";
 const TEXT_PRIMARY = "#FFFFFF";
 const TEXT_MUTED   = "rgba(255,255,255,0.65)";
@@ -33,6 +35,7 @@ export default function ClientSavedBusinessesScreen() {
   const router = useRouter();
   const { state, apiCall, dispatch } = useClientStore();
   const [loading, setLoading] = useState(true);
+  const [groupByCategory, setGroupByCategory] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -72,10 +75,83 @@ export default function ClientSavedBusinessesScreen() {
         <View style={{ width: 32 }} />
       </View>
 
+      {/* Group toggle */}
+      {!loading && state.savedBusinesses.length > 0 && (
+        <View style={{ flexDirection: "row", paddingHorizontal: 16, paddingBottom: 8, gap: 8 }}>
+          <Pressable
+            style={({ pressed }) => [{
+              flexDirection: "row" as const, alignItems: "center" as const, gap: 5,
+              paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1,
+              backgroundColor: groupByCategory ? ACCENT + "25" : "rgba(255,255,255,0.07)",
+              borderColor: groupByCategory ? ACCENT : "rgba(255,255,255,0.12)",
+              opacity: pressed ? 0.75 : 1,
+            }]}
+            onPress={() => {
+              if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setGroupByCategory((v) => !v);
+            }}
+          >
+            <Text style={{ fontSize: 12 }}>🗂️</Text>
+            <Text style={{ fontSize: 12, fontWeight: "600", color: groupByCategory ? ACCENT : "rgba(255,255,255,0.65)" }}>Group by Category</Text>
+          </Pressable>
+        </View>
+      )}
+
       {loading ? (
         <View style={s.loadingContainer}>
           <ActivityIndicator color={ACCENT} />
         </View>
+      ) : groupByCategory ? (
+        // Grouped view
+        (() => {
+          const groups: Record<string, typeof state.savedBusinesses> = {};
+          for (const biz of state.savedBusinesses) {
+            const key = biz.businessCategory || "Other";
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(biz);
+          }
+          const sortedKeys = Object.keys(groups).sort();
+          return (
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+              {sortedKeys.map((cat) => {
+                const def = getCategoryDef(cat);
+                return (
+                  <View key={cat} style={{ marginBottom: 20 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                      <Text style={{ fontSize: 14 }}>{def.emoji}</Text>
+                      <Text style={{ fontSize: 14, fontWeight: "700", color: def.color }}>{cat}</Text>
+                      <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>({groups[cat].length})</Text>
+                    </View>
+                    {groups[cat].map((item) => (
+                      <Pressable
+                        key={item.businessSlug}
+                        style={({ pressed }) => [s.bizCard, pressed && { opacity: 0.85 }]}
+                        onPress={() => router.push({ pathname: "/client-business-detail", params: { slug: item.businessSlug } } as any)}
+                      >
+                        <View style={s.bizLogo}>
+                          <IconSymbol name="scissors" size={22} color={ACCENT} />
+                        </View>
+                        <View style={s.bizInfo}>
+                          <Text style={s.bizName}>{item.businessName}</Text>
+                          {item.businessAddress && (
+                            <Text style={s.bizAddress} numberOfLines={1}>{item.businessAddress}</Text>
+                          )}
+                        </View>
+                        <Pressable
+                          style={({ pressed }) => [{ padding: 4 }, pressed && { opacity: 0.7 }]}
+                          onPress={() => handleUnsave(item.businessSlug)}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                          <IconSymbol name="bookmark.fill" size={18} color={ACCENT} />
+                        </Pressable>
+                      </Pressable>
+                    ))}
+                  </View>
+                );
+              })}
+            </ScrollView>
+          );
+        })()
       ) : (
         <FlatList
           data={state.savedBusinesses}
