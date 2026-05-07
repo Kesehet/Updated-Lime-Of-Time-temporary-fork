@@ -108,7 +108,8 @@ export default function ClientProfileScreen() {
           onPress: async () => {
             const { setProfileMode } = await import("@/lib/client-store");
             await setProfileMode("business");
-            router.replace("/onboarding" as any);
+            // Go to profile-select so auto-routing can kick in for returning business owners
+            router.replace("/profile-select" as any);
           },
         },
       ]

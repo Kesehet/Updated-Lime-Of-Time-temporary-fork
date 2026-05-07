@@ -216,7 +216,7 @@ export default function SettingsScreen() {
           } catch {}
           try { await removeSessionToken(); } catch {}
           try { await clearUserInfo(); } catch {}
-          router.replace("/onboarding");
+          router.replace("/profile-select" as any);
         },
       },
     ]);
@@ -250,7 +250,7 @@ export default function SettingsScreen() {
             } catch {}
             try { await removeSessionToken(); } catch {}
             try { await clearUserInfo(); } catch {}
-            router.replace("/onboarding");
+            router.replace("/profile-select" as any);
           },
         },
       ]
@@ -797,6 +797,24 @@ export default function SettingsScreen() {
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Restart Onboarding Tour</Text>
           <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Re-watch the app walkthrough</Text>
+        </View>
+        <IconSymbol name="chevron.right" size={16} color={colors.muted} />
+      </Pressable>
+
+      {/* Switch Portal */}
+      <SectionHeader label="Switch Portal" accentColor="#8B5CF6" colors={colors} />
+      <Pressable
+        onPress={() => {
+          router.replace("/profile-select" as any);
+        }}
+        style={({ pressed }) => [styles.navCard, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.75 : 1 }]}
+      >
+        <View style={[styles.navIcon, { backgroundColor: "#8B5CF615" }]}>
+          <IconSymbol name="person.2.fill" size={22} color="#8B5CF6" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Switch to Client Portal</Text>
+          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Discover and book services as a client</Text>
         </View>
         <IconSymbol name="chevron.right" size={16} color={colors.muted} />
       </Pressable>
