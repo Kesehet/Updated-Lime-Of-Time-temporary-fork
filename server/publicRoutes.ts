@@ -4875,7 +4875,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     <!-- Business Info Card -->
     <div class="card biz-info" id="biz-card">
       <div style="font-size:16px;font-weight:700;color:var(--text);">${escHtml(owner.businessName)}</div>
-      <div id="biz-address-row">${initialAddress ? `<div class="biz-info-row"><span>📍</span><a href="https://maps.google.com/?q=${encodeURIComponent(initialAddress)}" target="_blank">${escHtml(initialAddress)}</a></div>` : ""}</div>
+      <div id="biz-address-row">${(activeLocs.length <= 1 || !!preselectedLocationId) && initialAddress ? `<div class="biz-info-row"><span>📍</span><a href="https://maps.google.com/?q=${encodeURIComponent(initialAddress)}" target="_blank">${escHtml(initialAddress)}</a></div>` : ""}</div>
       ${owner.phone ? `<div class="biz-info-row"><span>📞</span><span>${escHtml(formatPhoneNumber(owner.phone))}</span></div>` : ""}
       ${owner.email ? `<div class="biz-info-row"><span>✉️</span><span>${escHtml(owner.email)}</span></div>` : ""}
       ${owner.description ? `<div style="font-size:13px;color:var(--text-muted);margin-top:6px;">${escHtml(owner.description)}</div>` : ""}
@@ -4895,7 +4895,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Choose a location to book your appointment.</p>
       <div id="locationSelectorStep0"></div>
       <div style="margin-top:16px;">
-        <button class="btn btn-primary" id="locContinueBtn" onclick="goToIntentStep()" style="width:100%" ${!preselectedLocationId ? 'disabled style="width:100%;opacity:0.5"' : 'style="width:100%"'}>Continue</button>
+        <button class="btn btn-primary" id="locContinueBtn" onclick="goToIntentStep()" style="width:100%" ${!preselectedLocationId ? 'disabled' : ''}>Continue</button>
       </div>
     </div>
     <!-- Intent Step: Book for myself vs Buy a Gift -->
@@ -5305,8 +5305,12 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         // Build full address: street, city, state zip
         var fullAddr = buildFullAddress(loc.address, loc.city, loc.state, loc.zipCode);
         var mapUrl = fullAddr ? 'https://maps.google.com/?q=' + encodeURIComponent(fullAddr) : '';
-        html += '<div onclick="selectLocation(&apos;' + loc.localId + '&apos;)" style="padding:14px 16px;border:1.5px solid ' + borderColor + ';border-radius:14px;margin-bottom:8px;cursor:pointer;background:' + bgColor + ';transition:all 0.2s;box-shadow:' + shadow + ';">';
+        var checkmark = isSelected ? '<span style="color:var(--accent);font-size:18px;font-weight:700;line-height:1;">&#10003;</span>' : '';
+        html += '<div onclick="selectLocation(' + Q + loc.localId + Q + ')" style="padding:14px 16px;border:1.5px solid ' + borderColor + ';border-radius:14px;margin-bottom:8px;cursor:pointer;background:' + bgColor + ';transition:all 0.2s;box-shadow:' + shadow + ';">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">';
         html += '<div style="font-weight:600;font-size:14px;color:var(--text);">' + escText(loc.name) + '</div>';
+        html += checkmark;
+        html += '</div>';
         if (fullAddr) {
           html += '<div style="font-size:12px;color:var(--text-secondary);margin-top:3px;">';
           if (mapUrl) html += '<a href="' + mapUrl + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:underline;font-size:12px;">' + escText(fullAddr) + '</a>';
@@ -5350,7 +5354,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         addr = buildFullAddress(effectiveLoc.address, effectiveLoc.city, effectiveLoc.state, effectiveLoc.zipCode);
         if (!addr) addr = effectiveLoc.address || '';
       }
-      if (!addr) addr = ${JSON.stringify(owner.address || '')};
+      // Only fall back to owner.address when there's a single location (or location is selected)
+      if (!addr && (locations.length <= 1 || selectedLocation)) addr = ${JSON.stringify(owner.address || '')};
       if (addr) {
         addrRow.innerHTML = '<div class="biz-info-row"><span>📍</span><a href="https://maps.google.com/?q=' + encodeURIComponent(addr) + '" target="_blank" style="color:var(--accent);text-decoration:underline;">' + escText(addr) + '</a></div>';
       } else {

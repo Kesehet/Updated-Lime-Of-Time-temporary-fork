@@ -1915,3 +1915,11 @@
 - [x] Build shared unread message count hook (polls /api/business/messages/unread-count every 30s)
 - [x] Wire unread count badge to Clients tab bar icon (shows count, caps at 99+)
 - [x] Badge clears when owner opens Messages tab (server marks threads as read on fetch)
+
+## Phase: Public Booking Page Location Step Improvements
+
+- [ ] Make location cards clickable with visual selection (green border + checkmark on selected card)
+- [ ] Hide address from top business info card when multiple locations exist (keep phone only)
+- [ ] Single location: auto-select and skip location step entirely (go straight to Step 2)
+- [ ] Support ?location=<id> URL param to pre-fill location and skip selector
+- [ ] Surface per-location booking URLs in Settings > Locations screen in the mobile app
