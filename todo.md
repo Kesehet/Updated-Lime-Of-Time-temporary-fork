@@ -1927,3 +1927,6 @@
 - [x] Business portal: require Face ID re-auth if last activity > 24 hours ago
 - [x] Client portal: auto-logout after 30 days of inactivity
 - [x] Profile-select: show quick-login button for returning business/client users instead of auto-routing
+- [x] Extend Face ID to client portal with 24h re-auth toggle in client settings
+- [x] Show "Welcome back" business name hint on Portal Selector for returning business owners
+- [x] Add Sign Out button in business Settings screen (already existed — verified)

@@ -15,6 +15,7 @@ import {
   Alert,
   Platform,
   Image,
+  Switch,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
@@ -25,6 +26,7 @@ import { formatPhone } from "@/lib/utils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAppLockContext } from "@/lib/app-lock-provider";
 
 const GREEN_ACCENT = "#8FBF6A";
 const GREEN_DARK = "#1A3A28";
@@ -76,6 +78,30 @@ export default function ClientProfileScreen() {
   const insets = useSafeAreaInsets();
   const { state, signOut } = useClientStore();
   const [signingOut, setSigningOut] = useState(false);
+  const { biometricEnabled, biometricAvailable, biometricType, toggleBiometric } = useAppLockContext();
+
+  const handleToggleFaceId = async (value: boolean) => {
+    if (!biometricAvailable) {
+      Alert.alert(
+        "Not Available",
+        "Face ID / Touch ID is not set up on this device. Please enable it in iOS Settings first.",
+      );
+      return;
+    }
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const success = await toggleBiometric(value);
+    if (!success && value) {
+      Alert.alert("Authentication Failed", "Could not enable Face ID. Please try again.");
+    }
+  };
+
+  const faceIdLabel =
+    biometricType === "face" ? "Face ID Lock" :
+    biometricType === "fingerprint" ? "Fingerprint Lock" :
+    "Biometric Lock";
+  const faceIdSubtitle = biometricEnabled
+    ? "Re-authenticates after 24 hours away"
+    : "Require Face ID to open the client portal";
 
   const handleSignOut = () => {
     Alert.alert(
@@ -250,6 +276,27 @@ export default function ClientProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>ACCOUNT</Text>
           <MenuItem icon="bell.fill" label="Notification Preferences" subtitle="SMS, push reminders" onPress={() => router.push("/client-notifications" as any)} />
+          <View style={styles.divider} />
+          {/* Face ID / Biometric lock toggle */}
+          <Pressable
+            style={[styles.menuItem]}
+            onPress={() => handleToggleFaceId(!biometricEnabled)}
+          >
+            <View style={[styles.menuIconWrap, { backgroundColor: "rgba(143,191,106,0.12)" }]}>
+              <IconSymbol name={biometricType === "face" ? "faceid" : "touchid"} size={18} color={GREEN_ACCENT} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.menuLabel}>{faceIdLabel}</Text>
+              <Text style={styles.menuSubtitle}>{faceIdSubtitle}</Text>
+            </View>
+            <Switch
+              value={biometricEnabled}
+              onValueChange={handleToggleFaceId}
+              trackColor={{ false: "rgba(255,255,255,0.15)", true: GREEN_ACCENT }}
+              thumbColor="#FFFFFF"
+              ios_backgroundColor="rgba(255,255,255,0.15)"
+            />
+          </Pressable>
           <View style={styles.divider} />
           <MenuItem icon="briefcase.fill" label="Switch to Business Profile" subtitle="Manage your own business" onPress={handleSwitchToBusiness} />
         </View>

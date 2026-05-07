@@ -12,6 +12,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Platform } from "react-native";
 import { useClientStore } from "@/lib/client-store";
 import { useClientNotifications } from "@/hooks/use-client-notifications";
+import { ClientAppLockProvider } from "@/lib/app-lock-provider";
 
 // Forest green palette (matches onboarding)
 const TAB_BG = "#1A3A28";
@@ -19,7 +20,7 @@ const TAB_ACTIVE = "#8FBF6A";   // light green accent
 const TAB_INACTIVE = "rgba(255,255,255,0.45)";
 const TAB_BORDER = "rgba(255,255,255,0.08)";
 
-export default function ClientTabLayout() {
+function ClientTabsInner() {
   const insets = useSafeAreaInsets();
   const { state } = useClientStore();
   // Register push token and handle notification taps
@@ -95,5 +96,13 @@ export default function ClientTabLayout() {
         }}
       />
     </Tabs>
+  );
+}
+
+export default function ClientTabLayout() {
+  return (
+    <ClientAppLockProvider>
+      <ClientTabsInner />
+    </ClientAppLockProvider>
   );
 }

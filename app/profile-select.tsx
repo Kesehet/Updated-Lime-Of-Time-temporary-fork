@@ -4,7 +4,7 @@
  * animated entry, and clear visual hierarchy for Business vs Client portals.
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Text,
   View,
@@ -95,6 +95,7 @@ function PortalCard({
   ctaLabel,
   onPress,
   delay,
+  welcomeBack,
 }: {
   gradientColors: [string, string, string];
   accentLight: string;
@@ -106,6 +107,7 @@ function PortalCard({
   ctaLabel: string;
   onPress: () => void;
   delay: number;
+  welcomeBack?: string | null;
 }) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
@@ -170,9 +172,16 @@ function PortalCard({
           {/* Divider */}
           <View style={[styles.cardDivider, { backgroundColor: "rgba(255,255,255,0.18)" }]} />
 
+          {/* Welcome-back hint */}
+          {welcomeBack ? (
+            <View style={styles.welcomeBackRow}>
+              <Text style={styles.welcomeBackText}>👋 Welcome back, {welcomeBack}</Text>
+            </View>
+          ) : null}
+
           {/* CTA row */}
           <View style={styles.cardCtaRow}>
-            <Text style={styles.cardCtaLabel}>{ctaLabel}</Text>
+            <Text style={styles.cardCtaLabel}>{welcomeBack ? "Continue" : ctaLabel}</Text>
             <View style={[styles.cardCtaArrowBox, { backgroundColor: "rgba(255,255,255,0.22)" }]}>
               <Text style={styles.cardCtaArrow}>→</Text>
             </View>
@@ -187,6 +196,25 @@ function PortalCard({
 export default function ProfileSelectScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // Welcome-back hints — loaded from AsyncStorage on mount
+  const [returnBusinessName, setReturnBusinessName] = useState<string | null>(null);
+  const [returnClientName, setReturnClientName] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const bOwnerId = await AsyncStorage.getItem("@bookease_business_owner_id");
+        const bName = await AsyncStorage.getItem("@bookease_business_name");
+        if (bOwnerId && bName) setReturnBusinessName(bName);
+      } catch { /* ignore */ }
+      try {
+        const { getUserInfo } = await import("@/lib/_core/auth");
+        const info = await getUserInfo();
+        if (info?.name) setReturnClientName(info.name);
+      } catch { /* ignore */ }
+    })();
+  }, []);
 
   const logoOpacity = useSharedValue(0);
   const logoScale = useSharedValue(0.8);
@@ -296,6 +324,7 @@ export default function ProfileSelectScreen() {
             ctaLabel="Get started"
             onPress={() => handleSelect("business")}
             delay={600}
+            welcomeBack={returnBusinessName}
           />
           <PortalCard
             gradientColors={["#4C2D8A", "#6B3FAD", "#8B5CF6"]}
@@ -308,6 +337,7 @@ export default function ProfileSelectScreen() {
             ctaLabel="Get started"
             onPress={() => handleSelect("client")}
             delay={750}
+            welcomeBack={returnClientName}
           />
         </View>
 
@@ -509,5 +539,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
     letterSpacing: 0.2,
     marginTop: 4,
+  },
+  welcomeBackRow: {
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginBottom: 10,
+    alignSelf: "flex-start",
+  },
+  welcomeBackText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.92)",
+    letterSpacing: 0.1,
   },
 });

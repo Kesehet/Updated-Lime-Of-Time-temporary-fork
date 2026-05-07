@@ -22,7 +22,7 @@ import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { StoreProvider, useStore } from "@/lib/store";
 import { ClientStoreProvider } from "@/lib/client-store";
-import { AppLockProvider } from "@/lib/app-lock-provider";
+import { AppLockProvider, ClientAppLockProvider } from "@/lib/app-lock-provider";
 import { NotificationProvider } from "@/lib/notification-provider";
 import { initSentry, withSentryWrapper } from "@/lib/sentry";
 import { AnimatedSplash } from "@/components/animated-splash";
@@ -304,7 +304,9 @@ function RootLayout() {
               <Stack.Screen name="client-profile-onboarding" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="client-edit-profile" options={{ presentation: "modal", headerShown: false }} />
               <Stack.Screen name="client-notifications" options={{ presentation: "modal", headerShown: false }} />
-              <Stack.Screen name="(client-tabs)" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="(client-tabs)" options={{ presentation: "fullScreenModal",
+                // Wrap client tabs in their own biometric lock provider
+                contentStyle: { flex: 1 } }} />
               <Stack.Screen name="client-business-detail" options={{ presentation: "modal" }} />
               <Stack.Screen name="client-booking-wizard" options={{ presentation: "modal", headerShown: false }} />
               <Stack.Screen name="client-appointment-detail" options={{ presentation: "modal" }} />
