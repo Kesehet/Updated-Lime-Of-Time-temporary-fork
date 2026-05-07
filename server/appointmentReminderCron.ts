@@ -9,7 +9,9 @@
  *   - Sends a push notification to the business owner's device
  *   - Sends a reminder email to the client (if they have an email on file)
  *
- * The 1-hour window ensures each appointment is only reminded once per run cycle.
+ * Dedup: appointments.reminderSentAt is set after a reminder is sent.
+ * If reminderSentAt is within the last 2 hours, the reminder is skipped.
+ * This prevents duplicate notifications when the server restarts within the same window.
  */
 import { getDb } from "./db";
 import {
@@ -19,7 +21,7 @@ import {
   services,
   locations,
 } from "../drizzle/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { sendExpoPush } from "./push";
 import { sendAppointmentReminderEmail } from "./email";
 
@@ -130,8 +132,14 @@ async function sendAppointmentReminders() {
       const reminderHours: number = notifPrefs.reminderHoursBefore ?? 24;
       // Only process supported windows to avoid sending at wrong times
       if (!SUPPORTED_WINDOWS.includes(reminderHours as any)) return false;
-
-      return isInReminderWindow(appt.date, appt.time, reminderHours, now);
+      if (!isInReminderWindow(appt.date, appt.time, reminderHours, now)) return false;
+      // Dedup: skip if a reminder was already sent within the last 2 hours.
+      // This prevents duplicate notifications when the server restarts within the same window.
+      if (appt.reminderSentAt) {
+        const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+        if (appt.reminderSentAt > twoHoursAgo) return false;
+      }
+      return true;
     });
 
     if (toRemind.length === 0) return;
@@ -213,6 +221,16 @@ async function sendAppointmentReminders() {
         }
       }
 
+      // ── Mark reminder as sent (dedup) ──────────────────────────────────────────────
+      // Update reminderSentAt so that if the server restarts within the same window,
+      // this appointment is skipped on the next startup run.
+      try {
+        await db.update(appointments)
+          .set({ reminderSentAt: now })
+          .where(eq(appointments.localId, appt.localId));
+      } catch (err) {
+        console.warn(`[ReminderCron] Failed to update reminderSentAt for appt ${appt.localId}:`, err);
+      }
       // ── Reminder email to client ───────────────────────────────────────────────────
       // Email reminders are only available on paid plans (not free tier)
       const ownerSubStatus = owner.subscriptionStatus as string | undefined;

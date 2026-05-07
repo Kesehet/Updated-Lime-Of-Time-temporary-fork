@@ -400,6 +400,13 @@
       "when": 1778091345048,
       "tag": "0056_naive_blindfold",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "5",
+      "when": 1778112890896,
+      "tag": "0057_futuristic_cyclops",
+      "breakpoints": true
     }
   ]
 }

@@ -274,6 +274,11 @@ export const appointments = mysqlTable("appointments", {
    * null = no request submitted
    */
   rescheduleRequest: json("rescheduleRequest"),
+  /**
+   * Timestamp when the last appointment reminder push/email was sent.
+   * Used to prevent duplicate reminders when the server restarts within the same reminder window.
+   */
+  reminderSentAt: timestamp("reminderSentAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
