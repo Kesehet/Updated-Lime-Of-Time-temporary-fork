@@ -5,6 +5,7 @@ import {
   FlatList,
   Pressable,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -187,16 +188,37 @@ export default function NotificationInboxScreen() {
           <Ionicons name="chevron-back" size={24} color={colors.primary} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>Alerts</Text>
-        {unread.length > 0 ? (
-          <Pressable
-            onPress={() => dispatch({ type: "MARK_INBOX_READ" })}
-            hitSlop={8}
-          >
-            <Text style={[styles.markAll, { color: colors.primary }]}>Mark all read</Text>
-          </Pressable>
-        ) : (
-          <View style={{ width: 80 }} />
-        )}
+        <View style={{ width: 80, alignItems: 'flex-end', gap: 2 }}>
+          {unread.length > 0 && (
+            <Pressable
+              onPress={() => dispatch({ type: "MARK_INBOX_READ" })}
+              hitSlop={8}
+            >
+              <Text style={[styles.markAll, { color: colors.primary }]}>Mark all read</Text>
+            </Pressable>
+          )}
+          {notifications.length > 0 && (
+            <Pressable
+              onPress={() => {
+                Alert.alert(
+                  "Clear All Notifications",
+                  "Remove all notifications from your inbox?",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Clear All",
+                      style: "destructive",
+                      onPress: () => dispatch({ type: "CLEAR_INBOX" }),
+                    },
+                  ]
+                );
+              }}
+              hitSlop={8}
+            >
+              <Text style={[styles.markAll, { color: colors.error }]}>Clear all</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <FlatList

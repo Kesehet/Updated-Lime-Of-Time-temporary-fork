@@ -1099,6 +1099,7 @@ export default function CalendarScreen() {
     const svc = getServiceById(appt.serviceId);
     const apptLoc = appt.locationId ? getLocationById(appt.locationId) : null;
     dispatch({ type: "UPDATE_APPOINTMENT_STATUS", payload: { id: appt.id, status: "confirmed" } });
+    dispatch({ type: "MARK_INBOX_READ_BY_APPOINTMENT", payload: appt.id });
     syncToDb({ type: "UPDATE_APPOINTMENT_STATUS", payload: { id: appt.id, status: "confirmed" } });
     const message = generateAcceptMessage(
       state.settings.businessName,
@@ -1127,6 +1128,7 @@ export default function CalendarScreen() {
         text: "Reject", style: "destructive",
         onPress: () => {
           dispatch({ type: "UPDATE_APPOINTMENT_STATUS", payload: { id: appt.id, status: "cancelled" } });
+          dispatch({ type: "MARK_INBOX_READ_BY_APPOINTMENT", payload: appt.id });
           syncToDb({ type: "UPDATE_APPOINTMENT_STATUS", payload: { id: appt.id, status: "cancelled" } });
           const apptLoc = appt.locationId ? getLocationById(appt.locationId) : null;
           const message = generateRejectMessage(

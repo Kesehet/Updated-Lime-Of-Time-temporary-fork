@@ -201,6 +201,8 @@ type Action =
   | { type: "ADD_INBOX_NOTIFICATION"; payload: InboxNotification }
   | { type: "SYNC_INBOX_FROM_APPOINTMENTS" }
   | { type: "MARK_INBOX_READ" }
+  | { type: "MARK_INBOX_READ_BY_APPOINTMENT"; payload: string }
+  | { type: "CLEAR_INBOX" }
   | { type: "DISMISS_INBOX_NOTIFICATION"; payload: string }
   | { type: "CLEAR_OLD_INBOX_NOTIFICATIONS" }
   | { type: "ADD_REMINDER_TEMPLATE"; payload: ReminderTemplate }
@@ -549,6 +551,15 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         inboxNotifications: (state.inboxNotifications ?? []).map((n) => ({ ...n, read: true })),
       };
+    case "MARK_INBOX_READ_BY_APPOINTMENT":
+      return {
+        ...state,
+        inboxNotifications: (state.inboxNotifications ?? []).map((n) =>
+          n.appointmentId === action.payload ? { ...n, read: true } : n
+        ),
+      };
+    case "CLEAR_INBOX":
+      return { ...state, inboxNotifications: [] };
     case "DISMISS_INBOX_NOTIFICATION":
       // Dismissing moves it to read immediately
       return {

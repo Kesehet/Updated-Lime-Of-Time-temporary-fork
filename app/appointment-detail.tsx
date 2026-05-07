@@ -1445,6 +1445,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                         { text: 'Approve', style: 'destructive', onPress: async () => {
                           // Mark request as approved
                           const updatedAppt = { ...appointment, cancelRequest: { ...appointment.cancelRequest!, status: 'approved' as const, resolvedAt: new Date().toISOString() } };
+                          dispatch({ type: 'MARK_INBOX_READ_BY_APPOINTMENT', payload: appointment.id });
                           dispatch({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
                           // Handle card refund/fee
                           if (isPaidByCard) {
@@ -1485,6 +1486,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                         { text: 'Decline', style: 'destructive', onPress: () => {
                           const updatedAppt = { ...appointment, cancelRequest: { ...appointment.cancelRequest!, status: 'declined' as const, resolvedAt: new Date().toISOString() } };
                           dispatch({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
+                          dispatch({ type: 'MARK_INBOX_READ_BY_APPOINTMENT', payload: appointment.id });
                           syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
                         }},
                       ]);
@@ -1513,6 +1515,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                         { text: 'Approve', onPress: () => {
                           const updatedAppt = { ...appointment, date: appointment.rescheduleRequest!.requestedDate, time: appointment.rescheduleRequest!.requestedTime, rescheduleRequest: { ...appointment.rescheduleRequest!, status: 'approved' as const, resolvedAt: new Date().toISOString() } };
                           dispatch({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
+                          dispatch({ type: 'MARK_INBOX_READ_BY_APPOINTMENT', payload: appointment.id });
                           syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
                           Alert.alert('✅ Approved', 'Appointment rescheduled successfully.');
                         }},
@@ -1529,6 +1532,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                         { text: 'Decline', style: 'destructive', onPress: () => {
                           const updatedAppt = { ...appointment, rescheduleRequest: { ...appointment.rescheduleRequest!, status: 'declined' as const, resolvedAt: new Date().toISOString() } };
                           dispatch({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
+                          dispatch({ type: 'MARK_INBOX_READ_BY_APPOINTMENT', payload: appointment.id });
                           syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
                         }},
                       ]);
