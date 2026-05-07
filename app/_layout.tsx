@@ -78,7 +78,15 @@ function RootLayout() {
   const router = useRouter();
   const handleSplashFinish = useCallback(async () => {
     setSplashDone(true);
-    // Always land on profile-select so the user can choose Business or Client portal
+    try {
+      // Returning business owner: skip portal selector and go straight to dashboard
+      const storedOwnerId = await AsyncStorage.getItem("@bookease_business_owner_id");
+      if (storedOwnerId) {
+        router.replace("/(tabs)" as any);
+        return;
+      }
+    } catch { /* ignore */ }
+    // First-time or logged-out user: show portal selector
     router.replace("/profile-select" as any);
   }, [router]);
   const onLayoutRootView = useCallback(async () => {

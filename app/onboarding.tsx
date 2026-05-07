@@ -65,6 +65,7 @@ import * as Notifications from "expo-notifications";
 import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
 import * as Auth from "@/lib/_core/auth";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Step = 1 | "otp" | 2 | "subscription" | 3 | "socialPhone";
 
@@ -262,6 +263,7 @@ export default function OnboardingScreen() {
   const colors = useColors();
   const router = useRouter();
   const { isTablet, hp, width, height } = useResponsive();
+  const insets = useSafeAreaInsets();
 
   const socialParams = useLocalSearchParams<{ socialLogin?: string; socialName?: string; socialEmail?: string }>();
   const isSocialFlow = socialParams.socialLogin === "1";
@@ -1117,6 +1119,32 @@ export default function OnboardingScreen() {
           borderTopRightRadius: width * 0.6,
         }}
       />
+
+      {/* ─── Back to Portal Select ─────────────────────────── */}
+      {step === 1 && (
+        <Pressable
+          onPress={() => {
+            if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.back();
+          }}
+          style={({ pressed }) => ({
+            position: "absolute",
+            top: insets.top + 8,
+            left: 16,
+            zIndex: 100,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            paddingVertical: 8,
+            paddingHorizontal: 10,
+            borderRadius: 20,
+            backgroundColor: pressed ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.12)",
+          })}
+        >
+          <Text style={{ fontSize: 16, color: "rgba(255,255,255,0.85)", lineHeight: 20 }}>‹</Text>
+          <Text style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", fontWeight: "600", letterSpacing: 0.2 }}>Portals</Text>
+        </Pressable>
+      )}
 
       <KeyboardAvoidingView
         behavior="padding"
