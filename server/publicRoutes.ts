@@ -381,9 +381,14 @@ export function registerPublicRoutes(app: Express) {
       const allSchedule = await db.getCustomScheduleByOwner(owner.id);
       const mode = (owner.scheduleMode as "weekly" | "custom") || "weekly";
       const buffer = (owner as any).bufferTime || 0;
-      // Effective slot step: use configured slotInterval when non-zero, else auto (duration capped at 30)
+      // Effective slot step: client can override via ?step= param; else use business slotInterval; else auto (duration capped at 30)
+      const clientStep = req.query.step !== undefined ? parseInt(req.query.step as string) : 0;
       const configuredInterval = (owner as any).slotInterval ?? 0;
-      const getStep = (dur: number) => configuredInterval > 0 ? configuredInterval : Math.min(dur, 30);
+      const getStep = (dur: number) => {
+        if (clientStep > 0) return clientStep;
+        if (configuredInterval > 0) return configuredInterval;
+        return Math.min(dur, 30);
+      };
 
       // When a specific location is requested, use single-location logic (staff > location > global)
       if (locationLocalId) {

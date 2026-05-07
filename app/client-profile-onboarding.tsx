@@ -21,7 +21,7 @@ import {
   Alert,
   KeyboardAvoidingView,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { ScreenContainer } from "@/components/screen-container";
 import { useClientStore } from "@/lib/client-store";
@@ -53,6 +53,7 @@ export default function ClientProfileOnboardingScreen() {
   const router = useRouter();
   const { state, signIn } = useClientStore();
   const insets = useSafeAreaInsets();
+  const { returnSlug, returnServiceLocalId } = useLocalSearchParams<{ returnSlug?: string; returnServiceLocalId?: string }>();
 
   const [name, setName] = useState(state.account?.name ?? "");
   const [email, setEmail] = useState(state.account?.email ?? "");
@@ -160,7 +161,11 @@ export default function ClientProfileOnboardingScreen() {
       await signIn(data.clientAccount, token!);
 
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace("/(client-tabs)" as any);
+      if (returnSlug) {
+        router.replace({ pathname: "/client-booking-wizard", params: { slug: returnSlug, serviceLocalId: returnServiceLocalId ?? "" } } as any);
+      } else {
+        router.replace("/(client-tabs)" as any);
+      }
     } catch (e: any) {
       setError(e.message ?? "Something went wrong. Please try again.");
     } finally {
@@ -169,7 +174,11 @@ export default function ClientProfileOnboardingScreen() {
   };
 
   const handleSkip = () => {
-    router.replace("/(client-tabs)" as any);
+    if (returnSlug) {
+      router.replace({ pathname: "/client-booking-wizard", params: { slug: returnSlug, serviceLocalId: returnServiceLocalId ?? "" } } as any);
+    } else {
+      router.replace("/(client-tabs)" as any);
+    }
   };
 
   return (

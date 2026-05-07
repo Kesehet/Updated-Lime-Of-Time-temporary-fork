@@ -139,6 +139,9 @@ export default function ClientBookingWizardScreen() {
   const [customDays, setCustomDays] = useState<Record<string, boolean>>({});
   // Set of YYYY-MM-DD strings that have zero available slots (fully booked / closed)
   const [unavailableDates, setUnavailableDates] = useState<Set<string>>(new Set());
+  // Distinguish closed (business not working that day) vs full (working but all slots taken)
+  const [closedDates, setClosedDates] = useState<Set<string>>(new Set());
+  const [fullDates, setFullDates] = useState<Set<string>>(new Set());
   // Map of YYYY-MM-DD → slot count for available days
   const [slotCounts, setSlotCounts] = useState<Record<string, number>>({});
   const [loadingMonthAvail, setLoadingMonthAvail] = useState(false);
@@ -249,12 +252,15 @@ export default function ClientBookingWizardScreen() {
     lastAvailFetchKey.current = fetchKey;
     setLoadingMonthAvail(true);
     const newUnavailable = new Set<string>();
+    const newClosed = new Set<string>();
+    const newFull = new Set<string>();
     const newSlotCounts: Record<string, number> = {};
     const todayStr = new Date().toISOString().split("T")[0];
     const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
     // Build list of future dates in this month
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const todayDate = new Date();
+    const WEEKDAY_KEYS = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
     const promises: Promise<void>[] = [];
     for (let d = 1; d <= daysInMonth; d++) {
       const dateObj = new Date(year, month, d);
@@ -263,6 +269,10 @@ export default function ClientBookingWizardScreen() {
       const staffParam = staffId !== "any" ? `&staffId=${encodeURIComponent(staffId)}` : "";
       const locParam = location ? `&locationId=${encodeURIComponent(location.localId)}` : "";
       const url = `${apiBase}/api/public/business/${effectiveSlug}/slots?date=${dateStr}&duration=${service.duration}${staffParam}${locParam}&clientToday=${todayStr}&nowMinutes=${nowMinutes}`;
+      // Determine if the day is a working day per weeklyDays/customDays
+      const weekdayKey = WEEKDAY_KEYS[dateObj.getDay()];
+      const customOverride = customDays[dateStr];
+      const isWorkingDay = customOverride !== undefined ? customOverride : (weeklyDays[weekdayKey] ?? false);
       promises.push(
         fetch(url)
           .then((r) => r.ok ? r.json() : { slots: [] })
@@ -270,6 +280,11 @@ export default function ClientBookingWizardScreen() {
             const count = data.slots?.length ?? 0;
             if (!count) {
               newUnavailable.add(dateStr);
+              if (!isWorkingDay) {
+                newClosed.add(dateStr);
+              } else {
+                newFull.add(dateStr);
+              }
             } else {
               newSlotCounts[dateStr] = count;
             }
@@ -279,9 +294,11 @@ export default function ClientBookingWizardScreen() {
     }
     await Promise.all(promises);
     setUnavailableDates(newUnavailable);
+    setClosedDates(newClosed);
+    setFullDates(newFull);
     setSlotCounts(newSlotCounts);
     setLoadingMonthAvail(false);
-  }, [effectiveSlug, apiBase]);
+  }, [effectiveSlug, apiBase, weeklyDays, customDays]);
 
   // Trigger month availability fetch when calendar month or service changes
   useEffect(() => {
@@ -300,6 +317,8 @@ export default function ClientBookingWizardScreen() {
     setRefreshCounter((c) => c + 1);
   }, [selectedDate, selectedService]);
   const [refreshCounter, setRefreshCounter] = useState(0);
+  // Slot interval: 0 = Auto (use business default), or 5/10/15/20/25/30 min
+  const [slotStep, setSlotStep] = useState<number>(0);
 
   // Load slots — location-aware
   useEffect(() => {
@@ -314,7 +333,8 @@ export default function ClientBookingWizardScreen() {
         const locParam = selectedLocation ? `&locationId=${encodeURIComponent(selectedLocation.localId)}` : "";
         const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
         const clientToday = new Date().toISOString().split("T")[0];
-        const url = `${apiBase}/api/public/business/${effectiveSlug}/slots?date=${dateStr}&duration=${selectedService.duration}${staffParam}${locParam}&clientToday=${clientToday}&nowMinutes=${nowMinutes}`;
+        const stepParam = slotStep > 0 ? `&step=${slotStep}` : "";
+        const url = `${apiBase}/api/public/business/${effectiveSlug}/slots?date=${dateStr}&duration=${selectedService.duration}${staffParam}${locParam}&clientToday=${clientToday}&nowMinutes=${nowMinutes}${stepParam}`;
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
@@ -328,7 +348,7 @@ export default function ClientBookingWizardScreen() {
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedService, selectedStaffId, selectedLocation, effectiveSlug, apiBase, refreshCounter]);
+  }, [selectedDate, selectedService, selectedStaffId, selectedLocation, effectiveSlug, apiBase, refreshCounter, slotStep]);
 
   const handleNext = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -617,7 +637,7 @@ export default function ClientBookingWizardScreen() {
               ]}
               onPress={() => setSelectedStaffId("any")}
             >
-              <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}20` }]}>
+              <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}20`, alignItems: "center", justifyContent: "center" }]}>
                 <IconSymbol name="person.3.fill" size={20} color={LIME_GREEN} />
               </View>
               <View style={s.optionLeft}>
@@ -687,7 +707,7 @@ export default function ClientBookingWizardScreen() {
                   setSelectedSlot(null);
                 }}
               >
-                <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}20` }]}>
+                <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}20`, alignItems: "center", justifyContent: "center" }]}>
                   <IconSymbol name="location.fill" size={18} color={LIME_GREEN} />
                 </View>
                 <View style={s.optionLeft}>
@@ -756,6 +776,8 @@ export default function ClientBookingWizardScreen() {
                 const isPast = day < new Date(today.getFullYear(), today.getMonth(), today.getDate());
                 const dateStr = day.toISOString().split("T")[0];
                 const isUnavailable = !isPast && unavailableDates.has(dateStr);
+                const isClosed = !isPast && closedDates.has(dateStr);
+                const isFull = !isPast && fullDates.has(dateStr);
                 const isSelected = selectedDate?.toDateString() === day.toDateString();
                 const isToday = day.toDateString() === today.toDateString();
                 const isDisabled = isPast || isUnavailable;
@@ -766,7 +788,7 @@ export default function ClientBookingWizardScreen() {
                       s.calCell,
                       isSelected && { backgroundColor: LIME_GREEN, borderRadius: 20 },
                       isToday && !isSelected && { borderWidth: 1.5, borderColor: LIME_GREEN, borderRadius: 20 },
-                      (isPast || isUnavailable) && { opacity: 0.3 },
+                      (isPast || isUnavailable) && { opacity: isClosed ? 0.25 : 0.45 },
                       pressed && !isDisabled && { opacity: 0.7 },
                     ]}
                     onPress={() => {
@@ -780,8 +802,15 @@ export default function ClientBookingWizardScreen() {
                     <Text style={{ color: isSelected ? "#FFFFFF" : isUnavailable ? TEXT_MUTED : TEXT_PRIMARY, fontSize: 14, fontWeight: isToday ? "700" : "400" }}>
                       {day.getDate()}
                     </Text>
-                    {isUnavailable && !isPast && (
-                      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: TEXT_MUTED, marginTop: 1 }} />
+                    {isClosed && !isPast && (
+                      <Text style={{ fontSize: 7, fontWeight: "600", color: TEXT_MUTED, marginTop: 1, lineHeight: 9 }}>
+                        Closed
+                      </Text>
+                    )}
+                    {isFull && !isPast && (
+                      <Text style={{ fontSize: 7, fontWeight: "600", color: "#F59E0B", marginTop: 1, lineHeight: 9 }}>
+                        Full
+                      </Text>
                     )}
                     {!isUnavailable && !isPast && slotCounts[dateStr] != null && (
                       <Text style={{
@@ -814,6 +843,33 @@ export default function ClientBookingWizardScreen() {
                   >
                     <IconSymbol name="arrow.clockwise" size={16} color={LIME_GREEN} />
                   </Pressable>
+                </View>
+                {/* Interval picker */}
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, marginTop: 2 }}>
+                  {([0, 5, 10, 15, 20, 25, 30] as const).map((mins) => {
+                    const isActive = slotStep === mins;
+                    return (
+                      <Pressable
+                        key={mins}
+                        onPress={() => {
+                          setSlotStep(mins);
+                          setSelectedSlot(null);
+                          setRefreshCounter((c) => c + 1);
+                        }}
+                        style={({ pressed }) => [{
+                          paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
+                          borderWidth: 1.5,
+                          borderColor: isActive ? LIME_GREEN : CARD_BORDER,
+                          backgroundColor: isActive ? `${LIME_GREEN}20` : CARD_BG,
+                          opacity: pressed ? 0.7 : 1,
+                        }]}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: "600", color: isActive ? LIME_GREEN : TEXT_MUTED }}>
+                          {mins === 0 ? "Auto" : `${mins}m`}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
                 {loadingSlots ? (
                   <ActivityIndicator color={LIME_GREEN} style={{ marginTop: 16 }} />

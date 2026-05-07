@@ -22,7 +22,7 @@ import {
   TextInput,
   Pressable,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { setProfileMode, useClientStore } from "@/lib/client-store";
 import { startOAuthLogin, getApiBaseUrl } from "@/constants/oauth";
@@ -108,6 +108,8 @@ type Step = "options" | "phone";
 export default function ClientSignInScreen() {
   const router = useRouter();
   const { signIn } = useClientStore();
+  // returnTo params: if set, navigate to booking wizard after sign-in instead of home
+  const { returnSlug, returnServiceLocalId } = useLocalSearchParams<{ returnSlug?: string; returnServiceLocalId?: string }>();
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("options");
 
@@ -190,7 +192,14 @@ export default function ClientSignInScreen() {
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Navigate to profile onboarding for new users (no name set yet)
       if (!data.account?.name) {
-        router.replace("/client-profile-onboarding" as any);
+        if (returnSlug) {
+          router.replace({ pathname: "/client-profile-onboarding", params: { returnSlug, returnServiceLocalId: returnServiceLocalId ?? "" } } as any);
+        } else {
+          router.replace("/client-profile-onboarding" as any);
+        }
+      } else if (returnSlug) {
+        // Existing user with returnTo — go straight to booking wizard
+        router.replace({ pathname: "/client-booking-wizard", params: { slug: returnSlug, serviceLocalId: returnServiceLocalId ?? "" } } as any);
       } else {
         router.replace("/(client-tabs)" as any);
       }

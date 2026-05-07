@@ -203,10 +203,8 @@ export default function ClientBusinessDetailScreen() {
 
   const handleBookService = (service: ApiService) => {
     if (!state.account) {
-      Alert.alert("Sign In Required", "Please sign in to book an appointment.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Sign In", onPress: () => router.push("/client-signin" as any) },
-      ]);
+      // Pass returnTo params so sign-in redirects back to this booking after auth
+      router.push({ pathname: "/client-signin", params: { returnSlug: slug, returnServiceLocalId: service.localId } } as any);
       return;
     }
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -756,7 +754,7 @@ export default function ClientBusinessDetailScreen() {
           <Pressable
             style={({ pressed }) => [s.stickyGiftBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
             onPress={() => {
-              if (!state.account) { router.push("/client-signin" as any); return; }
+              if (!state.account) { router.push({ pathname: "/client-signin", params: { returnSlug: slug, returnServiceLocalId: "" } } as any); return; }
               router.push({ pathname: "/client-buy-gift", params: { slug, businessName: business?.businessName ?? "" } } as any);
             }}
           >
@@ -766,7 +764,11 @@ export default function ClientBusinessDetailScreen() {
           <Pressable
             style={({ pressed }) => [s.stickyBookBtn, { flex: 1 }, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
             onPress={() => {
-              if (!state.account) { router.push("/client-signin" as any); return; }
+              if (!state.account) {
+                const firstSvc = services[0];
+                router.push({ pathname: "/client-signin", params: { returnSlug: slug, returnServiceLocalId: firstSvc?.localId ?? "" } } as any);
+                return;
+              }
               if (services.length > 0) handleBookService(services[0]);
             }}
           >

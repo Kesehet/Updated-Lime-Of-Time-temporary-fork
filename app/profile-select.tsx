@@ -236,7 +236,9 @@ export default function ProfileSelectScreen() {
       } catch { /* ignore */ }
       router.replace("/onboarding");
     } else {
-      router.replace("/client-signin" as any);
+      // Go directly to the Discover tab — location permission is requested on mount there.
+      // Clients can sign in later when they try to book.
+      router.replace("/(client-tabs)/discover" as any);
     }
   };
 
