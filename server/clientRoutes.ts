@@ -273,8 +273,22 @@ export function registerClientRoutes(app: Express) {
 
       const results = enriched
         .filter((b) => {
-          // Category filter
-          if (category && b.businessCategory !== category) return false;
+          // Category filter — case-insensitive, partial match
+          // e.g. "Hair" matches "Hair Salon", "hair", "HAIR & Nails"
+          // Businesses with null/empty category are treated as "Other"
+          if (category) {
+            const filterCat = category.toLowerCase();
+            const bizCat = (b.businessCategory ?? "").toLowerCase();
+            if (filterCat === "other") {
+              // "Other" chip: match only businesses with no category or explicit "other"
+              if (bizCat && bizCat !== "other") return false;
+            } else {
+              // Skip businesses with no category set (they appear under "Other")
+              if (!bizCat) return false;
+              // Partial match in either direction
+              if (!bizCat.includes(filterCat) && !filterCat.includes(bizCat)) return false;
+            }
+          }
           // Text search: match business name, description, address, city, zip
           if (rawSearch) {
             const nameMatch = (b.businessName ?? "").toLowerCase().includes(rawSearch);

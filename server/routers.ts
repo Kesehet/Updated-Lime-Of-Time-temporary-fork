@@ -541,6 +541,52 @@ const appointmentsRouter = router({
         }
       }
 
+      // ── Notify client when owner approves a reschedule request ─────────────
+      if (data.rescheduleRequest && (data.rescheduleRequest as any).status === "approved") {
+        try {
+          const [owner, enrichedAppt] = await Promise.all([
+            db.getBusinessOwnerById(businessOwnerId),
+            db.getEnrichedAppointment(localId, businessOwnerId),
+          ]);
+          if (owner && enrichedAppt) {
+            const masterNotifOn = (owner as any).notificationsEnabled !== false;
+            const prefs = (owner as any).notificationPreferences ?? {};
+            const clientFirstName = (enrichedAppt.clientName ?? "there").split(" ")[0];
+            const svcName = enrichedAppt.serviceName ?? "your appointment";
+            const bName = owner.businessName;
+            // Use the new date/time from the approved reschedule request
+            const rr = data.rescheduleRequest as any;
+            const newDate = rr.requestedDate ?? enrichedAppt.date ?? "";
+            const newTime = rr.requestedTime ?? enrichedAppt.time ?? "";
+            const smsBody = `Hi ${clientFirstName}, great news! Your reschedule request for ${svcName} with ${bName} has been approved. Your new appointment is on ${newDate}${newTime ? ` at ${newTime}` : ""}. See you then! \u2013 ${bName}`;
+            // SMS notification
+            if (masterNotifOn && prefs.smsClientOnConfirmation !== false && enrichedAppt.clientPhone) {
+              try { await sendStatusSms(enrichedAppt.clientPhone, smsBody); } catch { /* non-blocking */ }
+            }
+            // Push notification to client portal user
+            if (enrichedAppt.clientPhone) {
+              try {
+                const rawDigits = enrichedAppt.clientPhone.replace(/\D/g, "");
+                const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
+                const clientAcc = await db.getClientAccountByPhone(normalizedPhone)
+                  ?? await db.getClientAccountByPhone(enrichedAppt.clientPhone);
+                if (clientAcc?.expoPushToken) {
+                  await sendExpoPush(clientAcc.expoPushToken, {
+                    title: `\u2705 Reschedule Approved!`,
+                    body: `Your ${svcName} with ${bName} has been rescheduled to ${newDate}${newTime ? ` at ${newTime}` : ""}. See you then!`,
+                    data: { type: "reschedule_approved" as any, appointmentId: localId, businessOwnerId },
+                    channelId: "appointments",
+                    sound: "default",
+                  });
+                }
+              } catch { /* non-blocking */ }
+            }
+          }
+        } catch (err) {
+          console.error("[Notify] Failed to send reschedule approval notification:", err);
+        }
+      }
+
       // Send payment receipt email to client when appointment is marked paid
       if (data.paymentStatus === "paid") {
         try {

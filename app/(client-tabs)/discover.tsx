@@ -832,12 +832,16 @@ export default function DiscoverScreen() {
                 <View style={s.emptyContainer}>
                   <Text style={s.emptyIcon}>📍</Text>
                   <Text style={[s.emptyTitle, { color: TEXT_PRIMARY }]}>
-                    {userLat != null ? "No businesses nearby" : "No businesses found"}
+                    {state.discoverCategory
+                      ? `No ${state.discoverCategory} businesses`
+                      : userLat != null ? "No businesses nearby" : "No businesses found"}
                   </Text>
                   <Text style={[s.emptySubtitle, { color: TEXT_MUTED }]}>
-                    {userLat != null
-                      ? `No businesses available within ${state.discoverRadius} miles. Try increasing your range or changing the category.`
-                      : "No businesses match your search. Try a different keyword or category."}
+                    {state.discoverCategory
+                      ? `No businesses have set their category to "${state.discoverCategory}" yet. Tap "All" to see all available businesses.`
+                      : userLat != null
+                        ? `No businesses available within ${state.discoverRadius} miles. Try increasing your range or changing the category.`
+                        : "No businesses match your search. Try a different keyword or category."}
                   </Text>
                   {userLat != null && (
                     <Pressable
