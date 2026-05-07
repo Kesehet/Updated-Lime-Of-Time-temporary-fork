@@ -85,6 +85,12 @@ function RootLayout() {
         router.replace("/(tabs)" as any);
         return;
       }
+      // Returning client: skip portal selector and go straight to client portal
+      const clientToken = await AsyncStorage.getItem("client_session_token");
+      if (clientToken) {
+        router.replace("/(client-tabs)" as any);
+        return;
+      }
     } catch { /* ignore */ }
     // First-time or logged-out user: show portal selector
     router.replace("/profile-select" as any);

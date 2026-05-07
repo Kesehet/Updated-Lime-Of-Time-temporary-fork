@@ -242,8 +242,8 @@ export default function ClientHomeScreen() {
             <Text style={styles.greetingSub}>What are you booking today?</Text>
             {/* Portal indicator pill */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#8FBF6A" }} />
-              <Text style={{ fontSize: 10, fontWeight: "700", color: "#8FBF6A", letterSpacing: 0.8, textTransform: "uppercase" }}>Client Portal</Text>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#8B5CF6" }} />
+              <Text style={{ fontSize: 10, fontWeight: "700", color: "#8B5CF6", letterSpacing: 0.8, textTransform: "uppercase" }}>Client Portal</Text>
             </View>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>

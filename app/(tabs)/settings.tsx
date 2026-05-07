@@ -807,7 +807,17 @@ export default function SettingsScreen() {
       <SectionHeader label="Switch Portal" accentColor="#8B5CF6" colors={colors} />
       <Pressable
         onPress={() => {
-          router.replace("/profile-select" as any);
+          Alert.alert(
+            "Switch to Client Portal",
+            "Your business session will stay active. You can switch back anytime from the portal selector.",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Switch",
+                onPress: () => router.replace("/profile-select" as any),
+              },
+            ]
+          );
         }}
         style={({ pressed }) => [styles.navCard, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.75 : 1 }]}
       >
