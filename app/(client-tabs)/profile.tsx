@@ -120,7 +120,23 @@ export default function ClientProfileScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
         <ClientPortalBackground />
-        <View style={[styles.guestContainer, { paddingTop: insets.top }]}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top }} showsVerticalScrollIndicator={false}>
+          {/* App Branding */}
+          <View style={styles.brandingWrap}>
+            <View style={styles.brandLogoRing}>
+              <Image source={require("../../assets/images/icon.png")} style={styles.brandLogo} resizeMode="cover" />
+            </View>
+            <View style={styles.brandTitleWrap}>
+              <Text style={styles.brandAppName}>Lime Of Time</Text>
+              <Text style={styles.brandTagline}>Book appointments with ease</Text>
+              <View style={styles.brandByLine}>
+                <View style={styles.brandByLineDash} />
+                <Text style={styles.brandByLineText}>CLIENT PORTAL</Text>
+                <View style={styles.brandByLineDash} />
+              </View>
+            </View>
+          </View>
+          <View style={[styles.guestContainer, { paddingTop: 0 }]}>
           <View style={styles.guestAvatar}>
             <IconSymbol name="person.crop.circle.fill" size={48} color={GREEN_ACCENT} />
           </View>
@@ -134,7 +150,8 @@ export default function ClientProfileScreen() {
           >
             <Text style={styles.signInBtnText}>Sign In / Create Account</Text>
           </Pressable>
-        </View>
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -146,6 +163,21 @@ export default function ClientProfileScreen() {
         contentContainerStyle={{ paddingBottom: 40, paddingTop: insets.top }}
         showsVerticalScrollIndicator={false}
       >
+        {/* App Branding */}
+        <View style={styles.brandingWrap}>
+          <View style={styles.brandLogoRing}>
+            <Image source={require("../../assets/images/icon.png")} style={styles.brandLogo} resizeMode="cover" />
+          </View>
+          <View style={styles.brandTitleWrap}>
+            <Text style={styles.brandAppName}>Lime Of Time</Text>
+            <Text style={styles.brandTagline}>Book appointments with ease</Text>
+            <View style={styles.brandByLine}>
+              <View style={styles.brandByLineDash} />
+              <Text style={styles.brandByLineText}>CLIENT PORTAL</Text>
+              <View style={styles.brandByLineDash} />
+            </View>
+          </View>
+        </View>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           {state.account.profilePhotoUri ? (
@@ -317,6 +349,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: TEXT_MUTED,
     marginTop: 8,
+  },
+  brandingWrap: {
+    alignItems: "center",
+    paddingTop: 20,
+    paddingBottom: 4,
+    gap: 10,
+  },
+  brandLogoRing: {
+    width: 88,
+    height: 88,
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.22)",
+    marginBottom: 4,
+  },
+  brandLogo: { width: 66, height: 66, borderRadius: 18 },
+  brandTitleWrap: { alignItems: "center", gap: 4 },
+  brandAppName: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -0.5,
+  },
+  brandTagline: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.6)",
+    letterSpacing: 0.2,
+  },
+  brandByLine: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 2 },
+  brandByLineDash: { width: 20, height: 1, backgroundColor: "rgba(255,255,255,0.28)" },
+  brandByLineText: {
+    fontSize: 10,
+    color: "rgba(255,255,255,0.4)",
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
   },
   guestContainer: {
     flex: 1,
