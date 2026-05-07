@@ -12,6 +12,7 @@ import {
   Image,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as Haptics from "expo-haptics";
 import { PhotoLightbox } from "@/components/photo-lightbox";
 import { ScreenContainer } from "@/components/screen-container";
 import { BirthdayPicker } from "@/components/birthday-picker";
@@ -546,9 +547,18 @@ export default function ClientDetailScreen() {
                 </View>
               </View>
             ) : null}
-<View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+{/* ── Quick-action trifecta ─────────────────────────────────────────── */}
+            <View style={{
+              flexDirection: "row",
+              gap: 8,
+              marginTop: 14,
+              marginHorizontal: -20, // bleed to card edges (card padding is 20)
+              paddingHorizontal: 20,
+            }}>
+              {/* Book Appt */}
               <Pressable
                 onPress={() => router.push({ pathname: "/calendar-booking", params: { clientId: client.id } } as any)}
+                onPressIn={() => { if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                 style={({ pressed }) => [{
                   flex: 1,
                   flexDirection: "row",
@@ -558,15 +568,40 @@ export default function ClientDetailScreen() {
                   borderRadius: 14,
                   backgroundColor: colors.success,
                   opacity: pressed ? 0.82 : 1,
-                  gap: 7,
+                  gap: 6,
                 }]}
               >
                 <IconSymbol name="calendar" size={17} color="#FFF" />
-                <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Book Appt</Text>
+                <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Book</Text>
               </Pressable>
+
+              {/* Call — only shown when phone exists */}
+              {client.phone ? (
+                <Pressable
+                  onPress={() => Linking.openURL(`tel:${stripPhoneFormat(client.phone)}`).catch(() => Alert.alert("Call", "Unable to open phone dialer."))}
+                  onPressIn={() => { if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                  style={({ pressed }) => [{
+                    flex: 1,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: 46,
+                    borderRadius: 14,
+                    backgroundColor: "#2563EB",
+                    opacity: pressed ? 0.82 : 1,
+                    gap: 6,
+                  }]}
+                >
+                  <IconSymbol name="phone.fill" size={17} color="#FFF" />
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Call</Text>
+                </Pressable>
+              ) : null}
+
+              {/* Message */}
               {client.phone ? (
                 <Pressable
                   onPress={handleQuickMessage}
+                  onPressIn={() => { if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                   style={({ pressed }) => [{
                     flex: 1,
                     flexDirection: "row",
@@ -576,11 +611,11 @@ export default function ClientDetailScreen() {
                     borderRadius: 14,
                     backgroundColor: colors.primary,
                     opacity: pressed ? 0.82 : 1,
-                    gap: 7,
+                    gap: 6,
                   }]}
                 >
                   <IconSymbol name="paperplane.fill" size={17} color="#FFF" />
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Message</Text>
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Message</Text>
                 </Pressable>
               ) : null}
             </View>

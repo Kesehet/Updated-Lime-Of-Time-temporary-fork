@@ -1930,3 +1930,4 @@
 - [x] Extend Face ID to client portal with 24h re-auth toggle in client settings
 - [x] Show "Welcome back" business name hint on Portal Selector for returning business owners
 - [x] Add Sign Out button in business Settings screen (already existed — verified)
+- [x] Client detail: add Call button (Linking tel:), edge-to-edge button row, haptics on all action buttons
