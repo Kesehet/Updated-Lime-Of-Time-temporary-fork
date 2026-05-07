@@ -350,16 +350,30 @@ export default function ClientHomeScreen() {
                 onPress={() => router.push({ pathname: "/client-booking-wizard", params: { slug: lastCompleted.businessSlug, preServiceName: lastCompleted.serviceName } } as any)}
                 style={{ marginBottom: 12 }}
               >
-                <View style={[styles.apptCard, { backgroundColor: GREEN_ACCENT + "18", borderRadius: 14, borderWidth: 1, borderColor: GREEN_ACCENT + "40" }]}>
-                  <View style={[styles.apptAccent, { backgroundColor: GREEN_ACCENT }]} />
-                  <View style={styles.apptLeft}>
-                    <Text style={[styles.apptService, { color: GREEN_ACCENT }]}>{lastCompleted.serviceName}</Text>
-                    <Text style={[styles.apptBusiness, { color: TEXT_MUTED }]}>{lastCompleted.businessName}</Text>
-                    <Text style={[styles.apptDate, { color: TEXT_MUTED }]}>Last visited {formatDate(lastCompleted.date)}</Text>
-                  </View>
-                  <View style={{ justifyContent: "center", paddingRight: 4 }}>
-                    <View style={{ backgroundColor: GREEN_ACCENT, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 }}>
-                      <Text style={{ color: "#1A3A28", fontWeight: "700", fontSize: 13 }}>Book Again</Text>
+                <View style={[styles.apptCard, { backgroundColor: GREEN_ACCENT + "18", borderRadius: 14, borderWidth: 1, borderColor: GREEN_ACCENT + "40", overflow: "hidden", padding: 0 }]}>
+                  {/* Service photo banner */}
+                  {(lastCompleted as any).servicePhotoUri ? (
+                    <Image
+                      source={{ uri: (lastCompleted as any).servicePhotoUri }}
+                      style={{ width: "100%", height: 90, borderTopLeftRadius: 14, borderTopRightRadius: 14 }}
+                      resizeMode="cover"
+                    />
+                  ) : (lastCompleted as any).businessLogoUri ? (
+                    <View style={{ width: "100%", height: 90, backgroundColor: GREEN_ACCENT + "18", alignItems: "center", justifyContent: "center", borderTopLeftRadius: 14, borderTopRightRadius: 14 }}>
+                      <Image source={{ uri: (lastCompleted as any).businessLogoUri }} style={{ width: 56, height: 56, borderRadius: 14 }} resizeMode="cover" />
+                    </View>
+                  ) : null}
+                  <View style={{ flexDirection: "row", alignItems: "center", padding: 12, gap: 8 }}>
+                    <View style={[styles.apptAccent, { backgroundColor: GREEN_ACCENT, alignSelf: "stretch", marginLeft: 0 }]} />
+                    <View style={styles.apptLeft}>
+                      <Text style={[styles.apptService, { color: GREEN_ACCENT }]}>{lastCompleted.serviceName}</Text>
+                      <Text style={[styles.apptBusiness, { color: TEXT_MUTED }]}>{lastCompleted.businessName}</Text>
+                      <Text style={[styles.apptDate, { color: TEXT_MUTED }]}>Last visited {formatDate(lastCompleted.date)}</Text>
+                    </View>
+                    <View style={{ justifyContent: "center", paddingRight: 4 }}>
+                      <View style={{ backgroundColor: GREEN_ACCENT, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 }}>
+                        <Text style={{ color: "#1A3A28", fontWeight: "700", fontSize: 13 }}>Book Again</Text>
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -398,6 +412,14 @@ export default function ClientHomeScreen() {
                 >
                   <View style={styles.apptCard}>
                     <View style={[styles.apptAccent, { backgroundColor: statusColor(appt.status) }]} />
+                    {/* Service or business photo thumbnail */}
+                    {((appt as any).servicePhotoUri || (appt as any).businessLogoUri) && (
+                      <Image
+                        source={{ uri: (appt as any).servicePhotoUri ?? (appt as any).businessLogoUri }}
+                        style={{ width: 48, height: 48, borderRadius: 10, marginRight: 4 }}
+                        resizeMode="cover"
+                      />
+                    )}
                     <View style={styles.apptLeft}>
                       <Text style={styles.apptService}>{appt.serviceName}</Text>
                       <Text style={[styles.apptBusiness, { color: TEXT_MUTED }]}>{appt.businessName}</Text>
@@ -433,13 +455,45 @@ export default function ClientHomeScreen() {
                     onPress={() => router.push({ pathname: "/client-business-detail", params: { slug: biz.businessSlug } } as any)}
                   >
                     <View style={styles.savedCard}>
-                      <View style={styles.savedIcon}>
-                        <IconSymbol name="scissors" size={20} color={GREEN_ACCENT} />
-                      </View>
-                      <Text style={styles.savedName} numberOfLines={2}>{biz.businessName}</Text>
-                      {biz.businessCategory && (
-                        <Text style={[styles.savedCat, { color: TEXT_MUTED }]} numberOfLines={1}>{biz.businessCategory}</Text>
+                      {/* Business logo or fallback icon */}
+                      {(biz as any).businessLogoUri ? (
+                        <Image
+                          source={{ uri: (biz as any).businessLogoUri }}
+                          style={styles.savedLogo}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.savedIcon}>
+                          <IconSymbol name="building.2" size={22} color={GREEN_ACCENT} />
+                        </View>
                       )}
+                      {/* Business name */}
+                      <Text style={styles.savedName} numberOfLines={2}>{biz.businessName}</Text>
+                      {/* Category */}
+                      {biz.businessCategory && (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN_ACCENT }} />
+                          <Text style={[styles.savedCat, { color: GREEN_ACCENT }]} numberOfLines={1}>{biz.businessCategory}</Text>
+                        </View>
+                      )}
+                      {/* Address */}
+                      {(biz as any).businessAddress && (
+                        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 4, marginTop: 2 }}>
+                          <IconSymbol name="location" size={10} color={TEXT_MUTED} style={{ marginTop: 1 }} />
+                          <Text style={[styles.savedCat, { color: TEXT_MUTED, flex: 1 }]} numberOfLines={2}>{(biz as any).businessAddress}</Text>
+                        </View>
+                      )}
+                      {/* Phone */}
+                      {(biz as any).businessPhone && (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1 }}>
+                          <IconSymbol name="phone.fill" size={10} color={TEXT_MUTED} />
+                          <Text style={[styles.savedCat, { color: TEXT_MUTED }]} numberOfLines={1}>{(biz as any).businessPhone}</Text>
+                        </View>
+                      )}
+                      {/* Book button */}
+                      <View style={{ marginTop: 6, backgroundColor: GREEN_ACCENT + "20", borderRadius: 8, paddingVertical: 5, alignItems: "center" }}>
+                        <Text style={{ color: GREEN_ACCENT, fontSize: 11, fontWeight: "700" }}>Book Now</Text>
+                      </View>
                     </View>
                   </AnimCard>
                 ))}
@@ -751,21 +805,29 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   savedCard: {
-    width: 110,
+    width: 160,
     borderRadius: 14,
     padding: 12,
-    gap: 6,
+    gap: 4,
     backgroundColor: CARD_BG,
     borderWidth: 1,
     borderColor: CARD_BORDER,
   },
+  savedLogo: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: "rgba(143,191,106,0.1)",
+    marginBottom: 2,
+  },
   savedIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 56,
+    height: 56,
+    borderRadius: 12,
     backgroundColor: "rgba(143,191,106,0.15)",
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 2,
   },
   savedName: {
     fontSize: 13,

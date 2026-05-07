@@ -473,6 +473,12 @@ export function registerClientRoutes(app: Express) {
           const service = services.find((s) => s.localId === appt.serviceLocalId);
           const staff = staffList.find((st) => st.localId === appt.staffId);
           const location = locations.find((l) => l.localId === appt.locationId);
+          // Get first service photo if available
+          let servicePhotoUri: string | null = null;
+          if (service?.localId) {
+            const photos = await db.getServicePhotos(appt.businessOwnerId, service.localId);
+            servicePhotoUri = photos[0]?.uri ?? null;
+          }
           return {
             ...appt,
             businessName: owner?.businessName ?? "Unknown",
@@ -481,6 +487,7 @@ export function registerClientRoutes(app: Express) {
             coverPhotoUri: (owner as any)?.coverPhotoUri ?? null,
             businessCategory: owner?.businessCategory ?? null,
             serviceName: service?.name ?? appt.serviceLocalId,
+            servicePhotoUri,
             price: service?.price ?? null,
             staffName: staff?.name ?? null,
             staffAvatarUrl: staff?.photoUri ?? null,
@@ -882,6 +889,7 @@ export function registerClientRoutes(app: Express) {
             businessCategory: owner.businessCategory ?? null,
             businessAddress: owner.address ?? null,
             businessPhone: owner.phone ?? null,
+            businessLogoUri: (owner as any).businessLogoUri ?? null,
             savedAt: new Date().toISOString(),
           };
         })

@@ -270,11 +270,24 @@ export function ClientStoreProvider({ children }: { children: React.ReactNode })
     }
     const res = await fetch(`${getApiBaseUrl()}${path}`, { ...options, headers });
     if (!res.ok) {
+      // 401 Unauthorized — session expired or invalid: auto sign out and notify
+      if (res.status === 401) {
+        await Promise.all([
+          AsyncStorage.removeItem(CLIENT_SESSION_KEY),
+          AsyncStorage.removeItem(CLIENT_ACCOUNT_KEY),
+        ]);
+        dispatch({ type: "CLEAR_SESSION" });
+        // Emit session-expired event so root layout shows toast and redirects
+        import("@/lib/_core/session-events").then(({ emitSessionExpired }) => {
+          emitSessionExpired();
+        }).catch(() => {});
+        throw new Error("Session expired");
+      }
       const err = await res.json().catch(() => ({ error: "Request failed" }));
       throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`);
     }
     return res.json() as Promise<T>;
-  }, [state.sessionToken]);
+  }, [state.sessionToken, dispatch]);
 
   // ── Background unread-count polling (every 30 s when signed in) ──────────
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
