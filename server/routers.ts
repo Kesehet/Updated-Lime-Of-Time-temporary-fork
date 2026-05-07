@@ -498,6 +498,49 @@ const appointmentsRouter = router({
         }
       }
 
+      // ── Notify client when owner declines a reschedule request ─────────────
+      if (data.rescheduleRequest && (data.rescheduleRequest as any).status === "declined") {
+        try {
+          const [owner, enrichedAppt] = await Promise.all([
+            db.getBusinessOwnerById(businessOwnerId),
+            db.getEnrichedAppointment(localId, businessOwnerId),
+          ]);
+          if (owner && enrichedAppt) {
+            const masterNotifOn = (owner as any).notificationsEnabled !== false;
+            const prefs = (owner as any).notificationPreferences ?? {};
+            const clientFirstName = (enrichedAppt.clientName ?? "there").split(" ")[0];
+            const svcName = enrichedAppt.serviceName ?? "your appointment";
+            const bName = owner.businessName;
+            const originalDate = enrichedAppt.date ?? "";
+            const smsBody = `Hi ${clientFirstName}, your reschedule request for ${svcName} was declined. Your original appointment on ${originalDate} is still confirmed. Please contact us if you need to make changes. \u2013 ${bName}`;
+            // SMS notification (respects master toggle; uses confirmation pref as proxy)
+            if (masterNotifOn && prefs.smsClientOnConfirmation !== false && enrichedAppt.clientPhone) {
+              try { await sendStatusSms(enrichedAppt.clientPhone, smsBody); } catch { /* non-blocking */ }
+            }
+            // Push notification to client portal user
+            if (enrichedAppt.clientPhone) {
+              try {
+                const rawDigits = enrichedAppt.clientPhone.replace(/\D/g, "");
+                const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
+                const clientAcc = await db.getClientAccountByPhone(normalizedPhone)
+                  ?? await db.getClientAccountByPhone(enrichedAppt.clientPhone);
+                if (clientAcc?.expoPushToken) {
+                  await sendExpoPush(clientAcc.expoPushToken, {
+                    title: `\u274c Reschedule Request Declined`,
+                    body: `Your reschedule request for ${svcName} with ${bName} was declined. Your original appointment on ${originalDate} is still confirmed.`,
+                    data: { type: "reschedule_declined" as any, appointmentId: localId, businessOwnerId },
+                    channelId: "appointments",
+                    sound: "default",
+                  });
+                }
+              } catch { /* non-blocking */ }
+            }
+          }
+        } catch (err) {
+          console.error("[Notify] Failed to send reschedule decline notification:", err);
+        }
+      }
+
       // Send payment receipt email to client when appointment is marked paid
       if (data.paymentStatus === "paid") {
         try {
