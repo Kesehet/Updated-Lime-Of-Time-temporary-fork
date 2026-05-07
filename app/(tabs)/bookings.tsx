@@ -800,7 +800,7 @@ export default function BookingsScreen() {
                 : f.key === "confirmed" ? locationAppointments.filter((a) => a.status === "confirmed").length
                 : f.key === "unpaid" ? locationAppointments.filter((a) => a.status !== "cancelled" && a.paymentStatus !== "paid").length
                 : f.key === "paid" ? locationAppointments.filter((a) => a.paymentStatus === "paid").length
-                : f.key === "requests" ? locationAppointments.filter((a) => a.status === "pending").length
+                : f.key === "requests" ? locationAppointments.filter((a) => a.status === "pending" || (a.rescheduleRequest as any)?.status === "pending").length
                 : f.key === "cancelled" ? locationAppointments.filter((a) => a.status === "cancelled").length
                 : locationAppointments.filter((a) => a.status === "completed").length;
               return (
@@ -870,6 +870,30 @@ export default function BookingsScreen() {
           </View>
         )}
 
+        {/* Reschedule request alert banner */}
+        {(() => {
+          const pendingRescheduled = locationAppointments.filter((a) => (a.rescheduleRequest as any)?.status === "pending");
+          if (pendingRescheduled.length === 0) return null;
+          return (
+            <Pressable
+              style={({ pressed }) => ({ paddingHorizontal: hp, marginBottom: 10, opacity: pressed ? 0.85 : 1 })}
+              onPress={() => setActiveFilterPersisted("requests")}
+            >
+              <View style={{ backgroundColor: "#F59E0B18", borderRadius: 12, borderWidth: 1.5, borderColor: "#F59E0B", padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <Text style={{ fontSize: 18 }}>🔄</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: "#92400E" }}>
+                    {pendingRescheduled.length} reschedule request{pendingRescheduled.length !== 1 ? "s" : ""} pending
+                  </Text>
+                  <Text style={{ fontSize: 12, color: "#B45309", marginTop: 2 }}>
+                    Tap to review — clients are waiting for your response
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 13, color: "#92400E", fontWeight: "700" }}>→</Text>
+              </View>
+            </Pressable>
+          );
+        })()}
         {/* Bulk Mark All Paid banner (Unpaid filter only) */}
         {activeFilter === "unpaid" && filteredAppointments.length > 1 && (
           <View style={{ paddingHorizontal: hp, marginBottom: 10 }}>

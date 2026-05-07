@@ -50,6 +50,11 @@ export default function TabLayout() {
     () => state.appointments.filter((a) => a.status === "pending").length,
     [state.appointments]
   );
+  const pendingRescheduleCount = useMemo(
+    () => state.appointments.filter((a) => (a.rescheduleRequest as any)?.status === "pending").length,
+    [state.appointments]
+  );
+  const bookingsBadgeCount = pendingCount + pendingRescheduleCount;
 
   const bottomPadding = Platform.OS === "web"
     ? (isTablet ? 16 : 12)
@@ -112,7 +117,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <IconSymbol size={iconSize} name="calendar.badge.clock" color={color} />
           ),
-          tabBarBadge: pendingCount > 0 ? pendingCount : undefined,
+          tabBarBadge: bookingsBadgeCount > 0 ? bookingsBadgeCount : undefined,
           tabBarBadgeStyle: {
             backgroundColor: colors.error,
             color: "#FFFFFF",
