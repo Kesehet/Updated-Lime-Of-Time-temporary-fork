@@ -5385,6 +5385,13 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       if (selectedService && currentStep === 3) {
         renderStaffForService(selectedService.localId);
       }
+      // Auto-advance to the next step after a brief visual confirmation delay
+      // so the user sees the checkmark before moving on
+      var closedBanner = document.getElementById('topLocClosedBanner');
+      var locationIsClosed = closedBanner && closedBanner.classList.contains('show');
+      if (!locationIsClosed) {
+        setTimeout(function() { goToIntentStep(); }, 350);
+      }
     }
 
     function getEffectiveWorkingDays() {

@@ -270,12 +270,30 @@ export default function ClientsScreen() {
                 </>
               )}
               {activeTab === "messages" && (
-                <Pressable
-                  onPress={loadThreads}
-                  style={({ pressed }) => [styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
-                >
-                  <IconSymbol name="arrow.clockwise" size={18} color={colors.primary} />
-                </Pressable>
+                <>
+                  {totalUnread > 0 && (
+                    <Pressable
+                      onPress={async () => {
+                        try {
+                          await apiCall("/api/business/messages/mark-all-read", { method: "POST" });
+                          loadThreads();
+                        } catch {
+                          // silently fail
+                        }
+                      }}
+                      style={({ pressed }) => [styles.iconButton, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "50", opacity: pressed ? 0.7 : 1, flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, minWidth: 0 }]}
+                    >
+                      <IconSymbol name="checkmark.circle.fill" size={14} color={colors.primary} />
+                      <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "600" }}>Mark all read</Text>
+                    </Pressable>
+                  )}
+                  <Pressable
+                    onPress={loadThreads}
+                    style={({ pressed }) => [styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
+                  >
+                    <IconSymbol name="arrow.clockwise" size={18} color={colors.primary} />
+                  </Pressable>
+                </>
               )}
             </View>
           </View>

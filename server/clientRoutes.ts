@@ -707,6 +707,22 @@ export function registerClientRoutes(app: Express) {
     }
   });
 
+  /** POST /api/business/messages/mark-all-read — mark all client messages as read for this business */
+  app.post("/api/business/messages/mark-all-read", async (req: Request, res: Response) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      const owner = await db.getBusinessOwnerByOpenId(user.openId);
+      if (!owner) {
+        res.status(404).json({ error: "Business owner not found" });
+        return;
+      }
+      await db.markAllClientMessagesRead(owner.id);
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });
+    }
+  });
+
   /** GET /api/business/messages/:clientAccountId — full thread with a client */
   app.get("/api/business/messages/:clientAccountId", async (req: Request, res: Response) => {
     try {

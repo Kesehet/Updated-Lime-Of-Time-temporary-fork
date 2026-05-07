@@ -2758,9 +2758,9 @@ export default function HomeScreen() {
         />
       </ScrollView>
 
-      {/* FAB */}
+      {/* Messages FAB */}
       <Pressable
-        onPress={() => router.push({ pathname: "/calendar-booking", params: { preselectedLocationId: selectedLocationFilter ?? "" } } as any)}
+        onPress={() => router.push("/(tabs)/clients?tab=messages" as any)}
         style={({ pressed }) => [
           styles.fab,
           { right: hp, transform: [{ scale: pressed ? 0.93 : 1 }] },
@@ -2772,7 +2772,28 @@ export default function HomeScreen() {
           end={{ x: 1, y: 1 }}
           style={{ width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" }}
         >
-          <IconSymbol name="plus" size={28} color="#FFF" />
+          <IconSymbol name="message.fill" size={26} color="#FFF" />
+          {/* Unread badge on FAB */}
+          {recentMessages.some(t => t.unreadCount > 0) && (
+            <View style={{
+              position: "absolute",
+              top: 6,
+              right: 6,
+              backgroundColor: "#EF4444",
+              borderRadius: 7,
+              minWidth: 14,
+              height: 14,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingHorizontal: 3,
+              borderWidth: 1.5,
+              borderColor: "#fff",
+            }}>
+              <Text style={{ color: "#fff", fontSize: 8, fontWeight: "700" }}>
+                {recentMessages.reduce((s, t) => s + t.unreadCount, 0) > 9 ? "9+" : recentMessages.reduce((s, t) => s + t.unreadCount, 0)}
+              </Text>
+            </View>
+          )}
         </LinearGradient>
       </Pressable>
 

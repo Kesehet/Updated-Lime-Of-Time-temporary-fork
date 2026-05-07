@@ -1179,6 +1179,20 @@ export async function markClientMessagesRead(businessOwnerId: number, clientAcco
     );
 }
 
+export async function markAllClientMessagesRead(businessOwnerId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(clientMessages)
+    .set({ readAt: new Date() })
+    .where(
+      and(
+        eq(clientMessages.businessOwnerId, businessOwnerId),
+        eq(clientMessages.senderType, "client"),
+        isNull(clientMessages.readAt)
+      )
+    );
+}
 export async function getClientMessageInbox(clientAccountId: number): Promise<{ businessOwnerId: number; lastMessage: string; lastAt: Date; unreadCount: number }[]> {
   const db = await getDb();
   if (!db) return [];
