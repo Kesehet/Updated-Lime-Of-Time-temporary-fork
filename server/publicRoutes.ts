@@ -545,6 +545,41 @@ export function registerPublicRoutes(app: Express) {
     }
   });
 
+  /** Validate a gift certificate code */
+  app.get("/api/public/business/:slug/gift-validate/:code", async (req: Request, res: Response) => {
+    try {
+      const owner = await db.getBusinessOwnerBySlug(req.params.slug);
+      if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
+      const code = req.params.code.toUpperCase().trim();
+      const card = await db.getGiftCardByCode(code, owner.id);
+      if (!card) { res.status(404).json({ error: "Gift certificate not found" }); return; }
+      if (card.redeemed) { res.status(400).json({ error: "This gift certificate has already been fully redeemed" }); return; }
+      if (card.paymentStatus !== "paid") { res.status(400).json({ error: "This gift certificate has not been paid for yet" }); return; }
+      if (card.expiresAt) {
+        const today = new Date().toISOString().split("T")[0];
+        if (card.expiresAt < today) { res.status(400).json({ error: `This gift certificate expired on ${card.expiresAt}` }); return; }
+      }
+      // Compute remaining value from the message/meta or totalValue
+      let remainingValue = 0;
+      const totalValue = parseFloat(String(card.totalValue ?? "0"));
+      // Try to get remaining balance from meta stored in message field
+      let gcMeta: any = {};
+      const gcMsgStr = (card as any).message || "";
+      const gcDataMatch = gcMsgStr.match(/\n---GIFT_DATA---\n(.+)$/s);
+      if (gcDataMatch) {
+        try { gcMeta = JSON.parse(gcDataMatch[1]); } catch (_) {}
+      } else {
+        try { gcMeta = JSON.parse(gcMsgStr); } catch (_) {}
+      }
+      remainingValue = gcMeta.remainingBalance ?? gcMeta.originalValue ?? totalValue;
+      if (remainingValue <= 0) { res.status(400).json({ error: "This gift certificate has no remaining value" }); return; }
+      res.json({ code: card.code, value: remainingValue, totalValue, expiresAt: card.expiresAt });
+    } catch (err) {
+      console.error("[Public API] Error validating gift certificate:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   /** Get reviews for a business */
   app.get("/api/public/business/:slug/reviews", async (req: Request, res: Response) => {
     try {

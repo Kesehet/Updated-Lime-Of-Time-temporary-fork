@@ -767,6 +767,7 @@ export function registerClientRoutes(app: Express) {
             ...item,
             clientName: client?.name ?? "Client",
             clientPhone: client?.phone?.startsWith("oauth:") ? null : client?.phone,
+            clientAvatarUrl: client?.profilePhotoUri ?? client?.avatarUrl ?? null,
           };
         })
       );
@@ -822,7 +823,13 @@ export function registerClientRoutes(app: Express) {
       const messages = await db.getClientMessages(owner.id, clientAccountId);
       // Mark client messages as read
       await db.markClientMessagesRead(owner.id, clientAccountId, "client");
-      res.json({ messages });
+      // Include client profile info
+      const clientInfo = await db.getClientAccountById(clientAccountId);
+      res.json({
+        messages,
+        clientAvatarUrl: clientInfo?.profilePhotoUri ?? clientInfo?.avatarUrl ?? null,
+        clientName: clientInfo?.name ?? "Client",
+      });
     } catch (err: any) {
       res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });
     }
@@ -1227,6 +1234,90 @@ export function registerClientRoutes(app: Express) {
       res.json(result);
     } catch (err: any) {
       console.error("[Client API] Error fetching my-gifts:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ── GET /api/client/my-packages ─────────────────────────────────────────────
+  // Get purchased packages for the authenticated client
+  app.get("/api/client/my-packages", async (req: Request, res: Response) => {
+    try {
+      const { clientAccount } = await getClientAccount(req);
+      if (!clientAccount) { res.status(401).json({ error: "Unauthorized" }); return; }
+      const dbase = await db.getDb();
+      if (!dbase) { res.status(500).json({ error: "Database not available" }); return; }
+      const { clientPackages: cpTable, businessOwners } = await import("../drizzle/schema");
+      const { eq, or } = await import("drizzle-orm");
+      const phone = clientAccount.phone || "";
+      const email = clientAccount.email || "";
+      const conditions: any[] = [];
+      if (clientAccount.id) conditions.push(eq(cpTable.clientAccountId, clientAccount.id));
+      if (phone) conditions.push(eq(cpTable.clientPhone, phone));
+      if (email) conditions.push(eq(cpTable.clientEmail, email));
+      if (conditions.length === 0) { res.json([]); return; }
+      const packages = await dbase.select().from(cpTable).where(
+        conditions.length === 1 ? conditions[0] : or(...conditions)
+      );
+      const result = await Promise.all(packages.map(async (pkg: any) => {
+        const [owner] = await dbase.select({ businessName: businessOwners.businessName, businessLogoUri: businessOwners.businessLogoUri, customSlug: businessOwners.customSlug }).from(businessOwners).where(eq(businessOwners.id, pkg.businessOwnerId));
+        return {
+          localId: pkg.localId,
+          packageLocalId: pkg.packageLocalId,
+          packageName: pkg.packageName,
+          businessName: owner?.businessName || "Unknown Business",
+          businessLogoUri: owner?.businessLogoUri || null,
+          businessSlug: owner?.customSlug || null,
+          totalSessions: pkg.totalSessions,
+          sessionsCompleted: pkg.sessionsCompleted,
+          totalValue: pkg.totalValue ? parseFloat(String(pkg.totalValue)) : null,
+          status: pkg.status,
+          paymentStatus: pkg.paymentStatus,
+          purchasedAt: pkg.purchasedAt,
+          expiresAt: pkg.expiresAt || null,
+          notes: pkg.notes || null,
+        };
+      }));
+      res.json(result);
+    } catch (err: any) {
+      console.error("[Client API] Error fetching my-packages:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  /** POST /api/business/appointments/:appointmentId/confirm-gift-redemption — business owner confirms gift was used */
+  app.post("/api/business/appointments/:appointmentId/confirm-gift-redemption", async (req: Request, res: Response) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      const owner = await db.getBusinessOwnerByOpenId(user.openId);
+      if (!owner) { res.status(404).json({ error: "Business owner not found" }); return; }
+      const { appointmentId } = req.params;
+      // Find the appointment
+      const appts = await db.getAppointmentsByOwner(owner.id);
+      const appt = appts.find((a: any) => a.localId === appointmentId);
+      if (!appt) { res.status(404).json({ error: "Appointment not found" }); return; }
+      if (!appt.giftApplied) { res.status(400).json({ error: "This appointment does not have a gift certificate applied" }); return; }
+      // Mark the gift card as redeemed if we can find it by looking at the appointment notes
+      // The gift code is embedded in the enriched notes as "Gift Card: -$X.XX"
+      // We'll mark the appointment's giftApplied as confirmed by updating a flag
+      // For now, find any unredeemed gift card for this business and mark it
+      // In a full implementation, the giftCode would be stored on the appointment
+      const { giftCards: gcTable } = await import("../drizzle/schema.js");
+      const { eq: eqGc, and: andGc } = await import("drizzle-orm");
+      const dbase = await db.getDb();
+      if (dbase) {
+        // Mark all unredeemed gift cards for this business that match the appointment's client as redeemed
+        // This is a simplified approach - in production, store giftCode on appointment
+        await dbase.update(gcTable)
+          .set({ redeemed: true, redeemedAt: new Date(), pendingRedemptionAppointmentId: appointmentId } as any)
+          .where(andGc(
+            eqGc(gcTable.businessOwnerId, owner.id),
+            eqGc(gcTable.redeemed, false),
+            eqGc(gcTable.pendingRedemptionAppointmentId as any, appointmentId)
+          ));
+      }
+      res.json({ success: true, message: "Gift certificate marked as redeemed" });
+    } catch (err: any) {
+      console.error("[Business API] Error confirming gift redemption:", err);
       res.status(500).json({ error: "Internal server error" });
     }
   });

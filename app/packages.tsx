@@ -9,8 +9,10 @@ import {
   ScrollView,
   Switch,
   Modal,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId } from "@/lib/store";
 import { useColors } from "@/hooks/use-colors";
@@ -31,6 +33,7 @@ const EMPTY_FORM = {
   bufferMinutes: "",
   active: true,
   serviceIds: [] as string[],
+  photoUri: null as string | null,
 };
 
 export default function PackagesScreen() {
@@ -68,6 +71,7 @@ export default function PackagesScreen() {
       bufferMinutes: pkg.bufferMinutes != null ? String(pkg.bufferMinutes) : "",
       active: pkg.active,
       serviceIds: pkg.serviceIds,
+      photoUri: pkg.photoUri ?? null,
     });
     setErrors({});
     setShowForm(true);
@@ -105,6 +109,7 @@ export default function PackagesScreen() {
         bufferMinutes: bufferMinutesNum,
         active: form.active,
         serviceIds: form.serviceIds,
+        photoUri: form.photoUri,
       };
       dispatch({ type: "UPDATE_PACKAGE", payload: updated });
     } else {
@@ -119,6 +124,7 @@ export default function PackagesScreen() {
         bufferMinutes: bufferMinutesNum,
         active: form.active,
         serviceIds: form.serviceIds,
+        photoUri: form.photoUri,
         createdAt: new Date().toISOString(),
       };
       dispatch({ type: "ADD_PACKAGE", payload: newPkg });
@@ -161,6 +167,20 @@ export default function PackagesScreen() {
   const packagePrice = parseFloat(form.price) || 0;
   const savings = selectedServicesTotal - packagePrice;
 
+  const handlePickPhoto = useCallback(async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") { Alert.alert("Permission needed", "Allow photo access to add a package image."); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setForm((f) => ({ ...f, photoUri: result.assets[0].uri }));
+    }
+  }, []);
+
   const renderPackage = useCallback(({ item }: { item: ServicePackage }) => {
     const includedServices = item.serviceIds
       .map((id) => state.services.find((s) => s.id === id)?.name)
@@ -182,6 +202,9 @@ export default function PackagesScreen() {
           },
         ]}
       >
+        {item.photoUri ? (
+          <Image source={{ uri: item.photoUri }} style={{ width: "100%", height: 140, borderRadius: 10, marginBottom: 10 }} resizeMode="cover" />
+        ) : null}
         <View style={styles.cardHeader}>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -328,6 +351,31 @@ export default function PackagesScreen() {
           </View>
 
           <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }}>
+            {/* Photo */}
+            <Text style={[styles.label, { color: colors.muted }]}>Package Photo (optional)</Text>
+            <Pressable
+              onPress={handlePickPhoto}
+              style={({ pressed }) => ({
+                width: "100%", height: 160, borderRadius: 12, borderWidth: 1.5, borderStyle: "dashed",
+                borderColor: colors.border, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center",
+                marginBottom: 16, overflow: "hidden", opacity: pressed ? 0.8 : 1,
+              })}
+            >
+              {form.photoUri ? (
+                <>
+                  <Image source={{ uri: form.photoUri }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+                  <View style={{ position: "absolute", bottom: 8, right: 8, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                    <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>Change Photo</Text>
+                  </View>
+                </>
+              ) : (
+                <View style={{ alignItems: "center", gap: 6 }}>
+                  <Text style={{ fontSize: 28 }}>📷</Text>
+                  <Text style={{ fontSize: 13, color: colors.muted, fontWeight: "600" }}>Tap to add a photo</Text>
+                  <Text style={{ fontSize: 11, color: colors.muted }}>16:9 ratio recommended</Text>
+                </View>
+              )}
+            </Pressable>
             {/* Name */}
             <Text style={[styles.label, { color: colors.muted }]}>Package Name *</Text>
             <TextInput

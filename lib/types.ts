@@ -279,6 +279,8 @@ export interface ServicePackage {
   sessions?: number;
   /** Whether this package is currently active / available for booking */
   active: boolean;
+  /** Optional photo URI for the package card */
+  photoUri?: string | null;
   /** Optional expiry in days from purchase date (null = no expiry) */
   expiryDays?: number | null;
   /**

@@ -1,0 +1,20 @@
+CREATE TABLE `client_packages` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`localId` varchar(64) NOT NULL,
+	`businessOwnerId` int NOT NULL,
+	`clientAccountId` int,
+	`clientPhone` varchar(20),
+	`clientEmail` varchar(320),
+	`packageLocalId` varchar(64) NOT NULL,
+	`packageName` varchar(255) NOT NULL,
+	`totalSessions` int NOT NULL DEFAULT 1,
+	`sessionsCompleted` int NOT NULL DEFAULT 0,
+	`totalValue` decimal(10,2),
+	`status` varchar(32) NOT NULL DEFAULT 'active',
+	`paymentStatus` varchar(32) DEFAULT 'unpaid',
+	`purchasedAt` timestamp NOT NULL DEFAULT (now()),
+	`expiresAt` varchar(10),
+	`notes` text,
+	CONSTRAINT `client_packages_id` PRIMARY KEY(`id`),
+	CONSTRAINT `client_packages_localId_unique` UNIQUE(`localId`)
+);

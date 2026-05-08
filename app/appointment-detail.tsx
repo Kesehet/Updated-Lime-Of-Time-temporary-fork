@@ -1621,6 +1621,15 @@ Would you also like to charge a no-show fee via Stripe?`,
               <IconSymbol name="checkmark" size={20} color="#FFFFFF" />
               <Text className="text-white font-semibold ml-2">Mark Complete</Text>
             </Pressable>
+            {appointment.giftApplied && (
+              <Pressable
+                onPress={handleConfirmGiftRedemption}
+                style={({ pressed }) => [styles.actionButton, { backgroundColor: "#22C55E", opacity: pressed ? 0.8 : 1 }]}
+              >
+                <Text style={{ fontSize: 16 }}>🎁</Text>
+                <Text className="text-white font-semibold ml-2">Confirm Gift Redemption</Text>
+              </Pressable>
+            )}
             <Pressable
               onPress={() => { setReschedDate(appointment.date); setReschedTime(null); setReschedCalMonth(() => { const d = new Date(appointment.date + "T12:00:00"); return { year: d.getFullYear(), month: d.getMonth() }; }); setShowRescheduleModal(true); }}
               style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}

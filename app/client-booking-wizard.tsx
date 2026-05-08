@@ -141,6 +141,11 @@ export default function ClientBookingWizardScreen() {
   const [promoError, setPromoError] = useState("");
   const [promoLoading, setPromoLoading] = useState(false);
   const [discounts, setDiscounts] = useState<{ localId: string; name: string; percentage: number; serviceIds: string[] }[]>([]);
+  // Gift certificate state
+  const [giftInput, setGiftInput] = useState("");
+  const [giftApplied, setGiftApplied] = useState<{ code: string; value: number; label: string } | null>(null);
+  const [giftError, setGiftError] = useState("");
+  const [giftLoading, setGiftLoading] = useState(false);
   const [businessDisplayName, setBusinessDisplayName] = useState<string>("");
   // Category filter for the service selection step
   const [wizardCatFilter, setWizardCatFilter] = useState<string | null>(null);
@@ -444,6 +449,8 @@ export default function ClientBookingWizardScreen() {
           paymentConfirmationNumber: paymentMethod !== "cash" ? paymentConfirmationNumber.trim() : undefined,
           promoCode: promoApplied?.code ?? undefined,
           promoLocalId: promoApplied?.localId ?? undefined,
+          giftCode: giftApplied?.code ?? undefined,
+          giftSaving: giftApplied ? Math.min(giftApplied.value, Math.max(0, servicePrice - (discountAmount ?? 0) - (promoSaving ?? 0))) : undefined,
           discountName,
           discountPercentage,
           discountAmount,
@@ -486,6 +493,8 @@ export default function ClientBookingWizardScreen() {
           discountAmount: discountAmount ? `$${discountAmount.toFixed(2)}` : "",
           promoCode: promoApplied?.code ?? "",
           promoSaving: promoSaving > 0 ? `$${promoSaving.toFixed(2)}` : "",
+          giftCode: giftApplied?.code ?? "",
+          giftSaving: giftSaving > 0 ? `$${giftSaving.toFixed(2)}` : "",
           paymentMethod: paymentMethod ?? "",
           paymentConfirmationNumber: paymentMethod !== "cash" ? paymentConfirmationNumber.trim() : "",
         },
@@ -1183,7 +1192,9 @@ export default function ClientBookingWizardScreen() {
               ? Math.min(promoApplied.flatAmount, afterDiscount)
               : parseFloat((afterDiscount * (promoApplied.percentage ?? 0) / 100).toFixed(2))
             : 0;
-          const finalPrice = Math.max(0, afterDiscount - promoSaving);
+          const afterPromo = Math.max(0, afterDiscount - promoSaving);
+          const giftSaving = giftApplied ? Math.min(giftApplied.value, afterPromo) : 0;
+          const finalPrice = Math.max(0, afterPromo - giftSaving);
           return (
             <View style={s.stepContent}>
               <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Confirm Booking</Text>
@@ -1201,7 +1212,10 @@ export default function ClientBookingWizardScreen() {
                 {promoSaving > 0 && (
                   <Row label={`Promo (${promoApplied!.code})`} value={`-$${promoSaving.toFixed(2)}`} colors={colors} />
                 )}
-                {(discSaving > 0 || promoSaving > 0) && (
+                {giftSaving > 0 && (
+                  <Row label={`Gift (${giftApplied!.code})`} value={`-$${giftSaving.toFixed(2)}`} colors={colors} />
+                )}
+                {(discSaving > 0 || promoSaving > 0 || giftSaving > 0) && (
                   <Row label="Total" value={`$${finalPrice.toFixed(2)}`} colors={colors} />
                 )}
                 <Row label="Date" value={formatDateLabel(selectedDate)} />

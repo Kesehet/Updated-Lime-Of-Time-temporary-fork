@@ -56,6 +56,22 @@ interface GiftCertificate {
   paymentStatus: string;
   createdAt: string;
 }
+interface ClientPackage {
+  localId: string;
+  packageLocalId: string;
+  packageName: string;
+  businessName: string;
+  businessLogoUri: string | null;
+  businessSlug: string | null;
+  totalSessions: number;
+  sessionsCompleted: number;
+  totalValue: number | null;
+  status: string;
+  paymentStatus: string;
+  purchasedAt: string;
+  expiresAt: string | null;
+  notes: string | null;
+}
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const GREEN_ACCENT = "#8FBF6A";   // light green CTA
 const GREEN_DARK   = "#1A3A28";
@@ -132,6 +148,7 @@ export default function ClientHomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [reviewPromptAppt, setReviewPromptAppt] = useState<ClientAppointment | null>(null);
   const [myGifts, setMyGifts] = useState<GiftCertificate[]>([]);
+  const [myPackages, setMyPackages] = useState<ClientPackage[]>([]);
 
   const isSignedIn = !!state.account;
 
@@ -139,12 +156,14 @@ export default function ClientHomeScreen() {
     if (!isSignedIn) return;
     if (!silent) setLoading(true);
     try {
-      const [rawAppts, saved, giftsRaw] = await Promise.all([
+      const [rawAppts, saved, giftsRaw, packagesRaw] = await Promise.all([
         apiCall<{ appointments: ClientAppointment[] } | ClientAppointment[]>("/api/client/appointments"),
         apiCall<any>("/api/client/saved-businesses"),
         apiCall<GiftCertificate[]>("/api/client/my-gifts").catch(() => []),
+        apiCall<ClientPackage[]>("/api/client/my-packages").catch(() => []),
       ]);
       setMyGifts(Array.isArray(giftsRaw) ? giftsRaw : []);
+      setMyPackages(Array.isArray(packagesRaw) ? packagesRaw.filter((p) => p.status === "active") : []);
       // API returns { appointments: [...] } — unwrap it
       const appts: ClientAppointment[] = Array.isArray(rawAppts) ? rawAppts : (rawAppts as any).appointments ?? [];
       dispatch({ type: "SET_APPOINTMENTS", payload: appts });
@@ -359,6 +378,71 @@ export default function ClientHomeScreen() {
               </View>
             </AnimCard>
           </View>
+
+          {/* My Packages & Bundles */}
+          {myPackages.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>📦 My Packages</Text>
+              </View>
+              {myPackages.map((pkg) => {
+                const progress = pkg.totalSessions > 0 ? pkg.sessionsCompleted / pkg.totalSessions : 0;
+                const remaining = pkg.totalSessions - pkg.sessionsCompleted;
+                const isComplete = pkg.sessionsCompleted >= pkg.totalSessions;
+                return (
+                  <View key={pkg.localId} style={{ backgroundColor: CARD_BG, borderRadius: 16, borderWidth: 1, borderColor: CARD_BORDER, padding: 16, marginBottom: 12, gap: 12 }}>
+                    {/* Header row */}
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                      <View style={{ flex: 1, gap: 2 }}>
+                        <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>{pkg.packageName}</Text>
+                        <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>{pkg.businessName}</Text>
+                      </View>
+                      <View style={{ backgroundColor: isComplete ? "#22C55E25" : GREEN_ACCENT + "25", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Text style={{ color: isComplete ? "#22C55E" : GREEN_ACCENT, fontSize: 11, fontWeight: "700" }}>
+                          {isComplete ? "✓ Complete" : "Active"}
+                        </Text>
+                      </View>
+                    </View>
+                    {/* Progress bar */}
+                    <View style={{ gap: 6 }}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                        <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: "600" }}>Sessions</Text>
+                        <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700" }}>
+                          {pkg.sessionsCompleted} / {pkg.totalSessions}
+                        </Text>
+                      </View>
+                      <View style={{ height: 8, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 4, overflow: "hidden" }}>
+                        <View style={{ height: 8, width: `${Math.min(100, progress * 100)}%`, backgroundColor: isComplete ? "#22C55E" : GREEN_ACCENT, borderRadius: 4 }} />
+                      </View>
+                      {!isComplete && (
+                        <Text style={{ color: TEXT_MUTED, fontSize: 11 }}>
+                          {remaining} session{remaining !== 1 ? "s" : ""} remaining
+                        </Text>
+                      )}
+                    </View>
+                    {/* Value + expiry */}
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      {pkg.totalValue ? (
+                        <Text style={{ color: GREEN_ACCENT, fontWeight: "700", fontSize: 13 }}>Value: ${pkg.totalValue.toFixed(2)}</Text>
+                      ) : <View />}
+                      {pkg.expiresAt && !isComplete ? (
+                        <Text style={{ color: TEXT_MUTED, fontSize: 11 }}>Expires: {new Date(pkg.expiresAt).toLocaleDateString()}</Text>
+                      ) : null}
+                    </View>
+                    {/* Book next session button */}
+                    {!isComplete && pkg.businessSlug ? (
+                      <Pressable
+                        onPress={() => router.push({ pathname: "/client-booking-wizard", params: { slug: pkg.businessSlug } } as any)}
+                        style={({ pressed }) => [{ backgroundColor: GREEN_ACCENT, borderRadius: 10, paddingVertical: 10, alignItems: "center", opacity: pressed ? 0.85 : 1 }]}
+                      >
+                        <Text style={{ color: "#1A3A28", fontWeight: "700", fontSize: 13 }}>Book Next Session →</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
+          )}
 
           {/* My Gift Certificates */}
           {myGifts.length > 0 && (

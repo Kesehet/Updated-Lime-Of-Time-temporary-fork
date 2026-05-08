@@ -791,3 +791,25 @@ export const giftCertificateRecipients = mysqlTable("gift_certificate_recipients
 });
 export type DbGiftCertificateRecipient = typeof giftCertificateRecipients.$inferSelect;
 export type InsertGiftCertificateRecipient = typeof giftCertificateRecipients.$inferInsert;
+
+// ─── Client Package Purchases ─────────────────────────────────────────────────
+export const clientPackages = mysqlTable("client_packages", {
+  id: int("id").autoincrement().primaryKey(),
+  localId: varchar("localId", { length: 64 }).notNull().unique(),
+  businessOwnerId: int("businessOwnerId").notNull(),
+  clientAccountId: int("clientAccountId"),
+  clientPhone: varchar("clientPhone", { length: 20 }),
+  clientEmail: varchar("clientEmail", { length: 320 }),
+  packageLocalId: varchar("packageLocalId", { length: 64 }).notNull(),
+  packageName: varchar("packageName", { length: 255 }).notNull(),
+  totalSessions: int("totalSessions").notNull().default(1),
+  sessionsCompleted: int("sessionsCompleted").notNull().default(0),
+  totalValue: decimal("totalValue", { precision: 10, scale: 2 }),
+  status: varchar("status", { length: 32 }).notNull().default("active"), // active | completed | cancelled
+  paymentStatus: varchar("paymentStatus", { length: 32 }).default("unpaid"),
+  purchasedAt: timestamp("purchasedAt").defaultNow().notNull(),
+  expiresAt: varchar("expiresAt", { length: 10 }),
+  notes: text("notes"),
+});
+export type DbClientPackage = typeof clientPackages.$inferSelect;
+export type InsertClientPackage = typeof clientPackages.$inferInsert;

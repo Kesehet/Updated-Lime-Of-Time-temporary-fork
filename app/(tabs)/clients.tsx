@@ -1,4 +1,4 @@
-import { FlatList, Text, View, Pressable, StyleSheet, TextInput, Alert, Platform, ActivityIndicator } from "react-native";
+import { FlatList, Text, View, Pressable, StyleSheet, TextInput, Alert, Platform, ActivityIndicator, Image } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { FuturisticBackground } from "@/components/futuristic-background";
@@ -23,6 +23,7 @@ interface MessageThread {
   clientAccountId: number;
   clientName: string;
   clientPhone: string | null;
+  clientAvatarUrl: string | null;
   lastMessage: string;
   lastMessageAt: string;
   unreadCount: number;
@@ -493,15 +494,19 @@ export default function ClientsScreen() {
                 contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 80 }}
                 renderItem={({ item }) => (
                   <Pressable
-                    onPress={() => router.push({ pathname: "/client-message-thread-business" as any, params: { clientAccountId: String(item.clientAccountId), clientName: item.clientName } })}
+                    onPress={() => router.push({ pathname: "/client-message-thread-business" as any, params: { clientAccountId: String(item.clientAccountId), clientName: item.clientName, clientAvatarUrl: item.clientAvatarUrl ?? "" } })}
                     style={({ pressed }) => [
                       styles.threadRow,
                       { backgroundColor: colors.surface, borderColor: item.unreadCount > 0 ? colors.primary + "60" : colors.border, opacity: pressed ? 0.7 : 1 },
                     ]}
                   >
                     {/* Avatar */}
-                    <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
-                      <Text style={[styles.avatarText, { color: colors.primary }]}>{getInitials(item.clientName)}</Text>
+                    <View style={[styles.avatar, { backgroundColor: colors.primary + "20", overflow: "hidden" }]}>
+                      {item.clientAvatarUrl ? (
+                        <Image source={{ uri: item.clientAvatarUrl }} style={{ width: 44, height: 44, borderRadius: 12 }} resizeMode="cover" />
+                      ) : (
+                        <Text style={[styles.avatarText, { color: colors.primary }]}>{getInitials(item.clientName)}</Text>
+                      )}
                     </View>
                     <View style={{ flex: 1, paddingVertical: 14, paddingLeft: 12, paddingRight: 4 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
