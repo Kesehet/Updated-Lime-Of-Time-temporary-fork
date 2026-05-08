@@ -2006,3 +2006,8 @@
 - [ ] Packages: multi-session date picker with buffer-enforced pre-selected next available date
 - [ ] Packages: date-aware discount application per session
 - [ ] Packages: confirmation screen shows all sessions with full package price breakdown
+## Phase: Startup Flash Fix + New Features (May 2026)
+- [x] Fix startup flash: reset navigation to profile-select immediately on mount to prevent stale Expo Router state from showing client profile before portal selector
+- [ ] Packages & Bundles in booking wizard: add Packages tab in service selection step with multi-session date picker
+- [ ] Payment step price breakdown: show itemized summary (service price, promo/gift discount, final amount due)
+- [ ] Restore deleted threads: add "Restore" option in messages screen to un-hide deleted conversations

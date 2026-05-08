@@ -58,6 +58,18 @@ interface PublicService {
   category?: string | null;
   photoUri?: string | null;
 }
+interface PublicPackage {
+  localId: string;
+  name: string;
+  description: string | null;
+  packageItems: { serviceLocalId: string; sessions: number; daysPerSession?: number; serviceName?: string; serviceCategory?: string | null }[];
+  totalSessions: number;
+  sessionDurationMinutes: number;
+  originalPrice: number;
+  packagePrice: number;
+  photoUri: string | null;
+  category: string | null;
+}
 interface PublicStaff {
   localId: string;
   name: string;
@@ -120,6 +132,9 @@ export default function ClientBookingWizardScreen() {
 
   const [step, setStep] = useState(0);
   const [services, setServices] = useState<PublicService[]>([]);
+  const [packages, setPackages] = useState<PublicPackage[]>([]);
+  const [selectedPackage, setSelectedPackage] = useState<PublicPackage | null>(null);
+  const [serviceTab, setServiceTab] = useState<"services" | "packages">("services");
   const [staff, setStaff] = useState<PublicStaff[]>([]);
   const [locations, setLocations] = useState<PublicLocation[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -192,20 +207,23 @@ export default function ClientBookingWizardScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const [svcRes, staffRes, locRes, discRes, bizRes] = await Promise.all([
+        const [svcRes, staffRes, locRes, discRes, bizRes, pkgRes] = await Promise.all([
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/services`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/staff`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/locations`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/discounts`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}`),
+          fetch(`${apiBase}/api/client/packages/${effectiveSlug}`),
         ]);
         const svcData = svcRes.ok ? await svcRes.json() : [];
         const staffData = staffRes.ok ? await staffRes.json() : [];
         const locData = locRes.ok ? await locRes.json() : [];
         const discData = discRes.ok ? await discRes.json() : [];
         const bizData = bizRes.ok ? await bizRes.json() : {};
+        const pkgData = pkgRes.ok ? await pkgRes.json() : [];
         setDiscounts(Array.isArray(discData) ? discData : []);
         if (bizData?.businessName) setBusinessDisplayName(bizData.businessName);
+        setPackages(Array.isArray(pkgData) ? pkgData : []);
         const svcList: PublicService[] = Array.isArray(svcData) ? svcData : [];
         const staffList: PublicStaff[] = Array.isArray(staffData) ? staffData : [];
         const locList: PublicLocation[] = Array.isArray(locData)
@@ -642,6 +660,120 @@ export default function ClientBookingWizardScreen() {
           return (
             <View style={s.stepContent}>
               <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Choose a Service</Text>
+              {/* Services / Packages tab switcher */}
+              {packages.length > 0 && (
+                <View style={{ flexDirection: "row", backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 10, padding: 3, marginBottom: 14 }}>
+                  {(["services", "packages"] as const).map((tab) => (
+                    <Pressable
+                      key={tab}
+                      style={({ pressed }) => [{
+                        flex: 1, alignItems: "center" as const, paddingVertical: 8, borderRadius: 8,
+                        backgroundColor: serviceTab === tab ? LIME_GREEN : "transparent",
+                        opacity: pressed ? 0.8 : 1,
+                      }]}
+                      onPress={() => {
+                        if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setServiceTab(tab);
+                        if (tab === "services") setSelectedPackage(null);
+                      }}
+                    >
+                      <Text style={{ color: serviceTab === tab ? "#FFFFFF" : TEXT_MUTED, fontWeight: "600", fontSize: 14, textTransform: "capitalize" }}>
+                        {tab === "services" ? "Services" : "Packages"}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+              {/* ── Packages tab ── */}
+              {serviceTab === "packages" && packages.length > 0 && (
+                <View style={{ gap: 12 }}>
+                  {packages.map((pkg) => {
+                    const savings = pkg.originalPrice > pkg.packagePrice ? pkg.originalPrice - pkg.packagePrice : 0;
+                    const isSelected = selectedPackage?.localId === pkg.localId;
+                    return (
+                      <Pressable
+                        key={pkg.localId}
+                        style={({ pressed }) => [
+                          s.optionCard,
+                          { backgroundColor: CARD_BG, borderColor: isSelected ? LIME_GREEN : CARD_BORDER, padding: 0, overflow: "hidden", flexDirection: "column", alignItems: "stretch" },
+                          isSelected && { borderWidth: 2 },
+                          pressed && { opacity: 0.85 },
+                        ]}
+                        onPress={() => {
+                          if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          if (isSelected) {
+                            setSelectedPackage(null);
+                            setSelectedService(null);
+                            setSelectedServices([]);
+                          } else {
+                            setSelectedPackage(pkg);
+                            // Auto-populate selectedService with a synthetic service for downstream steps
+                            const syntheticService: PublicService = {
+                              localId: pkg.localId,
+                              name: pkg.name,
+                              duration: pkg.sessionDurationMinutes,
+                              price: String(pkg.packagePrice),
+                              description: pkg.description,
+                              category: pkg.category,
+                              photoUri: pkg.photoUri,
+                            };
+                            setSelectedService(syntheticService);
+                            setSelectedServices([syntheticService]);
+                          }
+                        }}
+                      >
+                        {pkg.photoUri ? (
+                          <Image source={{ uri: pkg.photoUri }} style={{ width: "100%", height: 120 }} contentFit="cover" />
+                        ) : null}
+                        <View style={{ padding: 14, gap: 6 }}>
+                          <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
+                            <View style={{ flex: 1, gap: 4 }}>
+                              <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700" }}>{pkg.name}</Text>
+                              {pkg.description ? <Text style={{ color: TEXT_MUTED, fontSize: 13, lineHeight: 18 }} numberOfLines={2}>{pkg.description}</Text> : null}
+                              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "rgba(74,124,89,0.2)", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                                  <Text style={{ color: LIME_GREEN, fontSize: 12, fontWeight: "600" }}>📦 {pkg.totalSessions} session{pkg.totalSessions !== 1 ? "s" : ""}</Text>
+                                </View>
+                                {pkg.category ? (
+                                  <View style={{ backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                                    <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>{pkg.category}</Text>
+                                  </View>
+                                ) : null}
+                              </View>
+                            </View>
+                            <View style={{ alignItems: "flex-end", gap: 4, marginLeft: 12 }}>
+                              <Text style={{ color: LIME_GREEN, fontSize: 18, fontWeight: "800" }}>${pkg.packagePrice.toFixed(2)}</Text>
+                              {savings > 0 ? (
+                                <>
+                                  <Text style={{ color: TEXT_MUTED, fontSize: 12, textDecorationLine: "line-through" }}>${pkg.originalPrice.toFixed(2)}</Text>
+                                  <View style={{ backgroundColor: "#22C55E20", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                                    <Text style={{ color: "#4ADE80", fontSize: 11, fontWeight: "700" }}>Save ${savings.toFixed(2)}</Text>
+                                  </View>
+                                </>
+                              ) : null}
+                            </View>
+                          </View>
+                          {/* Included services */}
+                          {pkg.packageItems.length > 0 && (
+                            <View style={{ marginTop: 4, gap: 3 }}>
+                              {pkg.packageItems.map((item, idx) => (
+                                <Text key={idx} style={{ color: TEXT_MUTED, fontSize: 12 }}>
+                                  • {item.serviceName ?? item.serviceLocalId}{item.sessions > 1 ? ` × ${item.sessions}` : ""}
+                                </Text>
+                              ))}
+                            </View>
+                          )}
+                        </View>
+                        <View style={[s.checkCircle, { position: "absolute", top: 12, right: 12, flexShrink: 0, backgroundColor: isSelected ? LIME_GREEN : "rgba(255,255,255,0.12)", borderWidth: isSelected ? 0 : 1.5, borderColor: "rgba(255,255,255,0.30)" }]}>
+                          {isSelected && <IconSymbol name="checkmark" size={14} color="#FFFFFF" />}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+              {/* ── Services tab ── */}
+              {serviceTab === "services" && <>
               {/* Category filter chips */}
               {svcCats.length > 1 && (
                 <ScrollView
@@ -762,6 +894,7 @@ export default function ClientBookingWizardScreen() {
                   </View>
                 </Pressable>
               ))}
+          </>}
             </View>
           );
         })()}
@@ -1077,9 +1210,55 @@ export default function ClientBookingWizardScreen() {
         )}
 
         {/* Payment step */}
-        {step === STEP_PAYMENT && selectedService && (
+        {step === STEP_PAYMENT && selectedService && (() => {
+          // Price breakdown calculation (same logic as Confirm step)
+          const _svcPrice = selectedService.price ? parseFloat(selectedService.price) : 0;
+          const _activeDiscount = discounts.find(d => !d.serviceIds || (d.serviceIds as string[]).length === 0 || (d.serviceIds as string[]).includes(selectedService.localId));
+          const _discSaving = _activeDiscount ? parseFloat((_svcPrice * _activeDiscount.percentage / 100).toFixed(2)) : 0;
+          const _afterDiscount = _svcPrice - _discSaving;
+          const _promoSaving = promoApplied
+            ? promoApplied.flatAmount
+              ? Math.min(promoApplied.flatAmount, _afterDiscount)
+              : parseFloat((_afterDiscount * (promoApplied.percentage ?? 0) / 100).toFixed(2))
+            : 0;
+          const _afterPromo = Math.max(0, _afterDiscount - _promoSaving);
+          const _giftSaving = giftApplied ? Math.min(giftApplied.value, _afterPromo) : 0;
+          const _finalPrice = Math.max(0, _afterPromo - _giftSaving);
+          const _hasDiscounts = _discSaving > 0 || _promoSaving > 0 || _giftSaving > 0;
+          return (
           <View style={s.stepContent}>
             <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Payment</Text>
+            {/* Price breakdown summary card */}
+            <View style={{ backgroundColor: "rgba(74,124,89,0.12)", borderRadius: 12, borderWidth: 1, borderColor: `${LIME_GREEN}40`, padding: 14, marginBottom: 16, gap: 6 }}>
+              <Text style={{ color: LIME_GREEN, fontSize: 13, fontWeight: "700", marginBottom: 4 }}>Order Summary</Text>
+              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>{selectedService.name}</Text>
+                <Text style={{ color: TEXT_PRIMARY, fontSize: 13 }}>${_svcPrice.toFixed(2)}</Text>
+              </View>
+              {_discSaving > 0 && (
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>Discount ({_activeDiscount!.percentage}%)</Text>
+                  <Text style={{ color: "#4ADE80", fontSize: 13 }}>-${_discSaving.toFixed(2)}</Text>
+                </View>
+              )}
+              {_promoSaving > 0 && (
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>Promo ({promoApplied!.code})</Text>
+                  <Text style={{ color: "#4ADE80", fontSize: 13 }}>-${_promoSaving.toFixed(2)}</Text>
+                </View>
+              )}
+              {_giftSaving > 0 && (
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>Gift ({giftApplied!.code})</Text>
+                  <Text style={{ color: "#4ADE80", fontSize: 13 }}>-${_giftSaving.toFixed(2)}</Text>
+                </View>
+              )}
+              {_hasDiscounts && <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.1)", marginVertical: 4 }} />}
+              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "700" }}>Amount Due</Text>
+                <Text style={{ color: LIME_GREEN, fontSize: 16, fontWeight: "800" }}>${_finalPrice.toFixed(2)}</Text>
+              </View>
+            </View>
             <Text style={[s.stepSubtitle, { color: TEXT_MUTED }]}>
               Select how you'll pay for this appointment.
             </Text>
@@ -1143,7 +1322,8 @@ export default function ClientBookingWizardScreen() {
               </View>
             )}
           </View>
-        )}
+          );
+        })()}
 
         {/* Promo / Discount step */}
         {step === STEP_PROMO && selectedService && (

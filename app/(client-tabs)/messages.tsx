@@ -17,6 +17,9 @@ import {
   Platform,
   Image,
   Alert,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -89,6 +92,7 @@ export default function MessagesScreen() {
   const { state, dispatch, apiCall } = useClientStore();
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [hiddenIds, setHiddenIds] = useState<Set<number>>(new Set());
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -162,6 +166,18 @@ export default function MessagesScreen() {
   }));
 
   const visibleThreads = threads.filter((t) => !hiddenIds.has(t.businessOwnerId));
+  const hiddenThreads = threads.filter((t) => hiddenIds.has(t.businessOwnerId));
+
+  const handleRestoreThread = useCallback(async (item: MessageThread) => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const next = new Set(hiddenIds);
+    next.delete(item.businessOwnerId);
+    setHiddenIds(next);
+    await saveHiddenThreadIds(next);
+    const visible = threads.filter((t) => !next.has(t.businessOwnerId));
+    const total = visible.reduce((sum, t) => sum + t.unreadCount, 0);
+    dispatch({ type: "SET_UNREAD_COUNT", payload: total });
+  }, [hiddenIds, threads, dispatch]);
 
   if (!state.account) {
     return (
@@ -188,9 +204,59 @@ export default function MessagesScreen() {
     <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
       <ClientPortalBackground />
       <Animated.View style={[styles.header, headerStyle, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.title}>Messages</Text>
-        <Text style={styles.subtitle}>Hold a conversation to delete it</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>Messages</Text>
+          <Text style={styles.subtitle}>Hold a conversation to delete it</Text>
+        </View>
+        {hiddenThreads.length > 0 && (
+          <TouchableOpacity
+            style={{ backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, flexDirection: "row", alignItems: "center", gap: 4 }}
+            onPress={() => setShowRestoreModal(true)}
+          >
+            <IconSymbol name="arrow.counterclockwise" size={14} color={GREEN_ACCENT} />
+            <Text style={{ color: GREEN_ACCENT, fontSize: 12, fontWeight: "600" }}>Deleted ({hiddenThreads.length})</Text>
+          </TouchableOpacity>
+        )}
       </Animated.View>
+      {/* Restore Deleted Threads Modal */}
+      <Modal visible={showRestoreModal} transparent animationType="slide" onRequestClose={() => setShowRestoreModal(false)}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
+          <View style={{ backgroundColor: "#1A3A28", borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: insets.bottom + 16 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 20, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.1)" }}>
+              <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "700" }}>Deleted Conversations</Text>
+              <TouchableOpacity onPress={() => setShowRestoreModal(false)}>
+                <IconSymbol name="xmark.circle.fill" size={24} color={TEXT_MUTED} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ maxHeight: 400 }} contentContainerStyle={{ padding: 16, gap: 10 }}>
+              {hiddenThreads.map((item) => {
+                const initials = item.businessName.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
+                return (
+                  <View key={item.businessOwnerId} style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 12, padding: 12, gap: 12, marginBottom: 8 }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(143,191,106,0.2)", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                      {item.businessLogoUri ? (
+                        <Image source={{ uri: item.businessLogoUri }} style={{ width: 44, height: 44, borderRadius: 22 }} resizeMode="cover" />
+                      ) : (
+                        <Text style={{ color: GREEN_ACCENT, fontWeight: "700", fontSize: 16 }}>{initials}</Text>
+                      )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: TEXT_PRIMARY, fontWeight: "600", fontSize: 14 }}>{item.businessName}</Text>
+                      {item.lastMessage ? <Text style={{ color: TEXT_MUTED, fontSize: 12 }} numberOfLines={1}>{item.lastMessage}</Text> : null}
+                    </View>
+                    <TouchableOpacity
+                      style={{ backgroundColor: GREEN_ACCENT, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 }}
+                      onPress={() => handleRestoreThread(item)}
+                    >
+                      <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "700" }}>Restore</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       {loading ? (
         <View style={styles.loadingContainer}>
