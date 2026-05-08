@@ -1369,7 +1369,8 @@ export function registerClientRoutes(app: Express) {
       // We'll mark the appointment's giftApplied as confirmed by updating a flag
       // For now, find any unredeemed gift card for this business and mark it
       // In a full implementation, the giftCode would be stored on the appointment
-      const { giftCards: gcTable } = await import("../drizzle/schema");
+      const { giftCards: gcTableRaw } = await import("../drizzle/schema");
+      const gcTable = gcTableRaw as any;
       const { eq: eqGc, and: andGc } = await import("drizzle-orm");
       const dbase = await db.getDb();
       if (dbase) {

@@ -765,7 +765,7 @@ export function registerPublicRoutes(app: Express) {
         return;
       }
 
-      const { clientName, clientPhone, clientEmail, serviceLocalId, date, time, duration, notes, giftCode, totalPrice, extraItems, giftApplied, giftUsedAmount, discountName, discountPercentage, discountAmount, subtotal, locationId, paymentMethod, promoCode, promoLocalId } = req.body;
+      const { clientName, clientPhone, clientEmail, serviceLocalId, date, time, duration, notes, giftCode, totalPrice, extraItems, giftApplied, giftUsedAmount, discountName, discountPercentage, discountAmount, subtotal, locationId, paymentMethod, paymentConfirmationNumber, promoCode, promoLocalId } = req.body;
 
       if (!clientName || !serviceLocalId || !date || !time) {
         res.status(400).json({ error: "Missing required fields: clientName, serviceLocalId, date, time" });
@@ -915,6 +915,9 @@ export function registerPublicRoutes(app: Express) {
         }
         pricingLines.push(`Total Charged: $${finalTotal.toFixed(2)}`);
         enrichedNotes = (enrichedNotes ? enrichedNotes + "\n" : "") + "--- Pricing ---\n" + pricingLines.join("\n");
+      }
+      if (paymentConfirmationNumber) {
+        enrichedNotes = (enrichedNotes ? enrichedNotes + "\n" : "") + "Payment Ref: " + paymentConfirmationNumber;
       }
 
       // Create appointment
@@ -1869,7 +1872,8 @@ export function registerPublicRoutes(app: Express) {
       const { purchaserName, purchaserEmail, recipientName, recipientEmail, recipientPhone,
         serviceIds = [], productIds = [], personalMessage,
         giftType = "service", balanceAmount,
-        paymentMethod = "unpaid", recipientChoosesDate = true, preselectedDate, preselectedTime } = req.body;
+        paymentMethod = "unpaid", paymentConfirmationNumber,
+        recipientChoosesDate = true, preselectedDate, preselectedTime } = req.body;
       // Use business-configured validity (default 90 days) instead of client-supplied value
       const expiresInDays = (owner as any).giftValidDays ?? 90;
       if (!purchaserName || !purchaserEmail || !recipientName) {
@@ -1917,7 +1921,7 @@ export function registerPublicRoutes(app: Express) {
       expiry.setDate(expiry.getDate() + (parseInt(String(expiresInDays)) || 365));
       const expiresAt = expiry.toISOString().split("T")[0];
       const giftData = JSON.stringify({ giftType, serviceIds, productIds, originalValue: totalValue, remainingBalance: totalValue, purchasedPublicly: true });
-      const messageWithData = (personalMessage || "") + "\n---GIFT_DATA---\n" + giftData;
+      const messageWithData = (personalMessage || "") + "\n---GIFT_DATA---\n" + giftData + (paymentConfirmationNumber ? "\n---PAYMENT_REF---\n" + paymentConfirmationNumber : "");
       const dbase = await db.getDb();
       if (!dbase) { res.status(500).json({ error: "Database not available" }); return; }
       const { giftCards } = await import("../drizzle/schema");
@@ -5845,6 +5849,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     }
 
     var selectedPaymentMethod = null; // 'zelle' | 'venmo' | 'cashapp' | 'cash'
+    var paymentConfirmationNumber = ''; // confirmation/transaction ref for Zelle/Venmo/CashApp
 
     function updateSelectedLocBanner() {
       const banner = document.getElementById('selectedLocBanner');
@@ -5940,12 +5945,28 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         html += '</div>';
       });
       html += '</div>';
+      if (['zelle','venmo','cashapp'].includes(selectedPaymentMethod)) {
+        const pmHints = { zelle: 'Phone or email you sent from', venmo: '@username or transaction ID', cashapp: '$cashtag or transaction ID' };
+        const pmLabels2 = { zelle: '💜 Zelle Confirmation', venmo: '💙 Venmo Confirmation', cashapp: '💚 Cash App Confirmation' };
+        const pmDescs = { zelle: 'Enter the phone number or email address you used to send the Zelle payment.', venmo: 'Enter the @username you sent to, or copy the transaction ID from the Venmo app.', cashapp: 'Enter the $cashtag you sent to, or copy the transaction ID from the Cash App.' };
+        html += '<div style="margin-top:12px;padding:14px;border-radius:12px;background:var(--bg-card);border:1.5px solid var(--border-input);">';
+        html += '<div style="font-weight:700;font-size:13px;color:var(--text);margin-bottom:8px;">' + (pmLabels2[selectedPaymentMethod] || 'Payment Confirmation') + '</div>';
+        html += '<input type="text" id="paymentConfirmInput" placeholder="' + (pmHints[selectedPaymentMethod] || 'Transaction reference') + '" value="' + paymentConfirmationNumber.replace(/"/g, '&quot;') + '" oninput="paymentConfirmationNumber=this.value" style="width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border-input);background:var(--bg-input);color:var(--text);font-size:14px;box-sizing:border-box;" autocomplete="off" autocapitalize="none" autocorrect="off">';
+        html += '<div style="font-size:11px;color:#888;margin-top:6px;line-height:1.5;">' + (pmDescs[selectedPaymentMethod] || '') + '</div>';
+        html += '</div>';
+      }
       document.getElementById('paymentMethodList').innerHTML = html;
       document.getElementById('paymentMethodError').style.display = 'none';
+      // Restore focus to confirmation input if it was just re-rendered
+      if (['zelle','venmo','cashapp'].includes(selectedPaymentMethod)) {
+        const inp = document.getElementById('paymentConfirmInput');
+        if (inp && document.activeElement !== inp) { /* don't steal focus */ }
+      }
     }
 
     function selectPaymentMethod(id) {
       selectedPaymentMethod = id;
+      paymentConfirmationNumber = ''; // reset on method change
       renderPaymentStep();
     }
 
@@ -6898,6 +6919,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
               subtotal: getTotalPrice(),
               locationId: selectedLocation || null,
               paymentMethod: 'card',
+              paymentConfirmationNumber: paymentConfirmationNumber || null,
               promoCode: appliedPromo ? appliedPromo.code : null,
               promoLocalId: appliedPromo ? appliedPromo.localId : null,
             }),
@@ -6963,6 +6985,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
             subtotal: getTotalPrice(),
             locationId: selectedLocation || null,
             paymentMethod: (selectedPaymentMethod && selectedPaymentMethod !== 'later') ? selectedPaymentMethod : 'later',
+            paymentConfirmationNumber: paymentConfirmationNumber || null,
             promoCode: appliedPromo ? appliedPromo.code : null,
             promoLocalId: appliedPromo ? appliedPromo.localId : null,
           }),

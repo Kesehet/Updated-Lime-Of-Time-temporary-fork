@@ -2011,3 +2011,11 @@
 - [ ] Packages & Bundles in booking wizard: add Packages tab in service selection step with multi-session date picker
 - [ ] Payment step price breakdown: show itemized summary (service price, promo/gift discount, final amount due)
 - [ ] Restore deleted threads: add "Restore" option in messages screen to un-hide deleted conversations
+
+## Phase: Full Parity + New Features (May 2026)
+
+- [ ] Multi-session date picker for packages in mobile booking wizard (buffer enforcement)
+- [ ] Payment confirmation number validation with per-method format hints in mobile booking wizard
+- [ ] Unread badge on Messages tab icon
+- [ ] Web booking page: add payment method selection step + confirmation number + itemized price breakdown
+- [ ] Gift purchase page: add confirmation number field with per-method format hints

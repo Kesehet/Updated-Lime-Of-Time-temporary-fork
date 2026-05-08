@@ -158,6 +158,7 @@ export default function ClientBuyGiftScreen() {
   const [selectedStaffId, setSelectedStaffId] = useState<string>("any");
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
+  const [paymentConfirmationNumber, setPaymentConfirmationNumber] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const today = new Date();
@@ -343,6 +344,7 @@ export default function ClientBuyGiftScreen() {
         giftType: giftMode === "balance" ? "balance" : "service",
         balanceAmount: giftMode === "balance" ? parseFloat(balanceAmount) : undefined,
         paymentMethod,
+        paymentConfirmationNumber: ["zelle","venmo","cashapp"].includes(paymentMethod) ? paymentConfirmationNumber.trim() : undefined,
         recipientChoosesDate: giftMode === "balance" ? true : recipientChoosesDate,
         preselectedDate: !recipientChoosesDate && giftMode !== "balance" ? preselectedDate : undefined,
         preselectedTime: !recipientChoosesDate && selectedSlot && giftMode !== "balance" ? selectedSlot : undefined,
@@ -1099,7 +1101,7 @@ export default function ClientBuyGiftScreen() {
                     paymentMethod === method.id && { borderColor: GREEN_ACCENT, backgroundColor: `${GREEN_ACCENT}15` },
                     pressed && { opacity: 0.85 },
                   ]}
-                  onPress={() => setPaymentMethod(method.id)}
+                  onPress={() => { setPaymentMethod(method.id); setPaymentConfirmationNumber(""); }}
                 >
                   <Text style={{ fontSize: 22 }}>{method.icon}</Text>
                   <View style={{ flex: 1 }}>
@@ -1111,6 +1113,32 @@ export default function ClientBuyGiftScreen() {
                   )}
                 </Pressable>
               ))}
+              {["zelle","venmo","cashapp"].includes(paymentMethod) && (
+                <View style={{ marginTop: 4, backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: GREEN_ACCENT + "40" }}>
+                  <Text style={{ color: GREEN_ACCENT, fontWeight: "700", fontSize: 13, marginBottom: 6 }}>
+                    {paymentMethod === "zelle" ? "💜 Zelle Confirmation" : paymentMethod === "venmo" ? "💙 Venmo Confirmation" : "💚 Cash App Confirmation"}
+                  </Text>
+                  <TextInput
+                    style={{ backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 8, padding: 10, color: "#fff", fontSize: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)" }}
+                    placeholder={
+                      paymentMethod === "zelle" ? "Phone or email you sent from" :
+                      paymentMethod === "venmo" ? "@username or transaction ID" :
+                      "$cashtag or transaction ID"
+                    }
+                    placeholderTextColor="rgba(255,255,255,0.35)"
+                    value={paymentConfirmationNumber}
+                    onChangeText={setPaymentConfirmationNumber}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                  />
+                  <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 11, marginTop: 5, lineHeight: 16 }}>
+                    {paymentMethod === "zelle" ? "Enter the phone number or email address you used to send the Zelle payment." :
+                     paymentMethod === "venmo" ? "Enter the @username you sent to, or copy the transaction ID from the Venmo app." :
+                     "Enter the $cashtag you sent to, or copy the transaction ID from the Cash App."}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         )}

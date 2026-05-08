@@ -135,6 +135,9 @@ export default function ClientBookingWizardScreen() {
   const [packages, setPackages] = useState<PublicPackage[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<PublicPackage | null>(null);
   const [serviceTab, setServiceTab] = useState<"services" | "packages">("services");
+  // Multi-session scheduling: array of { date: Date | null, slot: AvailableSlot | null } for each session
+  const [sessionDates, setSessionDates] = useState<{ date: Date | null; slot: AvailableSlot | null }[]>([]);
+  const [activeSessionIdx, setActiveSessionIdx] = useState(0);
   const [staff, setStaff] = useState<PublicStaff[]>([]);
   const [locations, setLocations] = useState<PublicLocation[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -529,6 +532,9 @@ export default function ClientBookingWizardScreen() {
           giftCode: giftApplied?.code ?? undefined,
           giftSaving: giftApplied ? Math.min(giftApplied.value, Math.max(0, servicePrice - (discountAmount ?? 0) - (promoSaving ?? 0))) : undefined,
           packageLocalId: packageLocalId ?? undefined,
+          sessionDates: selectedPackage && sessionDates.length > 1
+            ? sessionDates.map(sd => ({ date: sd.date?.toISOString().split("T")[0] ?? null, time: sd.slot?.time ?? null }))
+            : undefined,
           discountName,
           discountPercentage,
           discountAmount,
@@ -705,8 +711,13 @@ export default function ClientBookingWizardScreen() {
                             setSelectedPackage(null);
                             setSelectedService(null);
                             setSelectedServices([]);
+                            setSessionDates([]);
+                            setActiveSessionIdx(0);
                           } else {
                             setSelectedPackage(pkg);
+                            // Initialize sessionDates array for each session
+                            setSessionDates(Array.from({ length: pkg.totalSessions }, () => ({ date: null, slot: null })));
+                            setActiveSessionIdx(0);
                             // Auto-populate selectedService with a synthetic service for downstream steps
                             const syntheticService: PublicService = {
                               localId: pkg.localId,
@@ -1040,7 +1051,73 @@ export default function ClientBookingWizardScreen() {
                 <Text style={{ color: LIME_GREEN, fontSize: 12, fontWeight: "600" }}>{selectedLocation.name}</Text>
               </View>
             )}
-
+            {/* ── Multi-session session selector (packages only) ── */}
+            {selectedPackage && sessionDates.length > 1 && (
+              <View style={{ marginBottom: 12 }}>
+                <Text style={{ color: TEXT_MUTED, fontSize: 13, marginBottom: 8, lineHeight: 18 }}>
+                  This package includes <Text style={{ color: LIME_GREEN, fontWeight: "700" }}>{selectedPackage.totalSessions} sessions</Text>. Schedule each session below — each must be at least 7 days apart.
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 4 }}>
+                  {sessionDates.map((sd, idx) => {
+                    const isActive = activeSessionIdx === idx;
+                    const isDone = sd.date != null && sd.slot != null;
+                    return (
+                      <Pressable
+                        key={idx}
+                        style={({ pressed }) => [{
+                          paddingHorizontal: 14,
+                          paddingVertical: 8,
+                          borderRadius: 20,
+                          borderWidth: 1.5,
+                          borderColor: isActive ? LIME_GREEN : isDone ? `${LIME_GREEN}60` : CARD_BORDER,
+                          backgroundColor: isActive ? `${LIME_GREEN}20` : isDone ? `${LIME_GREEN}10` : CARD_BG,
+                          alignItems: "center" as const,
+                          minWidth: 80,
+                        }, pressed && { opacity: 0.7 }]}
+                        onPress={() => {
+                          setActiveSessionIdx(idx);
+                          // Restore this session's date/slot into the main pickers
+                          const prev = sessionDates[idx];
+                          setSelectedDate(prev.date);
+                          setSelectedSlot(prev.slot);
+                          if (prev.date) {
+                            setCalMonth(prev.date.getMonth());
+                            setCalYear(prev.date.getFullYear());
+                          }
+                        }}
+                      >
+                        <Text style={{ color: isActive ? LIME_GREEN : isDone ? `${LIME_GREEN}CC` : TEXT_MUTED, fontSize: 12, fontWeight: "700" }}>
+                          Session {idx + 1}
+                        </Text>
+                        {isDone ? (
+                          <Text style={{ color: isDone ? `${LIME_GREEN}CC` : TEXT_MUTED, fontSize: 10, marginTop: 2 }}>
+                            {sd.date!.toLocaleDateString("en-US", { month: "short", day: "numeric" })} {sd.slot!.time}
+                          </Text>
+                        ) : (
+                          <Text style={{ color: TEXT_MUTED, fontSize: 10, marginTop: 2 }}>Not set</Text>
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+                {/* Buffer enforcement info */}
+                {activeSessionIdx > 0 && sessionDates[activeSessionIdx - 1]?.date && (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6, padding: 8, backgroundColor: `${LIME_GREEN}10`, borderRadius: 8, borderWidth: 1, borderColor: `${LIME_GREEN}30` }}>
+                    <Text style={{ fontSize: 14 }}>📅</Text>
+                    <Text style={{ color: TEXT_MUTED, fontSize: 12, flex: 1, lineHeight: 16 }}>
+                      Session {activeSessionIdx + 1} must be at least{" "}
+                      <Text style={{ color: LIME_GREEN, fontWeight: "700" }}>7 days</Text> after Session {activeSessionIdx} (
+                      {(() => {
+                        const minDate = new Date(sessionDates[activeSessionIdx - 1]!.date!);
+                        minDate.setDate(minDate.getDate() + 7);
+                        return minDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                      })()}{" "}
+                      or later).
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
             {/* ── Calendar ── */}
             <View style={s.monthNav}>
               <Pressable
@@ -1081,7 +1158,15 @@ export default function ClientBookingWizardScreen() {
                 const isFull = !isPast && fullDates.has(dateStr);
                 const isSelected = selectedDate?.toDateString() === day.toDateString();
                 const isToday = day.toDateString() === today.toDateString();
-                const isDisabled = isPast || isUnavailable;
+                // Buffer enforcement for multi-session packages
+                const isBeforeBuffer = selectedPackage && sessionDates.length > 1 && activeSessionIdx > 0 && sessionDates[activeSessionIdx - 1]?.date != null
+                  ? (() => {
+                      const minDate = new Date(sessionDates[activeSessionIdx - 1]!.date!);
+                      minDate.setDate(minDate.getDate() + 7);
+                      return day < minDate;
+                    })()
+                  : false;
+                const isDisabled = isPast || isUnavailable || isBeforeBuffer;
                 return (
                   <Pressable
                     key={day.toISOString()}
@@ -1097,6 +1182,10 @@ export default function ClientBookingWizardScreen() {
                       if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setSelectedDate(day);
                       setSelectedSlot(null); // reset time when date changes
+                      // For packages: save to sessionDates
+                      if (selectedPackage && sessionDates.length > 1) {
+                        setSessionDates(prev => prev.map((sd, i) => i === activeSessionIdx ? { ...sd, date: day, slot: null } : sd));
+                      }
                     }}
                     disabled={isDisabled}
                   >
@@ -1194,6 +1283,24 @@ export default function ClientBookingWizardScreen() {
                           onPress={() => {
                             if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             setSelectedSlot(slot);
+                            // For packages: save to sessionDates
+                            if (selectedPackage && sessionDates.length > 1) {
+                              setSessionDates(prev => prev.map((sd, i) => i === activeSessionIdx ? { ...sd, slot } : sd));
+                              // Auto-advance to next unset session
+                              const nextUnset = sessionDates.findIndex((sd, i) => i > activeSessionIdx && (sd.date == null || sd.slot == null));
+                              if (nextUnset !== -1) {
+                                setTimeout(() => {
+                                  setActiveSessionIdx(nextUnset);
+                                  setSelectedDate(null);
+                                  setSelectedSlot(null);
+                                  // Jump calendar to min date for next session
+                                  const minDate = new Date(sessionDates[nextUnset - 1]?.date ?? new Date());
+                                  minDate.setDate(minDate.getDate() + 7);
+                                  setCalMonth(minDate.getMonth());
+                                  setCalYear(minDate.getFullYear());
+                                }, 300);
+                              }
+                            }
                           }}
                         >
                           <Text style={{ color: isSelected ? "#FFFFFF" : TEXT_PRIMARY, fontSize: 14, fontWeight: "600" }}>
@@ -1296,20 +1403,35 @@ export default function ClientBookingWizardScreen() {
             {paymentMethod && paymentMethod !== "cash" && (
               <View style={{ marginTop: 16 }}>
                 <Text style={[s.notesLabel, { color: TEXT_PRIMARY }]}>
-                  {paymentMethod === "zelle" ? "Zelle" : paymentMethod === "venmo" ? "Venmo" : "Cash App"} Confirmation Number
+                  {paymentMethod === "zelle" ? "Zelle" : paymentMethod === "venmo" ? "Venmo" : "Cash App"} Confirmation
                 </Text>
                 <TextInput
-                  style={[s.notesInput, { backgroundColor: CARD_BG, borderColor: CARD_BORDER, color: TEXT_PRIMARY }]}
-                  placeholder="Enter confirmation number..."
+                  style={[s.notesInput, { backgroundColor: CARD_BG, borderColor: paymentConfirmationNumber.trim() ? LIME_GREEN : CARD_BORDER, color: TEXT_PRIMARY }]}
+                  placeholder={
+                    paymentMethod === "zelle" ? "e.g. Phone or email you sent to" :
+                    paymentMethod === "venmo" ? "e.g. @username or transaction ID" :
+                    "e.g. $cashtag or transaction ID"
+                  }
                   placeholderTextColor={TEXT_MUTED}
                   value={paymentConfirmationNumber}
                   onChangeText={setPaymentConfirmationNumber}
                   returnKeyType="done"
                   autoCapitalize="none"
+                  autoCorrect={false}
                 />
-                <Text style={[{ color: TEXT_MUTED, fontSize: 12, marginTop: 6, lineHeight: 16 }]}>
-                  After sending payment, enter the confirmation number here so the business can verify your payment.
-                </Text>
+                {/* Format hint per method */}
+                <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 6 }}>
+                  <Text style={{ fontSize: 13 }}>
+                    {paymentMethod === "zelle" ? "📱" : paymentMethod === "venmo" ? "💙" : "💚"}
+                  </Text>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 12, flex: 1, lineHeight: 16 }}>
+                    {paymentMethod === "zelle"
+                      ? "Enter the phone number or email address you used to send the Zelle payment."
+                      : paymentMethod === "venmo"
+                      ? "Enter the @username you sent to, or copy the transaction ID from the Venmo app."
+                      : "Enter the $cashtag you sent to, or copy the transaction ID from the Cash App."}
+                  </Text>
+                </View>
               </View>
             )}
 
