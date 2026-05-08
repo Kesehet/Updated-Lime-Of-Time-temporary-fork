@@ -302,18 +302,18 @@ function RootLayout() {
               <Stack.Screen name="profile-select" options={{ presentation: "card" }} />
               <Stack.Screen name="client-signin" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="client-profile-onboarding" options={{ presentation: "fullScreenModal" }} />
-              <Stack.Screen name="client-edit-profile" options={{ presentation: "modal", headerShown: false }} />
-              <Stack.Screen name="client-notifications" options={{ presentation: "modal", headerShown: false }} />
+              <Stack.Screen name="client-edit-profile" options={{ presentation: "fullScreenModal", headerShown: false }} />
+              <Stack.Screen name="client-notifications" options={{ presentation: "fullScreenModal", headerShown: false }} />
               <Stack.Screen name="(client-tabs)" options={{ presentation: "fullScreenModal",
                 // Wrap client tabs in their own biometric lock provider
                 contentStyle: { flex: 1 } }} />
-              <Stack.Screen name="client-business-detail" options={{ presentation: "modal" }} />
-              <Stack.Screen name="client-booking-wizard" options={{ presentation: "modal", headerShown: false }} />
-              <Stack.Screen name="client-appointment-detail" options={{ presentation: "modal" }} />
-              <Stack.Screen name="client-booking-confirmation" options={{ presentation: "modal" }} />
-              <Stack.Screen name="client-message-thread" options={{ presentation: "modal" }} />
-              <Stack.Screen name="client-saved-businesses" options={{ presentation: "modal" }} />
-              <Stack.Screen name="client-message-thread-business" options={{ presentation: "modal" }} />
+              <Stack.Screen name="client-business-detail" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="client-booking-wizard" options={{ presentation: "fullScreenModal", headerShown: false }} />
+              <Stack.Screen name="client-appointment-detail" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="client-booking-confirmation" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="client-message-thread" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="client-saved-businesses" options={{ presentation: "fullScreenModal" }} />
+              <Stack.Screen name="client-message-thread-business" options={{ presentation: "fullScreenModal" }} />
             </Stack>
             <StatusBar style="auto" />
             <SessionExpiredToast />
