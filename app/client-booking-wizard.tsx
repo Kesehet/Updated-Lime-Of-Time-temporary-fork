@@ -593,7 +593,7 @@ export default function ClientBookingWizardScreen() {
                   key={svc.localId}
                   style={({ pressed }) => [
                     s.optionCard,
-                    { backgroundColor: CARD_BG, borderColor: selectedService?.localId === svc.localId ? LIME_GREEN : CARD_BORDER, padding: 0, overflow: "hidden" },
+                    { backgroundColor: CARD_BG, borderColor: selectedService?.localId === svc.localId ? LIME_GREEN : CARD_BORDER, padding: 0, overflow: "hidden", flexDirection: "column", alignItems: "stretch" },
                     selectedService?.localId === svc.localId && { borderWidth: 2 },
                     pressed && { opacity: 0.85 },
                   ]}
@@ -617,36 +617,39 @@ export default function ClientBookingWizardScreen() {
                     >
                       <Image
                         source={{ uri: svc.photoUri }}
-                        style={{ width: "100%", height: 110, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+                        style={{ width: "100%", height: 130, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
                         contentFit="cover"
                       />
-                      <View style={{ position: "absolute", bottom: 8, right: 8, backgroundColor: "rgba(0,0,0,0.45)", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <View style={{ position: "absolute", bottom: 8, right: 8, backgroundColor: "rgba(0,0,0,0.50)", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, flexDirection: "row", alignItems: "center", gap: 4 }}>
                         <IconSymbol name="arrow.up.left.and.arrow.down.right" size={11} color="#FFFFFF" />
                         <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "600" }}>Preview</Text>
                       </View>
                     </TouchableOpacity>
                   ) : null}
-                  <View style={[s.optionLeft, { padding: 14, gap: 3 }]}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <Text style={[s.optionName, { color: TEXT_PRIMARY }]}>{svc.name}</Text>
-                      {svc.category && (() => {
-                        const def = getCategoryDef(svc.category);
-                        return (
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: def.color + "20", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
-                            <Text style={{ fontSize: 10, lineHeight: 13 }}>{def.emoji}</Text>
-                            <Text style={{ fontSize: 10, fontWeight: "600", color: def.color }}>{svc.category}</Text>
-                          </View>
-                        );
-                      })()}
+                  {/* Text content — always shown below photo (or as full card if no photo) */}
+                  <View style={{ flexDirection: "row", alignItems: "flex-start", padding: 14, gap: 10 }}>
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <Text style={[s.optionName, { color: TEXT_PRIMARY }]}>{svc.name}</Text>
+                        {svc.category && (() => {
+                          const def = getCategoryDef(svc.category);
+                          return (
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: def.color + "20", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                              <Text style={{ fontSize: 10, lineHeight: 13 }}>{def.emoji}</Text>
+                              <Text style={{ fontSize: 10, fontWeight: "600", color: def.color }}>{svc.category}</Text>
+                            </View>
+                          );
+                        })()}
+                      </View>
+                      {svc.description ? <Text style={[s.optionDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{svc.description}</Text> : null}
+                      <Text style={[s.optionMeta, { color: LIME_GREEN }]}>{svc.duration} min · {formatPrice(svc.price)}</Text>
                     </View>
-                    {svc.description ? <Text style={[s.optionDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{svc.description}</Text> : null}
-                    <Text style={[s.optionMeta, { color: LIME_GREEN }]}>{svc.duration} min · {formatPrice(svc.price)}</Text>
+                    {selectedService?.localId === svc.localId && (
+                      <View style={[s.checkCircle, { backgroundColor: LIME_GREEN, flexShrink: 0 }]}>
+                        <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
+                      </View>
+                    )}
                   </View>
-                  {selectedService?.localId === svc.localId && (
-                    <View style={[s.checkCircle, { backgroundColor: LIME_GREEN, position: "absolute", top: svc.photoUri ? 118 : 14, right: 14 }]}>
-                      <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
-                    </View>
-                  )}
                 </Pressable>
               ))}
             </View>
