@@ -454,7 +454,7 @@ export default function ClientHomeScreen() {
           {/* My Gift Certificates */}
           {myGifts.length > 0 && (
             <View style={[styles.section, { marginBottom: 0 }]}>
-              <View style={styles.sectionHeader}>
+              <View style={[styles.sectionHeader, { marginBottom: 16 }]}>
                 <Text style={styles.sectionTitle}>🎁 My Gift Certificates</Text>
               </View>
               {myGifts.map((gift) => {
@@ -531,23 +531,24 @@ export default function ClientHomeScreen() {
                     ) : null}
                     {/* How to use steps */}
                     {!gift.redeemed && !isExpired && (
-                      <View style={{ gap: 6, paddingTop: 4, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }}>
-                        <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 }}>How to use</Text>
+                      <View style={{ gap: 8, paddingTop: 6, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }}>
+                        {/* Redeem button — navigates to booking wizard with gift code pre-filled */}
+                        {gift.businessSlug ? (
+                          <Pressable
+                            onPress={() => router.push({ pathname: "/client-booking-wizard", params: { slug: gift.businessSlug, preGiftCode: gift.code } } as any)}
+                            style={({ pressed }) => [{ backgroundColor: GREEN_ACCENT, borderRadius: 10, paddingVertical: 11, alignItems: "center", opacity: pressed ? 0.85 : 1 }]}
+                          >
+                            <Text style={{ color: "#1A3A28", fontWeight: "700", fontSize: 14 }}>Redeem Gift →</Text>
+                          </Pressable>
+                        ) : null}
+                        <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>How to use</Text>
                         {[
-                          "1. Book an appointment at " + gift.businessName,
-                          "2. Show this code at checkout: " + gift.code,
+                          "1. Tap Redeem Gift above to start booking",
+                          "2. Your gift code will be pre-filled at checkout",
                           "3. The business will apply the gift value to your booking",
                         ].map((step, i) => (
                           <Text key={i} style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18 }}>{step}</Text>
                         ))}
-                        {gift.businessSlug ? (
-                          <Pressable
-                            onPress={() => router.push({ pathname: "/client-business-detail", params: { slug: gift.businessSlug } } as any)}
-                            style={({ pressed }) => [{ backgroundColor: GREEN_ACCENT, borderRadius: 10, paddingVertical: 10, alignItems: "center", marginTop: 4, opacity: pressed ? 0.85 : 1 }]}
-                          >
-                            <Text style={{ color: "#1A3A28", fontWeight: "700", fontSize: 13 }}>Book at {gift.businessName} →</Text>
-                          </Pressable>
-                        ) : null}
                       </View>
                     )}
                   </View>

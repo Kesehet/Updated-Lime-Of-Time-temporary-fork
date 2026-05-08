@@ -32,6 +32,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { getApiBaseUrl } from "@/constants/oauth";
+import { getCategoryDef, ALL_CATEGORY, SERVICE_CATEGORIES } from "@/constants/categories";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
 const GREEN_DARK   = "#1A3A28";
@@ -293,11 +294,19 @@ export default function ClientBuyGiftScreen() {
   const handleBack = () => {
     if (step === 0) { router.back(); return; }
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (giftMode === "balance") {
+      // Balance mode: skip steps 2 (Date) and 3 (Staff)
+      if (step === 4) { setStep(1); return; }
+    }
     setStep(s => s - 1);
   };
 
   const handleNext = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (giftMode === "balance") {
+      // Balance mode: skip steps 2 (Date) and 3 (Staff) — go directly from 1 to 4
+      if (step === 1) { setStep(4); return; }
+    }
     setStep(s => Math.min(s + 1, STEPS.length - 1));
   };
 
@@ -494,7 +503,7 @@ export default function ClientBuyGiftScreen() {
                         opacity: pressed ? 0.85 : 1,
                       }]}
                     >
-                      <Text style={{ color: parseFloat(balanceAmount) === amt ? "#1A3A28" : TEXT_PRIMARY, fontWeight: "600", fontSize: 13 }}>${"{amt}"}</Text>
+                      <Text style={{ color: parseFloat(balanceAmount) === amt ? "#1A3A28" : TEXT_PRIMARY, fontWeight: "600", fontSize: 13 }}>${amt}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -504,31 +513,88 @@ export default function ClientBuyGiftScreen() {
               </View>
             )}
 
-            {giftMode === "specific" && services.length > 0 && (
-              <>
-                <Text style={s.sectionHeader}>Services</Text>
-                {services.map(item => (
-                  <Pressable
-                    key={item.localId}
-                    style={({ pressed }) => [
-                      s.itemCard,
-                      selectedItems.has(item.localId) && { borderColor: GREEN_ACCENT, borderWidth: 2 },
-                      pressed && { opacity: 0.85 },
-                    ]}
-                    onPress={() => toggleItem(item.localId)}
-                  >
-                    <View style={[s.checkBox, selectedItems.has(item.localId) && { backgroundColor: GREEN_ACCENT, borderColor: GREEN_ACCENT }]}>
-                      {selectedItems.has(item.localId) && <IconSymbol name="checkmark" size={14} color="#fff" />}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.itemName}>{item.name}</Text>
-                      {item.description ? <Text style={s.itemDesc} numberOfLines={2}>{item.description}</Text> : null}
-                      <Text style={s.itemPrice}>{formatPrice(item.price)}</Text>
-                    </View>
-                  </Pressable>
-                ))}
-              </>
-            )}
+            {giftMode === "specific" && services.length > 0 && (() => {
+              // Derive unique categories from services
+              const cats = Array.from(new Set(services.map(s => s.category ?? "Other")));
+              const showCats = cats.length > 1;
+              const filteredServices = giftCategoryFilter
+                ? services.filter(s => (s.category ?? "Other") === giftCategoryFilter)
+                : services;
+              return (
+                <>
+                  {showCats && (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }} contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
+                      <Pressable
+                        key="all"
+                        onPress={() => setGiftCategoryFilter(null)}
+                        style={({ pressed }) => [{
+                          paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
+                          backgroundColor: !giftCategoryFilter ? GREEN_ACCENT : "rgba(255,255,255,0.08)",
+                          borderWidth: 1, borderColor: !giftCategoryFilter ? GREEN_ACCENT : "rgba(255,255,255,0.15)",
+                          opacity: pressed ? 0.85 : 1,
+                        }]}
+                      >
+                        <Text style={{ color: !giftCategoryFilter ? "#1A3A28" : TEXT_PRIMARY, fontWeight: "600", fontSize: 13 }}>All</Text>
+                      </Pressable>
+                      {cats.map(cat => {
+                        const def = getCategoryDef(cat);
+                        const active = giftCategoryFilter === cat;
+                        return (
+                          <Pressable
+                            key={cat}
+                            onPress={() => setGiftCategoryFilter(active ? null : cat)}
+                            style={({ pressed }) => [{
+                              paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, flexDirection: "row", alignItems: "center", gap: 4,
+                              backgroundColor: active ? GREEN_ACCENT : "rgba(255,255,255,0.08)",
+                              borderWidth: 1, borderColor: active ? GREEN_ACCENT : "rgba(255,255,255,0.15)",
+                              opacity: pressed ? 0.85 : 1,
+                            }]}
+                          >
+                            <Text style={{ fontSize: 13 }}>{def.emoji}</Text>
+                            <Text style={{ color: active ? "#1A3A28" : TEXT_PRIMARY, fontWeight: "600", fontSize: 13 }}>{cat}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  )}
+                  <Text style={s.sectionHeader}>Services</Text>
+                  {filteredServices.map(item => (
+                    <Pressable
+                      key={item.localId}
+                      style={({ pressed }) => [
+                        s.itemCard,
+                        selectedItems.has(item.localId) && { borderColor: GREEN_ACCENT, borderWidth: 2 },
+                        pressed && { opacity: 0.85 },
+                      ]}
+                      onPress={() => toggleItem(item.localId)}
+                    >
+                      {/* Service image or placeholder */}
+                      <Pressable
+                        onPress={() => setPreviewItem(item)}
+                        style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                      >
+                        <View style={{ width: 60, height: 60, borderRadius: 10, overflow: "hidden", backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" }}>
+                          {item.photoUri ? (
+                            <Image source={{ uri: item.photoUri }} style={{ width: 60, height: 60 }} contentFit="cover" />
+                          ) : (
+                            <Text style={{ fontSize: 24 }}>{getCategoryDef(item.category).emoji}</Text>
+                          )}
+                        </View>
+                      </Pressable>
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.itemName}>{item.name}</Text>
+                        {item.description ? <Text style={s.itemDesc} numberOfLines={2}>{item.description}</Text> : null}
+                        <Text style={s.itemPrice}>{formatPrice(item.price)}</Text>
+                      </View>
+                      {/* Right-side checkmark */}
+                      <View style={[s.checkBox, selectedItems.has(item.localId) && { backgroundColor: GREEN_ACCENT, borderColor: GREEN_ACCENT }]}>
+                        {selectedItems.has(item.localId) && <IconSymbol name="checkmark" size={14} color="#fff" />}
+                      </View>
+                    </Pressable>
+                  ))}
+                </>
+              );
+            })()}
 
             {giftMode === "specific" && products.length > 0 && (
               <>
@@ -543,13 +609,27 @@ export default function ClientBuyGiftScreen() {
                     ]}
                     onPress={() => toggleItem(item.localId)}
                   >
-                    <View style={[s.checkBox, selectedItems.has(item.localId) && { backgroundColor: GREEN_ACCENT, borderColor: GREEN_ACCENT }]}>
-                      {selectedItems.has(item.localId) && <IconSymbol name="checkmark" size={14} color="#fff" />}
-                    </View>
+                    {/* Product image or placeholder */}
+                    <Pressable
+                      onPress={() => setPreviewItem(item)}
+                      style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                    >
+                      <View style={{ width: 60, height: 60, borderRadius: 10, overflow: "hidden", backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" }}>
+                        {item.photoUri ? (
+                          <Image source={{ uri: item.photoUri }} style={{ width: 60, height: 60 }} contentFit="cover" />
+                        ) : (
+                          <Text style={{ fontSize: 24 }}>🛍️</Text>
+                        )}
+                      </View>
+                    </Pressable>
                     <View style={{ flex: 1 }}>
                       <Text style={s.itemName}>{item.name}</Text>
                       {item.description ? <Text style={s.itemDesc} numberOfLines={2}>{item.description}</Text> : null}
                       <Text style={s.itemPrice}>{formatPrice(item.price)}</Text>
+                    </View>
+                    {/* Right-side checkmark */}
+                    <View style={[s.checkBox, selectedItems.has(item.localId) && { backgroundColor: GREEN_ACCENT, borderColor: GREEN_ACCENT }]}>
+                      {selectedItems.has(item.localId) && <IconSymbol name="checkmark" size={14} color="#fff" />}
                     </View>
                   </Pressable>
                 ))}
@@ -1035,6 +1115,27 @@ export default function ClientBuyGiftScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Image Preview Modal */}
+      <Modal visible={!!previewItem} transparent animationType="fade" onRequestClose={() => setPreviewItem(null)}>
+        <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.9)", alignItems: "center", justifyContent: "center" }} onPress={() => setPreviewItem(null)}>
+          {previewItem?.photoUri ? (
+            <Image source={{ uri: previewItem.photoUri }} style={{ width: SCREEN_WIDTH - 40, height: SCREEN_WIDTH - 40, borderRadius: 16 }} contentFit="cover" />
+          ) : (
+            <View style={{ width: SCREEN_WIDTH - 40, height: 200, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontSize: 48 }}>{getCategoryDef(previewItem?.category).emoji}</Text>
+            </View>
+          )}
+          {previewItem && (
+            <View style={{ marginTop: 16, alignItems: "center", gap: 4 }}>
+              <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 17 }}>{previewItem.name}</Text>
+              <Text style={{ color: GREEN_ACCENT, fontWeight: "700", fontSize: 15 }}>{formatPrice(previewItem.price)}</Text>
+              {previewItem.description ? <Text style={{ color: TEXT_MUTED, fontSize: 13, textAlign: "center", paddingHorizontal: 24 }}>{previewItem.description}</Text> : null}
+              <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 8 }}>Tap anywhere to close</Text>
+            </View>
+          )}
+        </Pressable>
+      </Modal>
 
       {/* Bottom Action */}
       <View style={[s.bottomBar, { paddingBottom: insets.bottom + 12 }]}>

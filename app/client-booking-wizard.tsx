@@ -112,7 +112,7 @@ function formatDateLabel(d: Date): string {
 export default function ClientBookingWizardScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { slug, businessSlug, serviceLocalId, preServiceName, preStaffId, preStaffName, packageLocalId } = useLocalSearchParams<{ slug?: string; businessSlug?: string; serviceLocalId?: string; preServiceName?: string; preStaffId?: string; preStaffName?: string; packageLocalId?: string }>();
+  const { slug, businessSlug, serviceLocalId, preServiceName, preStaffId, preStaffName, packageLocalId, preGiftCode } = useLocalSearchParams<{ slug?: string; businessSlug?: string; serviceLocalId?: string; preServiceName?: string; preStaffId?: string; preStaffName?: string; packageLocalId?: string; preGiftCode?: string }>();
   const effectiveSlug = slug || businessSlug || "";
   const { state } = useClientStore();
   const apiBase = getApiBaseUrl();
@@ -248,9 +248,16 @@ export default function ClientBookingWizardScreen() {
       } finally {
         setLoadingData(false);
       }
-    })();
+     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveSlug, serviceLocalId, preServiceName, preStaffId, preStaffName, apiBase]);
+
+  // Pre-fill gift code when navigating from "Redeem" on home screen
+  useEffect(() => {
+    if (preGiftCode) {
+      setGiftInput(String(preGiftCode));
+    }
+  }, [preGiftCode]);
 
   // Fetch working-days info (weeklyDays + customDays) whenever slug/location changes
   useEffect(() => {
@@ -836,18 +843,7 @@ export default function ClientBookingWizardScreen() {
                 <View style={s.optionLeft}>
                   <Text style={[s.optionName, { color: TEXT_PRIMARY }]}>{loc.name}</Text>
                   {loc.address ? (
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        const encoded = encodeURIComponent(loc.address);
-                        const url = Platform.OS === "ios"
-                          ? `maps://maps.apple.com/?q=${encoded}`
-                          : `https://maps.google.com/?q=${encoded}`;
-                        Linking.openURL(url).catch(() => Linking.openURL(`https://maps.google.com/?q=${encoded}`));
-                      }}
-                    >
-                      <Text style={[s.optionDesc, { color: TEXT_MUTED, textDecorationLine: "underline" }]} numberOfLines={2}>{loc.address}</Text>
-                    </TouchableOpacity>
+                    <Text style={[s.optionDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{loc.address}</Text>
                   ) : null}
                   {loc.phone ? (
                     <TouchableOpacity
