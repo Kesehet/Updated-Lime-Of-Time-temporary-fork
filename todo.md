@@ -1977,3 +1977,10 @@
 - [x] On client home screen focus, check AsyncStorage flag and scroll to the gift certificates section
 - [x] Capture gifts section Y position via onLayout for accurate scroll target
 - [x] Smooth animated scroll with 350ms delay to let screen render first
+
+## Phase: Splash Screen Startup Fix (May 2026)
+
+- [x] Move SplashScreen.hideAsync() from onLayout to useEffect with 2 rAF delay so AnimatedSplash is painted first
+- [x] Fix handleSplashFinish to navigate to /profile-select BEFORE setSplashDone(true) to prevent last-page flash
+- [x] Remove redundant blocking overlay from inside content tree — AnimatedSplash already covers everything
+- [x] Verify native splash background is #0D2318 (already correct in app.config.ts)

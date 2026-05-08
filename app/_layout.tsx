@@ -85,7 +85,9 @@ function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
   const router = useRouter();
   const handleSplashFinish = useCallback(async () => {
-    setSplashDone(true);
+    // NOTE: Do NOT call setSplashDone(true) here yet.
+    // We first navigate to portal-select, then remove the splash overlay
+    // so the user never sees the last-visited route flash underneath.
     // Helper: decode JWT payload and check if token is expired (client-side only, no verification)
     const isTokenExpired = (token: string): boolean => {
       try {
@@ -152,18 +154,34 @@ function RootLayout() {
     } catch { /* ignore */ }
     // Always show portal selector on cold launch
     router.replace("/profile-select" as any);
-  }, [router]);
-  const onLayoutRootView = useCallback(async () => {
-    // Hide the native splash immediately — we use our own animated splash instead.
-    // Wrapped in try/catch because Expo Go sometimes throws
-    // "No native splash screen registered for given view controller"
-    // when the view controller changes before hideAsync completes — this is
-    // harmless and can be safely ignored.
-    try {
-      await SplashScreen.hideAsync();
-    } catch {
-      // Ignore — harmless Expo Go timing issue
-    }
+    // Small delay to let the navigation commit before removing the splash overlay
+    setTimeout(() => setSplashDone(true), 80);
+  }, [router, setSplashDone]);
+  const onLayoutRootView = useCallback(() => {
+    // No-op: SplashScreen.hideAsync is now called in a useEffect after first render
+    // to ensure our AnimatedSplash overlay is painted before the native splash disappears.
+  }, []);
+
+  // Hide the native splash screen after the first render so our AnimatedSplash
+  // is guaranteed to be on screen before the native splash disappears.
+  // Using requestAnimationFrame ensures the JS thread has committed the first frame.
+  useEffect(() => {
+    let cancelled = false;
+    const hide = async () => {
+      // Wait two animation frames so the AnimatedSplash View is fully painted
+      requestAnimationFrame(() => {
+        requestAnimationFrame(async () => {
+          if (cancelled) return;
+          try {
+            await SplashScreen.hideAsync();
+          } catch {
+            // Ignore — harmless Expo Go timing issue
+          }
+        });
+      });
+    };
+    hide();
+    return () => { cancelled = true; };
   }, []);
 
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
@@ -223,14 +241,6 @@ function RootLayout() {
 
   const content = (
     <View style={{ flex: 1 }}>
-    {/* Opaque blocking view that hides stale routes until splash finishes and routing completes.
-        This prevents the "last page flash" on app open. Removed once splashDone = true. */}
-    {!splashDone && (
-      <View
-        style={[StyleSheet.absoluteFill, { backgroundColor: "#0D2318", zIndex: 9998 }]}
-        pointerEvents="none"
-      />
-    )}
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>

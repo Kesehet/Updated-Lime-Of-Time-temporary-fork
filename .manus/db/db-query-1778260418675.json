@@ -1,0 +1,70 @@
+{
+  "query": "SELECT configKey, LEFT(configValue, 12) as value_preview FROM platform_config WHERE configKey LIKE 'TWILIO%' ORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, LEFT(configValue, 12) as value_preview FROM platform_config WHERE configKey LIKE 'TWILIO%' ORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "TWILIO_ACCOUNT_SID",
+      "value_preview": "VA7348fcb20a"
+    },
+    {
+      "configKey": "TWILIO_AUTH_TOKEN",
+      "value_preview": "7d157dfaa5f3"
+    },
+    {
+      "configKey": "TWILIO_FROM_NUMBER",
+      "value_preview": "+18556074585"
+    },
+    {
+      "configKey": "TWILIO_LIVE_ACCOUNT_SID",
+      "value_preview": "AC0eb74aa2bc"
+    },
+    {
+      "configKey": "TWILIO_LIVE_AUTH_TOKEN",
+      "value_preview": "7bf97543f414"
+    },
+    {
+      "configKey": "TWILIO_LIVE_FROM_NUMBER",
+      "value_preview": "+18556074585"
+    },
+    {
+      "configKey": "TWILIO_LIVE_VERIFY_SERVICE_SID",
+      "value_preview": ""
+    },
+    {
+      "configKey": "TWILIO_PER_PHONE_OTP",
+      "value_preview": "{}"
+    },
+    {
+      "configKey": "TWILIO_TEST_ACCOUNT_SID",
+      "value_preview": "VA7348fcb20a"
+    },
+    {
+      "configKey": "TWILIO_TEST_AUTH_TOKEN",
+      "value_preview": "7d157dfaa5f3"
+    },
+    {
+      "configKey": "TWILIO_TEST_FROM_NUMBER",
+      "value_preview": ""
+    },
+    {
+      "configKey": "TWILIO_TEST_MODE",
+      "value_preview": "true"
+    },
+    {
+      "configKey": "TWILIO_TEST_OTP",
+      "value_preview": "123456"
+    },
+    {
+      "configKey": "TWILIO_TEST_VERIFY_SERVICE_SID",
+      "value_preview": ""
+    },
+    {
+      "configKey": "TWILIO_VERIFY_SERVICE_SID",
+      "value_preview": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tvalue_preview\nTWILIO_ACCOUNT_SID\tVA7348fcb20a\nTWILIO_AUTH_TOKEN\t7d157dfaa5f3\nTWILIO_FROM_NUMBER\t+18556074585\nTWILIO_LIVE_ACCOUNT_SID\tAC0eb74aa2bc\nTWILIO_LIVE_AUTH_TOKEN\t7bf97543f414\nTWILIO_LIVE_FROM_NUMBER\t+18556074585\nTWILIO_LIVE_VERIFY_SERVICE_SID\t\nTWILIO_PER_PHONE_OTP\t{}\nTWILIO_TEST_ACCOUNT_SID\tVA7348fcb20a\nTWILIO_TEST_AUTH_TOKEN\t7d157dfaa5f3\nTWILIO_TEST_FROM_NUMBER\t\nTWILIO_TEST_MODE\ttrue\nTWILIO_TEST_OTP\t123456\nTWILIO_TEST_VERIFY_SERVICE_SID\t\nTWILIO_VERIFY_SERVICE_SID\t\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}
