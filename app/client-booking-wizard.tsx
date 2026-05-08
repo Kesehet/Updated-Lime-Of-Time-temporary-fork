@@ -494,7 +494,7 @@ export default function ClientBookingWizardScreen() {
           promoCode: promoApplied?.code ?? "",
           promoSaving: promoSaving > 0 ? `$${promoSaving.toFixed(2)}` : "",
           giftCode: giftApplied?.code ?? "",
-          giftSaving: giftSaving > 0 ? `$${giftSaving.toFixed(2)}` : "",
+          giftSaving: giftApplied ? `$${Math.min(giftApplied.value, Math.max(0, (selectedService ? (parseFloat(selectedService.price ?? "0") || 0) : 0) - (discountAmount ?? 0) - (promoSaving ?? 0))).toFixed(2)}` : "",
           paymentMethod: paymentMethod ?? "",
           paymentConfirmationNumber: paymentMethod !== "cash" ? paymentConfirmationNumber.trim() : "",
         },

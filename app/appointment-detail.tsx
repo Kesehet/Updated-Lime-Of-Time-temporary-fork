@@ -795,6 +795,24 @@ Would you also like to charge a no-show fee via Stripe?`,
     router.push({ pathname: '/send-reminder' as any, params: { appointmentId: appointment.id } });
   };
 
+  const handleConfirmGiftRedemption = async () => {
+    if (!appointment || !appointment.id) return;
+    try {
+      const token = state.token;
+      const res = await fetch('/api/business/confirm-gift-redemption', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ appointmentId: appointment.id }),
+      });
+      if (!res.ok) throw new Error('Failed to confirm redemption');
+      Alert.alert('Gift Redeemed', 'The gift certificate has been marked as redeemed.');
+      dispatch({ type: 'LOAD_DATA', payload: {} });
+    } catch (err) {
+      const e = err as any;
+      Alert.alert('Error', e?.message ?? 'Could not confirm gift redemption.');
+    }
+  };
+
   const handleOpenMap = () => {
     if (!profile.address) return;
     const url = getMapUrl(profile.address);

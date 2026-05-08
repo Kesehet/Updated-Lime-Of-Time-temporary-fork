@@ -421,6 +421,13 @@
       "when": 1778249244327,
       "tag": "0059_cultured_stranger",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "5",
+      "when": 1778249822388,
+      "tag": "0060_square_sentinels",
+      "breakpoints": true
     }
   ]
 }

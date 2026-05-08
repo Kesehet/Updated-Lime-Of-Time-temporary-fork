@@ -370,6 +370,7 @@ export const giftCards = mysqlTable("gift_cards", {
   purchasedPublicly: boolean("purchasedPublicly").default(false).notNull(),
   preselectedDate: varchar("preselectedDate", { length: 10 }),
   preselectedTime: varchar("preselectedTime", { length: 5 }),
+  pendingRedemptionAppointmentId: varchar("pendingRedemptionAppointmentId", { length: 64 }),
 });
 
 export type DbGiftCard = typeof giftCards.$inferSelect;

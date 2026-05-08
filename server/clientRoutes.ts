@@ -767,7 +767,7 @@ export function registerClientRoutes(app: Express) {
             ...item,
             clientName: client?.name ?? "Client",
             clientPhone: client?.phone?.startsWith("oauth:") ? null : client?.phone,
-            clientAvatarUrl: client?.profilePhotoUri ?? client?.avatarUrl ?? null,
+            clientAvatarUrl: (client as any)?.profilePhotoUri ?? null,
           };
         })
       );
@@ -827,7 +827,7 @@ export function registerClientRoutes(app: Express) {
       const clientInfo = await db.getClientAccountById(clientAccountId);
       res.json({
         messages,
-        clientAvatarUrl: clientInfo?.profilePhotoUri ?? clientInfo?.avatarUrl ?? null,
+        clientAvatarUrl: (clientInfo as any)?.profilePhotoUri ?? null,
         clientName: clientInfo?.name ?? "Client",
       });
     } catch (err: any) {
@@ -1301,7 +1301,7 @@ export function registerClientRoutes(app: Express) {
       // We'll mark the appointment's giftApplied as confirmed by updating a flag
       // For now, find any unredeemed gift card for this business and mark it
       // In a full implementation, the giftCode would be stored on the appointment
-      const { giftCards: gcTable } = await import("../drizzle/schema.js");
+      const { giftCards: gcTable } = await import("../drizzle/schema");
       const { eq: eqGc, and: andGc } = await import("drizzle-orm");
       const dbase = await db.getDb();
       if (dbase) {

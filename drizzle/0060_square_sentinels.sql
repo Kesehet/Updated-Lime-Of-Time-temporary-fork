@@ -1,0 +1,1 @@
+ALTER TABLE `gift_cards` ADD `pendingRedemptionAppointmentId` varchar(64);
