@@ -143,7 +143,7 @@ export default function ClientBookingWizardScreen() {
   const [discounts, setDiscounts] = useState<{ localId: string; name: string; percentage: number; serviceIds: string[] }[]>([]);
   // Gift certificate state
   const [giftInput, setGiftInput] = useState("");
-  const [giftApplied, setGiftApplied] = useState<{ code: string; value: number; label: string } | null>(null);
+  const [giftApplied, setGiftApplied] = useState<{ code: string; value: number; totalValue: number; label: string; giftType: string } | null>(null);
   const [giftError, setGiftError] = useState("");
   const [giftLoading, setGiftLoading] = useState(false);
   const [businessDisplayName, setBusinessDisplayName] = useState<string>("");
@@ -1205,19 +1205,13 @@ export default function ClientBookingWizardScreen() {
             {/* Gift Certificate entry */}
             <Text style={[s.notesLabel, { color: TEXT_PRIMARY, marginTop: 16 }]}>Gift Certificate Code</Text>
             {giftApplied ? (
-              <View style={[s.promoAppliedCard, { backgroundColor: `${LIME_GREEN}15`, borderColor: `${LIME_GREEN}50` }]}>
-                <Text style={{ fontSize: 20 }}>🎁</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>{giftApplied.code}</Text>
-                  <Text style={{ color: LIME_GREEN, fontSize: 13 }}>{giftApplied.label}</Text>
-                </View>
-                <Pressable
-                  onPress={() => { setGiftApplied(null); setGiftInput(""); setGiftError(""); }}
-                  style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-                >
-                  <Text style={{ color: TEXT_MUTED, fontSize: 13, fontWeight: "600" }}>Remove</Text>
-                </Pressable>
-              </View>
+              <GiftAppliedCard
+                giftApplied={giftApplied}
+                selectedService={selectedService}
+                discounts={discounts}
+                promoApplied={promoApplied}
+                onRemove={() => { setGiftApplied(null); setGiftInput(""); setGiftError(""); }}
+              />
             ) : (
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TextInput
@@ -1246,7 +1240,7 @@ export default function ClientBookingWizardScreen() {
                         const label = giftType === "balance"
                           ? `Balance Credit — $${parseFloat(data.value).toFixed(2)} available`
                           : `Gift Certificate — $${parseFloat(data.value).toFixed(2)} value`;
-                        setGiftApplied({ code: data.code, value: parseFloat(data.value), label });
+                        setGiftApplied({ code: data.code, value: parseFloat(data.value), totalValue: parseFloat(data.totalValue ?? data.value), label, giftType });
                         if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                       }
                     } catch {
@@ -1433,6 +1427,53 @@ function canProceed(
   }
   // Promo step is always skippable (optional)
   return true;
+}
+
+function GiftAppliedCard({
+  giftApplied,
+  selectedService,
+  discounts,
+  promoApplied,
+  onRemove,
+}: {
+  giftApplied: { code: string; value: number; totalValue: number; label: string; giftType: string };
+  selectedService: PublicService | null;
+  discounts: { localId: string; name: string; percentage: number; serviceIds: string[] }[];
+  promoApplied: { localId: string; code: string; label: string; percentage: number | null; flatAmount: number | null } | null;
+  onRemove: () => void;
+}) {
+  const svcPrice = selectedService?.price ? parseFloat(selectedService.price) : 0;
+  const activeDisc = discounts.find(d => !d.serviceIds || (d.serviceIds as string[]).length === 0 || (d.serviceIds as string[]).includes(selectedService?.localId ?? ""));
+  const discSaving = activeDisc ? parseFloat((svcPrice * activeDisc.percentage / 100).toFixed(2)) : 0;
+  const afterDiscount = svcPrice - discSaving;
+  const promoSaving = promoApplied
+    ? promoApplied.flatAmount
+      ? Math.min(promoApplied.flatAmount, afterDiscount)
+      : parseFloat((afterDiscount * (promoApplied.percentage ?? 0) / 100).toFixed(2))
+    : 0;
+  const afterPromo = Math.max(0, afterDiscount - promoSaving);
+  const giftUsed = Math.min(giftApplied.value, afterPromo);
+  const remainingAfterBooking = Math.max(0, giftApplied.value - giftUsed);
+  const isBalance = giftApplied.giftType === "balance";
+  return (
+    <View style={[{ flexDirection: "row", alignItems: "flex-start", gap: 10, padding: 12, borderRadius: 10, borderWidth: 1, marginTop: 4 }, { backgroundColor: `${LIME_GREEN}15`, borderColor: `${LIME_GREEN}50` }]}>
+      <Text style={{ fontSize: 20 }}>🎁</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>{giftApplied.code}</Text>
+        <Text style={{ color: LIME_GREEN, fontSize: 13 }}>{giftApplied.label}</Text>
+        {isBalance && (
+          <Text style={{ color: giftUsed >= giftApplied.value ? "#F87171" : "#FBBF24", fontSize: 12, marginTop: 2 }}>
+            {giftUsed >= giftApplied.value
+              ? `Covers full booking — $0.00 remaining`
+              : `Using $${giftUsed.toFixed(2)} — $${remainingAfterBooking.toFixed(2)} balance remaining`}
+          </Text>
+        )}
+      </View>
+      <Pressable onPress={onRemove} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
+        <Text style={{ color: TEXT_MUTED, fontSize: 13, fontWeight: "600" }}>Remove</Text>
+      </Pressable>
+    </View>
+  );
 }
 
 function Row({ label, value }: { label: string; value: string; colors?: ReturnType<typeof useColors> }) {

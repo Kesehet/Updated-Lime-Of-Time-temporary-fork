@@ -14,6 +14,7 @@ import {
   Platform,
   ScrollView,
   Animated,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ClientPortalBackground } from "@/components/client-portal-background";
@@ -42,6 +43,7 @@ export default function ClientGiftConfirmationScreen() {
     businessName,
     businessSlug,
     paymentMethod,
+    bannerImageUri,
   } = useLocalSearchParams<{
     giftCode: string;
     shareLink: string;
@@ -50,6 +52,7 @@ export default function ClientGiftConfirmationScreen() {
     businessName: string;
     businessSlug: string;
     paymentMethod: string;
+    bannerImageUri?: string;
   }>();
 
   // ── Entrance animation ─────────────────────────────────────────────────────
@@ -100,10 +103,21 @@ export default function ClientGiftConfirmationScreen() {
         {/* Top spacing for status bar */}
         <View style={{ height: insets.top + 16 }} />
 
-        {/* Success icon */}
-        <Animated.View style={[s.iconWrap, { transform: [{ scale: scaleAnim }], opacity: opacityAnim }]}>
-          <Text style={{ fontSize: 52 }}>🎁</Text>
-        </Animated.View>
+        {/* Banner image (if provided) */}
+        {bannerImageUri ? (
+          <Animated.View style={{ opacity: opacityAnim, marginBottom: 20 }}>
+            <Image
+              source={{ uri: bannerImageUri }}
+              style={{ width: "100%", height: 160, borderRadius: 16 }}
+              resizeMode="cover"
+            />
+          </Animated.View>
+        ) : (
+          /* Success icon (fallback when no banner) */
+          <Animated.View style={[s.iconWrap, { transform: [{ scale: scaleAnim }], opacity: opacityAnim }]}>
+            <Text style={{ fontSize: 52 }}>🎁</Text>
+          </Animated.View>
+        )}
 
         <Text style={s.headline}>Gift Purchased!</Text>
         {recipientName ? (

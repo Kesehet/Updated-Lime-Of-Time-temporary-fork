@@ -836,6 +836,7 @@ export function dbGiftCardToLocal(g: any): GiftCard {
   let originalValue = 0;
   let remainingBalance = 0;
   let hasGiftData = false;
+  let bannerImageUri: string | undefined;
   const msg = g.message ?? "";
   const jsonMatch = msg.match(/\n---GIFT_DATA---\n(.+)$/s);
   if (jsonMatch) {
@@ -845,6 +846,7 @@ export function dbGiftCardToLocal(g: any): GiftCard {
       productIds = data.productIds;
       originalValue = data.originalValue ?? 0;
       remainingBalance = data.remainingBalance ?? originalValue;
+      bannerImageUri = data.bannerImageUri ?? undefined;
       hasGiftData = true;
     } catch {}
   }
@@ -887,6 +889,7 @@ export function dbGiftCardToLocal(g: any): GiftCard {
       }
       return (g.serviceLocalId ? "service" : "balance") as "service" | "balance";
     })(),
+    bannerImageUri,
   };
 }
 export function dbPromoCodeToLocal(p: any): import("./types").PromoCode {
@@ -2024,12 +2027,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           }
           case "ADD_GIFT_CARD": {
             const gc = action.payload as GiftCard;
-            // Encode extended data (serviceIds, productIds, balance) in message field
+            // Encode extended data (serviceIds, productIds, balance, bannerImageUri) in message field
             const giftDataBlock = `\n---GIFT_DATA---\n${JSON.stringify({
               serviceIds: gc.serviceIds,
               productIds: gc.productIds,
               originalValue: gc.originalValue,
               remainingBalance: gc.remainingBalance,
+              ...(gc.bannerImageUri ? { bannerImageUri: gc.bannerImageUri } : {}),
             })}`;
             const msgWithData = (gc.message || "") + giftDataBlock;
             await createGiftCardMut.mutateAsync({
@@ -2052,6 +2056,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               productIds: gc.productIds,
               originalValue: gc.originalValue,
               remainingBalance: gc.remainingBalance,
+              ...(gc.bannerImageUri ? { bannerImageUri: gc.bannerImageUri } : {}),
             })}`;
             const updMsgWithData = (gc.message || "") + updGiftDataBlock;
             await updateGiftCardMut.mutateAsync({

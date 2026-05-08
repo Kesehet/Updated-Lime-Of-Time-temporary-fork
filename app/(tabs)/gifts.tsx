@@ -11,7 +11,9 @@ import {
   Linking,
   ScrollView,
   Share,
+  ActivityIndicator,
 } from "react-native";
+import { Image } from "expo-image";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId } from "@/lib/store";
 import { trpc } from "@/lib/trpc";
@@ -23,6 +25,8 @@ import { GiftCard, formatPhoneNumber, stripPhoneFormat, PUBLIC_BOOKING_URL } fro
 import * as Clipboard from "expo-clipboard";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { useScrollToTopOnFocus } from "@/hooks/use-scroll-to-top-on-focus";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
 
 
 function generateGiftCode(): string {
@@ -150,7 +154,42 @@ export default function GiftCardsScreen() {
   const [showItemPicker, setShowItemPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState<"services" | "products">("services");
   const [mainTab, setMainTab] = useState<"my" | "public">("my");
+  const [bannerImageUri, setBannerImageUri] = useState<string | undefined>(undefined);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const markAsPaidMut = trpc.giftCards.markAsPaid.useMutation();
+  const uploadImageMut = trpc.files.uploadImage.useMutation();
+
+  const pickBannerImage = useCallback(async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission Required", "Please allow access to your photo library to add a gift card banner.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.85,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const localUri = result.assets[0].uri;
+      if (Platform.OS !== "web") {
+        try {
+          setUploadingBanner(true);
+          const base64 = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+          const mimeType = result.assets[0].mimeType ?? "image/jpeg";
+          const { url } = await uploadImageMut.mutateAsync({ base64, mimeType, folder: "gifts" });
+          setBannerImageUri(url);
+        } catch {
+          setBannerImageUri(localUri);
+        } finally {
+          setUploadingBanner(false);
+        }
+      } else {
+        setBannerImageUri(localUri);
+      }
+    }
+  }, [uploadImageMut]);
 
   const resetForm = useCallback(() => {
     setSelectedServiceIds([]);
@@ -159,6 +198,7 @@ export default function GiftCardsScreen() {
     setRecipientPhone("");
     setMessage("");
     setExpiresInDays("30");
+    setBannerImageUri(undefined);
     setShowForm(false);
   }, []);
 
@@ -230,12 +270,13 @@ export default function GiftCardsScreen() {
       redeemed: false,
       expiresAt,
       createdAt: new Date().toISOString(),
+      ...(bannerImageUri ? { bannerImageUri } : {}),
     };
 
     dispatch({ type: "ADD_GIFT_CARD", payload: newCard });
     syncToDb({ type: "ADD_GIFT_CARD", payload: newCard });
     resetForm();
-  }, [selectedServiceIds, selectedProductIds, recipientName, recipientPhone, message, expiresInDays, totalValue, dispatch, syncToDb, resetForm]);
+  }, [selectedServiceIds, selectedProductIds, recipientName, recipientPhone, message, expiresInDays, totalValue, bannerImageUri, dispatch, syncToDb, resetForm]);
 
   const handleRedeem = useCallback(
     (card: GiftCard) => {
@@ -590,6 +631,46 @@ export default function GiftCardsScreen() {
         placeholderTextColor={colors.muted + "80"}
         multiline
       />
+
+      {/* Gift Card Banner Image */}
+      <Text style={[styles.fieldLabel, { color: colors.muted }]}>Banner Image (Optional)</Text>
+      {bannerImageUri ? (
+        <View style={{ marginBottom: 8 }}>
+          <Image
+            source={{ uri: bannerImageUri }}
+            style={{ width: "100%", height: 140, borderRadius: 10, backgroundColor: colors.border }}
+            contentFit="cover"
+          />
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 6 }}>
+            <Pressable
+              onPress={pickBannerImage}
+              style={({ pressed }) => [{ flex: 1, backgroundColor: colors.primary + "18", borderRadius: 8, paddingVertical: 8, alignItems: "center", borderWidth: 1, borderColor: colors.primary + "40" }, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 13 }}>Change</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setBannerImageUri(undefined)}
+              style={({ pressed }) => [{ flex: 1, backgroundColor: colors.error + "15", borderRadius: 8, paddingVertical: 8, alignItems: "center", borderWidth: 1, borderColor: colors.error + "40" }, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={{ color: colors.error, fontWeight: "600", fontSize: 13 }}>Remove</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : (
+        <Pressable
+          onPress={pickBannerImage}
+          style={({ pressed }) => [{ height: 100, borderRadius: 10, borderWidth: 1.5, borderStyle: "dashed", borderColor: colors.border, alignItems: "center", justifyContent: "center", backgroundColor: colors.background, marginBottom: 8, gap: 6 }, pressed && { opacity: 0.7 }]}
+        >
+          {uploadingBanner ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <>
+              <IconSymbol name="photo.badge.plus" size={24} color={colors.muted} />
+              <Text style={{ color: colors.muted, fontSize: 13 }}>Tap to upload a banner image</Text>
+            </>
+          )}
+        </Pressable>
+      )}
 
       {/* Expires In */}
       <Text style={[styles.fieldLabel, { color: colors.muted }]}>Expires In (days)</Text>

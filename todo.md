@@ -1957,3 +1957,9 @@
 - [x] Gift data clarification — strip GIFT_DATA blob from visible message, show clean data in UI
 - [x] Balance Credit gift type — business can set a dollar amount gift (no specific service), client can apply it to any service at checkout
 - [x] Gift code entry UI in booking wizard promo step — client can enter gift certificate code to apply to booking
+
+## Phase: Branding, Gift & Package Enhancements (May 2026 Session 2)
+- [x] Splash screen fix — rebuilt AnimatedSplash with branded logo, app name "Lime Of Time", tagline, and smooth fade-in animation; navigates to Portal Selector after animation
+- [x] Gift card image upload — business can upload a custom banner image when creating gift cards; banner shown on client home screen gift cards and confirmation screen
+- [x] Package expiry reminder — in-app warning banner on client home screen when package expires within 7 days; amber border highlight and "Expires in X days" message
+- [x] Balance gift partial redemption display — Promo step shows remaining balance after applying a balance-type gift code ("Using $X.XX — $Y.YY balance remaining")

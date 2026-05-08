@@ -181,6 +181,8 @@ export interface GiftCard {
   preselectedTime?: string;
   /** "service" for specific service gifts, "balance" for dollar credit gifts */
   giftType?: "service" | "balance";
+  /** Optional banner image URI shown on gift confirmation and client home screen */
+  bannerImageUri?: string;
 }
 
 export interface Product {

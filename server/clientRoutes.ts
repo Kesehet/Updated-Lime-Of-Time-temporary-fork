@@ -1219,11 +1219,13 @@ export function registerClientRoutes(app: Express) {
         const giftDataMatch = rawMsg.match(/\n---GIFT_DATA---\n(.+)$/s);
         let remainingBalance: number | null = null;
         let giftType: string = "service";
+        let bannerImageUri: string | null = null;
         if (giftDataMatch) {
           try {
             const meta = JSON.parse(giftDataMatch[1]);
             remainingBalance = meta.remainingBalance ?? meta.originalValue ?? null;
             giftType = meta.giftType ?? "service";
+            bannerImageUri = meta.bannerImageUri ?? null;
           } catch {}
         }
         const cleanMessage = rawMsg.replace(/\n---GIFT_DATA---\n.+$/s, "").trim() || null;
@@ -1245,6 +1247,7 @@ export function registerClientRoutes(app: Express) {
           giftType,
           paymentStatus: card.paymentStatus || "unpaid",
           createdAt: card.createdAt,
+          bannerImageUri,
         };
       }));
       res.json(result);

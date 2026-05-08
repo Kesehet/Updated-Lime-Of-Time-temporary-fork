@@ -57,6 +57,7 @@ interface GiftCertificate {
   giftType: string;
   paymentStatus: string;
   createdAt: string;
+  bannerImageUri?: string | null;
 }
 interface ClientPackage {
   localId: string;
@@ -394,8 +395,24 @@ export default function ClientHomeScreen() {
                 const isExpiredPkg = pkg.status === "expired" || (pkg.expiresAt ? new Date(pkg.expiresAt + "T23:59:59") < new Date() : false);
                 const pkgStatusLabel = isComplete ? "✓ Complete" : isExpiredPkg ? "Expired" : "Active";
                 const pkgStatusColor = isComplete ? "#22C55E" : isExpiredPkg ? "#F87171" : GREEN_ACCENT;
+                // Expiry reminder: warn if expiring within 7 days and not yet expired/complete
+                const daysUntilExpiry = pkg.expiresAt && !isExpiredPkg && !isComplete
+                  ? Math.ceil((new Date(pkg.expiresAt + "T23:59:59").getTime() - Date.now()) / 86400000)
+                  : null;
+                const showExpiryWarning = daysUntilExpiry !== null && daysUntilExpiry <= 7 && daysUntilExpiry >= 0;
                 return (
-                  <View key={pkg.localId} style={{ backgroundColor: isExpiredPkg ? "rgba(255,255,255,0.04)" : CARD_BG, borderRadius: 16, borderWidth: 1, borderColor: isExpiredPkg ? "rgba(248,113,113,0.25)" : CARD_BORDER, padding: 16, marginBottom: 12, gap: 12 }}>
+                  <View key={pkg.localId} style={{ backgroundColor: isExpiredPkg ? "rgba(255,255,255,0.04)" : CARD_BG, borderRadius: 16, borderWidth: 1, borderColor: isExpiredPkg ? "rgba(248,113,113,0.25)" : showExpiryWarning ? "rgba(251,191,36,0.40)" : CARD_BORDER, padding: 16, marginBottom: 12, gap: 12 }}>
+                    {/* Expiry warning banner */}
+                    {showExpiryWarning && (
+                      <View style={{ backgroundColor: "rgba(251,191,36,0.15)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <Text style={{ fontSize: 14 }}>⚠️</Text>
+                        <Text style={{ color: "#FBBF24", fontSize: 12, fontWeight: "600", flex: 1 }}>
+                          {daysUntilExpiry === 0
+                            ? "Expires today! Book your remaining sessions."
+                            : `Expires in ${daysUntilExpiry} day${daysUntilExpiry === 1 ? "" : "s"} — use your remaining sessions soon.`}
+                        </Text>
+                      </View>
+                    )}
                     {/* Header row */}
                     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                       <View style={{ flex: 1, gap: 2 }}>
@@ -474,6 +491,14 @@ export default function ClientHomeScreen() {
                       gap: 10,
                     }}
                   >
+                    {/* Banner image (if present) */}
+                    {gift.bannerImageUri ? (
+                      <Image
+                        source={{ uri: gift.bannerImageUri }}
+                        style={{ width: "100%", height: 110, borderRadius: 10, marginBottom: 2 }}
+                        resizeMode="cover"
+                      />
+                    ) : null}
                     {/* Header row */}
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                       <View style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: GREEN_ACCENT + "25", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
