@@ -38,6 +38,7 @@ import { ClientPortalBackground } from "@/components/client-portal-background";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { getCategoryDef, ALL_CATEGORY } from "@/constants/categories";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LIME_GREEN = "#4A7C59";
 // ─── Portal palette (same as business detail) ────────────────────────────────
@@ -414,7 +415,14 @@ export default function ClientBookingWizardScreen() {
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
   const handleBack = () => {
-    if (step === 0) { router.back(); return; }
+    if (step === 0) {
+      // If wizard was started from a gift card, signal the home screen to scroll to gifts on return
+      if (preGiftCode) {
+        AsyncStorage.setItem("scroll_to_gifts_on_focus", "1").catch(() => {});
+      }
+      router.back();
+      return;
+    }
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setStep((s) => Math.max(s - 1, 0));
   };

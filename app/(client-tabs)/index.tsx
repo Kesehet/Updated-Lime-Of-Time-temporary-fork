@@ -153,6 +153,9 @@ export default function ClientHomeScreen() {
   const [reviewPromptAppt, setReviewPromptAppt] = useState<ClientAppointment | null>(null);
   const [myGifts, setMyGifts] = useState<GiftCertificate[]>([]);
   const [myPackages, setMyPackages] = useState<ClientPackage[]>([]);
+  // Scroll-to-gifts: ref to the main ScrollView and the Y position of the gifts section
+  const scrollRef = useRef<ScrollView>(null);
+  const giftsYRef = useRef<number>(0);
 
   const isSignedIn = !!state.account;
 
@@ -210,6 +213,20 @@ export default function ClientHomeScreen() {
   }, [isSignedIn, apiCall, dispatch]);
 
   useFocusEffect(useCallback(() => { loadData(true); }, [loadData]));
+
+  // When returning from booking wizard started via a gift card, scroll to the gifts section
+  useFocusEffect(useCallback(() => {
+    AsyncStorage.getItem("scroll_to_gifts_on_focus").then((val) => {
+      if (val === "1") {
+        AsyncStorage.removeItem("scroll_to_gifts_on_focus");
+        // Small delay to let the screen fully render before scrolling
+        setTimeout(() => {
+          scrollRef.current?.scrollTo({ y: giftsYRef.current, animated: true });
+        }, 350);
+      }
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []));
 
   const onRefresh = () => { setRefreshing(true); loadData(); };
 
@@ -274,6 +291,7 @@ export default function ClientHomeScreen() {
     <Animated.View style={[{ flex: 1, backgroundColor: GREEN_DARK }, screenSlideStyle]}>
       <ClientPortalBackground />
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ paddingBottom: 32, paddingTop: insets.top }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN_ACCENT} />}
       >
@@ -471,7 +489,10 @@ export default function ClientHomeScreen() {
 
           {/* My Gift Certificates */}
           {myGifts.length > 0 && (
-            <View style={[styles.section, { marginBottom: 0 }]}>
+            <View
+              style={[styles.section, { marginBottom: 0 }]}
+              onLayout={(e) => { giftsYRef.current = e.nativeEvent.layout.y; }}
+            >
               <View style={[styles.sectionHeader, { marginBottom: 16 }]}>
                 <Text style={styles.sectionTitle}>🎁 My Gift Certificates</Text>
               </View>

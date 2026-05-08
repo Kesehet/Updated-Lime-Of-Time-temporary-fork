@@ -1971,3 +1971,9 @@
 - [x] Pass serviceLocalId (or preServiceName fallback) + preGiftCode to booking wizard on tap
 - [x] Auto-validate gift code when client reaches Promo step (no manual Apply needed)
 - [x] Update "How to use" instructions to reflect new tap-to-book flow
+
+## Phase: Back-to-Gift Navigation Shortcut (May 2026 Session 4)
+- [x] Write scroll_to_gifts_on_focus flag to AsyncStorage when back is pressed from gift-started wizard
+- [x] On client home screen focus, check AsyncStorage flag and scroll to the gift certificates section
+- [x] Capture gifts section Y position via onLayout for accurate scroll target
+- [x] Smooth animated scroll with 350ms delay to let screen render first
