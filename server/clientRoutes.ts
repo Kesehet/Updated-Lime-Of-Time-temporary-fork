@@ -1372,11 +1372,11 @@ export function registerClientRoutes(app: Express) {
         // Mark all unredeemed gift cards for this business that match the appointment's client as redeemed
         // This is a simplified approach - in production, store giftCode on appointment
         await dbase.update(gcTable)
-          .set({ redeemed: true, redeemedAt: new Date(), pendingRedemptionAppointmentId: appointmentId } as any)
+          .set({ redeemed: true, redeemedAt: new Date(), pendingRedemptionAppointmentId: appointmentId })
           .where(andGc(
             eqGc(gcTable.businessOwnerId, owner.id),
             eqGc(gcTable.redeemed, false),
-            eqGc((gcTable as any).pendingRedemptionAppointmentId, appointmentId)
+            eqGc(gcTable.pendingRedemptionAppointmentId, appointmentId)
           ));
       }
       res.json({ success: true, message: "Gift certificate marked as redeemed" });

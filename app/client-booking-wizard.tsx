@@ -410,7 +410,7 @@ export default function ClientBookingWizardScreen() {
       try {
         const pkgCheckRes = await fetch(`${apiBase}/api/client/my-packages/${packageLocalId}/use-session`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.token}` },
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
           body: JSON.stringify({ dryRun: true }),
         });
         if (!pkgCheckRes.ok) {
@@ -503,7 +503,7 @@ export default function ClientBookingWizardScreen() {
       if (packageLocalId) {
         fetch(`${apiBase}/api/client/my-packages/${packageLocalId}/use-session`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.token}` },
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
           body: JSON.stringify({ appointmentId }),
         }).catch(() => {});
       }

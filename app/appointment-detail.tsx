@@ -2,6 +2,7 @@ import { Text, View, Pressable, StyleSheet, ScrollView, Alert, Platform, Linking
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, formatTime, formatDateDisplay } from "@/lib/store";
+import { getSessionToken } from "@/lib/_core/auth";
 import { useColors } from "@/hooks/use-colors";
 import { useResponsive } from "@/hooks/use-responsive";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -798,10 +799,10 @@ Would you also like to charge a no-show fee via Stripe?`,
   const handleConfirmGiftRedemption = async () => {
     if (!appointment || !appointment.id) return;
     try {
-      const token = state.token;
+      const token = await getSessionToken();
       const res = await fetch('/api/business/confirm-gift-redemption', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
         body: JSON.stringify({ appointmentId: appointment.id }),
       });
       if (!res.ok) throw new Error('Failed to confirm redemption');
