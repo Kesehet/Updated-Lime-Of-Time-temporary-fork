@@ -350,31 +350,45 @@ export default function ClientHomeScreen() {
                 onPress={() => router.push({ pathname: "/client-booking-wizard", params: { slug: lastCompleted.businessSlug, preServiceName: lastCompleted.serviceName } } as any)}
                 style={{ marginBottom: 12 }}
               >
-                <View style={[styles.apptCard, { backgroundColor: GREEN_ACCENT + "18", borderRadius: 14, borderWidth: 1, borderColor: GREEN_ACCENT + "40", overflow: "hidden", padding: 0 }]}>
-                  {/* Service photo banner */}
-                  {(lastCompleted as any).servicePhotoUri ? (
-                    <Image
-                      source={{ uri: (lastCompleted as any).servicePhotoUri }}
-                      style={{ width: "100%", height: 90, borderTopLeftRadius: 14, borderTopRightRadius: 14 }}
-                      resizeMode="cover"
-                    />
-                  ) : (lastCompleted as any).businessLogoUri ? (
-                    <View style={{ width: "100%", height: 90, backgroundColor: GREEN_ACCENT + "18", alignItems: "center", justifyContent: "center", borderTopLeftRadius: 14, borderTopRightRadius: 14 }}>
-                      <Image source={{ uri: (lastCompleted as any).businessLogoUri }} style={{ width: 56, height: 56, borderRadius: 14 }} resizeMode="cover" />
-                    </View>
-                  ) : null}
-                  <View style={{ flexDirection: "row", alignItems: "center", padding: 12, gap: 8 }}>
-                    <View style={[styles.apptAccent, { backgroundColor: GREEN_ACCENT, alignSelf: "stretch", marginLeft: 0 }]} />
-                    <View style={styles.apptLeft}>
-                      <Text style={[styles.apptService, { color: GREEN_ACCENT }]}>{lastCompleted.serviceName}</Text>
-                      <Text style={[styles.apptBusiness, { color: TEXT_MUTED }]}>{lastCompleted.businessName}</Text>
-                      <Text style={[styles.apptDate, { color: TEXT_MUTED }]}>Last visited {formatDate(lastCompleted.date)}</Text>
-                    </View>
-                    <View style={{ justifyContent: "center", paddingRight: 4 }}>
-                      <View style={{ backgroundColor: GREEN_ACCENT, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 }}>
-                        <Text style={{ color: "#1A3A28", fontWeight: "700", fontSize: 13 }}>Book Again</Text>
-                      </View>
-                    </View>
+                {/* Clean horizontal card: logo | text | button */}
+                <View style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: GREEN_ACCENT + "18",
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: GREEN_ACCENT + "40",
+                  padding: 14,
+                  gap: 12,
+                }}>
+                  {/* Business logo */}
+                  <View style={{
+                    width: 56, height: 56, borderRadius: 14,
+                    backgroundColor: GREEN_ACCENT + "30",
+                    alignItems: "center", justifyContent: "center",
+                    overflow: "hidden", flexShrink: 0,
+                  }}>
+                    {(lastCompleted as any).businessLogoUri ? (
+                      <Image source={{ uri: (lastCompleted as any).businessLogoUri }} style={{ width: 56, height: 56 }} resizeMode="cover" />
+                    ) : (
+                      <Text style={{ fontSize: 24 }}>🏢</Text>
+                    )}
+                  </View>
+                  {/* Text block */}
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }} numberOfLines={1}>{lastCompleted.businessName}</Text>
+                    <Text style={{ color: GREEN_ACCENT, fontWeight: "600", fontSize: 13 }} numberOfLines={1}>{lastCompleted.serviceName}</Text>
+                    <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Last visited {formatDate(lastCompleted.date)}</Text>
+                  </View>
+                  {/* Book Again pill */}
+                  <View style={{
+                    backgroundColor: GREEN_ACCENT,
+                    borderRadius: 22,
+                    paddingHorizontal: 14,
+                    paddingVertical: 9,
+                    flexShrink: 0,
+                  }}>
+                    <Text style={{ color: "#1A3A28", fontWeight: "800", fontSize: 13 }}>Book{'\n'}Again</Text>
                   </View>
                 </View>
               </AnimCard>

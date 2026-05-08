@@ -196,14 +196,17 @@ export default function ClientBookingWizardScreen() {
           const found = svcList.find((s) => s.localId === serviceLocalId);
           if (found) {
             setSelectedService(found);
-            setStep(1);
+            // Stay on step 0 (service selection) so the user always sees the service step
+            // and can confirm or change their selection before proceeding
+            setStep(0);
           }
         } else if (preServiceName) {
           // Book Again: pre-select service by name (case-insensitive match)
           const found = svcList.find((s) => s.name.toLowerCase() === String(preServiceName).toLowerCase());
           if (found) {
             setSelectedService(found);
-            setStep(1); // skip service step, go to staff
+            // Stay on step 0 so user can confirm the service before continuing
+            setStep(0);
           }
         }
         // Pre-select staff from "Book with [Name]" on business detail

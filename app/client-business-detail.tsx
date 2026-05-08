@@ -245,7 +245,7 @@ export default function ClientBusinessDetailScreen() {
   ];
 
   return (
-    <ScreenContainer>
+    <ScreenContainer containerClassName="bg-[#1A3A28]">
       <ClientPortalBackground />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
 

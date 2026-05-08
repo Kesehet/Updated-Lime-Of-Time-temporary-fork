@@ -1933,3 +1933,7 @@
 - [x] Client detail: add Call button (Linking tel:), edge-to-edge button row, haptics on all action buttons
 - [x] Client detail: show "Add phone to unlock Call & Message" hint when client has no phone
 - [x] Fix crash in client-booking-wizard.tsx: null serviceIds on discounts causing crash after cash payment
+- [x] Booking wizard: always start at service selection (not staff) regardless of pre-selected service
+- [x] Booking wizard service step: category filter pills already implemented (verified)
+- [x] Business detail hero: extend banner image to fill blue gap at top (no color gap above photo)
+- [x] Client home Book Again card: show business logo + name + last service + last visited + Book Again button
