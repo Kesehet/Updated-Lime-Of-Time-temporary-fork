@@ -510,10 +510,14 @@ export default function ClientHomeScreen() {
                   router.push({ pathname: "/client-booking-wizard", params } as any);
                 };
                 return (
-                  <AnimCard
+                  <Pressable
                     key={gift.localId}
                     onPress={handleRedeemGift}
-                    style={{ marginBottom: 12 }}
+                    style={({ pressed }) => ({
+                      marginBottom: 12,
+                      opacity: pressed && canRedeem ? 0.88 : 1,
+                      transform: [{ scale: pressed && canRedeem ? 0.985 : 1 }],
+                    })}
                   >
                   <View
                     style={{
@@ -611,7 +615,7 @@ export default function ClientHomeScreen() {
                       </View>
                     )}
                   </View>
-                  </AnimCard>
+                  </Pressable>
                 );
               })}
             </View>
