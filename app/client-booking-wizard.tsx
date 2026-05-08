@@ -23,6 +23,7 @@ import {
   Platform,
   Modal,
   TouchableOpacity,
+  Linking,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -34,6 +35,7 @@ import { scheduleAppointmentReminders } from "@/lib/notifications";
 import * as Haptics from "expo-haptics";
 import { ClientPortalBackground } from "@/components/client-portal-background";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { getCategoryDef, ALL_CATEGORY } from "@/constants/categories";
 
 const LIME_GREEN = "#4A7C59";
@@ -123,6 +125,7 @@ export default function ClientBookingWizardScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const [selectedService, setSelectedService] = useState<PublicService | null>(null);
+  const [selectedServices, setSelectedServices] = useState<PublicService[]>([]);
   const [selectedStaffId, setSelectedStaffId] = useState<string>("any");
   const [selectedLocation, setSelectedLocation] = useState<PublicLocation | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -600,13 +603,19 @@ export default function ClientBookingWizardScreen() {
                   key={svc.localId}
                   style={({ pressed }) => [
                     s.optionCard,
-                    { backgroundColor: CARD_BG, borderColor: selectedService?.localId === svc.localId ? LIME_GREEN : CARD_BORDER, padding: 0, overflow: "hidden", flexDirection: "column", alignItems: "stretch" },
-                    selectedService?.localId === svc.localId && { borderWidth: 2 },
+                    { backgroundColor: CARD_BG, borderColor: selectedServices.some((s) => s.localId === svc.localId) ? LIME_GREEN : CARD_BORDER, padding: 0, overflow: "hidden", flexDirection: "column", alignItems: "stretch" },
+                    selectedServices.some((s) => s.localId === svc.localId) && { borderWidth: 2 },
                     pressed && { opacity: 0.85 },
                   ]}
                   onPress={() => {
                     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setSelectedService(svc);
+                    const isSelected = selectedServices.some((s) => s.localId === svc.localId);
+                    const updated = isSelected
+                      ? selectedServices.filter((s) => s.localId !== svc.localId)
+                      : [...selectedServices, svc];
+                    setSelectedServices(updated);
+                    // Keep selectedService as the first selected for backward compat
+                    setSelectedService(updated.length > 0 ? updated[0] : null);
                     setSelectedStaffId("any");
                     setSelectedDate(null);
                     setSelectedSlot(null);
@@ -627,7 +636,13 @@ export default function ClientBookingWizardScreen() {
                         style={{ width: "100%", height: 130, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
                         contentFit="cover"
                       />
-                      <View style={{ position: "absolute", bottom: 8, right: 8, backgroundColor: "rgba(0,0,0,0.50)", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      {/* Dark gradient overlay at bottom for readability */}
+                      <LinearGradient
+                        colors={["transparent", "rgba(0,0,0,0.55)"]}
+                        style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 60, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
+                        pointerEvents="none"
+                      />
+                      <View style={{ position: "absolute", bottom: 8, right: 8, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, flexDirection: "row", alignItems: "center", gap: 4 }}>
                         <IconSymbol name="arrow.up.left.and.arrow.down.right" size={11} color="#FFFFFF" />
                         <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "600" }}>Preview</Text>
                       </View>
@@ -651,11 +666,11 @@ export default function ClientBookingWizardScreen() {
                       {svc.description ? <Text style={[s.optionDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{svc.description}</Text> : null}
                       <Text style={[s.optionMeta, { color: LIME_GREEN }]}>{svc.duration} min · {formatPrice(svc.price)}</Text>
                     </View>
-                    {selectedService?.localId === svc.localId && (
-                      <View style={[s.checkCircle, { backgroundColor: LIME_GREEN, flexShrink: 0 }]}>
+                    <View style={[s.checkCircle, { flexShrink: 0, backgroundColor: selectedServices.some((s) => s.localId === svc.localId) ? LIME_GREEN : "rgba(255,255,255,0.12)", borderWidth: selectedServices.some((s) => s.localId === svc.localId) ? 0 : 1.5, borderColor: "rgba(255,255,255,0.30)" }]}>
+                      {selectedServices.some((s) => s.localId === svc.localId) && (
                         <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
-                      </View>
-                    )}
+                      )}
+                    </View>
                   </View>
                 </Pressable>
               ))}
@@ -663,6 +678,27 @@ export default function ClientBookingWizardScreen() {
           );
         })()}
 
+            {/* Selected services summary bar */}
+            {selectedServices.length > 0 && (
+              <View style={{ marginTop: 8, backgroundColor: "rgba(74,124,89,0.18)", borderRadius: 12, borderWidth: 1, borderColor: `${LIME_GREEN}40`, padding: 12, gap: 6 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+                  <Text style={{ color: LIME_GREEN, fontSize: 13, fontWeight: "700" }}>
+                    {selectedServices.length} service{selectedServices.length > 1 ? "s" : ""} selected
+                  </Text>
+                  <Text style={{ color: LIME_GREEN, fontSize: 13, fontWeight: "700" }}>
+                    {formatPrice(
+                      selectedServices.reduce((sum, s) => sum + (s.price ? parseFloat(s.price) : 0), 0).toFixed(2)
+                    )}
+                  </Text>
+                </View>
+                {selectedServices.map((s) => (
+                  <View key={s.localId} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    <Text style={{ color: TEXT_PRIMARY, fontSize: 13, flex: 1 }} numberOfLines={1}>{s.name}</Text>
+                    <Text style={{ color: TEXT_MUTED, fontSize: 12, marginLeft: 8 }}>{s.duration} min · {formatPrice(s.price)}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
         {/* Step 1: Staff */}
         {step === STEP_STAFF && (
           <View style={s.stepContent}>
@@ -752,10 +788,26 @@ export default function ClientBookingWizardScreen() {
                 <View style={s.optionLeft}>
                   <Text style={[s.optionName, { color: TEXT_PRIMARY }]}>{loc.name}</Text>
                   {loc.address ? (
-                    <Text style={[s.optionDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{loc.address}</Text>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        const encoded = encodeURIComponent(loc.address);
+                        const url = Platform.OS === "ios"
+                          ? `maps://maps.apple.com/?q=${encoded}`
+                          : `https://maps.google.com/?q=${encoded}`;
+                        Linking.openURL(url).catch(() => Linking.openURL(`https://maps.google.com/?q=${encoded}`));
+                      }}
+                    >
+                      <Text style={[s.optionDesc, { color: TEXT_MUTED, textDecorationLine: "underline" }]} numberOfLines={2}>{loc.address}</Text>
+                    </TouchableOpacity>
                   ) : null}
                   {loc.phone ? (
-                    <Text style={[s.optionMeta, { color: LIME_GREEN }]}>{formatPhone(loc.phone)}</Text>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => Linking.openURL(`tel:${loc.phone.replace(/\D/g, "")}`)}
+                    >
+                      <Text style={[s.optionMeta, { color: LIME_GREEN, textDecorationLine: "underline" }]}>{formatPhone(loc.phone)}</Text>
+                    </TouchableOpacity>
                   ) : null}
                 </View>
                 {selectedLocation?.localId === loc.localId && (
@@ -1253,7 +1305,7 @@ function canProceed(
   paymentMethod?: string | null,
   paymentConfirmationNumber?: string
 ): boolean {
-  if (step === STEP_SERVICE) return selectedService != null;
+  if (step === STEP_SERVICE) return selectedService != null || selectedServices.length > 0;
   if (step === STEP_STAFF) return selectedStaffId !== undefined;
   if (showLocationStep && step === STEP_LOCATION) return selectedLocation != null;
   // Date and Time are merged — require both a date AND a time slot to proceed
