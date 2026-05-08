@@ -28,6 +28,8 @@ import { useClientStore, ClientAppointment } from "@/lib/client-store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import * as Calendar from "expo-calendar";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
 const GREEN_ACCENT = "#8FBF6A";
@@ -140,6 +142,59 @@ export default function ClientAppointmentDetailScreen() {
     }
   }, [appt, id, reviewRating, reviewComment, apiCall]);
 
+  const handleAddToCalendar = async () => {
+    try {
+      if (Platform.OS === "web") {
+        Alert.alert("Not supported", "Calendar integration is not available on web.");
+        return;
+      }
+      const { status } = await Calendar.requestCalendarPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission needed", "Please allow calendar access to add this appointment.");
+        return;
+      }
+      // Build start/end dates
+      const [year, month, day] = appt.date.split("-").map(Number);
+      const [hourStr, minuteStr] = appt.time.replace(/[AP]M/i, "").trim().split(":");
+      let hour = parseInt(hourStr, 10);
+      const minute = parseInt(minuteStr ?? "0", 10);
+      if (appt.time.toLowerCase().includes("pm") && hour !== 12) hour += 12;
+      if (appt.time.toLowerCase().includes("am") && hour === 12) hour = 0;
+      const startDate = new Date(year, month - 1, day, hour, minute);
+      const endDate = new Date(startDate.getTime() + (appt.duration ?? 60) * 60 * 1000);
+      // Get default calendar
+      let calendarId: string;
+      if (Platform.OS === "ios") {
+        const defaultCal = await Calendar.getDefaultCalendarAsync();
+        calendarId = defaultCal.id;
+      } else {
+        const cals = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+        const primary = cals.find(c => c.isPrimary) ?? cals[0];
+        if (!primary) { Alert.alert("No calendar", "No calendar found on this device."); return; }
+        calendarId = primary.id;
+      }
+      const notes = [
+        appt.staffName ? `Staff: ${appt.staffName}` : null,
+        appt.locationName ? `Location: ${appt.locationName}` : null,
+        appt.locationAddress ? appt.locationAddress : null,
+        (appt as any).locationPhone ? `Phone: ${(appt as any).locationPhone}` : null,
+      ].filter(Boolean).join("\n");
+      await Calendar.createEventAsync(calendarId, {
+        title: `${appt.serviceName} @ ${appt.businessName}`,
+        startDate,
+        endDate,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        location: appt.locationAddress ?? undefined,
+        notes: notes || undefined,
+        alarms: [{ relativeOffset: -60 }, { relativeOffset: -1440 }],
+      });
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Added!", `"${appt.serviceName}" has been added to your calendar with reminders.`);
+    } catch (err: any) {
+      console.warn("[Calendar]", err);
+      Alert.alert("Error", "Could not add to calendar. Please try again.");
+    }
+  };
   const handleCancelRequest = () => {
     Alert.alert(
       "Request Cancellation",
@@ -256,7 +311,7 @@ export default function ClientAppointmentDetailScreen() {
             <InfoRow icon="hourglass" label="Duration" value={`${appt.duration} min`} />
           ) : null}
           {appt.staffName ? (
-            <InfoRow icon="person.fill" label="Staff" value={appt.staffName} />
+            <StaffRow name={appt.staffName} avatarUrl={appt.staffAvatarUrl ?? null} />
           ) : null}
           {appt.totalPrice != null ? (
             <InfoRow
@@ -390,6 +445,16 @@ export default function ClientAppointmentDetailScreen() {
             </Pressable>
           )}
 
+          {/* Add to Calendar */}
+          {(appt.status === "confirmed" || appt.status === "pending") && (
+            <Pressable
+              style={({ pressed }) => [styles.actionBtn, { backgroundColor: "rgba(143,191,106,0.12)", borderColor: "rgba(143,191,106,0.3)", borderWidth: 1 }, pressed && { opacity: 0.85 }]}
+              onPress={handleAddToCalendar}
+            >
+              <IconSymbol name="calendar.badge.plus" size={18} color={GREEN_ACCENT} />
+              <Text style={[styles.actionBtnText, { color: GREEN_ACCENT }]}>Add to Calendar</Text>
+            </Pressable>
+          )}
           {/* View Business */}
           {appt.businessSlug ? (
             <Pressable
@@ -529,6 +594,24 @@ export default function ClientAppointmentDetailScreen() {
   );
 }
 
+function StaffRow({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
+  const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  return (
+    <View style={[infoStyles.row, { alignItems: "center" }]}>
+      <View style={{ width: 36, height: 36, borderRadius: 18, overflow: "hidden", marginRight: 12, backgroundColor: "rgba(143,191,106,0.18)", alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: "rgba(143,191,106,0.35)" }}>
+        {avatarUrl ? (
+          <Image source={{ uri: avatarUrl }} style={{ width: 36, height: 36 }} contentFit="cover" />
+        ) : (
+          <Text style={{ fontSize: 13, fontWeight: "700", color: "#8FBF6A" }}>{initials}</Text>
+        )}
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={infoStyles.label}>Staff</Text>
+        <Text style={infoStyles.value}>{name}</Text>
+      </View>
+    </View>
+  );
+}
 function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <View style={infoStyles.row}>

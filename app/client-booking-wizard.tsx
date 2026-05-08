@@ -471,6 +471,7 @@ export default function ClientBookingWizardScreen() {
         params: {
           serviceName: selectedService.name,
           staffName: selectedStaffMember?.name ?? "",
+          staffAvatarUrl: selectedStaffMember?.photoUri ?? "",
           locationName: selectedLocation?.name ?? "",
           locationAddress: selectedLocation?.address ?? "",
           locationPhone: selectedLocation?.phone ?? "",

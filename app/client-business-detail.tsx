@@ -7,6 +7,7 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   View, Text, ScrollView, Pressable, StyleSheet, TextInput,
   ActivityIndicator, Alert, Platform, Linking, Dimensions, FlatList, Modal,
+  NativeScrollEvent, NativeSyntheticEvent,
 } from "react-native";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -131,6 +132,7 @@ export default function ClientBusinessDetailScreen() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [serviceLightboxUri, setServiceLightboxUri] = useState<string | null>(null);
   const [logoPreviewVisible, setLogoPreviewVisible] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
   const [expandedStaffId, setExpandedStaffId] = useState<string | null>(null);
 
   const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -255,13 +257,23 @@ export default function ClientBusinessDetailScreen() {
   return (
     <ScreenContainer containerClassName="bg-[#1A3A28]">
       <ClientPortalBackground />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={(e: NativeSyntheticEvent<NativeScrollEvent>) => setScrollY(e.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={16}
+      >
 
-        {/* ── Header Bar (no background image) ── */}
-        <View style={[s.banner, { backgroundColor: "transparent", overflow: "visible" }]}>
+        {/* ── Header Bar ── */}
+        <View style={[s.banner, { backgroundColor: scrollY > 120 ? "rgba(13,35,24,0.95)" : "transparent", overflow: "visible" }]}>
           <Pressable style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]} onPress={() => router.back()}>
             <IconSymbol name="chevron.left" size={20} color="#FFFFFF" />
           </Pressable>
+          {scrollY > 120 && business?.businessName ? (
+            <Text numberOfLines={1} style={{ flex: 1, textAlign: "center", color: "#FFFFFF", fontSize: 16, fontWeight: "700", marginHorizontal: 8 }}>
+              {business.businessName}
+            </Text>
+          ) : <View style={{ flex: 1 }} />}
           <Pressable style={({ pressed }) => [s.saveBtn, pressed && { opacity: 0.7 }]} onPress={handleToggleSave} disabled={savingToggle}>
             <IconSymbol name={isSaved ? "bookmark.fill" : "bookmark"} size={20} color="#FFFFFF" />
           </Pressable>
@@ -269,15 +281,23 @@ export default function ClientBusinessDetailScreen() {
 
         {/* ── Business Info ── */}
         <View style={s.infoSection}>
-          <Pressable
-            style={({ pressed }) => [s.logoCircle, { backgroundColor: `${LIME_GREEN}30`, borderColor: PORTAL_BG }, pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] }]}
-            onPress={() => { if (logoUri) { if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setLogoPreviewVisible(true); } }}
-            accessibilityLabel="View business logo"
-          >
-            {logoUri
-              ? <Image source={{ uri: logoUri }} style={{ width: 66, height: 66, borderRadius: 33 }} contentFit="cover" />
-              : <Image source={require("../assets/images/icon.png")} style={{ width: 66, height: 66, borderRadius: 33 }} contentFit="cover" />}
-          </Pressable>
+          <View style={{ alignItems: "center" }}>
+            <Pressable
+              style={({ pressed }) => [s.logoCircle, { backgroundColor: `${LIME_GREEN}30`, borderColor: PORTAL_BG }, pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] }]}
+              onPress={() => { if (logoUri) { if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setLogoPreviewVisible(true); } }}
+              accessibilityLabel="View business logo"
+            >
+              {logoUri
+                ? <Image source={{ uri: logoUri }} style={{ width: 66, height: 66, borderRadius: 33 }} contentFit="cover" />
+                : <Image source={require("../assets/images/icon.png")} style={{ width: 66, height: 66, borderRadius: 33 }} contentFit="cover" />}
+            </Pressable>
+            {logoUri ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 4, backgroundColor: "rgba(0,0,0,0.35)", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 }}>
+                <IconSymbol name="magnifyingglass" size={9} color="rgba(255,255,255,0.7)" />
+                <Text style={{ fontSize: 9, color: "rgba(255,255,255,0.7)", fontWeight: "600" }}>Tap to preview</Text>
+              </View>
+            ) : null}
+          </View>
           <Text style={[s.bizName, { color: TEXT_PRIMARY }]}>{business.businessName}</Text>
           {category && <Text style={[s.bizCategory, { color: ACCENT }]}>{category}</Text>}
           {distanceMiles ? (

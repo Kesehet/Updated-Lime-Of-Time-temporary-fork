@@ -32,6 +32,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
 import * as Calendar from "expo-calendar";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
@@ -48,6 +49,7 @@ export default function ClientBookingConfirmationScreen() {
   const {
     serviceName,
     staffName,
+    staffAvatarUrl,
     date,
     time,
     duration,
@@ -60,6 +62,7 @@ export default function ClientBookingConfirmationScreen() {
   } = useLocalSearchParams<{
     serviceName: string;
     staffName?: string;
+    staffAvatarUrl?: string;
     date: string;
     time: string;
     duration: string;
@@ -238,7 +241,19 @@ export default function ClientBookingConfirmationScreen() {
           <View style={styles.card}>
             <SummaryRow icon="scissors" label="Service" value={serviceName ?? "—"} />
             {staffName ? (
-              <SummaryRow icon="person.fill" label="Staff" value={staffName} />
+              <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
+                <View style={{ width: 34, height: 34, borderRadius: 17, overflow: "hidden", backgroundColor: "rgba(143,191,106,0.18)", alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: "rgba(143,191,106,0.35)", marginRight: 10 }}>
+                  {staffAvatarUrl ? (
+                    <Image source={{ uri: staffAvatarUrl }} style={{ width: 34, height: 34 }} contentFit="cover" />
+                  ) : (
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: "#8FBF6A" }}>{staffName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()}</Text>
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 }}>Staff</Text>
+                  <Text style={{ fontSize: 15, color: "#FFFFFF", fontWeight: "500" }}>{staffName}</Text>
+                </View>
+              </View>
             ) : null}
             <SummaryRow icon="calendar" label="Date" value={formatDateDisplay(date ?? "")} />
             <SummaryRow icon="clock" label="Time" value={formatTime12(time ?? "")} />

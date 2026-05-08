@@ -25,6 +25,9 @@ import { ClientPortalBackground } from "@/components/client-portal-background";
 import { formatPhone } from "@/lib/utils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
+import { Image as ExpoImage } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppLockContext } from "@/lib/app-lock-provider";
 
@@ -211,6 +214,53 @@ export default function ClientProfileScreen() {
     );
   }
 
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const handlePickAvatar = async () => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission needed", "Please allow access to your photo library to change your profile photo.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const uri = result.assets[0].uri;
+    try {
+      setUploadingAvatar(true);
+      const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+      const filename = uri.split("/").pop() ?? "photo.jpg";
+      const ext = filename.split(".").pop()?.toLowerCase() ?? "jpg";
+      const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+      const { getApiBaseUrl } = await import("@/constants/oauth");
+      const apiBase = getApiBaseUrl();
+      const res = await fetch(`${apiBase}/api/client/upload-photo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${state.sessionToken}` },
+        body: JSON.stringify({ base64, mimeType }),
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json() as { url: string };
+      // Save to profile
+      const patchRes = await fetch(`${apiBase}/api/client/profile`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${state.sessionToken}` },
+        body: JSON.stringify({ profilePhotoUri: data.url }),
+      });
+      if (!patchRes.ok) throw new Error("Save failed");
+      const updated = await patchRes.json() as any;
+      dispatch({ type: "SET_ACCOUNT", payload: { ...state.account!, profilePhotoUri: data.url } });
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err) {
+      Alert.alert("Error", "Could not update profile photo. Please try again.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
   return (
     <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
       <ClientPortalBackground />
@@ -220,20 +270,36 @@ export default function ClientProfileScreen() {
       >
         {/* Profile Header */}
         <View style={styles.profileHeader}>
-          {state.account.profilePhotoUri ? (
-            <Image
-              source={{ uri: state.account.profilePhotoUri }}
-              style={[styles.avatar, { borderWidth: 2.5, borderColor: GREEN_ACCENT }]}
-            />
-          ) : (
-            <View style={styles.avatar}>
-              <Text style={styles.avatarInitial}>
-                {state.account.name
-                  ? state.account.name.charAt(0).toUpperCase()
-                  : (state.account.phone?.replace(/\D/g, "").slice(-10, -9) ?? "?").toUpperCase()}
-              </Text>
+          <Pressable
+            style={({ pressed }) => [{ position: "relative" }, pressed && { opacity: 0.85 }]}
+            onPress={handlePickAvatar}
+            disabled={uploadingAvatar}
+            accessibilityLabel="Change profile photo"
+          >
+            {state.account.profilePhotoUri ? (
+              <ExpoImage
+                source={{ uri: state.account.profilePhotoUri }}
+                style={[styles.avatar, { borderWidth: 2.5, borderColor: GREEN_ACCENT }]}
+                contentFit="cover"
+              />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarInitial}>
+                  {state.account.name
+                    ? state.account.name.charAt(0).toUpperCase()
+                    : (state.account.phone?.replace(/\D/g, "").slice(-10, -9) ?? "?").toUpperCase()}
+                </Text>
+              </View>
+            )}
+            {/* Camera badge */}
+            <View style={{ position: "absolute", bottom: 2, right: 2, width: 24, height: 24, borderRadius: 12, backgroundColor: GREEN_ACCENT, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: GREEN_DARK }}>
+              {uploadingAvatar ? (
+                <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: GREEN_DARK, borderTopColor: "transparent" }} />
+              ) : (
+                <IconSymbol name="camera.fill" size={11} color={GREEN_DARK} />
+              )}
             </View>
-          )}
+          </Pressable>
           <Text style={styles.name}>{state.account.name ?? "Tap Edit Profile to set your name"}</Text>
           {state.account.email && (
             <Text style={styles.email}>{state.account.email}</Text>
