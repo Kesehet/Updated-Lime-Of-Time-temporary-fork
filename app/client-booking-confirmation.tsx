@@ -16,6 +16,8 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  TouchableOpacity,
+  Linking,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ClientPortalBackground } from "@/components/client-portal-background";
@@ -230,7 +232,18 @@ export default function ClientBookingConfirmationScreen() {
               last={!locationAddress}
             />
             {locationAddress ? (
-              <SummaryRow icon="location" label="Location" value={locationAddress} last />
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  const encoded = encodeURIComponent(locationAddress);
+                  const url = Platform.OS === "ios"
+                    ? `maps://maps.apple.com/?q=${encoded}`
+                    : `https://maps.google.com/?q=${encoded}`;
+                  Linking.openURL(url).catch(() => Linking.openURL(`https://maps.google.com/?q=${encoded}`));
+                }}
+              >
+                <SummaryRow icon="location" label="Location" value={locationAddress} last tappable />
+              </TouchableOpacity>
             ) : null}
           </View>
 
@@ -290,11 +303,13 @@ function SummaryRow({
   label,
   value,
   last,
+  tappable,
 }: {
   icon: string;
   label: string;
   value: string;
   last?: boolean;
+  tappable?: boolean;
 }) {
   return (
     <View style={[rowStyles.row, !last && rowStyles.rowBorder]}>
@@ -303,8 +318,11 @@ function SummaryRow({
       </View>
       <View style={rowStyles.textWrap}>
         <Text style={rowStyles.label}>{label}</Text>
-        <Text style={rowStyles.value}>{value}</Text>
+        <Text style={[rowStyles.value, tappable && { textDecorationLine: "underline" }]}>{value}</Text>
       </View>
+      {tappable ? (
+        <IconSymbol name="chevron.right" size={14} color={GREEN_ACCENT} />
+      ) : null}
     </View>
   );
 }

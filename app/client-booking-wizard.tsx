@@ -1074,25 +1074,31 @@ export default function ClientBookingWizardScreen() {
             <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Discounts & Promo</Text>
             <Text style={[s.stepSubtitle, { color: TEXT_MUTED }]}>Apply a promo code or see active discounts. This step is optional.</Text>
 
-            {/* Active discounts for this service */}
-            {discounts.filter(d => !d.serviceIds || (d.serviceIds as string[]).length === 0 || (d.serviceIds as string[]).includes(selectedService.localId)).map(d => (
-              <View key={d.localId} style={[s.discountBanner, { backgroundColor: `${LIME_GREEN}18`, borderColor: `${LIME_GREEN}40` }]}>
-                <Text style={{ fontSize: 20 }}>🏷️</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.discountName, { color: TEXT_PRIMARY }]}>{d.name}</Text>
-                  <Text style={[s.discountPct, { color: LIME_GREEN }]}>{d.percentage}% off — saves ${((selectedService.price ? parseFloat(selectedService.price) : 0) * d.percentage / 100).toFixed(2)}</Text>
+            {/* Active discounts for this service — show only the best (highest %) one */}
+            {(() => {
+              const applicable = discounts.filter(d => !d.serviceIds || (d.serviceIds as string[]).length === 0 || (d.serviceIds as string[]).includes(selectedService.localId));
+              const best = applicable.length > 0 ? applicable.reduce((a, b) => b.percentage > a.percentage ? b : a) : null;
+              if (!best) {
+                return (
+                  <View style={[s.discountBanner, { backgroundColor: CARD_BG, borderColor: CARD_BORDER }]}>
+                    <Text style={{ fontSize: 18 }}>💡</Text>
+                    <Text style={[{ color: TEXT_MUTED, fontSize: 13, flex: 1 }]}>No active discounts for this service right now.</Text>
+                  </View>
+                );
+              }
+              return (
+                <View style={[s.discountBanner, { backgroundColor: `${LIME_GREEN}18`, borderColor: `${LIME_GREEN}40` }]}>
+                  <Text style={{ fontSize: 20 }}>🏷️</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.discountName, { color: TEXT_PRIMARY }]}>{best.name}</Text>
+                    <Text style={[s.discountPct, { color: LIME_GREEN }]}>{best.percentage}% off — saves ${((selectedService.price ? parseFloat(selectedService.price) : 0) * best.percentage / 100).toFixed(2)}</Text>
+                  </View>
+                  <View style={[s.discountBadge, { backgroundColor: LIME_GREEN }]}>
+                    <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>AUTO</Text>
+                  </View>
                 </View>
-                <View style={[s.discountBadge, { backgroundColor: LIME_GREEN }]}>
-                  <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>AUTO</Text>
-                </View>
-              </View>
-            ))}
-            {discounts.filter(d => !d.serviceIds || (d.serviceIds as string[]).length === 0 || (d.serviceIds as string[]).includes(selectedService.localId)).length === 0 && (
-              <View style={[s.discountBanner, { backgroundColor: CARD_BG, borderColor: CARD_BORDER }]}>
-                <Text style={{ fontSize: 18 }}>💡</Text>
-                <Text style={[{ color: TEXT_MUTED, fontSize: 13, flex: 1 }]}>No active discounts for this service right now.</Text>
-              </View>
-            )}
+              );
+            })()}
 
             {/* Promo code entry */}
             <Text style={[s.notesLabel, { color: TEXT_PRIMARY, marginTop: 8 }]}>Promo Code</Text>
