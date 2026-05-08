@@ -1937,3 +1937,7 @@
 - [x] Booking wizard service step: category filter pills already implemented (verified)
 - [x] Business detail hero: extend banner image to fill blue gap at top (no color gap above photo)
 - [x] Client home Book Again card: show business logo + name + last service + last visited + Book Again button
+- [ ] Pre-splash screen: replace logo with green background + small loading spinner
+- [ ] Fix SplashScreen.show error on Expo Go
+- [ ] Booking wizard service cards: add service photos with tap-to-preview
+- [ ] Fix blue/dark gap at top of booking wizard screen

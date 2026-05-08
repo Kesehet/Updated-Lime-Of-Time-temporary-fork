@@ -21,6 +21,8 @@ import {
   TextInput,
   Alert,
   Platform,
+  Modal,
+  TouchableOpacity,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -50,6 +52,7 @@ interface PublicService {
   price: string | null;
   description: string | null;
   category?: string | null;
+  photoUri?: string | null;
 }
 interface PublicStaff {
   localId: string;
@@ -129,6 +132,8 @@ export default function ClientBookingWizardScreen() {
   const [discounts, setDiscounts] = useState<{ localId: string; name: string; percentage: number; serviceIds: string[] }[]>([]);
   // Category filter for the service selection step
   const [wizardCatFilter, setWizardCatFilter] = useState<string | null>(null);
+  // Full-screen photo preview state
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
 
   const today = new Date();
   const [calYear, setCalYear] = useState(today.getFullYear());
@@ -480,7 +485,7 @@ export default function ClientBookingWizardScreen() {
 
   if (loadingData) {
     return (
-      <ScreenContainer>
+      <ScreenContainer containerClassName="bg-[#0D2318]">
         <ClientPortalBackground />
         <View style={s.loadingContainer}>
           <ActivityIndicator color={LIME_GREEN} size="large" />
@@ -497,7 +502,7 @@ export default function ClientBookingWizardScreen() {
     : staff;
 
   return (
-    <ScreenContainer>
+    <ScreenContainer containerClassName="bg-[#0D2318]">
       <ClientPortalBackground />
       {/* Header */}
       <View style={s.header}>
@@ -588,7 +593,7 @@ export default function ClientBookingWizardScreen() {
                   key={svc.localId}
                   style={({ pressed }) => [
                     s.optionCard,
-                    { backgroundColor: CARD_BG, borderColor: selectedService?.localId === svc.localId ? LIME_GREEN : CARD_BORDER },
+                    { backgroundColor: CARD_BG, borderColor: selectedService?.localId === svc.localId ? LIME_GREEN : CARD_BORDER, padding: 0, overflow: "hidden" },
                     selectedService?.localId === svc.localId && { borderWidth: 2 },
                     pressed && { opacity: 0.85 },
                   ]}
@@ -600,7 +605,28 @@ export default function ClientBookingWizardScreen() {
                     setSelectedSlot(null);
                   }}
                 >
-                  <View style={s.optionLeft}>
+                  {/* Service photo thumbnail */}
+                  {svc.photoUri ? (
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setPreviewUri(svc.photoUri!);
+                      }}
+                      style={{ width: "100%" }}
+                    >
+                      <Image
+                        source={{ uri: svc.photoUri }}
+                        style={{ width: "100%", height: 110, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+                        contentFit="cover"
+                      />
+                      <View style={{ position: "absolute", bottom: 8, right: 8, backgroundColor: "rgba(0,0,0,0.45)", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <IconSymbol name="arrow.up.left.and.arrow.down.right" size={11} color="#FFFFFF" />
+                        <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "600" }}>Preview</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ) : null}
+                  <View style={[s.optionLeft, { padding: 14, gap: 3 }]}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                       <Text style={[s.optionName, { color: TEXT_PRIMARY }]}>{svc.name}</Text>
                       {svc.category && (() => {
@@ -617,7 +643,7 @@ export default function ClientBookingWizardScreen() {
                     <Text style={[s.optionMeta, { color: LIME_GREEN }]}>{svc.duration} min · {formatPrice(svc.price)}</Text>
                   </View>
                   {selectedService?.localId === svc.localId && (
-                    <View style={[s.checkCircle, { backgroundColor: LIME_GREEN }]}>
+                    <View style={[s.checkCircle, { backgroundColor: LIME_GREEN, position: "absolute", top: svc.photoUri ? 118 : 14, right: 14 }]}>
                       <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
                     </View>
                   )}
@@ -1171,6 +1197,31 @@ export default function ClientBookingWizardScreen() {
           </Pressable>
         )}
       </View>
+
+      {/* Full-screen photo preview modal */}
+      <Modal
+        visible={previewUri !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewUri(null)}
+        statusBarTranslucent
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.92)", alignItems: "center", justifyContent: "center" }}>
+          {previewUri ? (
+            <Image
+              source={{ uri: previewUri }}
+              style={{ width: "100%", height: "70%" }}
+              contentFit="contain"
+            />
+          ) : null}
+          <TouchableOpacity
+            onPress={() => setPreviewUri(null)}
+            style={{ position: "absolute", top: 52, right: 20, width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" }}
+          >
+            <IconSymbol name="xmark" size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }
