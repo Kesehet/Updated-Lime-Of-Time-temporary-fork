@@ -1048,7 +1048,9 @@ Would you also like to charge a no-show fee via Stripe?`,
               )}
               {appointment.giftApplied && giftDeduction > 0 && (
                 <View className="flex-row justify-between py-1">
-                  <Text className="text-sm" style={{ color: colors.success }}>Gift Card Applied</Text>
+                  <Text className="text-sm" style={{ color: colors.success }}>
+                    🎁 Gift{(appointment as any).giftCode ? ` — Code: ${(appointment as any).giftCode}` : ' Card Applied'}
+                  </Text>
                   <Text className="text-sm font-semibold" style={{ color: colors.success }}>-${giftDeduction.toFixed(2)}</Text>
                 </View>
               )}

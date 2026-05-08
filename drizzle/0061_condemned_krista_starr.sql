@@ -1,0 +1,1 @@
+ALTER TABLE `appointments` ADD `giftCode` varchar(64);

@@ -238,6 +238,8 @@ export const appointments = mysqlTable("appointments", {
   giftApplied: boolean("giftApplied").default(false),
   /** Dollar amount used from gift card */
   giftUsedAmount: decimal("giftUsedAmount", { precision: 10, scale: 2 }),
+  /** Gift certificate code applied to this appointment */
+  giftCode: varchar("giftCode", { length: 64 }),
   /** Staff member localId assigned to this appointment */
   staffId: varchar("staffId", { length: 64 }),
   /** Location localId for multi-location businesses */

@@ -311,9 +311,16 @@ export default function ClientMessageThreadBusinessScreen() {
                   )}
                   <View style={[s.msgBubble, isBusiness ? { backgroundColor: colors.primary, borderBottomRightRadius: 4 } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderBottomLeftRadius: 4 }]}>
                     <Text style={[s.msgBody, { color: isBusiness ? "#FFFFFF" : colors.foreground }]}>{msg.body}</Text>
-                    <Text style={[s.msgTime, { color: isBusiness ? "rgba(255,255,255,0.6)" : colors.muted }]}>
-                      {formatTime(msg.createdAt)}{isBusiness && msg.readAt && "  ✓"}
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Text style={[s.msgTime, { color: isBusiness ? "rgba(255,255,255,0.6)" : colors.muted }]}>
+                        {formatTime(msg.createdAt)}
+                      </Text>
+                      {isBusiness && (
+                        <Text style={{ fontSize: 11, fontWeight: "700", letterSpacing: -1.5, color: msg.readAt ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.4)" }}>
+                          {msg.readAt ? "✓✓" : "✓"}
+                        </Text>
+                      )}
+                    </View>
                   </View>
                 </View>
               );

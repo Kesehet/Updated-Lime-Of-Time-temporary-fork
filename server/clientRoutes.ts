@@ -1284,6 +1284,38 @@ export function registerClientRoutes(app: Express) {
     }
   });
 
+  /** POST /api/client/my-packages/:packageLocalId/use-session — decrement sessionsCompleted for a client package */
+  app.post("/api/client/my-packages/:packageLocalId/use-session", async (req: Request, res: Response) => {
+    try {
+      const { clientAccount } = await getClientAccount(req);
+      if (!clientAccount) { res.status(401).json({ error: "Unauthorized" }); return; }
+      const { packageLocalId } = req.params;
+      const dbase = await db.getDb();
+      if (!dbase) { res.status(500).json({ error: "Database not available" }); return; }
+      const { clientPackages: cpTable } = await import("../drizzle/schema");
+      const { eq, and, or } = await import("drizzle-orm");
+      // Find the package belonging to this client
+      const conditions: any[] = [eq(cpTable.localId, packageLocalId)];
+      const clientConditions: any[] = [eq(cpTable.clientAccountId, clientAccount.id)];
+      if (clientAccount.phone) clientConditions.push(eq(cpTable.clientPhone, clientAccount.phone));
+      if (clientAccount.email) clientConditions.push(eq(cpTable.clientEmail, clientAccount.email));
+      const [pkg] = await dbase.select().from(cpTable).where(
+        and(eq(cpTable.localId, packageLocalId), or(...clientConditions))
+      );
+      if (!pkg) { res.status(404).json({ error: "Package not found" }); return; }
+      if (pkg.status !== "active") { res.status(400).json({ error: "Package is not active" }); return; }
+      const newCompleted = Math.min(pkg.sessionsCompleted + 1, pkg.totalSessions);
+      const newStatus = newCompleted >= pkg.totalSessions ? "completed" : "active";
+      await dbase.update(cpTable)
+        .set({ sessionsCompleted: newCompleted, status: newStatus })
+        .where(eq(cpTable.localId, packageLocalId));
+      res.json({ success: true, sessionsCompleted: newCompleted, totalSessions: pkg.totalSessions, status: newStatus });
+    } catch (err: any) {
+      console.error("[Client API] Error using package session:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   /** POST /api/business/appointments/:appointmentId/confirm-gift-redemption — business owner confirms gift was used */
   app.post("/api/business/appointments/:appointmentId/confirm-gift-redemption", async (req: Request, res: Response) => {
     try {
@@ -1312,7 +1344,7 @@ export function registerClientRoutes(app: Express) {
           .where(andGc(
             eqGc(gcTable.businessOwnerId, owner.id),
             eqGc(gcTable.redeemed, false),
-            eqGc(gcTable.pendingRedemptionAppointmentId, appointmentId)
+            eqGc((gcTable as any).pendingRedemptionAppointmentId, appointmentId)
           ));
       }
       res.json({ success: true, message: "Gift certificate marked as redeemed" });

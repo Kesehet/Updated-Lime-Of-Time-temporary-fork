@@ -935,6 +935,7 @@ export function registerPublicRoutes(app: Express) {
         extraItems: extras.length > 0 ? JSON.stringify(extras) : null,
         giftApplied: !!giftApplied,
         giftUsedAmount: giftUsedAmount ? String(parseFloat(String(giftUsedAmount))) : null,
+        giftCode: giftCode || null,
         locationId: locationId || null,
         paymentMethod: (paymentMethod && paymentMethod !== 'later') ? paymentMethod : null,
         paymentStatus: paymentMethod === 'cash' ? 'pending_cash' : ((paymentMethod && paymentMethod !== 'later') ? 'unpaid' : null),

@@ -112,7 +112,7 @@ function formatDateLabel(d: Date): string {
 export default function ClientBookingWizardScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { slug, businessSlug, serviceLocalId, preServiceName, preStaffId, preStaffName } = useLocalSearchParams<{ slug?: string; businessSlug?: string; serviceLocalId?: string; preServiceName?: string; preStaffId?: string; preStaffName?: string }>();
+  const { slug, businessSlug, serviceLocalId, preServiceName, preStaffId, preStaffName, packageLocalId } = useLocalSearchParams<{ slug?: string; businessSlug?: string; serviceLocalId?: string; preServiceName?: string; preStaffId?: string; preStaffName?: string; packageLocalId?: string }>();
   const effectiveSlug = slug || businessSlug || "";
   const { state } = useClientStore();
   const apiBase = getApiBaseUrl();
@@ -451,6 +451,7 @@ export default function ClientBookingWizardScreen() {
           promoLocalId: promoApplied?.localId ?? undefined,
           giftCode: giftApplied?.code ?? undefined,
           giftSaving: giftApplied ? Math.min(giftApplied.value, Math.max(0, servicePrice - (discountAmount ?? 0) - (promoSaving ?? 0))) : undefined,
+          packageLocalId: packageLocalId ?? undefined,
           discountName,
           discountPercentage,
           discountAmount,
@@ -472,6 +473,14 @@ export default function ClientBookingWizardScreen() {
         dateStr,
         selectedSlot.time
       ).catch(() => {});
+      // Decrement package session count if this booking used a package
+      if (packageLocalId) {
+        fetch(`${apiBase}/api/client/my-packages/${packageLocalId}/use-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.token}` },
+          body: JSON.stringify({ appointmentId }),
+        }).catch(() => {});
+      }
       const selectedStaffMember = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
       router.replace({
         pathname: "/client-booking-confirmation",
