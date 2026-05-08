@@ -44,12 +44,12 @@ interface NotificationPrefs {
 }
 
 const DEFAULT_PREFS: NotificationPrefs = {
-  pushEnabled: true,
-  smsEnabled: true,
-  reminder24h: true,
-  reminder1h: true,
-  bookingConfirmation: true,
-  cancellationAlerts: true,
+  pushEnabled: false,
+  smsEnabled: false,
+  reminder24h: false,
+  reminder1h: false,
+  bookingConfirmation: false,
+  cancellationAlerts: false,
 };
 
 export default function ClientNotificationsScreen() {

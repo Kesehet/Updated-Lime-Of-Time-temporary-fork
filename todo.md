@@ -1991,3 +1991,18 @@
 - [x] Biometric auto-login: logic already existed in handleSplashFinish — fixed critical bug where setSplashDone(true) was never called on the early-return path
 - [x] If business owner has valid token + was recently active + Face ID enabled, skip Portal Selector and navigate directly to business dashboard
 - [x] Show Face ID prompt immediately on dashboard arrival (AppLockProvider already handles this)
+
+## Phase: Messaging & Notifications Batch (May 2026)
+
+- [x] SMS Reminders toggle: default to OFF for new accounts
+- [x] Messages list: sort threads newest-first (most recent message at top)
+- [x] Messages list: allow client to swipe-to-delete or long-press to delete/archive a chat thread
+- [x] Messaging thread header: show business logo avatar next to business name
+- [x] Booking wizard: move Promo step BEFORE Payment step for all flows (single service, packages, gift)
+- [ ] Packages: sync ADD_PACKAGE / UPDATE_PACKAGE / DELETE_PACKAGE to service_packages DB table
+- [ ] Packages: add public API endpoint GET /api/public/business/:slug/packages
+- [ ] Packages: show Packages & Bundles section in booking wizard service step
+- [ ] Packages: when package selected, lock out individual service selection
+- [ ] Packages: multi-session date picker with buffer-enforced pre-selected next available date
+- [ ] Packages: date-aware discount application per session
+- [ ] Packages: confirmation screen shows all sessions with full package price breakdown

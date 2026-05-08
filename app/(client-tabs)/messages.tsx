@@ -2,6 +2,7 @@
  * Client Portal — Messages Tab
  *
  * Lists all message threads (one per appointment) with unread count badges.
+ * Threads are sorted newest-first. Long-press a thread to delete (local hide).
  */
 
 import React, { useCallback, useState } from "react";
@@ -15,6 +16,7 @@ import {
   RefreshControl,
   Platform,
   Image,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -23,23 +25,23 @@ import { useClientStore } from "@/lib/client-store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ClientPortalBackground } from "@/components/client-portal-background";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSpring,
   Easing,
-  runOnJS,
 } from "react-native-reanimated";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
 
 const GREEN_ACCENT = "#8FBF6A";
 const GREEN_DARK = "#1A3A28";
-const CARD_BG = "rgba(255,255,255,0.09)";
 const CARD_BORDER = "rgba(255,255,255,0.14)";
 const TEXT_PRIMARY = "#FFFFFF";
 const TEXT_MUTED = "rgba(255,255,255,0.6)";
+
+const HIDDEN_THREADS_KEY = "client_hidden_threads";
 
 interface MessageThread {
   businessOwnerId: number;
@@ -64,12 +66,29 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
+async function loadHiddenThreadIds(): Promise<Set<number>> {
+  try {
+    const raw = await AsyncStorage.getItem(HIDDEN_THREADS_KEY);
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw) as number[]);
+  } catch {
+    return new Set();
+  }
+}
+
+async function saveHiddenThreadIds(ids: Set<number>): Promise<void> {
+  try {
+    await AsyncStorage.setItem(HIDDEN_THREADS_KEY, JSON.stringify([...ids]));
+  } catch {}
+}
+
 export default function MessagesScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { state, dispatch, apiCall } = useClientStore();
   const [threads, setThreads] = useState<MessageThread[]>([]);
+  const [hiddenIds, setHiddenIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -77,8 +96,18 @@ export default function MessagesScreen() {
     if (!state.account) return;
     if (!silent) setLoading(true);
     try {
-      const data = await apiCall<MessageThread[]>("/api/client/messages/threads");
-      setThreads(data);
+      const [data, hidden] = await Promise.all([
+        apiCall<MessageThread[]>("/api/client/messages/threads"),
+        loadHiddenThreadIds(),
+      ]);
+      // Sort newest-first by lastMessageAt
+      const sorted = [...data].sort((a, b) => {
+        const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+        const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+        return tb - ta;
+      });
+      setThreads(sorted);
+      setHiddenIds(hidden);
       const total = data.reduce((sum, t) => sum + t.unreadCount, 0);
       dispatch({ type: "SET_UNREAD_COUNT", payload: total });
     } catch (err) {
@@ -93,6 +122,33 @@ export default function MessagesScreen() {
 
   const onRefresh = () => { setRefreshing(true); loadThreads(); };
 
+  const handleDeleteThread = useCallback((item: MessageThread) => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      "Delete Conversation",
+      `Remove your conversation with ${item.businessName}? This only hides it on your device.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            const next = new Set(hiddenIds);
+            next.add(item.businessOwnerId);
+            setHiddenIds(next);
+            await saveHiddenThreadIds(next);
+            // Update unread count
+            const remaining = threads.filter(
+              (t) => !next.has(t.businessOwnerId)
+            );
+            const total = remaining.reduce((sum, t) => sum + t.unreadCount, 0);
+            dispatch({ type: "SET_UNREAD_COUNT", payload: total });
+          },
+        },
+      ]
+    );
+  }, [hiddenIds, threads, dispatch]);
+
   // Entrance animation
   const headerOpacity = useSharedValue(0);
   const headerY = useSharedValue(-16);
@@ -104,6 +160,8 @@ export default function MessagesScreen() {
     opacity: headerOpacity.value,
     transform: [{ translateY: headerY.value }],
   }));
+
+  const visibleThreads = threads.filter((t) => !hiddenIds.has(t.businessOwnerId));
 
   if (!state.account) {
     return (
@@ -131,6 +189,7 @@ export default function MessagesScreen() {
       <ClientPortalBackground />
       <Animated.View style={[styles.header, headerStyle, { paddingTop: insets.top + 16 }]}>
         <Text style={styles.title}>Messages</Text>
+        <Text style={styles.subtitle}>Hold a conversation to delete it</Text>
       </Animated.View>
 
       {loading ? (
@@ -139,7 +198,7 @@ export default function MessagesScreen() {
         </View>
       ) : (
         <FlatList
-          data={threads}
+          data={visibleThreads}
           keyExtractor={(item) => String(item.businessOwnerId)}
           contentContainerStyle={{ paddingBottom: 32 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN_ACCENT} />}
@@ -155,7 +214,12 @@ export default function MessagesScreen() {
             </View>
           }
           renderItem={({ item, index }) => (
-            <ThreadRow item={item} index={index} router={router} />
+            <ThreadRow
+              item={item}
+              index={index}
+              router={router}
+              onLongPress={() => handleDeleteThread(item)}
+            />
           )}
         />
       )}
@@ -163,31 +227,31 @@ export default function MessagesScreen() {
   );
 }
 
-function ThreadRow({ item, index, router }: { item: MessageThread; index: number; router: ReturnType<typeof useRouter> }) {
+function ThreadRow({
+  item,
+  index,
+  router,
+  onLongPress,
+}: {
+  item: MessageThread;
+  index: number;
+  router: ReturnType<typeof useRouter>;
+  onLongPress: () => void;
+}) {
   const scale = useSharedValue(1);
 
-  // Stable wrapper needed so runOnJS preserves the correct `this` context on iOS native
   const navigateToThread = useCallback(() => {
     router.push({
       pathname: "/client-message-thread",
       params: {
         businessOwnerId: String(item.businessOwnerId),
         businessName: item.businessName,
+        businessLogoUri: item.businessLogoUri ?? "",
         serviceName: item.serviceName,
         appointmentDate: item.appointmentDate,
       },
     } as any);
-  }, [router, item.businessOwnerId, item.businessName, item.serviceName, item.appointmentDate]);
-
-  const tap = Gesture.Tap()
-    .onBegin(() => { scale.value = withSpring(0.98, { damping: 20, stiffness: 300 }); })
-    .onFinalize((_, success) => {
-      scale.value = withSpring(1, { damping: 18, stiffness: 200 });
-      if (success) {
-        if (Platform.OS !== "web") runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
-        runOnJS(navigateToThread)();
-      }
-    });
+  }, [router, item]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -201,8 +265,23 @@ function ThreadRow({ item, index, router }: { item: MessageThread; index: number
     .join("");
 
   return (
-    <GestureDetector gesture={tap}>
-      <Animated.View style={[animStyle, styles.threadCard]}>
+    <Animated.View style={animStyle}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.threadCard,
+          pressed && { backgroundColor: "rgba(255,255,255,0.05)" },
+        ]}
+        onPress={() => {
+          scale.value = withSpring(0.98, { damping: 20, stiffness: 300 });
+          setTimeout(() => {
+            scale.value = withSpring(1, { damping: 18, stiffness: 200 });
+          }, 100);
+          if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          navigateToThread();
+        }}
+        onLongPress={onLongPress}
+        delayLongPress={500}
+      >
         {/* Avatar — show business logo if available, else initials */}
         <View style={styles.avatar}>
           {item.businessLogoUri ? (
@@ -243,8 +322,8 @@ function ThreadRow({ item, index, router }: { item: MessageThread; index: number
             <Text style={styles.unreadText}>{item.unreadCount}</Text>
           </View>
         )}
-      </Animated.View>
-    </GestureDetector>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -257,6 +336,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     color: TEXT_PRIMARY,
+  },
+  subtitle: {
+    fontSize: 12,
+    color: TEXT_MUTED,
+    marginTop: 2,
   },
   loadingContainer: {
     flex: 1,
@@ -307,6 +391,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "rgba(143,191,106,0.3)",
+    overflow: "hidden",
   },
   avatarText: {
     fontSize: 16,

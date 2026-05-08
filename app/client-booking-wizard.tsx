@@ -176,16 +176,16 @@ export default function ClientBookingWizardScreen() {
 
   // Build the step list dynamically — Date & Time are merged into one step
   const STEPS = showLocationStep
-    ? ["Service", "Staff", "Location", "Date & Time", "Payment", "Promo", "Confirm"]
-    : ["Service", "Staff", "Date & Time", "Payment", "Promo", "Confirm"];
+    ? ["Service", "Staff", "Location", "Date & Time", "Promo", "Payment", "Confirm"]
+    : ["Service", "Staff", "Date & Time", "Promo", "Payment", "Confirm"];
   // Step indices (dynamic based on whether location step is shown)
   const STEP_SERVICE = 0;
   const STEP_STAFF = 1;
   const STEP_LOCATION = showLocationStep ? 2 : -1;
   const STEP_DATE = showLocationStep ? 3 : 2;   // merged Date+Time step
   const STEP_TIME = STEP_DATE;                   // same step as date
-  const STEP_PAYMENT = showLocationStep ? 4 : 3;
-  const STEP_PROMO = showLocationStep ? 5 : 4;
+  const STEP_PROMO = showLocationStep ? 4 : 3;
+  const STEP_PAYMENT = showLocationStep ? 5 : 4;
   const STEP_CONFIRM = showLocationStep ? 6 : 5;
 
   // Load services, staff, locations, and discounts

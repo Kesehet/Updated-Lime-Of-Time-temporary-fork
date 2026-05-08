@@ -18,6 +18,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -74,6 +75,7 @@ export default function ClientMessageThreadScreen() {
   const params = useLocalSearchParams<{
     businessOwnerId?: string;
     businessName?: string;
+    businessLogoUri?: string;
     serviceName?: string;
     appointmentDate?: string;
   }>();
@@ -162,6 +164,22 @@ export default function ClientMessageThreadScreen() {
         >
           <IconSymbol name="chevron.left" size={20} color={TEXT_PRIMARY} />
         </Pressable>
+        {/* Business logo avatar */}
+        {params.businessLogoUri ? (
+          <View style={styles.headerAvatar}>
+            <Image
+              source={{ uri: params.businessLogoUri }}
+              style={{ width: 36, height: 36, borderRadius: 18 }}
+              resizeMode="cover"
+            />
+          </View>
+        ) : (
+          <View style={styles.headerAvatarInitials}>
+            <Text style={styles.headerAvatarText}>
+              {(params.businessName ?? "B").split(" ").slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? "").join("")}
+            </Text>
+          </View>
+        )}
         <View style={styles.headerInfo}>
           <Text style={styles.headerBusiness} numberOfLines={1}>
             {params.businessName ?? "Business"}
@@ -287,9 +305,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    gap: 12,
+    gap: 10,
     borderBottomWidth: 1,
     borderBottomColor: CARD_BORDER,
+  },
+  headerAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(143,191,106,0.3)",
+  },
+  headerAvatarInitials: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(143,191,106,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(143,191,106,0.3)",
+  },
+  headerAvatarText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: GREEN_ACCENT,
   },
   backBtn: {
     width: 36,
