@@ -1250,11 +1250,11 @@ export default function ClientBookingWizardScreen() {
           <Pressable
             style={({ pressed }) => [
               s.nextBtn,
-              { opacity: canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber) ? 1 : 0.4 },
-              pressed && canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber) && { transform: [{ scale: 0.97 }] },
+              { opacity: canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length) ? 1 : 0.4 },
+              pressed && canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length) && { transform: [{ scale: 0.97 }] },
             ]}
             onPress={handleNext}
-            disabled={!canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber)}
+            disabled={!canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length)}
           >
             <Text style={s.nextBtnText}>Continue</Text>
             <IconSymbol name="chevron.right" size={16} color="#FFFFFF" />
@@ -1320,9 +1320,10 @@ function canProceed(
   selectedDate: Date | null,
   selectedSlot: any,
   paymentMethod?: string | null,
-  paymentConfirmationNumber?: string
+  paymentConfirmationNumber?: string,
+  selectedServicesCount?: number
 ): boolean {
-  if (step === STEP_SERVICE) return selectedService != null || selectedServices.length > 0;
+  if (step === STEP_SERVICE) return selectedService != null || (selectedServicesCount ?? 0) > 0;
   if (step === STEP_STAFF) return selectedStaffId !== undefined;
   if (showLocationStep && step === STEP_LOCATION) return selectedLocation != null;
   // Date and Time are merged — require both a date AND a time slot to proceed

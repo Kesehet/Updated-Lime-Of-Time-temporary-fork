@@ -283,7 +283,7 @@ export function ClientStoreProvider({ children }: { children: React.ReactNode })
         dispatch({ type: "CLEAR_SESSION" });
         // Emit session-expired event so root layout shows toast and redirects
         import("@/lib/_core/session-events").then(({ emitSessionExpired }) => {
-          emitSessionExpired();
+          emitSessionExpired("client");
         }).catch(() => {});
         throw new Error("Session expired");
       }
