@@ -1312,7 +1312,7 @@ export function registerClientRoutes(app: Express) {
           .where(andGc(
             eqGc(gcTable.businessOwnerId, owner.id),
             eqGc(gcTable.redeemed, false),
-            eqGc(gcTable.pendingRedemptionAppointmentId as any, appointmentId)
+            eqGc(gcTable.pendingRedemptionAppointmentId, appointmentId)
           ));
       }
       res.json({ success: true, message: "Gift certificate marked as redeemed" });
