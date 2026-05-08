@@ -300,20 +300,20 @@ function RootLayout() {
               <Stack.Screen name="payment-method-zelle" options={{ presentation: "fullScreenModal" }} />
               {/* Client Portal Screens */}
               <Stack.Screen name="profile-select" options={{ presentation: "card" }} />
-              <Stack.Screen name="client-signin" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } }} />
+              <Stack.Screen name="client-signin" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
               <Stack.Screen name="client-profile-onboarding" options={{ presentation: "fullScreenModal" }} />
-              <Stack.Screen name="client-edit-profile" options={{ presentation: "fullScreenModal", headerShown: false, contentStyle: { backgroundColor: "#0D2318" } }} />
-              <Stack.Screen name="client-notifications" options={{ presentation: "fullScreenModal", headerShown: false, contentStyle: { backgroundColor: "#0D2318" } }} />
+              <Stack.Screen name="client-edit-profile" options={{ presentation: "fullScreenModal", headerShown: false, contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
+              <Stack.Screen name="client-notifications" options={{ presentation: "fullScreenModal", headerShown: false, contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
               <Stack.Screen name="(client-tabs)" options={{ presentation: "fullScreenModal",
                 // Wrap client tabs in their own biometric lock provider
                 contentStyle: { flex: 1 } }} />
-              <Stack.Screen name="client-business-detail" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } }} />
-              <Stack.Screen name="client-booking-wizard" options={{ presentation: "fullScreenModal", headerShown: false, contentStyle: { backgroundColor: "#0D2318" } }} />
-              <Stack.Screen name="client-appointment-detail" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } }} />
-              <Stack.Screen name="client-booking-confirmation" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } }} />
-              <Stack.Screen name="client-message-thread" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } }} />
-              <Stack.Screen name="client-saved-businesses" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } }} />
-              <Stack.Screen name="client-message-thread-business" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } }} />
+              <Stack.Screen name="client-business-detail" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
+              <Stack.Screen name="client-booking-wizard" options={{ presentation: "fullScreenModal", headerShown: false, contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
+              <Stack.Screen name="client-appointment-detail" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
+              <Stack.Screen name="client-booking-confirmation" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
+              <Stack.Screen name="client-message-thread" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
+              <Stack.Screen name="client-saved-businesses" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
+              <Stack.Screen name="client-message-thread-business" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
             </Stack>
             <StatusBar style="auto" />
             <SessionExpiredToast />

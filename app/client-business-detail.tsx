@@ -130,6 +130,7 @@ export default function ClientBusinessDetailScreen() {
   const [lightboxVisible, setLightboxVisible] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [serviceLightboxUri, setServiceLightboxUri] = useState<string | null>(null);
+  const [logoPreviewVisible, setLogoPreviewVisible] = useState(false);
   const [expandedStaffId, setExpandedStaffId] = useState<string | null>(null);
 
   const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -256,12 +257,8 @@ export default function ClientBusinessDetailScreen() {
       <ClientPortalBackground />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
 
-        {/* ── Header Banner ── */}
-        <View style={[s.banner, { backgroundColor: PORTAL_BG, overflow: "hidden" }]}>
-          {(coverUri || logoUri) ? (
-            <Image source={{ uri: coverUri || logoUri! }} style={StyleSheet.absoluteFillObject} contentFit="cover" transition={300} />
-          ) : null}
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0,0,0,0.35)" }]} />
+        {/* ── Header Bar (no background image) ── */}
+        <View style={[s.banner, { backgroundColor: "transparent", overflow: "visible" }]}>
           <Pressable style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]} onPress={() => router.back()}>
             <IconSymbol name="chevron.left" size={20} color="#FFFFFF" />
           </Pressable>
@@ -272,11 +269,15 @@ export default function ClientBusinessDetailScreen() {
 
         {/* ── Business Info ── */}
         <View style={s.infoSection}>
-          <View style={[s.logoCircle, { backgroundColor: `${LIME_GREEN}30`, borderColor: PORTAL_BG }]}>
+          <Pressable
+            style={({ pressed }) => [s.logoCircle, { backgroundColor: `${LIME_GREEN}30`, borderColor: PORTAL_BG }, pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] }]}
+            onPress={() => { if (logoUri) { if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setLogoPreviewVisible(true); } }}
+            accessibilityLabel="View business logo"
+          >
             {logoUri
               ? <Image source={{ uri: logoUri }} style={{ width: 66, height: 66, borderRadius: 33 }} contentFit="cover" />
               : <Image source={require("../assets/images/icon.png")} style={{ width: 66, height: 66, borderRadius: 33 }} contentFit="cover" />}
-          </View>
+          </Pressable>
           <Text style={[s.bizName, { color: TEXT_PRIMARY }]}>{business.businessName}</Text>
           {category && <Text style={[s.bizCategory, { color: ACCENT }]}>{category}</Text>}
           {distanceMiles ? (
@@ -662,6 +663,17 @@ export default function ClientBusinessDetailScreen() {
         )}
       </ScrollView>
 
+      {/* ── Logo Preview Modal ── */}
+      <Modal visible={logoPreviewVisible} transparent animationType="fade" onRequestClose={() => setLogoPreviewVisible(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.92)", alignItems: "center", justifyContent: "center" }} onPress={() => setLogoPreviewVisible(false)}>
+          {logoUri ? (
+            <Image source={{ uri: logoUri }} style={{ width: SCREEN_WIDTH * 0.8, height: SCREEN_WIDTH * 0.8, borderRadius: 20 }} contentFit="contain" transition={200} />
+          ) : null}
+          <View style={{ position: "absolute", top: 56, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" }}>
+            <IconSymbol name="xmark" size={16} color="#FFFFFF" />
+          </View>
+        </Pressable>
+      </Modal>
       {/* ── Lightbox Modal ── */}
       <Modal visible={lightboxVisible} transparent animationType="fade" onRequestClose={() => setLightboxVisible(false)}>
         <View style={s.lightboxOverlay}>
@@ -790,7 +802,7 @@ export default function ClientBusinessDetailScreen() {
 
 const s = StyleSheet.create({
   loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
-  banner: { height: 160, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingHorizontal: 16, paddingTop: 16 },
+  banner: { height: 80, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingHorizontal: 16, paddingTop: 16 },
   backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center" },
   saveBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center" },
   infoSection: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, alignItems: "center", gap: 6 },

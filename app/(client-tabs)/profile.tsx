@@ -175,22 +175,6 @@ export default function ClientProfileScreen() {
       <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
         <ClientPortalBackground />
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top }} showsVerticalScrollIndicator={false}>
-          {/* App Branding */}
-          <View style={styles.brandingWrap}>
-            <View style={styles.brandLogoRing}>
-              <Image source={require("../../assets/images/icon.png")} style={styles.brandLogo} resizeMode="cover" />
-            </View>
-            <View style={styles.brandTitleWrap}>
-              <Text style={styles.brandAppName}>Lime Of Time</Text>
-              <Text style={styles.brandTagline}>Book appointments with ease</Text>
-              <View style={styles.brandByLine}>
-                <View style={styles.brandByLineDash} />
-                <Text style={styles.brandByLineText}>CLIENT PORTAL</Text>
-                <View style={styles.brandByLineDash} />
-              </View>
-              <Text style={styles.brandByInnovancio}>BY INNOVANCIO</Text>
-            </View>
-          </View>
           <View style={[styles.guestContainer, { paddingTop: 0 }]}>
           <View style={styles.guestAvatar}>
             <IconSymbol name="person.crop.circle.fill" size={48} color={GREEN_ACCENT} />
@@ -206,6 +190,22 @@ export default function ClientProfileScreen() {
             <Text style={styles.signInBtnText}>Sign In / Create Account</Text>
           </Pressable>
           </View>
+          {/* App Branding - bottom */}
+          <View style={styles.brandingWrap}>
+            <View style={styles.brandLogoRing}>
+              <Image source={require("../../assets/images/icon.png")} style={styles.brandLogo} resizeMode="cover" />
+            </View>
+            <View style={styles.brandTitleWrap}>
+              <Text style={styles.brandAppName}>Lime Of Time</Text>
+              <Text style={styles.brandTagline}>Book appointments with ease</Text>
+              <View style={styles.brandByLine}>
+                <View style={styles.brandByLineDash} />
+                <Text style={styles.brandByLineText}>CLIENT PORTAL</Text>
+                <View style={styles.brandByLineDash} />
+              </View>
+              <Text style={styles.brandByInnovancio}>BY INNOVANCIO</Text>
+            </View>
+          </View>
         </ScrollView>
       </View>
     );
@@ -218,22 +218,6 @@ export default function ClientProfileScreen() {
         contentContainerStyle={{ paddingBottom: 40, paddingTop: insets.top }}
         showsVerticalScrollIndicator={false}
       >
-        {/* App Branding */}
-        <View style={styles.brandingWrap}>
-          <View style={styles.brandLogoRing}>
-            <Image source={require("../../assets/images/icon.png")} style={styles.brandLogo} resizeMode="cover" />
-          </View>
-          <View style={styles.brandTitleWrap}>
-            <Text style={styles.brandAppName}>Lime Of Time</Text>
-            <Text style={styles.brandTagline}>Book appointments with ease</Text>
-            <View style={styles.brandByLine}>
-              <View style={styles.brandByLineDash} />
-              <Text style={styles.brandByLineText}>CLIENT PORTAL</Text>
-              <View style={styles.brandByLineDash} />
-            </View>
-            <Text style={styles.brandByInnovancio}>BY INNOVANCIO</Text>
-          </View>
-        </View>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           {state.account.profilePhotoUri ? (
@@ -305,6 +289,22 @@ export default function ClientProfileScreen() {
           <MenuItem icon="rectangle.portrait.and.arrow.right" label="Sign Out" onPress={handleSignOut} destructive />
         </View>
 
+        {/* App Branding - bottom */}
+        <View style={[styles.brandingWrap, { marginTop: 8 }]}>
+          <View style={styles.brandLogoRing}>
+            <Image source={require("../../assets/images/icon.png")} style={styles.brandLogo} resizeMode="cover" />
+          </View>
+          <View style={styles.brandTitleWrap}>
+            <Text style={styles.brandAppName}>Lime Of Time</Text>
+            <Text style={styles.brandTagline}>Book appointments with ease</Text>
+            <View style={styles.brandByLine}>
+              <View style={styles.brandByLineDash} />
+              <Text style={styles.brandByLineText}>CLIENT PORTAL</Text>
+              <View style={styles.brandByLineDash} />
+            </View>
+            <Text style={styles.brandByInnovancio}>BY INNOVANCIO</Text>
+          </View>
+        </View>
         <Text style={styles.version}>Client Portal v1.0</Text>
       </ScrollView>
     </View>
