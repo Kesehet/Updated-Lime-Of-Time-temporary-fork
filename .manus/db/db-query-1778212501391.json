@@ -1,0 +1,85 @@
+{
+  "query": "SHOW TABLES LIKE '%gift%'; DESCRIBE gift_cards;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SHOW TABLES LIKE '%gift%'; DESCRIBE gift_cards;",
+  "rows": [
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "gift_cards"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "Field\tType\tNull\tKey\tDefault\tExtra"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "id\tint\tNO\tPRI\tNULL\tauto_increment"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "businessOwnerId\tint\tNO\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "localId\tvarchar(64)\tNO\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "code\tvarchar(20)\tNO\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "serviceLocalId\tvarchar(64)\tNO\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "recipientName\tvarchar(255)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "recipientPhone\tvarchar(20)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "message\ttext\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "redeemed\ttinyint(1)\tNO\t\t0\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "redeemedAt\ttimestamp\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "expiresAt\tvarchar(10)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "createdAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "updatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "purchaserName\tvarchar(255)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "purchaserEmail\tvarchar(320)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "recipientEmail\tvarchar(320)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "recipientChoosesDate\ttinyint(1)\tYES\t\t1\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "paymentMethod\tvarchar(30)\tYES\t\tunpaid\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "paymentStatus\tvarchar(20)\tYES\t\tunpaid\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "totalValue\tdecimal(10,2)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "purchasedPublicly\ttinyint(1)\tNO\t\t0\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "preselectedDate\tvarchar(10)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)": "preselectedTime\tvarchar(5)\tYES\t\tNULL\t"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_Dw4mhfnuurFcniLsqjLpWN (%gift%)\ngift_cards\nField\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nbusinessOwnerId\tint\tNO\t\tNULL\t\nlocalId\tvarchar(64)\tNO\t\tNULL\t\ncode\tvarchar(20)\tNO\t\tNULL\t\nserviceLocalId\tvarchar(64)\tNO\t\tNULL\t\nrecipientName\tvarchar(255)\tYES\t\tNULL\t\nrecipientPhone\tvarchar(20)\tYES\t\tNULL\t\nmessage\ttext\tYES\t\tNULL\t\nredeemed\ttinyint(1)\tNO\t\t0\t\nredeemedAt\ttimestamp\tYES\t\tNULL\t\nexpiresAt\tvarchar(10)\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\npurchaserName\tvarchar(255)\tYES\t\tNULL\t\npurchaserEmail\tvarchar(320)\tYES\t\tNULL\t\nrecipientEmail\tvarchar(320)\tYES\t\tNULL\t\nrecipientChoosesDate\ttinyint(1)\tYES\t\t1\t\npaymentMethod\tvarchar(30)\tYES\t\tunpaid\t\npaymentStatus\tvarchar(20)\tYES\t\tunpaid\t\ntotalValue\tdecimal(10,2)\tYES\t\tNULL\t\npurchasedPublicly\ttinyint(1)\tNO\t\t0\t\npreselectedDate\tvarchar(10)\tYES\t\tNULL\t\npreselectedTime\tvarchar(5)\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 351
+}

@@ -754,3 +754,40 @@ export const servicePhotos = mysqlTable("service_photos", {
 });
 export type ServicePhoto = typeof servicePhotos.$inferSelect;
 export type InsertServicePhoto = typeof servicePhotos.$inferInsert;
+
+// ─── Service Packages / Bundles ──────────────────────────────────────────────
+export const servicePackages = mysqlTable("service_packages", {
+  id: int("id").autoincrement().primaryKey(),
+  businessOwnerId: int("businessOwnerId").notNull(),
+  localId: varchar("localId", { length: 64 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  /** JSON: Array<{ serviceLocalId: string; sessions: number; daysPerSession: number }> */
+  packageItems: json("packageItems").notNull(),
+  totalSessions: int("totalSessions").notNull().default(1),
+  sessionDurationMinutes: int("sessionDurationMinutes").notNull().default(60),
+  originalPrice: decimal("originalPrice", { precision: 10, scale: 2 }).notNull(),
+  packagePrice: decimal("packagePrice", { precision: 10, scale: 2 }).notNull(),
+  photoUri: varchar("photoUri", { length: 2048 }),
+  category: varchar("category", { length: 100 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DbServicePackage = typeof servicePackages.$inferSelect;
+export type InsertServicePackage = typeof servicePackages.$inferInsert;
+
+// ─── Gift Certificate Recipients ─────────────────────────────────────────────
+export const giftCertificateRecipients = mysqlTable("gift_certificate_recipients", {
+  id: int("id").autoincrement().primaryKey(),
+  giftCardLocalId: varchar("giftCardLocalId", { length: 64 }).notNull(),
+  giftCardCode: varchar("giftCardCode", { length: 20 }).notNull(),
+  businessOwnerId: int("businessOwnerId").notNull(),
+  clientAccountId: int("clientAccountId"),
+  recipientPhone: varchar("recipientPhone", { length: 20 }),
+  recipientEmail: varchar("recipientEmail", { length: 320 }),
+  linked: boolean("linked").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type DbGiftCertificateRecipient = typeof giftCertificateRecipients.$inferSelect;
+export type InsertGiftCertificateRecipient = typeof giftCertificateRecipients.$inferInsert;

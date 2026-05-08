@@ -1133,4 +1133,101 @@ export function registerClientRoutes(app: Express) {
     }
   });
 
+
+  // ── GET /api/client/packages/:slug ─────────────────────────────────────────
+  // Get packages/bundles for a business (public, no auth required)
+  app.get("/api/client/packages/:slug", async (req: Request, res: Response) => {
+    try {
+      const owner = await db.getBusinessOwnerBySlug(req.params.slug);
+      if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
+      const dbase = await db.getDb();
+      if (!dbase) { res.status(500).json({ error: "Database not available" }); return; }
+      const { servicePackages } = await import("../drizzle/schema");
+      const { eq, and } = await import("drizzle-orm");
+      const pkgs = await dbase.select().from(servicePackages).where(
+        and(eq(servicePackages.businessOwnerId, owner.id), eq(servicePackages.isActive, true))
+      );
+      // Enrich each package with service details
+      const allServices = await db.getServicesByOwner(owner.id);
+      const svcMap: Record<string, any> = {};
+      allServices.forEach((s: any) => { svcMap[s.localId] = s; });
+      const enriched = pkgs.map((pkg: any) => {
+        const items = Array.isArray(pkg.packageItems) ? pkg.packageItems : JSON.parse(pkg.packageItems || '[]');
+        return {
+          localId: pkg.localId,
+          name: pkg.name,
+          description: pkg.description || null,
+          packageItems: items.map((item: any) => ({
+            ...item,
+            serviceName: svcMap[item.serviceLocalId]?.name || item.serviceLocalId,
+            serviceCategory: svcMap[item.serviceLocalId]?.category || null,
+          })),
+          totalSessions: pkg.totalSessions,
+          sessionDurationMinutes: pkg.sessionDurationMinutes,
+          originalPrice: parseFloat(String(pkg.originalPrice)),
+          packagePrice: parseFloat(String(pkg.packagePrice)),
+          photoUri: pkg.photoUri || null,
+          category: pkg.category || null,
+        };
+      });
+      res.json(enriched);
+    } catch (err: any) {
+      console.error("[Client API] Error fetching packages:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ── GET /api/client/my-gifts ────────────────────────────────────────────────
+  // Get gift certificates received by the authenticated client (matched by phone/email)
+  app.get("/api/client/my-gifts", async (req: Request, res: Response) => {
+    try {
+      const { clientAccount } = await getClientAccount(req);
+      if (!clientAccount) { res.status(401).json({ error: "Unauthorized" }); return; }
+      const dbase = await db.getDb();
+      if (!dbase) { res.status(500).json({ error: "Database not available" }); return; }
+      const { giftCards, businessOwners } = await import("../drizzle/schema");
+      const { eq, or } = await import("drizzle-orm");
+      // Find gift cards where recipient phone/email matches this client account
+      const phone = clientAccount.phone || "";
+      const email = clientAccount.email || "";
+      const conditions: any[] = [];
+      if (phone) conditions.push(eq(giftCards.recipientPhone, phone));
+      if (email) conditions.push(eq(giftCards.recipientEmail, email));
+      if (conditions.length === 0) { res.json([]); return; }
+      const cards = await dbase.select().from(giftCards).where(
+        conditions.length === 1 ? conditions[0] : or(...conditions)
+      );
+      // Enrich with business name and service name
+      const result = await Promise.all(cards.map(async (card: any) => {
+        const [owner] = await dbase.select({ businessName: businessOwners.businessName, businessLogoUri: businessOwners.businessLogoUri, customSlug: businessOwners.customSlug, businessName2: businessOwners.businessName }).from(businessOwners).where(eq(businessOwners.id, card.businessOwnerId));
+        let serviceName = null;
+        if (card.serviceLocalId) {
+          const { services: svcTable2 } = await import("../drizzle/schema");
+          const { and: andSvc } = await import("drizzle-orm");
+          const [svc] = await dbase.select({ name: svcTable2.name }).from(svcTable2).where(andSvc(eq(svcTable2.localId, card.serviceLocalId), eq(svcTable2.businessOwnerId, card.businessOwnerId)));
+          serviceName = svc?.name || null;
+        }
+        return {
+          localId: card.localId,
+          code: card.code,
+          serviceName,
+          businessName: owner?.businessName || "Unknown Business",
+          businessLogoUri: owner?.businessLogoUri || null,
+          businessSlug: owner?.customSlug || null,
+          purchaserName: card.purchaserName || null,
+          message: card.message || null,
+          redeemed: card.redeemed,
+          redeemedAt: card.redeemedAt || null,
+          expiresAt: card.expiresAt || null,
+          totalValue: card.totalValue ? parseFloat(String(card.totalValue)) : null,
+          paymentStatus: card.paymentStatus || "unpaid",
+          createdAt: card.createdAt,
+        };
+      }));
+      res.json(result);
+    } catch (err: any) {
+      console.error("[Client API] Error fetching my-gifts:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 }

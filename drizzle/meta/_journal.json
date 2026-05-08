@@ -407,6 +407,13 @@
       "when": 1778112890896,
       "tag": "0057_futuristic_cyclops",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "5",
+      "when": 1778212615953,
+      "tag": "0058_magical_masked_marvel",
+      "breakpoints": true
     }
   ]
 }

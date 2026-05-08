@@ -67,6 +67,13 @@ interface ApiReview {
 interface ApiServicePhoto {
   id: number; serviceLocalId: string; url: string; caption: string | null; sortOrder: number;
 }
+interface ApiPackage {
+  localId: string; name: string; description: string | null;
+  packageItems: Array<{ serviceLocalId: string; sessions: number; serviceName: string; serviceCategory: string | null }>;
+  totalSessions: number; sessionDurationMinutes: number;
+  originalPrice: number; packagePrice: number;
+  photoUri: string | null; category: string | null;
+}
 interface ApiBusiness {
   id: number; businessName: string; ownerName: string; description: string | null;
   address: string | null; phone: string | null; email: string | null;
@@ -113,6 +120,9 @@ export default function ClientBusinessDetailScreen() {
 
   const [business, setBusiness] = useState<ApiBusiness | null>(null);
   const [services, setServices] = useState<ApiService[]>([]);
+  const [packages, setPackages] = useState<ApiPackage[]>([]);
+  const [packageDetailVisible, setPackageDetailVisible] = useState(false);
+  const [selectedPackageDetail, setSelectedPackageDetail] = useState<ApiPackage | null>(null);
   const [staff, setStaff] = useState<ApiStaff[]>([]);
   const [reviews, setReviews] = useState<ApiReview[]>([]);
   const [servicePhotos, setServicePhotos] = useState<ApiServicePhoto[]>([]);
@@ -120,7 +130,7 @@ export default function ClientBusinessDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [savingToggle, setSavingToggle] = useState(false);
-  const [activeTab, setActiveTab] = useState<"services"|"staff"|"hours"|"reviews"|"gallery">("services");
+  const [activeTab, setActiveTab] = useState<"services"|"packages"|"staff"|"hours"|"reviews"|"gallery">("services");
   const reviewsTabRef = useRef<any>(null);
   const [serviceCategory, setServiceCategory] = useState<string | null>(null);
   const [detailReviewVisible, setDetailReviewVisible] = useState(false);
@@ -162,6 +172,11 @@ export default function ClientBusinessDetailScreen() {
         ]);
         if (bizRes.ok) setBusiness(await bizRes.json() as ApiBusiness);
         if (svcRes.ok) { const d = await svcRes.json(); setServices(Array.isArray(d) ? d : []); }
+        // Fetch packages
+        try {
+          const pkgRes = await fetch(`${apiBase}/api/client/packages/${slug}`);
+          if (pkgRes.ok) { const d = await pkgRes.json(); setPackages(Array.isArray(d) ? d : []); }
+        } catch {}
         if (staffRes.ok) { const d = await staffRes.json(); setStaff(Array.isArray(d) ? d : []); }
         if (revRes.ok) { const d = await revRes.json(); setReviews(Array.isArray(d) ? d : []); }
         if (photosRes.ok) { const d = await photosRes.json(); setServicePhotos(Array.isArray(d.photos) ? d.photos : (Array.isArray(d) ? d : [])); }
@@ -250,8 +265,10 @@ export default function ClientBusinessDetailScreen() {
     );
   }
 
-  const tabs: Array<"services"|"staff"|"hours"|"reviews"|"gallery"> = [
-    "services","staff","hours","reviews",
+  const tabs: Array<"services"|"packages"|"staff"|"hours"|"reviews"|"gallery"> = [
+    "services",
+    ...(packages.length > 0 ? (["packages"] as const) : []),
+    "staff","hours","reviews",
     ...(servicePhotos.length > 0 ? (["gallery"] as const) : []),
   ];
 
@@ -374,6 +391,8 @@ export default function ClientBusinessDetailScreen() {
                   ? `Gallery (${servicePhotos.length})`
                   : tab === "reviews" && reviews.length > 0
                   ? `Reviews (${reviews.length})`
+                  : tab === "packages"
+                  ? `Packages (${packages.length})`
                   : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </Text>
             </Pressable>
@@ -648,6 +667,50 @@ export default function ClientBusinessDetailScreen() {
           </View>
         )}
 
+        {/* ── Packages Tab ── */}
+        {activeTab === "packages" && (
+          <View style={s.tabContent}>
+            {packages.length === 0 ? (
+              <Text style={[s.emptyText, { color: TEXT_MUTED }]}>No packages available.</Text>
+            ) : packages.map((pkg) => (
+              <View key={pkg.localId} style={[s.serviceCard, { backgroundColor: CARD_BG, borderColor: CARD_BORDER, flexDirection: "column", padding: 0, overflow: "hidden" }]}>
+                {pkg.photoUri ? (
+                  <Image source={{ uri: pkg.photoUri }} style={{ width: "100%", height: 160 }} contentFit="cover" />
+                ) : (
+                  <View style={{ width: "100%", height: 80, backgroundColor: `${LIME_GREEN}25`, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ fontSize: 28 }}>📦</Text>
+                  </View>
+                )}
+                <View style={{ padding: 14 }}>
+                  {pkg.category ? <Text style={{ fontSize: 10, fontWeight: "700", color: ACCENT, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>{pkg.category}</Text> : null}
+                  <Text style={[s.serviceName, { color: TEXT_PRIMARY, marginBottom: 4 }]}>{pkg.name}</Text>
+                  {pkg.description ? <Text style={[s.serviceDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{pkg.description}</Text> : null}
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 6 }}>
+                    <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>📋 {pkg.packageItems.length} service{pkg.packageItems.length !== 1 ? "s" : ""}</Text>
+                    <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>🔁 {pkg.totalSessions} sessions</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <Text style={{ color: TEXT_MUTED, fontSize: 13, textDecorationLine: "line-through" }}>${pkg.originalPrice.toFixed(2)}</Text>
+                      <Text style={{ color: ACCENT, fontWeight: "700", fontSize: 16 }}>${pkg.packagePrice.toFixed(2)}</Text>
+                      {pkg.originalPrice > 0 && (
+                        <View style={{ backgroundColor: `${ACCENT}20`, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                          <Text style={{ color: ACCENT, fontSize: 11, fontWeight: "700" }}>{Math.round((1 - pkg.packagePrice / pkg.originalPrice) * 100)}% OFF</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Pressable
+                      style={({ pressed }) => [s.bookBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+                      onPress={() => { setSelectedPackageDetail(pkg); setPackageDetailVisible(true); }}
+                    >
+                      <Text style={s.bookBtnText}>Book</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
         {/* ── Gallery Tab ── */}
         {activeTab === "gallery" && (
           <View style={{ paddingTop: 16 }}>
@@ -684,6 +747,80 @@ export default function ClientBusinessDetailScreen() {
         )}
       </ScrollView>
 
+      {/* ── Package Detail Modal ── */}
+      <Modal visible={packageDetailVisible} transparent animationType="slide" onRequestClose={() => setPackageDetailVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.75)", justifyContent: "flex-end" }}>
+          <View style={{ backgroundColor: "#1A3A28", borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "88%", overflow: "hidden" }}>
+            {selectedPackageDetail?.photoUri ? (
+              <Image source={{ uri: selectedPackageDetail.photoUri }} style={{ width: "100%", height: 200 }} contentFit="cover" />
+            ) : null}
+            <ScrollView contentContainerStyle={{ padding: 20 }}>
+              {selectedPackageDetail?.category ? <Text style={{ color: ACCENT, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>{selectedPackageDetail.category}</Text> : null}
+              <Text style={{ color: TEXT_PRIMARY, fontSize: 22, fontWeight: "700", marginBottom: 6 }}>{selectedPackageDetail?.name}</Text>
+              {selectedPackageDetail?.description ? <Text style={{ color: TEXT_MUTED, fontSize: 14, lineHeight: 22, marginBottom: 14 }}>{selectedPackageDetail.description}</Text> : null}
+              {/* Included services */}
+              <View style={{ backgroundColor: CARD_BG, borderRadius: 12, padding: 14, marginBottom: 14 }}>
+                <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 14, marginBottom: 10 }}>What's Included</Text>
+                {selectedPackageDetail?.packageItems.map((item, idx) => (
+                  <View key={idx} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: ACCENT }} />
+                    <Text style={{ color: TEXT_PRIMARY, fontSize: 13, flex: 1 }}>
+                      {item.serviceName}
+                      <Text style={{ color: TEXT_MUTED }}> × {item.sessions} session{item.sessions !== 1 ? "s" : ""}</Text>
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              {/* Stats */}
+              <View style={{ flexDirection: "row", gap: 10, marginBottom: 14 }}>
+                <View style={{ flex: 1, backgroundColor: CARD_BG, borderRadius: 10, padding: 12, alignItems: "center" }}>
+                  <Text style={{ color: ACCENT, fontSize: 20, fontWeight: "700" }}>{selectedPackageDetail?.totalSessions}</Text>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 11, marginTop: 2 }}>Total Sessions</Text>
+                </View>
+                <View style={{ flex: 1, backgroundColor: CARD_BG, borderRadius: 10, padding: 12, alignItems: "center" }}>
+                  <Text style={{ color: ACCENT, fontSize: 20, fontWeight: "700" }}>{selectedPackageDetail?.sessionDurationMinutes} min</Text>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 11, marginTop: 2 }}>Per Session</Text>
+                </View>
+              </View>
+              {/* Pricing */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 20 }}>
+                <Text style={{ color: TEXT_MUTED, fontSize: 14, textDecorationLine: "line-through" }}>${selectedPackageDetail?.originalPrice.toFixed(2)}</Text>
+                <Text style={{ color: ACCENT, fontWeight: "700", fontSize: 22 }}>${selectedPackageDetail?.packagePrice.toFixed(2)}</Text>
+                {selectedPackageDetail && selectedPackageDetail.originalPrice > 0 && (
+                  <View style={{ backgroundColor: `${ACCENT}20`, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                    <Text style={{ color: ACCENT, fontSize: 12, fontWeight: "700" }}>
+                      {Math.round((1 - selectedPackageDetail.packagePrice / selectedPackageDetail.originalPrice) * 100)}% OFF
+                    </Text>
+                  </View>
+                )}
+              </View>
+              {/* Actions */}
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <Pressable
+                  onPress={() => {
+                    setPackageDetailVisible(false);
+                    if (!state.account) {
+                      router.push({ pathname: "/client-signin", params: { returnSlug: slug } } as any);
+                      return;
+                    }
+                    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push({ pathname: "/client-booking-wizard", params: { slug, packageLocalId: selectedPackageDetail?.localId } } as any);
+                  }}
+                  style={({ pressed }) => [{ flex: 1, backgroundColor: LIME_GREEN, paddingVertical: 14, borderRadius: 12, alignItems: "center", opacity: pressed ? 0.85 : 1 }]}
+                >
+                  <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Book This Package</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setPackageDetailVisible(false)}
+                  style={({ pressed }) => [{ paddingHorizontal: 20, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: CARD_BORDER, alignItems: "center", opacity: pressed ? 0.85 : 1 }]}
+                >
+                  <Text style={{ color: TEXT_MUTED, fontWeight: "600" }}>Close</Text>
+                </Pressable>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
       {/* ── Logo Preview Modal ── */}
       <Modal visible={logoPreviewVisible} transparent animationType="fade" onRequestClose={() => setLogoPreviewVisible(false)}>
         <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.92)", alignItems: "center", justifyContent: "center" }} onPress={() => setLogoPreviewVisible(false)}>
@@ -805,11 +942,13 @@ export default function ClientBusinessDetailScreen() {
             style={({ pressed }) => [s.stickyBookBtn, { flex: 1 }, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
             onPress={() => {
               if (!state.account) {
-                const firstSvc = services[0];
-                router.push({ pathname: "/client-signin", params: { returnSlug: slug, returnServiceLocalId: firstSvc?.localId ?? "" } } as any);
+                // No service pre-selected — just return to this business after sign-in
+                router.push({ pathname: "/client-signin", params: { returnSlug: slug } } as any);
                 return;
               }
-              if (services.length > 0) handleBookService(services[0]);
+              // Book an Appointment → step 1 (service selection), client picks one or more services
+              if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push({ pathname: "/client-booking-wizard", params: { slug } } as any);
             }}
           >
             <IconSymbol name="calendar" size={18} color="#FFFFFF" />

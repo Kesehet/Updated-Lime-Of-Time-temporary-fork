@@ -39,6 +39,23 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface GiftCertificate {
+  localId: string;
+  code: string;
+  serviceName: string | null;
+  businessName: string;
+  businessLogoUri: string | null;
+  businessSlug: string | null;
+  purchaserName: string | null;
+  message: string | null;
+  redeemed: boolean;
+  redeemedAt: string | null;
+  expiresAt: string | null;
+  totalValue: number | null;
+  paymentStatus: string;
+  createdAt: string;
+}
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const GREEN_ACCENT = "#8FBF6A";   // light green CTA
 const GREEN_DARK   = "#1A3A28";
@@ -114,6 +131,7 @@ export default function ClientHomeScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [reviewPromptAppt, setReviewPromptAppt] = useState<ClientAppointment | null>(null);
+  const [myGifts, setMyGifts] = useState<GiftCertificate[]>([]);
 
   const isSignedIn = !!state.account;
 
@@ -121,10 +139,12 @@ export default function ClientHomeScreen() {
     if (!isSignedIn) return;
     if (!silent) setLoading(true);
     try {
-      const [rawAppts, saved] = await Promise.all([
+      const [rawAppts, saved, giftsRaw] = await Promise.all([
         apiCall<{ appointments: ClientAppointment[] } | ClientAppointment[]>("/api/client/appointments"),
         apiCall<any>("/api/client/saved-businesses"),
+        apiCall<GiftCertificate[]>("/api/client/my-gifts").catch(() => []),
       ]);
+      setMyGifts(Array.isArray(giftsRaw) ? giftsRaw : []);
       // API returns { appointments: [...] } — unwrap it
       const appts: ClientAppointment[] = Array.isArray(rawAppts) ? rawAppts : (rawAppts as any).appointments ?? [];
       dispatch({ type: "SET_APPOINTMENTS", payload: appts });
@@ -340,6 +360,91 @@ export default function ClientHomeScreen() {
             </AnimCard>
           </View>
 
+          {/* My Gift Certificates */}
+          {myGifts.length > 0 && (
+            <View style={[styles.section, { marginBottom: 0 }]}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>🎁 My Gift Certificates</Text>
+              </View>
+              {myGifts.map((gift) => {
+                const isExpired = gift.expiresAt ? new Date(gift.expiresAt) < new Date() : false;
+                const statusColor = gift.redeemed ? TEXT_MUTED : isExpired ? "#F87171" : GREEN_ACCENT;
+                const statusLabel = gift.redeemed ? "Redeemed" : isExpired ? "Expired" : "Active";
+                return (
+                  <View
+                    key={gift.localId}
+                    style={{
+                      backgroundColor: gift.redeemed ? "rgba(255,255,255,0.04)" : GREEN_ACCENT + "14",
+                      borderRadius: 16,
+                      borderWidth: 1,
+                      borderColor: gift.redeemed ? CARD_BORDER : GREEN_ACCENT + "35",
+                      padding: 14,
+                      marginBottom: 12,
+                      gap: 10,
+                    }}
+                  >
+                    {/* Header row */}
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <View style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: GREEN_ACCENT + "25", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+                        {gift.businessLogoUri ? (
+                          <Image source={{ uri: gift.businessLogoUri }} style={{ width: 44, height: 44 }} resizeMode="cover" />
+                        ) : (
+                          <Text style={{ fontSize: 22 }}>🎁</Text>
+                        )}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 14 }} numberOfLines={1}>{gift.businessName}</Text>
+                        {gift.serviceName ? <Text style={{ color: GREEN_ACCENT, fontSize: 12, fontWeight: "600" }} numberOfLines={1}>{gift.serviceName}</Text> : null}
+                        {gift.purchaserName ? <Text style={{ color: TEXT_MUTED, fontSize: 11 }}>From: {gift.purchaserName}</Text> : null}
+                      </View>
+                      <View style={{ backgroundColor: statusColor + "25", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Text style={{ color: statusColor, fontSize: 11, fontWeight: "700" }}>{statusLabel}</Text>
+                      </View>
+                    </View>
+                    {/* Gift code */}
+                    <View style={{ backgroundColor: "rgba(0,0,0,0.25)", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                      <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: "600" }}>GIFT CODE</Text>
+                      <Text style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "800", letterSpacing: 2 }}>{gift.code}</Text>
+                    </View>
+                    {/* Value + message */}
+                    {gift.totalValue ? (
+                      <Text style={{ color: GREEN_ACCENT, fontWeight: "700", fontSize: 14 }}>Value: ${gift.totalValue.toFixed(2)}</Text>
+                    ) : null}
+                    {gift.message ? (
+                      <Text style={{ color: TEXT_MUTED, fontSize: 12, fontStyle: "italic" }}>"{gift.message}"</Text>
+                    ) : null}
+                    {/* Expiry */}
+                    {gift.expiresAt && !gift.redeemed ? (
+                      <Text style={{ color: isExpired ? "#F87171" : TEXT_MUTED, fontSize: 11 }}>
+                        {isExpired ? "Expired" : "Expires"}: {new Date(gift.expiresAt).toLocaleDateString()}
+                      </Text>
+                    ) : null}
+                    {/* How to use steps */}
+                    {!gift.redeemed && !isExpired && (
+                      <View style={{ gap: 6, paddingTop: 4, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }}>
+                        <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 }}>How to use</Text>
+                        {[
+                          "1. Book an appointment at " + gift.businessName,
+                          "2. Show this code at checkout: " + gift.code,
+                          "3. The business will apply the gift value to your booking",
+                        ].map((step, i) => (
+                          <Text key={i} style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18 }}>{step}</Text>
+                        ))}
+                        {gift.businessSlug ? (
+                          <Pressable
+                            onPress={() => router.push({ pathname: "/client-business-detail", params: { slug: gift.businessSlug } } as any)}
+                            style={({ pressed }) => [{ backgroundColor: GREEN_ACCENT, borderRadius: 10, paddingVertical: 10, alignItems: "center", marginTop: 4, opacity: pressed ? 0.85 : 1 }]}
+                          >
+                            <Text style={{ color: "#1A3A28", fontWeight: "700", fontSize: 13 }}>Book at {gift.businessName} →</Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          )}
           {/* Book Again Shortcut */}
           {lastCompleted && (
             <View style={[styles.section, { marginBottom: 0 }]}>

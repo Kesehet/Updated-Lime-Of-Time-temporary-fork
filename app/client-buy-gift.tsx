@@ -11,7 +11,7 @@
  *
  * Design: dark forest-green portal aesthetic.
  */
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -22,7 +22,10 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Modal,
+  Dimensions,
 } from "react-native";
+import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ClientPortalBackground } from "@/components/client-portal-background";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -46,7 +49,20 @@ interface GiftItem {
   price: number;
   description: string | null;
   category?: string | null;
+  photoUri?: string | null;
   type: "service" | "product";
+}
+interface GiftPackage {
+  localId: string;
+  name: string;
+  description: string | null;
+  packageItems: Array<{ serviceLocalId: string; sessions: number; serviceName: string; serviceCategory: string | null }>;
+  totalSessions: number;
+  sessionDurationMinutes: number;
+  originalPrice: number;
+  packagePrice: number;
+  photoUri: string | null;
+  category: string | null;
 }
 
 interface GiftStaff {
@@ -108,6 +124,13 @@ export default function ClientBuyGiftScreen() {
   // ── Wizard state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState(0);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [packages, setPackages] = useState<GiftPackage[]>([]);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+  const [giftTab, setGiftTab] = useState<"services" | "packages">("services");
+  const [giftCategoryFilter, setGiftCategoryFilter] = useState<string | null>(null);
+  const [previewItem, setPreviewItem] = useState<GiftItem | null>(null);
+  const [previewPackage, setPreviewPackage] = useState<GiftPackage | null>(null);
+  const SCREEN_WIDTH = Dimensions.get("window").width;
   // Details
   const [purchaserName, setPurchaserName] = useState("");
   const [purchaserEmail, setPurchaserEmail] = useState("");
@@ -145,6 +168,12 @@ export default function ClientBuyGiftScreen() {
           fetch(`${apiBase}/api/public/business/${slug}/gift-info`),
           fetch(`${apiBase}/api/public/business/${slug}/staff-list`),
         ]);
+        // Also fetch packages
+        const pkgRes = await fetch(`${apiBase}/api/client/packages/${slug}`).catch(() => null);
+        if (pkgRes?.ok) {
+          const pkgData = await pkgRes.json();
+          setPackages(Array.isArray(pkgData) ? pkgData : []);
+        }
         if (infoRes.ok) {
           const data = await infoRes.json();
           setBusinessName(data.businessName ?? bizNameParam ?? "");
@@ -269,7 +298,7 @@ export default function ClientBuyGiftScreen() {
   };
 
   const canProceed = (): boolean => {
-    if (step === 0) return selectedItems.size > 0;
+    if (step === 0) return selectedItems.size > 0 || !!selectedPackageId;
     if (step === 1) return purchaserName.trim().length > 0 && recipientName.trim().length > 0;
     if (step === 2) {
       if (recipientChoosesDate) return true;
@@ -1028,6 +1057,14 @@ const s = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.8,
     marginTop: 4,
+  },
+  richCard: {
+    backgroundColor: CARD_BG,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: CARD_BORDER,
+    marginBottom: 14,
+    overflow: "hidden",
   },
   itemCard: {
     flexDirection: "row",
