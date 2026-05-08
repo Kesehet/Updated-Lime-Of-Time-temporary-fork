@@ -1984,3 +1984,10 @@
 - [x] Fix handleSplashFinish to navigate to /profile-select BEFORE setSplashDone(true) to prevent last-page flash
 - [x] Remove redundant blocking overlay from inside content tree — AnimatedSplash already covers everything
 - [x] Verify native splash background is #0D2318 (already correct in app.config.ts)
+
+## Phase: Biometric Auto-Login + Splash Branding (May 2026)
+
+- [x] Add "by Innovancio" line below tagline on AnimatedSplash screen
+- [x] Biometric auto-login: logic already existed in handleSplashFinish — fixed critical bug where setSplashDone(true) was never called on the early-return path
+- [x] If business owner has valid token + was recently active + Face ID enabled, skip Portal Selector and navigate directly to business dashboard
+- [x] Show Face ID prompt immediately on dashboard arrival (AppLockProvider already handles this)

@@ -96,6 +96,11 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
       <Animated.View style={[styles.textBlock, { opacity: textOpacity }]}>
         <Text style={styles.appName}>Lime Of Time</Text>
         <Text style={styles.tagline}>Book Appointments Near You</Text>
+        <View style={styles.byLineRow}>
+          <View style={styles.byLineDash} />
+          <Text style={styles.byLine}>BY INNOVANCIO</Text>
+          <View style={styles.byLineDash} />
+        </View>
       </Animated.View>
 
       {/* Subtle bottom accent line */}
@@ -144,6 +149,25 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     color: BRAND_MUTED,
     letterSpacing: 0.3,
+  },
+  byLineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    gap: 8,
+  },
+  byLineDash: {
+    width: 20,
+    height: 1,
+    backgroundColor: BRAND_MUTED,
+    opacity: 0.5,
+  },
+  byLine: {
+    fontSize: 10,
+    fontWeight: "500",
+    color: BRAND_MUTED,
+    letterSpacing: 2,
+    opacity: 0.7,
   },
   accentLine: {
     position: "absolute",

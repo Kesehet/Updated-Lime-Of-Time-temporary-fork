@@ -128,6 +128,8 @@ function RootLayout() {
           if (biometricEnabled === "true" && !needsReauth) {
             // Recently used AND biometric enabled → auto-route, Face ID will guard
             router.replace("/(tabs)" as any);
+            // Remove splash overlay after navigation commits
+            setTimeout(() => setSplashDone(true), 80);
             return;
           }
           // Otherwise: show portal selector. User taps Business Portal → goes to dashboard.
