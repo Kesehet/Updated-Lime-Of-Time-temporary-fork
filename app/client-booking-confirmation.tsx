@@ -56,6 +56,7 @@ export default function ClientBookingConfirmationScreen() {
     price,
     locationName,
     locationAddress,
+    locationPhone,
   } = useLocalSearchParams<{
     serviceName: string;
     staffName?: string;
@@ -67,6 +68,7 @@ export default function ClientBookingConfirmationScreen() {
     price?: string;
     locationName?: string;
     locationAddress?: string;
+    locationPhone?: string;
   }>();
 
   // Entrance animation
@@ -243,8 +245,22 @@ export default function ClientBookingConfirmationScreen() {
                 icon="mappin"
                 label="Branch"
                 value={locationName}
-                last={!locationAddress}
+                last={!locationPhone && !locationAddress}
               />
+            ) : null}
+            {locationPhone ? (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => Linking.openURL(`tel:${locationPhone.replace(/\D/g, "")}`)}
+              >
+                <SummaryRow
+                  icon="phone"
+                  label="Phone"
+                  value={locationPhone}
+                  last={!locationAddress}
+                  tappable
+                />
+              </TouchableOpacity>
             ) : null}
             {locationAddress ? (
               <TouchableOpacity
@@ -292,18 +308,15 @@ export default function ClientBookingConfirmationScreen() {
             style={({ pressed }) => [styles.rescheduleBtn, pressed && { opacity: 0.8 }]}
             onPress={() => {
               if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              Alert.alert(
-                "Request Reschedule",
-                "To reschedule this appointment, please contact the business directly or go to your bookings and use the reschedule option.",
-                [
-                  { text: "Go to Bookings", onPress: () => router.replace("/(client-tabs)/bookings" as any) },
-                  { text: "Cancel", style: "cancel" },
-                ]
-              );
+              // Navigate to booking wizard pre-filled with the same business so client can pick a new slot
+              router.push({
+                pathname: "/client-booking-wizard",
+                params: { businessSlug: businessSlug ?? "" },
+              } as any);
             }}
           >
             <IconSymbol name="calendar" size={16} color={TEXT_MUTED} />
-            <Text style={styles.rescheduleBtnText}>Request Reschedule</Text>
+            <Text style={styles.rescheduleBtnText}>Book Again / Reschedule</Text>
           </Pressable>
           {/* ── View Bookings ────────────────────────────────────────── */}
           <Pressable

@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Platform,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -43,6 +44,7 @@ const TEXT_MUTED = "rgba(255,255,255,0.6)";
 interface MessageThread {
   businessOwnerId: number;
   businessName: string;
+  businessLogoUri: string | null;
   businessSlug: string;
   serviceName: string;
   appointmentDate: string;
@@ -201,9 +203,17 @@ function ThreadRow({ item, index, router }: { item: MessageThread; index: number
   return (
     <GestureDetector gesture={tap}>
       <Animated.View style={[animStyle, styles.threadCard]}>
-        {/* Avatar */}
+        {/* Avatar — show business logo if available, else initials */}
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
+          {item.businessLogoUri ? (
+            <Image
+              source={{ uri: item.businessLogoUri }}
+              style={{ width: 48, height: 48, borderRadius: 24 }}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={styles.avatarText}>{initials}</Text>
+          )}
         </View>
 
         {/* Thread info */}

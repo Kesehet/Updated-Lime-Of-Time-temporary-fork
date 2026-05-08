@@ -25,6 +25,7 @@ const MAPPING = {
   "xmark.circle": "cancel",
   "clock.fill": "access-time",
   "phone.fill": "phone",
+  "phone": "phone",
   "envelope.fill": "email",
   "pencil": "edit",
   "trash.fill": "delete",

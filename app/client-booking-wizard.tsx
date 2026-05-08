@@ -474,6 +474,7 @@ export default function ClientBookingWizardScreen() {
           staffName: selectedStaffMember?.name ?? "",
           locationName: selectedLocation?.name ?? "",
           locationAddress: selectedLocation?.address ?? "",
+          locationPhone: selectedLocation?.phone ?? "",
           date: dateStr,
           time: selectedSlot.time,
           duration: String(selectedService.duration),
