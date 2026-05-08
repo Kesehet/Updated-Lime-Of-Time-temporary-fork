@@ -236,8 +236,16 @@ export default function ClientBookingConfirmationScreen() {
               icon="building.2"
               label="Business"
               value={businessName ?? "—"}
-              last={!locationAddress}
+              last={!locationName && !locationAddress}
             />
+            {locationName ? (
+              <SummaryRow
+                icon="mappin"
+                label="Branch"
+                value={locationName}
+                last={!locationAddress}
+              />
+            ) : null}
             {locationAddress ? (
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -249,7 +257,7 @@ export default function ClientBookingConfirmationScreen() {
                   Linking.openURL(url).catch(() => Linking.openURL(`https://maps.google.com/?q=${encoded}`));
                 }}
               >
-                <SummaryRow icon="location" label="Location" value={locationAddress} last tappable />
+                <SummaryRow icon="location" label="Address" value={locationAddress} last tappable />
                 <Text style={{ color: GREEN_ACCENT, fontSize: 12, fontWeight: "600", marginLeft: 46, marginTop: -6, marginBottom: 8 }}>
                   Get Directions →
                 </Text>
