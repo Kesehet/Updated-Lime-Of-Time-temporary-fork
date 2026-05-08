@@ -26,6 +26,7 @@ import {
   Linking,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useClientStore } from "@/lib/client-store";
@@ -140,6 +141,7 @@ export default function ClientBookingWizardScreen() {
   const [promoError, setPromoError] = useState("");
   const [promoLoading, setPromoLoading] = useState(false);
   const [discounts, setDiscounts] = useState<{ localId: string; name: string; percentage: number; serviceIds: string[] }[]>([]);
+  const [businessDisplayName, setBusinessDisplayName] = useState<string>("");
   // Category filter for the service selection step
   const [wizardCatFilter, setWizardCatFilter] = useState<string | null>(null);
   // Full-screen photo preview state
@@ -184,17 +186,20 @@ export default function ClientBookingWizardScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const [svcRes, staffRes, locRes, discRes] = await Promise.all([
+        const [svcRes, staffRes, locRes, discRes, bizRes] = await Promise.all([
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/services`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/staff`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/locations`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/discounts`),
+          fetch(`${apiBase}/api/public/business/${effectiveSlug}`),
         ]);
         const svcData = svcRes.ok ? await svcRes.json() : [];
         const staffData = staffRes.ok ? await staffRes.json() : [];
         const locData = locRes.ok ? await locRes.json() : [];
         const discData = discRes.ok ? await discRes.json() : [];
+        const bizData = bizRes.ok ? await bizRes.json() : {};
         setDiscounts(Array.isArray(discData) ? discData : []);
+        if (bizData?.businessName) setBusinessDisplayName(bizData.businessName);
         const svcList: PublicService[] = Array.isArray(svcData) ? svcData : [];
         const staffList: PublicStaff[] = Array.isArray(staffData) ? staffData : [];
         const locList: PublicLocation[] = Array.isArray(locData)
@@ -472,7 +477,7 @@ export default function ClientBookingWizardScreen() {
           date: dateStr,
           time: selectedSlot.time,
           duration: String(selectedService.duration),
-          businessName: effectiveSlug,
+          businessName: businessDisplayName || effectiveSlug,
           businessSlug: effectiveSlug,
           price: `$${finalPrice.toFixed(2)}`,
           originalPrice: selectedService.price ?? "",
@@ -496,6 +501,7 @@ export default function ClientBookingWizardScreen() {
   if (loadingData) {
     return (
       <ScreenContainer containerClassName="bg-[#0D2318]">
+      <StatusBar style="light" />
         <ClientPortalBackground />
         <View style={s.loadingContainer}>
           <ActivityIndicator color={LIME_GREEN} size="large" />
@@ -514,6 +520,10 @@ export default function ClientBookingWizardScreen() {
   return (
     <ScreenContainer containerClassName="bg-[#0D2318]">
       <ClientPortalBackground />
+      {/* Drag handle — visual affordance for fullScreenModal dismiss */}
+      <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 4 }}>
+        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" }} />
+      </View>
       {/* Header */}
       <View style={s.header}>
         <Pressable style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]} onPress={handleBack}>

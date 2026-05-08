@@ -22,6 +22,7 @@ import {
   Linking,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { ClientPortalBackground } from "@/components/client-portal-background";
 import { useClientStore, ClientAppointment } from "@/lib/client-store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -170,7 +171,13 @@ export default function ClientAppointmentDetailScreen() {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
+      <StatusBar style="light" />
         <ClientPortalBackground />
+      {/* Drag handle */}
+      <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 4 }}>
+        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" }} />
+      </View>
+
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={GREEN_ACCENT} />
         </View>

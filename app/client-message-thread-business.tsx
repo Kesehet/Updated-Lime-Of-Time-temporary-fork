@@ -18,6 +18,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -133,7 +134,13 @@ export default function ClientMessageThreadBusinessScreen() {
 
   return (
     <ScreenContainer edges={["top", "left", "right"]} containerClassName="bg-[#0D2318]">
+      <StatusBar style="light" />
       <ClientPortalBackground />
+      {/* Drag handle */}
+      <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 4 }}>
+        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" }} />
+      </View>
+
       {/* Header */}
       <View style={[s.header, { borderBottomColor: DIVIDER }]}>
         <Pressable style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]} onPress={() => router.back()}>

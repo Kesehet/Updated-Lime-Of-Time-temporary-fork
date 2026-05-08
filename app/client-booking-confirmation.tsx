@@ -20,6 +20,7 @@ import {
   Linking,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { ClientPortalBackground } from "@/components/client-portal-background";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -189,7 +190,13 @@ export default function ClientBookingConfirmationScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
+      <StatusBar style="light" />
       <ClientPortalBackground />
+      {/* Drag handle */}
+      <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 4 }}>
+        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" }} />
+      </View>
+
 
       <ScrollView
         contentContainerStyle={[
@@ -243,6 +250,9 @@ export default function ClientBookingConfirmationScreen() {
                 }}
               >
                 <SummaryRow icon="location" label="Location" value={locationAddress} last tappable />
+                <Text style={{ color: GREEN_ACCENT, fontSize: 12, fontWeight: "600", marginLeft: 46, marginTop: -6, marginBottom: 8 }}>
+                  Get Directions →
+                </Text>
               </TouchableOpacity>
             ) : null}
           </View>
@@ -269,6 +279,24 @@ export default function ClientBookingConfirmationScreen() {
             </Text>
           </Pressable>
 
+          {/* ── Request Reschedule ──────────────────────────────────── */}
+          <Pressable
+            style={({ pressed }) => [styles.rescheduleBtn, pressed && { opacity: 0.8 }]}
+            onPress={() => {
+              if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Alert.alert(
+                "Request Reschedule",
+                "To reschedule this appointment, please contact the business directly or go to your bookings and use the reschedule option.",
+                [
+                  { text: "Go to Bookings", onPress: () => router.replace("/(client-tabs)/bookings" as any) },
+                  { text: "Cancel", style: "cancel" },
+                ]
+              );
+            }}
+          >
+            <IconSymbol name="calendar" size={16} color={TEXT_MUTED} />
+            <Text style={styles.rescheduleBtnText}>Request Reschedule</Text>
+          </Pressable>
           {/* ── View Bookings ────────────────────────────────────────── */}
           <Pressable
             style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
@@ -473,6 +501,25 @@ const styles = StyleSheet.create({
   },
   ghostBtnText: {
     fontSize: 14,
+    fontWeight: "600",
+    color: TEXT_MUTED,
+  },
+  // ─── Reschedule Button ────────────────────────────────────────────────────
+  rescheduleBtn: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    marginBottom: 10,
+  },
+  rescheduleBtnText: {
+    fontSize: 15,
     fontWeight: "600",
     color: TEXT_MUTED,
   },

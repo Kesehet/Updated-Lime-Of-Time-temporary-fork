@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useClientStore, SavedBusiness } from "@/lib/client-store";
@@ -219,7 +220,13 @@ export default function ClientBusinessDetailScreen() {
   if (loading) {
     return (
       <ScreenContainer containerClassName="bg-[#0D2318]">
+      <StatusBar style="light" />
         <ClientPortalBackground />
+      {/* Drag handle */}
+      <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 4 }}>
+        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" }} />
+      </View>
+
         <View style={s.loadingContainer}><ActivityIndicator size="large" color={ACCENT} /></View>
       </ScreenContainer>
     );

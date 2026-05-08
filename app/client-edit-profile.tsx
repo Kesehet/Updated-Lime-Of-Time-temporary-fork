@@ -23,6 +23,7 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { ClientPortalBackground } from "@/components/client-portal-background";
 import { useClientStore } from "@/lib/client-store";
 import { getApiBaseUrl } from "@/constants/oauth";
@@ -190,7 +191,13 @@ export default function ClientEditProfileScreen() {
   if (!account) {
     return (
       <View style={{ flex: 1, backgroundColor: GREEN_DARK, alignItems: "center", justifyContent: "center" }}>
+      <StatusBar style="light" />
         <ClientPortalBackground />
+      {/* Drag handle */}
+      <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 4 }}>
+        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" }} />
+      </View>
+
         <Text style={{ color: TEXT_MUTED, fontSize: 15 }}>Not signed in.</Text>
       </View>
     );

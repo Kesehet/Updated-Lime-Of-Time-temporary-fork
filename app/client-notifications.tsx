@@ -17,6 +17,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { ClientPortalBackground } from "@/components/client-portal-background";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -98,7 +99,13 @@ export default function ClientNotificationsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
+      <StatusBar style="light" />
       <ClientPortalBackground />
+      {/* Drag handle */}
+      <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 4 }}>
+        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" }} />
+      </View>
+
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
