@@ -218,7 +218,7 @@ export default function ClientBusinessDetailScreen() {
 
   if (loading) {
     return (
-      <ScreenContainer>
+      <ScreenContainer containerClassName="bg-[#0D2318]">
         <ClientPortalBackground />
         <View style={s.loadingContainer}><ActivityIndicator size="large" color={ACCENT} /></View>
       </ScreenContainer>
@@ -227,7 +227,7 @@ export default function ClientBusinessDetailScreen() {
 
   if (!business) {
     return (
-      <ScreenContainer className="px-6">
+      <ScreenContainer className="px-6" containerClassName="bg-[#0D2318]">
         <ClientPortalBackground />
         <View style={s.loadingContainer}>
           <Text style={{ color: TEXT_PRIMARY, fontSize: 16 }}>Business not found.</Text>

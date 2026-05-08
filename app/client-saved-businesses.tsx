@@ -65,7 +65,7 @@ export default function ClientSavedBusinessesScreen() {
   };
 
   return (
-    <ScreenContainer>
+    <ScreenContainer containerClassName="bg-[#0D2318]">
       <ClientPortalBackground />
       {/* Header */}
       <View style={s.header}>

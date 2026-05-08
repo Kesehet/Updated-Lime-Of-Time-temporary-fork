@@ -132,7 +132,7 @@ export default function ClientMessageThreadBusinessScreen() {
   const s = makeStyles(colors);
 
   return (
-    <ScreenContainer edges={["top", "left", "right"]}>
+    <ScreenContainer edges={["top", "left", "right"]} containerClassName="bg-[#0D2318]">
       <ClientPortalBackground />
       {/* Header */}
       <View style={[s.header, { borderBottomColor: DIVIDER }]}>

@@ -81,6 +81,13 @@ const PAYMENT_METHODS = [
 ] as const;
 type PaymentMethodId = typeof PAYMENT_METHODS[number]["id"];
 
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  if (digits.length === 11 && digits[0] === "1") return `(${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+  return raw; // return as-is if not standard
+}
+
 function formatPrice(price: string | null): string {
   if (price == null) return "Price varies";
   const n = parseFloat(price);
@@ -748,7 +755,7 @@ export default function ClientBookingWizardScreen() {
                     <Text style={[s.optionDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{loc.address}</Text>
                   ) : null}
                   {loc.phone ? (
-                    <Text style={[s.optionMeta, { color: LIME_GREEN }]}>{loc.phone}</Text>
+                    <Text style={[s.optionMeta, { color: LIME_GREEN }]}>{formatPhone(loc.phone)}</Text>
                   ) : null}
                 </View>
                 {selectedLocation?.localId === loc.localId && (
