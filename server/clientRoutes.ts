@@ -549,7 +549,13 @@ export function registerClientRoutes(app: Express) {
         staffName: staff?.name ?? null,
         staffAvatarUrl: staff?.photoUri ?? null,
         locationName: location?.name ?? null,
-        locationAddress: location?.address ?? null,
+        locationAddress: location ? [
+          location.address,
+          location.city,
+          location.state,
+          location.zipCode,
+        ].filter(Boolean).join(", ") : null,
+        locationPhone: location?.phone ?? null,
       });
     } catch (err: any) {
       res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });

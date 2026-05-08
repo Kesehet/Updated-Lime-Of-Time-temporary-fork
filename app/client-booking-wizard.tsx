@@ -216,17 +216,16 @@ export default function ClientBookingWizardScreen() {
           const found = svcList.find((s) => s.localId === serviceLocalId);
           if (found) {
             setSelectedService(found);
-            // Stay on step 0 (service selection) so the user always sees the service step
-            // and can confirm or change their selection before proceeding
-            setStep(0);
+            // Jump directly to step 1 (Staff) since the service is already chosen via the Book button
+            setStep(1);
           }
         } else if (preServiceName) {
           // Book Again: pre-select service by name (case-insensitive match)
           const found = svcList.find((s) => s.name.toLowerCase() === String(preServiceName).toLowerCase());
           if (found) {
             setSelectedService(found);
-            // Stay on step 0 so user can confirm the service before continuing
-            setStep(0);
+            // Jump to step 1 (Staff) for Book Again flow as well
+            setStep(1);
           }
         }
         // Pre-select staff from "Book with [Name]" on business detail
@@ -932,7 +931,7 @@ export default function ClientBookingWizardScreen() {
 
             {/* ── Available Times (shown below calendar once a date is selected) ── */}
             {selectedDate && (
-              <View style={{ marginTop: 8 }}>
+              <View style={{ marginTop: 4 }}>
                 <View style={s.timeSectionHeader}>
                   <IconSymbol name="clock" size={15} color={LIME_GREEN} />
                   <Text style={[s.timeSectionTitle, { color: TEXT_PRIMARY, flex: 1 }]}>
@@ -1373,7 +1372,7 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     dayHeaders: { flexDirection: "row", marginBottom: 4 },
     dayHeader: { flex: 1, textAlign: "center", fontSize: 12, fontWeight: "600" },
     calGrid: { flexDirection: "row", flexWrap: "wrap" },
-    calCell: { width: "14.28%" as any, aspectRatio: 1, alignItems: "center", justifyContent: "center" },
+    calCell: { width: "14.28%" as any, aspectRatio: 0.85, alignItems: "center", justifyContent: "center" },
     selectedDateLabel: { textAlign: "center", fontSize: 14, fontWeight: "600", marginTop: 12 },
     timeSectionHeader: { flexDirection: "row" as const, alignItems: "center" as const, gap: 6, marginBottom: 10 },
     timeSectionTitle: { fontSize: 15, fontWeight: "700" as const },

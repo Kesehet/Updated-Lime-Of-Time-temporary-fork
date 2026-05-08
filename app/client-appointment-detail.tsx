@@ -271,6 +271,23 @@ export default function ClientAppointmentDetailScreen() {
           {appt.locationAddress ? (
             <AddressRow address={appt.locationAddress} />
           ) : null}
+          {(appt as any).locationPhone ? (
+            <Pressable
+              style={({ pressed }) => [{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 4, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }, pressed && { opacity: 0.7 }]}
+              onPress={() => Linking.openURL(`tel:${(appt as any).locationPhone.replace(/\D/g, "")}`)}
+            >
+              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: "rgba(143,191,106,0.15)", alignItems: "center", justifyContent: "center", marginRight: 12 }}>
+                <IconSymbol name="phone" size={14} color="#8FBF6A" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, fontWeight: "600", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Phone</Text>
+                <Text style={{ fontSize: 15, color: "#8FBF6A", textDecorationLine: "underline" }}>
+                  {(() => { const d = (appt as any).locationPhone.replace(/\D/g, ""); return d.length === 10 ? `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}` : d.length === 11 ? `(${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7)}` : (appt as any).locationPhone; })()}
+                </Text>
+              </View>
+              <IconSymbol name="chevron.right" size={14} color="rgba(143,191,106,0.6)" />
+            </Pressable>
+          ) : null}
           {appt.notes ? (
             <InfoRow icon="note.text" label="Notes" value={appt.notes} />
           ) : null}

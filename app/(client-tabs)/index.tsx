@@ -430,7 +430,7 @@ export default function ClientHomeScreen() {
                     {((appt as any).servicePhotoUri || (appt as any).businessLogoUri) && (
                       <Image
                         source={{ uri: (appt as any).servicePhotoUri ?? (appt as any).businessLogoUri }}
-                        style={{ width: 48, height: 48, borderRadius: 10, marginRight: 4 }}
+                        style={{ width: 52, height: 52, borderRadius: 10, marginLeft: 8, marginRight: 6 }}
                         resizeMode="cover"
                       />
                     )}
