@@ -1963,3 +1963,11 @@
 - [x] Gift card image upload — business can upload a custom banner image when creating gift cards; banner shown on client home screen gift cards and confirmation screen
 - [x] Package expiry reminder — in-app warning banner on client home screen when package expires within 7 days; amber border highlight and "Expires in X days" message
 - [x] Balance gift partial redemption display — Promo step shows remaining balance after applying a balance-type gift code ("Using $X.XX — $Y.YY balance remaining")
+
+## Phase: Gift Card Tap-to-Book Flow (May 2026 Session 3)
+- [x] Add serviceLocalId to my-gifts API endpoint response
+- [x] Add serviceLocalId to GiftCertificate interface in client home screen
+- [x] Make entire gift certificate card tappable (AnimCard wrapper with haptic feedback)
+- [x] Pass serviceLocalId (or preServiceName fallback) + preGiftCode to booking wizard on tap
+- [x] Auto-validate gift code when client reaches Promo step (no manual Apply needed)
+- [x] Update "How to use" instructions to reflect new tap-to-book flow

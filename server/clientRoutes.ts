@@ -1233,6 +1233,7 @@ export function registerClientRoutes(app: Express) {
         return {
           localId: card.localId,
           code: card.code,
+          serviceLocalId: card.serviceLocalId || null,
           serviceName,
           businessName: owner?.businessName || "Unknown Business",
           businessLogoUri: owner?.businessLogoUri || null,

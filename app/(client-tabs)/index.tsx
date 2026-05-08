@@ -43,6 +43,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface GiftCertificate {
   localId: string;
   code: string;
+  serviceLocalId?: string | null;
   serviceName: string | null;
   businessName: string;
   businessLogoUri: string | null;
@@ -478,16 +479,28 @@ export default function ClientHomeScreen() {
                 const isExpired = gift.expiresAt ? new Date(gift.expiresAt) < new Date() : false;
                 const statusColor = gift.redeemed ? TEXT_MUTED : isExpired ? "#F87171" : GREEN_ACCENT;
                 const statusLabel = gift.redeemed ? "Redeemed" : isExpired ? "Expired" : "Active";
+                const canRedeem = !gift.redeemed && !isExpired && !!gift.businessSlug;
+                const handleRedeemGift = () => {
+                  if (!canRedeem) return;
+                  const params: Record<string, string> = { slug: gift.businessSlug! };
+                  if (gift.serviceLocalId) params.serviceLocalId = gift.serviceLocalId;
+                  else if (gift.serviceName) params.preServiceName = gift.serviceName;
+                  params.preGiftCode = gift.code;
+                  router.push({ pathname: "/client-booking-wizard", params } as any);
+                };
                 return (
-                  <View
+                  <AnimCard
                     key={gift.localId}
+                    onPress={handleRedeemGift}
+                    style={{ marginBottom: 12 }}
+                  >
+                  <View
                     style={{
                       backgroundColor: gift.redeemed ? "rgba(255,255,255,0.04)" : GREEN_ACCENT + "14",
                       borderRadius: 16,
                       borderWidth: 1,
                       borderColor: gift.redeemed ? CARD_BORDER : GREEN_ACCENT + "35",
                       padding: 14,
-                      marginBottom: 12,
                       gap: 10,
                     }}
                   >
@@ -557,10 +570,10 @@ export default function ClientHomeScreen() {
                     {/* How to use steps */}
                     {!gift.redeemed && !isExpired && (
                       <View style={{ gap: 8, paddingTop: 6, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }}>
-                        {/* Redeem button — navigates to booking wizard with gift code pre-filled */}
+                        {/* Redeem button — navigates to booking wizard with service pre-selected and gift code pre-filled */}
                         {gift.businessSlug ? (
                           <Pressable
-                            onPress={() => router.push({ pathname: "/client-booking-wizard", params: { slug: gift.businessSlug, preGiftCode: gift.code } } as any)}
+                            onPress={handleRedeemGift}
                             style={({ pressed }) => [{ backgroundColor: GREEN_ACCENT, borderRadius: 10, paddingVertical: 11, alignItems: "center", opacity: pressed ? 0.85 : 1 }]}
                           >
                             <Text style={{ color: "#1A3A28", fontWeight: "700", fontSize: 14 }}>Redeem Gift →</Text>
@@ -568,15 +581,16 @@ export default function ClientHomeScreen() {
                         ) : null}
                         <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>How to use</Text>
                         {[
-                          "1. Tap Redeem Gift above to start booking",
-                          "2. Your gift code will be pre-filled at checkout",
-                          "3. The business will apply the gift value to your booking",
+                          "1. Tap this card or 'Redeem Gift' to start booking",
+                          "2. Service is pre-selected — go straight to staff & time",
+                          "3. Your gift code is pre-filled at checkout automatically",
                         ].map((step, i) => (
                           <Text key={i} style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18 }}>{step}</Text>
                         ))}
                       </View>
                     )}
                   </View>
+                  </AnimCard>
                 );
               })}
             </View>

@@ -259,6 +259,31 @@ export default function ClientBookingWizardScreen() {
     }
   }, [preGiftCode]);
 
+  // Auto-validate gift code when client reaches the Promo step with a pre-filled code
+  useEffect(() => {
+    if (step !== STEP_PROMO) return;
+    if (!giftInput.trim() || giftApplied) return;
+    if (!effectiveSlug || !apiBase) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(`${apiBase}/api/public/business/${effectiveSlug}/gift-validate/${encodeURIComponent(giftInput.trim())}`);
+        if (cancelled) return;
+        if (r.ok) {
+          const data = await r.json();
+          const giftType = data.giftType ?? "service";
+          const label = giftType === "balance"
+            ? `Balance Credit — $${parseFloat(data.value).toFixed(2)} available`
+            : `Gift Certificate — $${parseFloat(data.value).toFixed(2)} value`;
+          setGiftApplied({ code: data.code, value: parseFloat(data.value), totalValue: parseFloat(data.totalValue ?? data.value), label, giftType });
+          if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      } catch { /* silent — user can still apply manually */ }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, STEP_PROMO]);
+
   // Fetch working-days info (weeklyDays + customDays) whenever slug/location changes
   useEffect(() => {
     if (!effectiveSlug) return;
