@@ -143,6 +143,7 @@ export default function ClientAppointmentDetailScreen() {
   }, [appt, id, reviewRating, reviewComment, apiCall]);
 
   const handleAddToCalendar = async () => {
+    if (!appt) return;
     try {
       if (Platform.OS === "web") {
         Alert.alert("Not supported", "Calendar integration is not available on web.");
@@ -188,7 +189,7 @@ export default function ClientAppointmentDetailScreen() {
         notes: notes || undefined,
         alarms: [{ relativeOffset: -60 }, { relativeOffset: -1440 }],
       });
-      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if ((Platform.OS as string) !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Added!", `"${appt.serviceName}" has been added to your calendar with reminders.`);
     } catch (err: any) {
       console.warn("[Calendar]", err);

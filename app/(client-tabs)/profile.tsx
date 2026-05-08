@@ -79,7 +79,7 @@ export default function ClientProfileScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { state, signOut } = useClientStore();
+  const { state, signOut, dispatch } = useClientStore();
   const [signingOut, setSigningOut] = useState(false);
   const { biometricEnabled, biometricAvailable, biometricType, toggleBiometric } = useAppLockContext();
 
@@ -254,7 +254,7 @@ export default function ClientProfileScreen() {
       if (!patchRes.ok) throw new Error("Save failed");
       const updated = await patchRes.json() as any;
       dispatch({ type: "SET_ACCOUNT", payload: { ...state.account!, profilePhotoUri: data.url } });
-      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if ((Platform.OS as string) !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err) {
       Alert.alert("Error", "Could not update profile photo. Please try again.");
     } finally {

@@ -196,6 +196,7 @@ export default function ClientBusinessDetailScreen() {
           businessName: business?.businessName ?? "", businessSlug: slug,
           businessCategory: business?.businessCategory ?? business?.category ?? null,
           businessAddress: business?.address ?? null, businessPhone: business?.phone ?? null,
+          businessLogoUri: business?.businessLogoUri ?? null,
           savedAt: new Date().toISOString(),
         };
         dispatch({ type: "ADD_SAVED_BUSINESS", payload: optimistic });
