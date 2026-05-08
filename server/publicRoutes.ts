@@ -491,7 +491,8 @@ export function registerPublicRoutes(app: Express) {
         startTime: d.startTime,
         endTime: d.endTime,
         dates: d.dates,
-        serviceIds: d.serviceIds,
+        // Normalise: null means "all services" → return empty array so clients can safely call .length
+        serviceIds: Array.isArray(d.serviceIds) ? d.serviceIds : [],
       })));
     } catch (err) {
       console.error("[Public API] Error fetching discounts:", err);

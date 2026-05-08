@@ -386,7 +386,7 @@ export default function ClientBookingWizardScreen() {
       let discountAmount: number | undefined;
       // Check active discounts for this service
       const activeDiscount = discounts.find(d =>
-        d.serviceIds.length === 0 || d.serviceIds.includes(selectedService.localId)
+        !d.serviceIds || (d.serviceIds as string[]).length === 0 || (d.serviceIds as string[]).includes(selectedService.localId)
       );
       if (activeDiscount) {
         discountName = activeDiscount.name;
@@ -984,7 +984,7 @@ export default function ClientBookingWizardScreen() {
             <Text style={[s.stepSubtitle, { color: TEXT_MUTED }]}>Apply a promo code or see active discounts. This step is optional.</Text>
 
             {/* Active discounts for this service */}
-            {discounts.filter(d => d.serviceIds.length === 0 || d.serviceIds.includes(selectedService.localId)).map(d => (
+            {discounts.filter(d => !d.serviceIds || (d.serviceIds as string[]).length === 0 || (d.serviceIds as string[]).includes(selectedService.localId)).map(d => (
               <View key={d.localId} style={[s.discountBanner, { backgroundColor: `${LIME_GREEN}18`, borderColor: `${LIME_GREEN}40` }]}>
                 <Text style={{ fontSize: 20 }}>🏷️</Text>
                 <View style={{ flex: 1 }}>
@@ -996,7 +996,7 @@ export default function ClientBookingWizardScreen() {
                 </View>
               </View>
             ))}
-            {discounts.filter(d => d.serviceIds.length === 0 || d.serviceIds.includes(selectedService.localId)).length === 0 && (
+            {discounts.filter(d => !d.serviceIds || (d.serviceIds as string[]).length === 0 || (d.serviceIds as string[]).includes(selectedService.localId)).length === 0 && (
               <View style={[s.discountBanner, { backgroundColor: CARD_BG, borderColor: CARD_BORDER }]}>
                 <Text style={{ fontSize: 18 }}>💡</Text>
                 <Text style={[{ color: TEXT_MUTED, fontSize: 13, flex: 1 }]}>No active discounts for this service right now.</Text>
@@ -1067,7 +1067,7 @@ export default function ClientBookingWizardScreen() {
         {/* Confirm step */}
         {step === STEP_CONFIRM && selectedService && selectedDate && selectedSlot && (() => {
           const svcPrice = selectedService.price ? parseFloat(selectedService.price) : 0;
-          const activeDiscount = discounts.find(d => d.serviceIds.length === 0 || d.serviceIds.includes(selectedService.localId));
+          const activeDiscount = discounts.find(d => !d.serviceIds || (d.serviceIds as string[]).length === 0 || (d.serviceIds as string[]).includes(selectedService.localId));
           const discSaving = activeDiscount ? parseFloat((svcPrice * activeDiscount.percentage / 100).toFixed(2)) : 0;
           const afterDiscount = svcPrice - discSaving;
           const promoSaving = promoApplied
