@@ -877,12 +877,18 @@ export function dbGiftCardToLocal(g: any): GiftCard {
     paymentMethod: g.paymentMethod ?? undefined,
     paymentStatus: g.paymentStatus ?? undefined,
     totalValue: g.totalValue != null ? parseFloat(String(g.totalValue)) : undefined,
-    recipientChoosesDate: g.recipientChoosesDate === 1 || g.recipientChoosesDate === true,
+     recipientChoosesDate: g.recipientChoosesDate === 1 || g.recipientChoosesDate === true,
     preselectedDate: g.preselectedDate ?? undefined,
     preselectedTime: g.preselectedTime ?? undefined,
+    giftType: (() => {
+      const jsonMatch2 = (g.message ?? "").match(/\n---GIFT_DATA---\n(.+)$/s);
+      if (jsonMatch2) {
+        try { const d = JSON.parse(jsonMatch2[1]); if (d.giftType) return d.giftType as "service" | "balance"; } catch {}
+      }
+      return (g.serviceLocalId ? "service" : "balance") as "service" | "balance";
+    })(),
   };
 }
-
 export function dbPromoCodeToLocal(p: any): import("./types").PromoCode {
   return {
     id: p.localId,

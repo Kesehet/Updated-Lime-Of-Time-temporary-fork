@@ -1941,3 +1941,19 @@
 - [ ] Fix SplashScreen.show error on Expo Go
 - [ ] Booking wizard service cards: add service photos with tap-to-preview
 - [ ] Fix blue/dark gap at top of booking wizard screen
+
+## Phase: Gift, Package & Inbox Improvements (May 2026)
+- [x] Business inbox unread badge — red dot/count badge on Messages tab when there are unread client messages (already implemented via useBusinessUnreadCount hook + tab badge)
+- [x] Package expiry enforcement — expiryDays field on packages, expiresAt computed on purchase, booking blocked with "Package expired" alert if expired
+- [x] Gift certificate balance display — remaining balance bar on client home screen gift cards ($X of $Y remaining)
+- [x] Gift data clarification — strip GIFT_DATA blob from visible message, show clean data in UI
+- [x] Balance Credit gift type — business can set a dollar amount gift (no specific service), client can apply it to any service at checkout
+- [x] Gift code entry UI in booking wizard promo step — client can enter gift certificate code to apply to booking
+
+## Phase: Gift, Package & Inbox Improvements (May 2026)
+- [x] Business inbox unread badge — red dot/count badge on Messages tab when there are unread client messages
+- [x] Package expiry enforcement — expiryDays field on packages, expiresAt computed on purchase, booking blocked with "Package expired" alert if expired
+- [x] Gift certificate balance display — remaining balance bar on client home screen gift cards ($X of $Y remaining)
+- [x] Gift data clarification — strip GIFT_DATA blob from visible message, show clean data in UI
+- [x] Balance Credit gift type — business can set a dollar amount gift (no specific service), client can apply it to any service at checkout
+- [x] Gift code entry UI in booking wizard promo step — client can enter gift certificate code to apply to booking

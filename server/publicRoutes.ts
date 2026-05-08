@@ -573,7 +573,8 @@ export function registerPublicRoutes(app: Express) {
       }
       remainingValue = gcMeta.remainingBalance ?? gcMeta.originalValue ?? totalValue;
       if (remainingValue <= 0) { res.status(400).json({ error: "This gift certificate has no remaining value" }); return; }
-      res.json({ code: card.code, value: remainingValue, totalValue, expiresAt: card.expiresAt });
+      const giftType = gcMeta.giftType ?? (card.serviceLocalId ? "service" : "balance");
+      res.json({ code: card.code, value: remainingValue, totalValue, expiresAt: card.expiresAt, giftType, serviceLocalId: card.serviceLocalId || null });
     } catch (err) {
       console.error("[Public API] Error validating gift certificate:", err);
       res.status(500).json({ error: "Internal server error" });
@@ -1867,23 +1868,47 @@ export function registerPublicRoutes(app: Express) {
       if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
       const { purchaserName, purchaserEmail, recipientName, recipientEmail, recipientPhone,
         serviceIds = [], productIds = [], personalMessage,
+        giftType = "service", balanceAmount,
         paymentMethod = "unpaid", recipientChoosesDate = true, preselectedDate, preselectedTime } = req.body;
       // Use business-configured validity (default 90 days) instead of client-supplied value
       const expiresInDays = (owner as any).giftValidDays ?? 90;
       if (!purchaserName || !purchaserEmail || !recipientName) {
         res.status(400).json({ error: "purchaserName, purchaserEmail, and recipientName are required" }); return;
       }
-      if (!serviceIds.length && !productIds.length) {
-        res.status(400).json({ error: "At least one service or product must be selected" }); return;
+      // For balance-type gifts, balanceAmount is required; for service-type, at least one item is required
+      if (giftType === "balance") {
+        const amt = parseFloat(String(balanceAmount ?? 0));
+        if (!amt || amt <= 0) {
+          res.status(400).json({ error: "A positive balance amount is required for balance-type gifts" }); return;
+        }
+      } else {
+        if (!serviceIds.length && !productIds.length) {
+          res.status(400).json({ error: "At least one service or product must be selected" }); return;
+        }
       }
-      const allServices = await db.getServicesByOwner(owner.id) as any[];
-      const allProducts = await db.getProductsByOwner(owner.id) as any[];
-      const selectedServices = serviceIds.map((id: string) => allServices.find(s => s.localId === id)).filter(Boolean);
-      const selectedProducts = productIds.map((id: string) => allProducts.find(p => p.localId === id)).filter(Boolean);
-      if (!selectedServices.length && !selectedProducts.length) {
-        res.status(400).json({ error: "Selected services or products not found" }); return;
+      let totalValue: number;
+      let selectedServices: any[] = [];
+      let selectedProducts: any[] = [];
+      let primaryServiceLocalId: string | null = null;
+      let items: Array<{ name: string; price: number; type: string }> = [];
+      if (giftType === "balance") {
+        totalValue = parseFloat(String(balanceAmount));
+        items = [{ name: "Balance Credit", price: totalValue, type: "balance" }];
+      } else {
+        const allServices = await db.getServicesByOwner(owner.id) as any[];
+        const allProducts = await db.getProductsByOwner(owner.id) as any[];
+        selectedServices = serviceIds.map((id: string) => allServices.find((s: any) => s.localId === id)).filter(Boolean);
+        selectedProducts = productIds.map((id: string) => allProducts.find((p: any) => p.localId === id)).filter(Boolean);
+        if (!selectedServices.length && !selectedProducts.length) {
+          res.status(400).json({ error: "Selected services or products not found" }); return;
+        }
+        totalValue = [...selectedServices, ...selectedProducts].reduce((sum: number, item: any) => sum + parseFloat(String(item.price)), 0);
+        primaryServiceLocalId = selectedServices.length > 0 ? selectedServices[0].localId : selectedProducts[0].localId;
+        items = [
+          ...selectedServices.map((s: any) => ({ name: s.name, price: parseFloat(String(s.price)), type: "service" })),
+          ...selectedProducts.map((p: any) => ({ name: p.name, price: parseFloat(String(p.price)), type: "product" })),
+        ];
       }
-      const totalValue = [...selectedServices, ...selectedProducts].reduce((sum: number, item: any) => sum + parseFloat(String(item.price)), 0);
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       let code = "GIFT-";
       for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -1891,25 +1916,22 @@ export function registerPublicRoutes(app: Express) {
       const expiry = new Date();
       expiry.setDate(expiry.getDate() + (parseInt(String(expiresInDays)) || 365));
       const expiresAt = expiry.toISOString().split("T")[0];
-      const giftData = JSON.stringify({ serviceIds, productIds, originalValue: totalValue, remainingBalance: totalValue, purchasedPublicly: true });
+      const giftData = JSON.stringify({ giftType, serviceIds, productIds, originalValue: totalValue, remainingBalance: totalValue, purchasedPublicly: true });
       const messageWithData = (personalMessage || "") + "\n---GIFT_DATA---\n" + giftData;
-      const primaryServiceLocalId = selectedServices.length > 0 ? selectedServices[0].localId : selectedProducts[0].localId;
       const dbase = await db.getDb();
       if (!dbase) { res.status(500).json({ error: "Database not available" }); return; }
       const { giftCards } = await import("../drizzle/schema");
       await dbase.insert(giftCards).values({
-        businessOwnerId: owner.id, localId, code, serviceLocalId: primaryServiceLocalId,
+        businessOwnerId: owner.id, localId, code,
+        serviceLocalId: primaryServiceLocalId ?? undefined,
         recipientName, recipientPhone: recipientPhone || null, message: messageWithData,
         redeemed: false, expiresAt, purchaserName, purchaserEmail,
-        recipientEmail: recipientEmail || null, recipientChoosesDate: !!recipientChoosesDate,
+        recipientEmail: recipientEmail || null, recipientChoosesDate: giftType === "balance" ? true : !!recipientChoosesDate,
         paymentMethod, paymentStatus: paymentMethod === "card" ? "paid" : "unpaid",
         totalValue: String(totalValue.toFixed(2)), purchasedPublicly: true,
-        preselectedDate: preselectedDate || null, preselectedTime: preselectedTime || null,
+        preselectedDate: giftType !== "balance" ? (preselectedDate || null) : null,
+        preselectedTime: giftType !== "balance" ? (preselectedTime || null) : null,
       } as any);
-      const items = [
-        ...selectedServices.map((s: any) => ({ name: s.name, price: parseFloat(String(s.price)), type: "service" })),
-        ...selectedProducts.map((p: any) => ({ name: p.name, price: parseFloat(String(p.price)), type: "product" })),
-      ];
       const o = owner as any;
       const slug = o.customSlug || owner.businessName.toLowerCase().replace(/\s+/g, "-");
       const shareLink = (req.headers.origin || 'https://lime-of-time.com') + '/api/gift/' + encodeURIComponent(code);

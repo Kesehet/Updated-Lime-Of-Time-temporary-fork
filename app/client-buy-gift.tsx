@@ -127,6 +127,8 @@ export default function ClientBuyGiftScreen() {
   const [packages, setPackages] = useState<GiftPackage[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [giftTab, setGiftTab] = useState<"services" | "packages">("services");
+  const [giftMode, setGiftMode] = useState<"specific" | "balance">("specific");
+  const [balanceAmount, setBalanceAmount] = useState<string>("");
   const [giftCategoryFilter, setGiftCategoryFilter] = useState<string | null>(null);
   const [previewItem, setPreviewItem] = useState<GiftItem | null>(null);
   const [previewPackage, setPreviewPackage] = useState<GiftPackage | null>(null);
@@ -274,7 +276,9 @@ export default function ClientBuyGiftScreen() {
   // ── Helpers ────────────────────────────────────────────────────────────────
   const allItems: GiftItem[] = [...services, ...products];
   const selectedItemsList = allItems.filter(i => selectedItems.has(i.localId));
-  const totalValue = selectedItemsList.reduce((sum, i) => sum + i.price, 0);
+  const totalValue = giftMode === "balance"
+    ? (parseFloat(balanceAmount) || 0)
+    : selectedItemsList.reduce((sum, i) => sum + i.price, 0);
 
   const toggleItem = useCallback((id: string) => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -298,7 +302,10 @@ export default function ClientBuyGiftScreen() {
   };
 
   const canProceed = (): boolean => {
-    if (step === 0) return selectedItems.size > 0 || !!selectedPackageId;
+    if (step === 0) {
+      if (giftMode === "balance") return parseFloat(balanceAmount) > 0;
+      return selectedItems.size > 0 || !!selectedPackageId;
+    }
     if (step === 1) return purchaserName.trim().length > 0 && recipientName.trim().length > 0;
     if (step === 2) {
       if (recipientChoosesDate) return true;
@@ -312,8 +319,8 @@ export default function ClientBuyGiftScreen() {
     setSubmitting(true);
     if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     try {
-      const serviceIds = selectedItemsList.filter(i => i.type === "service").map(i => i.localId);
-      const productIds = selectedItemsList.filter(i => i.type === "product").map(i => i.localId);
+      const serviceIds = giftMode === "balance" ? [] : selectedItemsList.filter(i => i.type === "service").map(i => i.localId);
+      const productIds = giftMode === "balance" ? [] : selectedItemsList.filter(i => i.type === "product").map(i => i.localId);
       const preselectedDate = selectedDate ? selectedDate.toISOString().split("T")[0] : undefined;
       const body: any = {
         purchaserName: purchaserName.trim(),
@@ -324,12 +331,14 @@ export default function ClientBuyGiftScreen() {
         personalMessage: personalMessage.trim() || undefined,
         serviceIds,
         productIds,
+        giftType: giftMode === "balance" ? "balance" : "service",
+        balanceAmount: giftMode === "balance" ? parseFloat(balanceAmount) : undefined,
         paymentMethod,
-        recipientChoosesDate,
-        preselectedDate: !recipientChoosesDate ? preselectedDate : undefined,
-        preselectedTime: !recipientChoosesDate && selectedSlot ? selectedSlot : undefined,
-        staffId: selectedStaffId !== "any" ? selectedStaffId : undefined,
-        locationId: selectedLocation?.localId ?? undefined,
+        recipientChoosesDate: giftMode === "balance" ? true : recipientChoosesDate,
+        preselectedDate: !recipientChoosesDate && giftMode !== "balance" ? preselectedDate : undefined,
+        preselectedTime: !recipientChoosesDate && selectedSlot && giftMode !== "balance" ? selectedSlot : undefined,
+        staffId: giftMode !== "balance" && selectedStaffId !== "any" ? selectedStaffId : undefined,
+        locationId: giftMode !== "balance" ? (selectedLocation?.localId ?? undefined) : undefined,
       };
       const res = await fetch(`${apiBase}/api/public/business/${slug}/buy-gift`, {
         method: "POST",
@@ -429,8 +438,73 @@ export default function ClientBuyGiftScreen() {
           <View style={s.stepContent}>
             <Text style={s.stepTitle}>Choose Gift Items</Text>
             <Text style={s.stepSub}>Select one or more services or products to include in the gift.</Text>
+            {/* Gift Type Selector */}
+            <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
+              <Pressable
+                onPress={() => setGiftMode("specific")}
+                style={({ pressed }) => [{
+                  flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center",
+                  backgroundColor: giftMode === "specific" ? GREEN_ACCENT : "rgba(255,255,255,0.07)",
+                  borderWidth: 1.5, borderColor: giftMode === "specific" ? GREEN_ACCENT : "rgba(255,255,255,0.15)",
+                  opacity: pressed ? 0.85 : 1,
+                }]}
+              >
+                <Text style={{ fontSize: 18, marginBottom: 2 }}>{"\uD83C\uDF81"}</Text>
+                <Text style={{ color: giftMode === "specific" ? "#1A3A28" : TEXT_PRIMARY, fontWeight: "700", fontSize: 13 }}>Specific Service</Text>
+                <Text style={{ color: giftMode === "specific" ? "#1A3A28" : TEXT_MUTED, fontSize: 11, textAlign: "center", marginTop: 2 }}>Gift a specific service or product</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setGiftMode("balance")}
+                style={({ pressed }) => [{
+                  flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center",
+                  backgroundColor: giftMode === "balance" ? GREEN_ACCENT : "rgba(255,255,255,0.07)",
+                  borderWidth: 1.5, borderColor: giftMode === "balance" ? GREEN_ACCENT : "rgba(255,255,255,0.15)",
+                  opacity: pressed ? 0.85 : 1,
+                }]}
+              >
+                <Text style={{ fontSize: 18, marginBottom: 2 }}>{"\uD83D\uDCB5"}</Text>
+                <Text style={{ color: giftMode === "balance" ? "#1A3A28" : TEXT_PRIMARY, fontWeight: "700", fontSize: 13 }}>Balance Credit</Text>
+                <Text style={{ color: giftMode === "balance" ? "#1A3A28" : TEXT_MUTED, fontSize: 11, textAlign: "center", marginTop: 2 }}>Gift a dollar amount to spend</Text>
+              </Pressable>
+            </View>
+            {giftMode === "balance" && (
+              <View style={{ marginBottom: 16, gap: 8 }}>
+                <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 }}>Gift Amount</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)", paddingHorizontal: 14, paddingVertical: 12 }}>
+                  <Text style={{ color: GREEN_ACCENT, fontWeight: "700", fontSize: 20, marginRight: 4 }}>$</Text>
+                  <TextInput
+                    value={balanceAmount}
+                    onChangeText={(v) => setBalanceAmount(v.replace(/[^0-9.]/g, ""))}
+                    placeholder="0.00"
+                    placeholderTextColor={TEXT_MUTED}
+                    keyboardType="decimal-pad"
+                    style={{ flex: 1, color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}
+                    returnKeyType="done"
+                  />
+                </View>
+                <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                  {[25, 50, 75, 100, 150, 200].map(amt => (
+                    <Pressable
+                      key={amt}
+                      onPress={() => setBalanceAmount(String(amt))}
+                      style={({ pressed }) => [{
+                        paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+                        backgroundColor: parseFloat(balanceAmount) === amt ? GREEN_ACCENT : "rgba(255,255,255,0.08)",
+                        borderWidth: 1, borderColor: parseFloat(balanceAmount) === amt ? GREEN_ACCENT : "rgba(255,255,255,0.15)",
+                        opacity: pressed ? 0.85 : 1,
+                      }]}
+                    >
+                      <Text style={{ color: parseFloat(balanceAmount) === amt ? "#1A3A28" : TEXT_PRIMARY, fontWeight: "600", fontSize: 13 }}>${"{amt}"}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18 }}>
+                  The recipient can use this balance as a credit toward any service at {businessName}.
+                </Text>
+              </View>
+            )}
 
-            {services.length > 0 && (
+            {giftMode === "specific" && services.length > 0 && (
               <>
                 <Text style={s.sectionHeader}>Services</Text>
                 {services.map(item => (
@@ -456,7 +530,7 @@ export default function ClientBuyGiftScreen() {
               </>
             )}
 
-            {products.length > 0 && (
+            {giftMode === "specific" && products.length > 0 && (
               <>
                 <Text style={s.sectionHeader}>Products</Text>
                 {products.map(item => (
@@ -482,20 +556,24 @@ export default function ClientBuyGiftScreen() {
               </>
             )}
 
-            {allItems.length === 0 && (
+            {giftMode === "specific" && allItems.length === 0 && (
               <View style={s.emptyState}>
                 <Text style={{ fontSize: 32 }}>🎁</Text>
                 <Text style={{ color: TEXT_MUTED, textAlign: "center" }}>No gift items available yet.</Text>
               </View>
             )}
 
-            {selectedItems.size > 0 && (
+            {(selectedItems.size > 0 || (giftMode === "balance" && parseFloat(balanceAmount) > 0)) && (
               <View style={[s.totalBanner, { backgroundColor: `${GREEN_ACCENT}15`, borderColor: `${GREEN_ACCENT}40` }]}>
-                <Text style={{ fontSize: 20 }}>🎁</Text>
+                <Text style={{ fontSize: 20 }}>{giftMode === "balance" ? "💵" : "🎁"}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>
-                    {selectedItems.size} item{selectedItems.size > 1 ? "s" : ""} selected
-                  </Text>
+                  {giftMode === "balance" ? (
+                    <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>Balance Credit Gift</Text>
+                  ) : (
+                    <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>
+                      {selectedItems.size} item{selectedItems.size > 1 ? "s" : ""} selected
+                    </Text>
+                  )}
                   <Text style={{ color: GREEN_ACCENT, fontWeight: "600", fontSize: 14 }}>
                     Total value: {formatPrice(totalValue)}
                   </Text>

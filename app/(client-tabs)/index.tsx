@@ -53,6 +53,8 @@ interface GiftCertificate {
   redeemedAt: string | null;
   expiresAt: string | null;
   totalValue: number | null;
+  remainingBalance: number | null;
+  giftType: string;
   paymentStatus: string;
   createdAt: string;
 }
@@ -389,17 +391,20 @@ export default function ClientHomeScreen() {
                 const progress = pkg.totalSessions > 0 ? pkg.sessionsCompleted / pkg.totalSessions : 0;
                 const remaining = pkg.totalSessions - pkg.sessionsCompleted;
                 const isComplete = pkg.sessionsCompleted >= pkg.totalSessions;
+                const isExpiredPkg = pkg.status === "expired" || (pkg.expiresAt ? new Date(pkg.expiresAt + "T23:59:59") < new Date() : false);
+                const pkgStatusLabel = isComplete ? "✓ Complete" : isExpiredPkg ? "Expired" : "Active";
+                const pkgStatusColor = isComplete ? "#22C55E" : isExpiredPkg ? "#F87171" : GREEN_ACCENT;
                 return (
-                  <View key={pkg.localId} style={{ backgroundColor: CARD_BG, borderRadius: 16, borderWidth: 1, borderColor: CARD_BORDER, padding: 16, marginBottom: 12, gap: 12 }}>
+                  <View key={pkg.localId} style={{ backgroundColor: isExpiredPkg ? "rgba(255,255,255,0.04)" : CARD_BG, borderRadius: 16, borderWidth: 1, borderColor: isExpiredPkg ? "rgba(248,113,113,0.25)" : CARD_BORDER, padding: 16, marginBottom: 12, gap: 12 }}>
                     {/* Header row */}
                     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                       <View style={{ flex: 1, gap: 2 }}>
                         <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>{pkg.packageName}</Text>
                         <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>{pkg.businessName}</Text>
                       </View>
-                      <View style={{ backgroundColor: isComplete ? "#22C55E25" : GREEN_ACCENT + "25", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
-                        <Text style={{ color: isComplete ? "#22C55E" : GREEN_ACCENT, fontSize: 11, fontWeight: "700" }}>
-                          {isComplete ? "✓ Complete" : "Active"}
+                      <View style={{ backgroundColor: pkgStatusColor + "25", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Text style={{ color: pkgStatusColor, fontSize: 11, fontWeight: "700" }}>
+                          {pkgStatusLabel}
                         </Text>
                       </View>
                     </View>
@@ -430,13 +435,15 @@ export default function ClientHomeScreen() {
                       ) : null}
                     </View>
                     {/* Book next session button */}
-                    {!isComplete && pkg.businessSlug ? (
+                    {!isComplete && !isExpiredPkg && pkg.businessSlug ? (
                       <Pressable
                         onPress={() => router.push({ pathname: "/client-booking-wizard", params: { slug: pkg.businessSlug } } as any)}
                         style={({ pressed }) => [{ backgroundColor: GREEN_ACCENT, borderRadius: 10, paddingVertical: 10, alignItems: "center", opacity: pressed ? 0.85 : 1 }]}
                       >
                         <Text style={{ color: "#1A3A28", fontWeight: "700", fontSize: 13 }}>Book Next Session →</Text>
                       </Pressable>
+                    ) : isExpiredPkg ? (
+                      <Text style={{ color: "#F87171", fontSize: 12, textAlign: "center" }}>This package has expired. Please contact {pkg.businessName} to renew.</Text>
                     ) : null}
                   </View>
                 );
@@ -470,15 +477,19 @@ export default function ClientHomeScreen() {
                     {/* Header row */}
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                       <View style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: GREEN_ACCENT + "25", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
-                        {gift.businessLogoUri ? (
+                        {gift.businessLogoUri && gift.giftType !== "balance" ? (
                           <Image source={{ uri: gift.businessLogoUri }} style={{ width: 44, height: 44 }} resizeMode="cover" />
                         ) : (
-                          <Text style={{ fontSize: 22 }}>🎁</Text>
+                          <Text style={{ fontSize: 22 }}>{gift.giftType === "balance" ? "💵" : "🎁"}</Text>
                         )}
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 14 }} numberOfLines={1}>{gift.businessName}</Text>
-                        {gift.serviceName ? <Text style={{ color: GREEN_ACCENT, fontSize: 12, fontWeight: "600" }} numberOfLines={1}>{gift.serviceName}</Text> : null}
+                        {gift.giftType === "balance" ? (
+                          <Text style={{ color: GREEN_ACCENT, fontSize: 12, fontWeight: "600" }} numberOfLines={1}>Balance Credit Gift</Text>
+                        ) : gift.serviceName ? (
+                          <Text style={{ color: GREEN_ACCENT, fontSize: 12, fontWeight: "600" }} numberOfLines={1}>{gift.serviceName}</Text>
+                        ) : null}
                         {gift.purchaserName ? <Text style={{ color: TEXT_MUTED, fontSize: 11 }}>From: {gift.purchaserName}</Text> : null}
                       </View>
                       <View style={{ backgroundColor: statusColor + "25", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
@@ -490,10 +501,25 @@ export default function ClientHomeScreen() {
                       <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: "600" }}>GIFT CODE</Text>
                       <Text style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "800", letterSpacing: 2 }}>{gift.code}</Text>
                     </View>
-                    {/* Value + message */}
-                    {gift.totalValue ? (
-                      <Text style={{ color: GREEN_ACCENT, fontWeight: "700", fontSize: 14 }}>Value: ${gift.totalValue.toFixed(2)}</Text>
+                    {/* Balance bar */}
+                    {gift.totalValue && !gift.redeemed ? (() => {
+                      const remaining = gift.remainingBalance ?? gift.totalValue;
+                      const pct = Math.max(0, Math.min(1, remaining / gift.totalValue));
+                      return (
+                        <View style={{ gap: 4 }}>
+                          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                            <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: "600" }}>BALANCE REMAINING</Text>
+                            <Text style={{ color: GREEN_ACCENT, fontWeight: "800", fontSize: 13 }}>${remaining.toFixed(2)} of ${gift.totalValue.toFixed(2)}</Text>
+                          </View>
+                          <View style={{ height: 6, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 3, overflow: "hidden" }}>
+                            <View style={{ height: 6, width: `${Math.round(pct * 100)}%` as any, backgroundColor: pct > 0.5 ? GREEN_ACCENT : pct > 0.2 ? "#FBBF24" : "#F87171", borderRadius: 3 }} />
+                          </View>
+                        </View>
+                      );
+                    })() : gift.redeemed && gift.totalValue ? (
+                      <Text style={{ color: TEXT_MUTED, fontSize: 13, fontWeight: "700" }}>Value: ${gift.totalValue.toFixed(2)} · Fully Redeemed</Text>
                     ) : null}
+                    {/* Message */}
                     {gift.message ? (
                       <Text style={{ color: TEXT_MUTED, fontSize: 12, fontStyle: "italic" }}>"{gift.message}"</Text>
                     ) : null}

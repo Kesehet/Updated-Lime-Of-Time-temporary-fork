@@ -398,6 +398,25 @@ export default function ClientBookingWizardScreen() {
       return;
     }
     if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Pre-check: if a package is being used, verify it hasn't expired
+    if (packageLocalId) {
+      try {
+        const pkgCheckRes = await fetch(`${apiBase}/api/client/my-packages/${packageLocalId}/use-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.token}` },
+          body: JSON.stringify({ dryRun: true }),
+        });
+        if (!pkgCheckRes.ok) {
+          const pkgErr = await pkgCheckRes.json().catch(() => ({ error: "Package check failed" }));
+          if ((pkgErr as any).code === "PACKAGE_EXPIRED") {
+            Alert.alert("Package Expired", `This package expired on ${(pkgErr as any).expiresAt}. Please book without a package or purchase a new one.`);
+            return;
+          }
+        }
+      } catch {
+        // Non-blocking — proceed with booking
+      }
+    }
     setSubmitting(true);
     try {
       const dateStr = selectedDate.toISOString().split("T")[0];
@@ -1187,6 +1206,66 @@ export default function ClientBookingWizardScreen() {
               </View>
             )}
             {promoError ? <Text style={{ color: "#F87171", fontSize: 13, marginTop: 4 }}>{promoError}</Text> : null}
+            {/* Gift Certificate entry */}
+            <Text style={[s.notesLabel, { color: TEXT_PRIMARY, marginTop: 16 }]}>Gift Certificate Code</Text>
+            {giftApplied ? (
+              <View style={[s.promoAppliedCard, { backgroundColor: `${LIME_GREEN}15`, borderColor: `${LIME_GREEN}50` }]}>
+                <Text style={{ fontSize: 20 }}>🎁</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>{giftApplied.code}</Text>
+                  <Text style={{ color: LIME_GREEN, fontSize: 13 }}>{giftApplied.label}</Text>
+                </View>
+                <Pressable
+                  onPress={() => { setGiftApplied(null); setGiftInput(""); setGiftError(""); }}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+                >
+                  <Text style={{ color: TEXT_MUTED, fontSize: 13, fontWeight: "600" }}>Remove</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <TextInput
+                  style={[s.notesInput, { flex: 1, minHeight: 0, paddingVertical: 12, backgroundColor: CARD_BG, borderColor: giftError ? "#F87171" : CARD_BORDER, color: TEXT_PRIMARY }]}
+                  placeholder="e.g. GIFT-ABCD1234"
+                  placeholderTextColor={TEXT_MUTED}
+                  value={giftInput}
+                  onChangeText={v => { setGiftInput(v.toUpperCase()); setGiftError(""); }}
+                  autoCapitalize="characters"
+                  returnKeyType="done"
+                />
+                <Pressable
+                  style={({ pressed }) => [s.promoApplyBtn, { backgroundColor: LIME_GREEN, opacity: giftLoading || !giftInput.trim() ? 0.5 : pressed ? 0.85 : 1 }]}
+                  onPress={async () => {
+                    if (!giftInput.trim()) return;
+                    setGiftLoading(true);
+                    setGiftError("");
+                    try {
+                      const r = await fetch(`${apiBase}/api/public/business/${effectiveSlug}/gift-validate/${encodeURIComponent(giftInput.trim())}`);
+                      if (!r.ok) {
+                        const e = await r.json().catch(() => ({}));
+                        setGiftError((e as any).error ?? "Invalid gift certificate");
+                      } else {
+                        const data = await r.json();
+                        const giftType = data.giftType ?? "service";
+                        const label = giftType === "balance"
+                          ? `Balance Credit — $${parseFloat(data.value).toFixed(2)} available`
+                          : `Gift Certificate — $${parseFloat(data.value).toFixed(2)} value`;
+                        setGiftApplied({ code: data.code, value: parseFloat(data.value), label });
+                        if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      }
+                    } catch {
+                      setGiftError("Could not validate gift certificate");
+                    } finally {
+                      setGiftLoading(false);
+                    }
+                  }}
+                  disabled={giftLoading || !giftInput.trim()}
+                >
+                  {giftLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>Apply</Text>}
+                </Pressable>
+              </View>
+            )}
+            {giftError ? <Text style={{ color: "#F87171", fontSize: 13, marginTop: 4 }}>{giftError}</Text> : null}
           </View>
         )}
 

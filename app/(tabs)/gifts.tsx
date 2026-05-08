@@ -74,7 +74,9 @@ function PublicGiftCard({
           </Text>
         </View>
       </View>
-      {items.map((it, idx) => (
+      {card.giftType === "balance" ? (
+        <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 2 }}>💵 Balance Credit — usable on any service</Text>
+      ) : items.map((it, idx) => (
         <Text key={idx} style={{ fontSize: 12, color: colors.muted, marginBottom: 2 }}>
           {it.type === "product" ? "📦" : "✂️"} {it.name} — {it.price}
         </Text>
@@ -411,7 +413,9 @@ export default function GiftCardsScreen() {
                 )}
               </View>
               {/* Items list */}
-              {items.map((it, idx) => (
+              {item.giftType === "balance" ? (
+                <Text style={[styles.serviceName, { color: colors.muted }]}>💵 Balance Credit — usable on any service</Text>
+              ) : items.map((it, idx) => (
                 <Text key={idx} style={[styles.serviceName, { color: colors.muted }]}>
                   {it.type === "product" ? "📦 " : "✂️ "}{it.name} — {it.price}
                 </Text>

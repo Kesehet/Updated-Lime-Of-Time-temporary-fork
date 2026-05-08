@@ -1214,6 +1214,20 @@ export function registerClientRoutes(app: Express) {
           const [svc] = await dbase.select({ name: svcTable2.name }).from(svcTable2).where(andSvc(eq(svcTable2.localId, card.serviceLocalId), eq(svcTable2.businessOwnerId, card.businessOwnerId)));
           serviceName = svc?.name || null;
         }
+        // Strip internal GIFT_DATA metadata block from message field
+        const rawMsg = card.message || "";
+        const giftDataMatch = rawMsg.match(/\n---GIFT_DATA---\n(.+)$/s);
+        let remainingBalance: number | null = null;
+        let giftType: string = "service";
+        if (giftDataMatch) {
+          try {
+            const meta = JSON.parse(giftDataMatch[1]);
+            remainingBalance = meta.remainingBalance ?? meta.originalValue ?? null;
+            giftType = meta.giftType ?? "service";
+          } catch {}
+        }
+        const cleanMessage = rawMsg.replace(/\n---GIFT_DATA---\n.+$/s, "").trim() || null;
+        const totalVal = card.totalValue ? parseFloat(String(card.totalValue)) : null;
         return {
           localId: card.localId,
           code: card.code,
@@ -1222,11 +1236,13 @@ export function registerClientRoutes(app: Express) {
           businessLogoUri: owner?.businessLogoUri || null,
           businessSlug: owner?.customSlug || null,
           purchaserName: card.purchaserName || null,
-          message: card.message || null,
+          message: cleanMessage,
           redeemed: card.redeemed,
           redeemedAt: card.redeemedAt || null,
           expiresAt: card.expiresAt || null,
-          totalValue: card.totalValue ? parseFloat(String(card.totalValue)) : null,
+          totalValue: totalVal,
+          remainingBalance: remainingBalance ?? totalVal,
+          giftType,
           paymentStatus: card.paymentStatus || "unpaid",
           createdAt: card.createdAt,
         };
@@ -1304,6 +1320,22 @@ export function registerClientRoutes(app: Express) {
       );
       if (!pkg) { res.status(404).json({ error: "Package not found" }); return; }
       if (pkg.status !== "active") { res.status(400).json({ error: "Package is not active" }); return; }
+      // Check if package has expired
+      if (pkg.expiresAt) {
+        const expiry = new Date(pkg.expiresAt + "T23:59:59");
+        if (expiry < new Date()) {
+          // Auto-mark as expired
+          await dbase.update(cpTable).set({ status: "expired" }).where(eq(cpTable.localId, packageLocalId));
+          res.status(400).json({ error: "Package expired", code: "PACKAGE_EXPIRED", expiresAt: pkg.expiresAt });
+          return;
+        }
+      }
+      // dryRun: just validate, don't actually decrement
+      const { dryRun } = req.body ?? {};
+      if (dryRun) {
+        res.json({ success: true, dryRun: true, sessionsCompleted: pkg.sessionsCompleted, totalSessions: pkg.totalSessions, status: pkg.status });
+        return;
+      }
       const newCompleted = Math.min(pkg.sessionsCompleted + 1, pkg.totalSessions);
       const newStatus = newCompleted >= pkg.totalSessions ? "completed" : "active";
       await dbase.update(cpTable)

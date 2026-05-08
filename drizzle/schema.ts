@@ -346,8 +346,8 @@ export const giftCards = mysqlTable("gift_cards", {
   localId: varchar("localId", { length: 64 }).notNull(),
   /** Unique redemption code */
   code: varchar("code", { length: 20 }).notNull(),
-  /** Service localId this gift card is for */
-  serviceLocalId: varchar("serviceLocalId", { length: 64 }).notNull(),
+  /** Service localId this gift card is for — nullable for balance-type gifts */
+  serviceLocalId: varchar("serviceLocalId", { length: 64 }),
   /** Recipient name */
   recipientName: varchar("recipientName", { length: 255 }),
   /** Recipient phone */
@@ -773,6 +773,8 @@ export const servicePackages = mysqlTable("service_packages", {
   packagePrice: decimal("packagePrice", { precision: 10, scale: 2 }).notNull(),
   photoUri: varchar("photoUri", { length: 2048 }),
   category: varchar("category", { length: 100 }),
+  /** Optional: number of days after purchase before the client's package expires */
+  expiryDays: int("expiryDays"),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

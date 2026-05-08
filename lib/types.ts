@@ -179,6 +179,8 @@ export interface GiftCard {
   recipientChoosesDate?: boolean;
   preselectedDate?: string;
   preselectedTime?: string;
+  /** "service" for specific service gifts, "balance" for dollar credit gifts */
+  giftType?: "service" | "balance";
 }
 
 export interface Product {

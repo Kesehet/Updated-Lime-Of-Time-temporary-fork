@@ -1,0 +1,18 @@
+{
+  "query": "SHOW COLUMNS FROM gift_cards LIKE 'pendingRedemptionAppointmentId';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SHOW COLUMNS FROM gift_cards LIKE 'pendingRedemptionAppointmentId';",
+  "rows": [
+    {
+      "Field": "pendingRedemptionAppointmentId",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\npendingRedemptionAppointmentId\tvarchar(64)\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 336
+}
