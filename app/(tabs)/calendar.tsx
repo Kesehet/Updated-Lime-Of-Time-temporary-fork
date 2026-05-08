@@ -2270,7 +2270,8 @@ export default function CalendarScreen() {
   return (
     <ScreenContainer tabletMaxWidth={0}>
       <FuturisticBackground />
-      <ScrollView ref={mainScrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100, alignSelf: "center", width: "100%", maxWidth: maxContentWidth }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <ScrollView ref={mainScrollRef} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={{ paddingBottom: 100, alignSelf: "center", width: "100%", maxWidth: maxContentWidth }}>
         {/* Header */}
         <View style={{ paddingHorizontal: hp, paddingTop: 4 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -2624,6 +2625,7 @@ export default function CalendarScreen() {
           </Pressable>
         </View>
       )}
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 }

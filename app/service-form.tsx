@@ -1,6 +1,6 @@
 import {
   Text, View, Pressable, StyleSheet, TextInput, ScrollView,
-  Alert, Platform, Image, ActivityIndicator, Modal, TouchableOpacity,
+  Alert, Platform, Image, ActivityIndicator, Modal, TouchableOpacity, KeyboardAvoidingView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -160,9 +160,11 @@ export default function ServiceFormScreen() {
         </Pressable>
       </View>
 
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
         contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 48, paddingTop: 8 }}
       >
 
@@ -380,6 +382,7 @@ export default function ServiceFormScreen() {
 
         <View style={{ height: 32 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* ── Lightbox ── */}
       <Modal visible={lightboxVisible} transparent animationType="fade" onRequestClose={() => setLightboxVisible(false)}>

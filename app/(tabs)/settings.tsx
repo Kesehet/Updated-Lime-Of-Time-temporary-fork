@@ -10,6 +10,7 @@ import {
   Alert,
   Image,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { FuturisticBackground } from "@/components/futuristic-background";
@@ -1026,13 +1027,17 @@ export default function SettingsScreen() {
       </View>
 
       {/* Tab Content */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
         contentContainerStyle={{ paddingHorizontal: hp, paddingTop: 14, paddingBottom: 100, alignSelf: "center", width: "100%", maxWidth: maxContentWidth }}
       >
         {searchQuery.trim() ? renderSearchResults() : tabContent[activeTab]()}
       </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 }

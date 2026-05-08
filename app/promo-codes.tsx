@@ -9,6 +9,8 @@ import {
   Alert,
   Switch,
   Share,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -233,7 +235,11 @@ export default function PromoCodesScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      >
         {/* Summary card */}
         <View style={s.summaryCard}>
           <View style={s.summaryItem}>
@@ -504,6 +510,7 @@ export default function PromoCodesScreen() {
             })
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 }

@@ -24,6 +24,7 @@ import {
   Platform,
   Modal,
   Dimensions,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -440,9 +441,13 @@ export default function ClientBuyGiftScreen() {
       </View>
       <Text style={s.stepLabel}>{STEPS[step]}</Text>
 
-      <ScrollView
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
+      
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
       >
         {/* ── Step 0: Items ─────────────────────────────────────────── */}
         {step === 0 && (
@@ -1143,6 +1148,7 @@ export default function ClientBuyGiftScreen() {
           </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Image Preview Modal */}
       <Modal visible={!!previewItem} transparent animationType="fade" onRequestClose={() => setPreviewItem(null)}>

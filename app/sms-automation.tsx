@@ -21,6 +21,8 @@ import {
   Switch,
   Alert,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -166,7 +168,11 @@ export default function SmsAutomationScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      >
         {/* Plan gating banner */}
         {!hasSmsAccess && (
           <View style={{ backgroundColor: colors.warning + "18", borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: colors.warning + "40", flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -431,6 +437,7 @@ export default function SmsAutomationScreen() {
           </Text>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Upgrade sheet — shown when user taps a locked SMS toggle */}
       <UpgradeSheet

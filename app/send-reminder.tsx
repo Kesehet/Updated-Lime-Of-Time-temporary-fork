@@ -9,6 +9,7 @@ import {
   Platform,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -347,9 +348,13 @@ export default function SendReminderScreen() {
         </Text>
       </View>
 
-      <ScrollView
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40 }}
+      
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
       >
         {/* Client + Appointment Summary */}
         <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
@@ -622,6 +627,7 @@ export default function SendReminderScreen() {
 
         <View style={{ height: 20 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Message Editor Modal */}
       <Modal

@@ -11,6 +11,7 @@ import {
   Linking,
   ScrollView,
   Share,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -709,13 +710,16 @@ export default function GiftCardsScreen() {
             </Pressable>
           </View>
         ) : (
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <FlatList
             data={allCards}
             keyExtractor={(item) => item.id}
             renderItem={renderCard}
+            keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ paddingHorizontal: hp, paddingTop: 16, paddingBottom: 100 }}
             ListHeaderComponent={formContent}
           />
+          </KeyboardAvoidingView>
         )
       ) : (
         /* Public Gifts Tab */
@@ -728,7 +732,11 @@ export default function GiftCardsScreen() {
             </Text>
           </View>
         ) : (
-          <ScrollView contentContainerStyle={{ paddingHorizontal: hp, paddingTop: 12, paddingBottom: 100 }}>
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView contentContainerStyle={{ paddingHorizontal: hp, paddingTop: 12, paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      >
             {/* Pending Payment Section */}
             {publicPendingPayment.length > 0 && (
               <View style={{ marginBottom: 16 }}>
@@ -772,6 +780,7 @@ export default function GiftCardsScreen() {
               </View>
             )}
           </ScrollView>
+      </KeyboardAvoidingView>
         )
       )}
 

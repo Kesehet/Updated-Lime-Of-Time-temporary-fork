@@ -1,4 +1,6 @@
-import { FlatList, Text, View, Pressable, StyleSheet, TextInput, Alert, Platform, ActivityIndicator, Image } from "react-native";
+import { FlatList, Text, View, Pressable, StyleSheet, TextInput, Alert, Platform, ActivityIndicator, Image,
+  KeyboardAvoidingView,
+} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { FuturisticBackground } from "@/components/futuristic-background";
@@ -241,6 +243,7 @@ export default function ClientsScreen() {
   return (
     <ScreenContainer tabletMaxWidth={0}>
       <FuturisticBackground />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <View style={{ flex: 1, alignSelf: "center", width: "100%", maxWidth: maxContentWidth }}>
         <View style={{ paddingHorizontal: hp }}>
           {/* Header */}
@@ -536,6 +539,7 @@ export default function ClientsScreen() {
           </>
         )}
       </View>
+      </KeyboardAvoidingView>
 
       {/* Upgrade Plan Sheet */}
       {upgradeSheetInfo && (

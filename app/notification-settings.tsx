@@ -8,6 +8,8 @@ import {
   ScrollView,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -247,7 +249,11 @@ function EditMessageModal({
           </Pressable>
         </View>
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
+              <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      >
           <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground, marginBottom: 4 }}>
             {event.label}
           </Text>
@@ -313,6 +319,7 @@ function EditMessageModal({
           {/* Live preview */}
           <MessagePreview template={draft} vars={event.vars} />
         </ScrollView>
+      </KeyboardAvoidingView>
       </View>
     </Modal>
   );

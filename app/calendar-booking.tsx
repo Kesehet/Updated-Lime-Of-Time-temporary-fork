@@ -14,6 +14,7 @@ import {
   Modal,
   TouchableOpacity,
   useWindowDimensions,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -2231,6 +2232,7 @@ export default function CalendarBookingScreen() {
 
       {/* ─── Step 2: Client Selection ─── */}
       {step === 2 && (
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <View style={{ flex: 1, paddingHorizontal: hp }}>
           <View className="flex-row items-center justify-between mb-3">
             <Pressable
@@ -2359,10 +2361,10 @@ export default function CalendarBookingScreen() {
                 <Text className="text-sm text-muted">No clients found</Text>
               </View>
             }
-          />
+           />
         </View>
+        </KeyboardAvoidingView>
       )}
-
       {/* ─── Step 3: Location Selection (only if multiple locations) ─── */}
       {step === 3 && (
         <ScrollView
@@ -2760,8 +2762,11 @@ export default function CalendarBookingScreen() {
 
       {/* ─── Step 5: Review & Add More ─── */}
       {step === 5 && (
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40 }}
         >
           <View className="flex-row items-center justify-between mb-3">
@@ -3172,8 +3177,8 @@ export default function CalendarBookingScreen() {
             <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "700" }}>Continue to Payment →</Text>
           </Pressable>
         </ScrollView>
+        </KeyboardAvoidingView>
       )}
-
       {/* ─── Step 6: Payment Method ─── */}
       {step === 6 && (
         <ScrollView

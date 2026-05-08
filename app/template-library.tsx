@@ -8,6 +8,8 @@ import {
   Alert,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -191,7 +193,11 @@ export default function TemplateLibraryScreen() {
         <View style={{ width: 60 }} />
       </View>
 
-      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      >
         <Text style={s.subtitle}>
           Browse 49 professional SMS templates organized by category. Tap{" "}
           <Text style={{ color: colors.primary }}>Add to My Templates</Text> to save, or{" "}
@@ -299,6 +305,7 @@ export default function TemplateLibraryScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Duplicate & Edit Modal */}
       <Modal

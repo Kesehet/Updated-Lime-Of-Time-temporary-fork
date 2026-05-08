@@ -10,6 +10,8 @@ import {
   Switch,
   Modal,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -350,7 +352,11 @@ export default function PackagesScreen() {
             </Pressable>
           </View>
 
-          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }}>
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      >
             {/* Photo */}
             <Text style={[styles.label, { color: colors.muted }]}>Package Photo (optional)</Text>
             <Pressable
@@ -524,6 +530,7 @@ export default function PackagesScreen() {
               </View>
             )}
           </ScrollView>
+      </KeyboardAvoidingView>
         </View>
       </Modal>
     </ScreenContainer>

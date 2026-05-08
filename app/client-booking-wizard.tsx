@@ -24,6 +24,7 @@ import {
   Modal,
   TouchableOpacity,
   Linking,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -654,7 +655,11 @@ export default function ClientBookingWizardScreen() {
       </View>
       <Text style={[s.stepLabel, { color: TEXT_PRIMARY }]}>{STEPS[step]}</Text>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      >
 
         {/* Step 0: Service */}
         {step === STEP_SERVICE && (() => {
@@ -1670,6 +1675,7 @@ export default function ClientBookingWizardScreen() {
           );
         })()}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Bottom Action */}
       <View style={[s.bottomAction, { backgroundColor: PORTAL_BG, borderTopColor: DIVIDER }]}>

@@ -9,6 +9,8 @@ import {
   ScrollView,
   Switch,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -828,13 +830,16 @@ export default function DiscountsScreen() {
           </Pressable>
         </View>
       ) : (
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <FlatList
           data={sortedDiscounts}
           keyExtractor={(item) => item.id}
           renderItem={renderDiscount}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingHorizontal: hp, paddingTop: 16, paddingBottom: 100 }}
           ListHeaderComponent={formContent}
         />
+        </KeyboardAvoidingView>
       )}
 
       {/* Time Picker Modal */}

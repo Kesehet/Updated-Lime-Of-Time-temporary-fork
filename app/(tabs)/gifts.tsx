@@ -12,6 +12,7 @@ import {
   ScrollView,
   Share,
   ActivityIndicator,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Image } from "expo-image";
 import { ScreenContainer } from "@/components/screen-container";
@@ -776,6 +777,7 @@ export default function GiftCardsScreen() {
           </View>
         </View>
       )}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       {mainTab === "my" ? (
         allCards.length === 0 && !showForm ? (
           <View style={styles.empty}>
@@ -858,6 +860,8 @@ export default function GiftCardsScreen() {
           </ScrollView>
         )
       )}
+
+      </KeyboardAvoidingView>
 
       {/* Item Picker Modal */}
       <Modal visible={showItemPicker} transparent animationType="fade">

@@ -9,6 +9,7 @@ import {
   Linking,
   Platform,
   TextInput,
+  KeyboardAvoidingView,
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore } from "@/lib/store";
@@ -172,6 +173,7 @@ export default function BirthdayCampaignsScreen() {
   return (
     <ScreenContainer edges={["top", "bottom", "left", "right"]}>
       <FuturisticBackground />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <View style={{ flex: 1, paddingHorizontal: hp }}>
         {/* Header */}
         <View style={styles.topBar}>
@@ -329,10 +331,10 @@ export default function BirthdayCampaignsScreen() {
           }}
         />
       </View>
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 }
-
 const styles = StyleSheet.create({
   topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12 },
   settingsCard: { borderRadius: 14, padding: 14, borderWidth: 1, marginBottom: 12 },

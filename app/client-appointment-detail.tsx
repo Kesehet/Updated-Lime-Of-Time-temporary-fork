@@ -20,6 +20,7 @@ import {
   Modal,
   TextInput,
   Linking,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -479,7 +480,7 @@ export default function ClientAppointmentDetailScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => !submittingReview && setReviewModalVisible(false)}
       >
-        <View style={{ flex: 1, backgroundColor: GREEN_DARK, padding: 24 }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: GREEN_DARK, padding: 24 }}>
           <ClientPortalBackground />
 
           {/* Modal Header */}
@@ -589,13 +590,12 @@ export default function ClientAppointmentDetailScreen() {
               </Pressable>
             </ScrollView>
           )}
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
 }
-
-function StaffRow({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
+function StaffRoww({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
   const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return (
     <View style={[infoStyles.row, { alignItems: "center" }]}>

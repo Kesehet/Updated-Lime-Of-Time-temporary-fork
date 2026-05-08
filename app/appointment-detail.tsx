@@ -1,4 +1,4 @@
-import { Text, View, Pressable, StyleSheet, ScrollView, Alert, Platform, Linking, Modal, TextInput, TouchableOpacity, Image, FlatList } from "react-native";
+import { Text, View, Pressable, StyleSheet, ScrollView, Alert, Platform, Linking, Modal, TextInput, TouchableOpacity, Image, FlatList, KeyboardAvoidingView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, formatTime, formatDateDisplay } from "@/lib/store";
@@ -105,6 +105,13 @@ export default function AppointmentDetailScreen() {
   const [discountInput, setDiscountInput] = useState("");
   const [discountType, setDiscountType] = useState<"percent" | "flat">("percent");
   const [chargesExpanded, setChargesExpanded] = useState(true);
+  // Edit Payment sheet state
+  const [showEditPaymentSheet, setShowEditPaymentSheet] = useState(false);
+  const [editPayMethod, setEditPayMethod] = useState<'cash' | 'zelle' | 'venmo' | 'cashapp' | 'card'>('cash');
+  const [editPayStatus, setEditPayStatus] = useState<'paid' | 'unpaid'>('paid');
+  const [editConfirmNumber, setEditConfirmNumber] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [savingPayment, setSavingPayment] = useState(false);
 
 
   // Derived variables — safe with optional chaining (appointment may be null during hydration)
@@ -525,6 +532,28 @@ export default function AppointmentDetailScreen() {
     }
   };
 
+  const handleSaveEditPayment = async () => {
+    if (!appointment || !state.businessOwnerId) return;
+    setSavingPayment(true);
+    try {
+      const parsedAmount = editAmount.trim() ? parseFloat(editAmount.trim()) : undefined;
+      const updated = {
+        ...appointment,
+        paymentStatus: editPayStatus as any,
+        paymentMethod: editPayMethod as any,
+        paymentConfirmationNumber: editConfirmNumber.trim() || undefined,
+        ...(parsedAmount != null && !isNaN(parsedAmount) ? { totalPrice: parsedAmount } : {}),
+      };
+      dispatch({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
+      syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
+      setShowEditPaymentSheet(false);
+    } catch (err) {
+      Alert.alert('Error', 'Could not save payment changes.');
+    } finally {
+      setSavingPayment(false);
+    }
+  };
+
   const CANCEL_REASONS = [
     "Client requested",
     "No-show",
@@ -850,7 +879,8 @@ Would you also like to charge a no-show fee via Stripe?`,
         )}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40 }}>
         {/* Service Card — multi-service aware */}
         {(() => {
           const extras = appointment.extraItems ?? [];
@@ -1078,13 +1108,35 @@ Would you also like to charge a no-show fee via Stripe?`,
           <View className="bg-surface rounded-2xl p-4 mb-4 border border-border">
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <Text className="text-xs text-muted">Payment</Text>
-              <View style={{
-                paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
-                backgroundColor: appointment.paymentStatus === 'paid' ? colors.success + '20' : appointment.paymentStatus === 'pending_cash' ? '#FF980020' : colors.warning + '20',
-              }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: appointment.paymentStatus === 'paid' ? colors.success : appointment.paymentStatus === 'pending_cash' ? '#FF9800' : colors.warning }}>
-                  {appointment.paymentStatus === 'paid' ? '✓ Paid' : appointment.paymentStatus === 'pending_cash' ? 'Cash — Pending' : 'Unpaid'}
-                </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{
+                  paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
+                  backgroundColor: appointment.paymentStatus === 'paid' ? colors.success + '20' : appointment.paymentStatus === 'pending_cash' ? '#FF980020' : colors.warning + '20',
+                }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: appointment.paymentStatus === 'paid' ? colors.success : appointment.paymentStatus === 'pending_cash' ? '#FF9800' : colors.warning }}>
+                    {appointment.paymentStatus === 'paid' ? '✓ Paid' : appointment.paymentStatus === 'pending_cash' ? 'Cash — Pending' : 'Unpaid'}
+                  </Text>
+                </View>
+                {/* Edit Payment button */}
+                <Pressable
+                  onPress={() => {
+                    setEditPayMethod((appointment.paymentMethod as any) === 'card' ? 'card' : (appointment.paymentMethod as any) ?? 'cash');
+                    setEditPayStatus(appointment.paymentStatus === 'paid' ? 'paid' : 'unpaid');
+                    setEditConfirmNumber(appointment.paymentConfirmationNumber ?? '');
+                    setEditAmount(appointment.totalPrice != null ? String(appointment.totalPrice) : '');
+                    setShowEditPaymentSheet(true);
+                  }}
+                  style={({ pressed }) => ({
+                    flexDirection: 'row', alignItems: 'center', gap: 4,
+                    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16,
+                    borderWidth: 1.5, borderColor: colors.primary + '60',
+                    backgroundColor: colors.primary + '10',
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <IconSymbol name="pencil" size={12} color={colors.primary} />
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>Edit</Text>
+                </Pressable>
               </View>
             </View>
             {(appointment.totalPrice ?? 0) <= 0 ? (
@@ -1701,9 +1753,11 @@ Would you also like to charge a no-show fee via Stripe?`,
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Payment Confirmation Modal */}
       <Modal visible={showPaymentModal} transparent animationType="slide">
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
             <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>
@@ -1764,8 +1818,120 @@ Would you also like to charge a no-show fee via Stripe?`,
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
+      {/* Edit Payment Sheet */}
+      <Modal visible={showEditPaymentSheet} transparent animationType="slide" onRequestClose={() => setShowEditPaymentSheet(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: 'rgba(0,0,0,0.45)', ...StyleSheet.absoluteFillObject }} />
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '90%' }}>
+            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
+            {/* Handle bar */}
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 16 }} />
+            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>Edit Payment</Text>
+            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 20 }}>
+              {client?.name ?? 'Client'}{appointment?.totalPrice != null ? ` · $${appointment.totalPrice.toFixed(2)}` : ''}
+            </Text>
 
+            {/* Payment Status Toggle */}
+            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Status</Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+              {(['paid', 'unpaid'] as const).map((s) => (
+                <Pressable
+                  key={s}
+                  onPress={() => setEditPayStatus(s)}
+                  style={({ pressed }) => ({
+                    flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center',
+                    backgroundColor: editPayStatus === s ? (s === 'paid' ? colors.success : colors.warning) : colors.background,
+                    borderWidth: 1.5,
+                    borderColor: editPayStatus === s ? (s === 'paid' ? colors.success : colors.warning) : colors.border,
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: editPayStatus === s ? '#FFF' : colors.foreground }}>
+                    {s === 'paid' ? '✓ Paid' : 'Unpaid'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* Payment Method */}
+            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Method</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+              {[
+                { key: 'cash' as const, label: '💵 Cash' },
+                { key: 'zelle' as const, label: '💜 Zelle' },
+                { key: 'venmo' as const, label: '💙 Venmo' },
+                { key: 'cashapp' as const, label: '💚 Cash App' },
+                { key: 'card' as const, label: '💳 Card' },
+              ].map((pm) => (
+                <Pressable
+                  key={pm.key}
+                  onPress={() => setEditPayMethod(pm.key)}
+                  style={({ pressed }) => ({
+                    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+                    backgroundColor: editPayMethod === pm.key ? colors.primary : colors.background,
+                    borderWidth: 1.5,
+                    borderColor: editPayMethod === pm.key ? colors.primary : colors.border,
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: editPayMethod === pm.key ? '#FFF' : colors.foreground }}>{pm.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* Confirmation Number */}
+            {editPayMethod !== 'cash' && editPayMethod !== 'card' && (
+              <>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Confirmation Number</Text>
+                <TextInput
+                  value={editConfirmNumber}
+                  onChangeText={setEditConfirmNumber}
+                  placeholder={
+                    editPayMethod === 'zelle' ? 'e.g. ZL-123456789' :
+                    editPayMethod === 'venmo' ? 'e.g. 3456789012' :
+                    editPayMethod === 'cashapp' ? 'e.g. C-ABCDE123' : 'Confirmation number'
+                  }
+                  placeholderTextColor={colors.muted}
+                  style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, fontSize: 14, color: colors.foreground, backgroundColor: colors.background, marginBottom: 16 }}
+                  returnKeyType="done"
+                />
+              </>
+            )}
+
+            {/* Amount */}
+            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Amount ($)</Text>
+            <TextInput
+              value={editAmount}
+              onChangeText={setEditAmount}
+              placeholder={appointment?.totalPrice != null ? String(appointment.totalPrice) : '0.00'}
+              placeholderTextColor={colors.muted}
+              keyboardType="decimal-pad"
+              style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, fontSize: 14, color: colors.foreground, backgroundColor: colors.background, marginBottom: 24 }}
+              returnKeyType="done"
+            />
+
+            {/* Action Buttons */}
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => setShowEditPaymentSheet(false)}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.muted }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSaveEditPayment}
+                disabled={savingPayment}
+                style={{ flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', opacity: savingPayment ? 0.7 : 1 }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>{savingPayment ? 'Saving…' : 'Save Changes'}</Text>
+              </TouchableOpacity>
+            </View>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
       {/* Refund Modal */}
       <Modal visible={showRefundModal} transparent animationType="slide">
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>

@@ -12,6 +12,7 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -385,7 +386,7 @@ export default function ServiceGalleryScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setEditingPhoto(null)}
       >
-        <View style={{ flex: 1, backgroundColor: colors.background, padding: 20 }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: colors.background, padding: 20 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
             <Pressable onPress={() => setEditingPhoto(null)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
               <Text style={{ fontSize: 16, color: colors.primary }}>Cancel</Text>
@@ -418,10 +419,9 @@ export default function ServiceGalleryScreen() {
               borderWidth: 1,
               borderColor: colors.border,
             }}
-          />
-        </View>
+           />
+        </KeyboardAvoidingView>
       </Modal>
-
       {/* Full-screen Photo Viewer Modal */}
       <Modal
         visible={viewingPhoto !== null}

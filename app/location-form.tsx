@@ -16,6 +16,7 @@ import {
   Modal,
   Image,
   ActivityIndicator,
+  KeyboardAvoidingView,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
@@ -416,7 +417,11 @@ export default function LocationFormScreen() {
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      >
         {/* First-location welcome banner */}
         {isFirstLocation && (
           <View style={[styles.section, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "30" }]}>
@@ -901,6 +906,7 @@ export default function LocationFormScreen() {
           </Pressable>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
       {/* Time Picker Modal */}
       <Modal visible={!!timePickerDay} transparent animationType="slide">
         <Pressable style={styles.modalOverlay} onPress={() => { setTimePickerDay(null); setWeekSubPicker(null); }}>

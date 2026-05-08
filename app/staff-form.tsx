@@ -14,6 +14,7 @@ import {
   Modal,
   Image,
   ActivityIndicator,
+  KeyboardAvoidingView,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
@@ -290,7 +291,8 @@ export default function StaffFormScreen() {
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Basic Info */}
         <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text className="text-base font-semibold text-foreground mb-3">Basic Information</Text>
@@ -605,6 +607,7 @@ export default function StaffFormScreen() {
           )}
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Staff Time Picker Modal */}
       <Modal visible={!!staffTimePicker} transparent animationType="slide">

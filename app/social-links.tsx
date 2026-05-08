@@ -9,6 +9,7 @@ import {
   Linking,
   Alert,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import Svg, { Path, Rect, Circle, G } from "react-native-svg";
 import { ScreenContainer } from "@/components/screen-container";
@@ -168,7 +169,8 @@ export default function SocialLinksScreen() {
         <View style={styles.backBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Section heading */}
         <View style={[styles.sectionHeadingRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <IconSymbol name="person.2.fill" size={18} color={colors.primary} />
@@ -241,6 +243,7 @@ export default function SocialLinksScreen() {
           </Text>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 }

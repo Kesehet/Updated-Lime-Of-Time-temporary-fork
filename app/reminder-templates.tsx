@@ -8,6 +8,8 @@ import {
   Alert,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -140,9 +142,13 @@ export default function ReminderTemplatesScreen() {
         </Pressable>
       </View>
 
-      <ScrollView
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+      
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
       >
         {savedTemplates.length === 0 ? (
           <View style={styles.emptyState}>
@@ -261,6 +267,7 @@ export default function ReminderTemplatesScreen() {
           </>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Edit Modal */}
       <Modal

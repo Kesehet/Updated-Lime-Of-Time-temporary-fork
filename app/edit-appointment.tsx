@@ -8,6 +8,8 @@ import {
   Modal,
   TextInput,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -468,9 +470,13 @@ export default function EditAppointmentScreen() {
         );
       })()}
 
-      <ScrollView
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40 }}
+      
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
       >
         {/* Services Editor */}
         <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
@@ -1210,6 +1216,7 @@ export default function EditAppointmentScreen() {
 
         <View style={{ height: 20 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Custom Time Modal */}
       <Modal

@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   Platform,
   Image,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -658,10 +659,10 @@ export default function DiscoverScreen() {
   }, [state.appointments, state.account]);
 
   const s = styles(colors);
-  return (
+   return (
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
     <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
       <ClientPortalBackground />
-
       {/* Search Bar + Radius */}
       <View style={[s.searchRow, { paddingTop: insets.top + 10 }]}>
         <View style={[s.searchBox, { backgroundColor: CARD_BG, borderColor: CARD_BORDER }]}>
@@ -930,6 +931,7 @@ export default function DiscoverScreen() {
         />
       )}
     </View>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -11,6 +11,7 @@ import {
   Alert,
   Modal,
   Image,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -790,7 +791,11 @@ export default function NewBookingScreen() {
 
       {/* Step 1: Select Service — category drill-down */}
       {step === 1 && (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: hp }}>
+              <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: hp }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      >
           {/* ── Packages & Bundles section ─────────────────────────────────── */}
           {(() => {
             const activePackages = (state.packages ?? []).filter((p) => p.active);
@@ -982,10 +987,12 @@ export default function NewBookingScreen() {
             );
           })()}
         </ScrollView>
+      </KeyboardAvoidingView>
       )}
 
       {/* Step 2: Select Client */}
       {step === 2 && (
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <View style={{ flex: 1, paddingHorizontal: hp }}>
           <View className="flex-row items-center justify-between mb-3">
             <Pressable onPress={() => setStep(1)} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
@@ -1101,6 +1108,7 @@ export default function NewBookingScreen() {
             </>
           )}
         </View>
+        </KeyboardAvoidingView>
       )}
 
       {/* Step 3: Pick Date & Time */}

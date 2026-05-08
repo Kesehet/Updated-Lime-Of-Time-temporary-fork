@@ -7,7 +7,7 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   View, Text, ScrollView, Pressable, StyleSheet, TextInput,
   ActivityIndicator, Alert, Platform, Linking, Dimensions, FlatList, Modal,
-  NativeScrollEvent, NativeSyntheticEvent,
+  NativeScrollEvent, NativeSyntheticEvent, KeyboardAvoidingView,
 } from "react-native";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -869,7 +869,7 @@ export default function ClientBusinessDetailScreen() {
 
       {/* ── Write a Review Modal ── */}
       <Modal visible={detailReviewVisible} transparent animationType="slide" onRequestClose={() => setDetailReviewVisible(false)}>
-        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
           <View style={[s.reviewModal, { backgroundColor: "#1E3D2F" }]}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <Text style={[s.reviewModalTitle, { color: TEXT_PRIMARY }]}>Write a Review</Text>
@@ -921,10 +921,9 @@ export default function ClientBusinessDetailScreen() {
             >
               <Text style={s.reviewSubmitBtnText}>{detailReviewSubmitting ? "Submitting..." : "Submit Review"}</Text>
             </Pressable>
-          </View>
-        </View>
+           </View>
+        </KeyboardAvoidingView>
       </Modal>
-
       {/* ── Sticky Book Button ── */}
       <View style={[s.stickyBook, { backgroundColor: PORTAL_BG, borderTopColor: DIVIDER }]}>
         <View style={{ flexDirection: "row", gap: 10 }}>
