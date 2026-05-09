@@ -235,7 +235,17 @@ export default function ClientMessageThreadScreen() {
                 <View style={[styles.msgRow, isClient ? styles.msgRowRight : styles.msgRowLeft]}>
                   {!isClient && (
                     <View style={styles.msgAvatar}>
-                      <IconSymbol name="scissors" size={13} color={GREEN_ACCENT} />
+                      {params.businessLogoUri ? (
+                        <Image
+                          source={{ uri: params.businessLogoUri }}
+                          style={{ width: 30, height: 30, borderRadius: 15 }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <Text style={{ fontSize: 13, fontWeight: "700", color: GREEN_ACCENT }}>
+                          {(params.businessName ?? "B").charAt(0).toUpperCase()}
+                        </Text>
+                      )}
                     </View>
                   )}
                   <View style={[

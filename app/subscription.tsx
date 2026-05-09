@@ -343,6 +343,7 @@ export default function SubscriptionScreen() {
   const colors = useColors();
   const router = useRouter();
   const { state } = useStore();
+  const { fs, buttonHeight, modalMaxWidth } = useResponsive();
   const businessOwnerId = state.businessOwnerId;
   const [portalLoading, setPortalLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
