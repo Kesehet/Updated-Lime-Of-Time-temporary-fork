@@ -202,6 +202,7 @@ function UsageMeter({
 }
 
 function PlanBadge({ planKey, displayName, isAdminOverride }: { planKey: string; displayName: string; isAdminOverride: boolean }) {
+  const { fs } = useResponsive();
   const badgeColor = isAdminOverride ? "#F59E0B" : (PLAN_COLORS[planKey] ?? "#6B7280");
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -226,6 +227,7 @@ function FeatureRow({
   dim?: boolean;
   colors: ReturnType<typeof useColors>;
 }) {
+  const { fs } = useResponsive();
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }}>
       <IconSymbol
@@ -253,6 +255,7 @@ function PlanBenefitsCard({
   isCurrentPlan: boolean;
   colors: ReturnType<typeof useColors>;
 }) {
+  const { fs } = useResponsive();
   const [expanded, setExpanded] = useState(isCurrentPlan);
   return (
     <View

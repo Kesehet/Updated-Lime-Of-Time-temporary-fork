@@ -53,6 +53,7 @@ function MiniCalendar({
   onSelect: (date: string) => void;
   colors: ReturnType<typeof useColors>;
 }) {
+  const { fs } = useResponsive();
   const today = new Date();
   const [calMonth, setCalMonth] = useState(() => {
     if (selectedDate) {
@@ -161,6 +162,7 @@ function CalCell({
   styles: any;
   onPress: () => void;
 }) {
+  const { fs } = useResponsive();
   if (day === null) return <View key={`e${i}`} style={styles.calCell} />;
   const isClosed = customDay?.isOpen === false;
   const hasCustomHours = customDay?.isOpen === true && !!customDay.startTime;

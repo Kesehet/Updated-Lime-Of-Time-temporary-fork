@@ -118,6 +118,7 @@ function GradientKpiCard({
   onPress?: () => void;
   width: number;
 }) {
+  const { fontScale: fs } = useResponsive();
   const sparkW = cardWidth - 28;
   const animatedNum = useCountUp(numericValue ?? 0);
   const displayValue = numericValue != null

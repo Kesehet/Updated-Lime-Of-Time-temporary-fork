@@ -49,6 +49,7 @@ function PublicGiftCard({
   getCardItems: (card: GiftCard) => Array<{ name: string; price: string; type: string }>;
   getCardTotal: (card: GiftCard) => number;
 }) {
+  const { fs } = useResponsive();
   const items = getCardItems(card);
   const total = getCardTotal(card);
   const isPaid = (card as any).paymentStatus === "paid";

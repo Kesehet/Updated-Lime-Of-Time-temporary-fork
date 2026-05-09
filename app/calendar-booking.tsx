@@ -3932,6 +3932,7 @@ function SummaryRow({
   bold?: boolean;
   valueColor?: string;
 }) {
+  const { fs } = useResponsive();
   return (
     <View
       style={{

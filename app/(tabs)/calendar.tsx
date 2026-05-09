@@ -99,6 +99,7 @@ function TimelineView({
   dateStr, appts, tintColor, liveNow, todayStr, timelineHours, effectiveHours, available,
   colors, getServiceById, getClientById, onApptPress,
 }: TimelineViewProps) {
+  const { fs } = useResponsive();
   const [containerWidth, setContainerWidth] = React.useState(0);
   const LABEL_WIDTH = 56;
   const totalHours = TIMELINE_END - TIMELINE_START + 1;

@@ -101,8 +101,8 @@ function SwipeUpHint({ visible }: { visible: boolean }) {
 
   return (
     <Animated.View style={[{ alignItems: "center", marginTop: 14, gap: 4 }, style]}>
-      <Text style={{ fontSize: fs.md, color: "#4A7C59" }}>↑</Text>
-      <Text style={{ fontSize: fs.xs, color: "#4A7C59", fontWeight: "600", letterSpacing: 0.4 }}>
+      <Text style={{ fontSize: 15, color: "#4A7C59" }}>↑</Text>
+      <Text style={{ fontSize: 11, color: "#4A7C59", fontWeight: "600", letterSpacing: 0.4 }}>
         Tap Continue to proceed
       </Text>
     </Animated.View>

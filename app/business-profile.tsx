@@ -40,6 +40,7 @@ type FieldProps = {
 };
 
 function Field({ label, required, error, errorColor, foregroundColor, children }: FieldProps) {
+  const { fs } = useResponsive();
   return (
     <View style={styles.fieldWrapper}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 6 }}>
