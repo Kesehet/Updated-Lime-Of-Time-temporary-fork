@@ -557,6 +557,47 @@ export default function PaymentMethodsScreen() {
           </Text>
         </View>
 
+        {/* ── Stripe Not Connected Warning Banner ── */}
+        {isStripePlan && !connectStatusLoading && connectStatus && !connectStatus.chargesEnabled && (
+          <TouchableOpacity
+            onPress={handleConnectStripe}
+            disabled={connectLoading}
+            activeOpacity={0.85}
+            style={{
+              backgroundColor: "#fffbeb",
+              borderWidth: 1.5,
+              borderColor: "#f59e0b",
+              borderRadius: 14,
+              padding: 14,
+              marginBottom: 12,
+              flexDirection: "row",
+              alignItems: "flex-start",
+              gap: 10,
+            }}
+          >
+            <Text style={{ fontSize: 20, lineHeight: 24 }}>⚠️</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: "700", color: "#92400e", marginBottom: 3 }}>
+                Card Payments Not Active
+              </Text>
+              <Text style={{ fontSize: 13, color: "#78350f", lineHeight: 18 }}>
+                {connectStatus.connected
+                  ? "Your Stripe account is connected but not fully verified. Complete onboarding to let clients pay by card."
+                  : "Clients cannot pay by card until you connect your Stripe account. Tap here to connect Stripe and enable card payments on your booking page."}
+              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8, gap: 4 }}>
+                {connectLoading ? (
+                  <ActivityIndicator size="small" color="#635bff" />
+                ) : (
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: "#635bff", textDecorationLine: "underline" }}>
+                    {connectStatus.connected ? "Complete Stripe Onboarding →" : "Connect with Stripe →"}
+                  </Text>
+                )}
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
+
         {/* Info Banner */}
         <View style={[styles.infoBanner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <IconSymbol name="info.circle.fill" size={16} color={colors.primary} />
