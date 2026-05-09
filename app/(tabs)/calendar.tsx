@@ -1244,9 +1244,18 @@ export default function CalendarScreen() {
           <View style={[styles.statusBadge, { backgroundColor: statusColor + "18" }]}>
             <Text style={{ fontSize: fs.xs, fontWeight: "600", color: statusColor, textTransform: "capitalize" }}>{appt.status}</Text>
           </View>
-          {appt.paymentMethod === "card" && appt.paymentStatus === "paid" && (
-            <View style={{ backgroundColor: "#635BFF18", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
-              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#635BFF" }}>💳 Card</Text>
+          {appt.paymentMethod === "card" && (
+            <View style={{
+              backgroundColor: "#635BFF18",
+              borderRadius: 6,
+              paddingHorizontal: 7,
+              paddingVertical: 3,
+              borderWidth: appt.paymentStatus !== "paid" ? 1 : 0,
+              borderColor: "#635BFF40",
+            }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#635BFF" }}>
+                {appt.paymentStatus === "paid" ? "💳 Card" : "💳 Card · Pending"}
+              </Text>
             </View>
           )}
           {appt.clientPaidNotifiedAt && appt.paymentStatus !== "paid" && (
