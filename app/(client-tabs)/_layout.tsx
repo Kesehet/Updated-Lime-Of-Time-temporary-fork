@@ -13,6 +13,7 @@ import { Platform } from "react-native";
 import { useClientStore } from "@/lib/client-store";
 import { useClientNotifications } from "@/hooks/use-client-notifications";
 import { ClientAppLockProvider } from "@/lib/app-lock-provider";
+import { useSplashDone } from "@/lib/splash-done-context";
 
 // Forest green palette (matches onboarding)
 const TAB_BG = "#1A3A28";
@@ -100,8 +101,13 @@ function ClientTabsInner() {
 }
 
 export default function ClientTabLayout() {
+  // Read splashDone from root context so the biometric prompt is deferred
+  // until AFTER the user has tapped the Client Portal card on the portal
+  // selector. Without this, the Face ID prompt fires immediately on mount
+  // even before the user has chosen which portal to enter.
+  const splashDone = useSplashDone();
   return (
-    <ClientAppLockProvider>
+    <ClientAppLockProvider splashDone={splashDone}>
       <ClientTabsInner />
     </ClientAppLockProvider>
   );

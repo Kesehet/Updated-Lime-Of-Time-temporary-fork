@@ -44,14 +44,21 @@ export function AppLockProvider({
  * Client portal app lock provider.
  * Uses a separate storage key so the client biometric setting is independent
  * from the business owner's biometric setting.
+ *
+ * splashDone: when false, the Face ID prompt is deferred until the animated
+ * splash finishes AND the user has navigated into the client tabs.
+ * Pass the root-level splashDone value so the biometric prompt never fires
+ * before the user has tapped the Client Portal card on the portal selector.
  */
 export function ClientAppLockProvider({
   children,
+  splashDone = true,
 }: {
   children: React.ReactNode;
+  splashDone?: boolean;
 }) {
   const appLock = useAppLock(
-    true,
+    splashDone,
     CLIENT_BIOMETRIC_ENABLED_KEY,
     recordClientActivity, // resets the 24h timer after successful Face ID
   );

@@ -23,6 +23,7 @@ import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-run
 import { StoreProvider, useStore } from "@/lib/store";
 import { ClientStoreProvider } from "@/lib/client-store";
 import { AppLockProvider, ClientAppLockProvider } from "@/lib/app-lock-provider";
+import { SplashDoneProvider } from "@/lib/splash-done-context";
 import { NotificationProvider } from "@/lib/notification-provider";
 import { initSentry, withSentryWrapper } from "@/lib/sentry";
 import { AnimatedSplash } from "@/components/animated-splash";
@@ -32,6 +33,8 @@ import { SessionExpiredToast } from "@/components/session-expired-toast";
 import {
   businessNeedsReauth,
   clientNeedsLogout,
+  clientNeedsReauth,
+  CLIENT_BIOMETRIC_ENABLED_KEY,
   CLIENT_LAST_ACTIVE_KEY,
   BUSINESS_LAST_ACTIVE_KEY,
 } from "@/hooks/use-app-lock";
@@ -161,8 +164,22 @@ function RootLayout() {
           if (needsLogout) {
             // Inactive for > 30 days — clear session and show portal selector
             await AsyncStorage.multiRemove(["client_session_token", "client_account_info", CLIENT_LAST_ACTIVE_KEY]);
+            // Fall through to portal selector — do NOT check biometrics for a cleared session
+          } else {
+            // Session is valid and active. Check if client biometric is enabled
+            // and the client was active within the last 24 hours.
+            // If so, auto-route to client tabs — ClientAppLockProvider will show Face ID.
+            const clientBiometricEnabled = await AsyncStorage.getItem(CLIENT_BIOMETRIC_ENABLED_KEY);
+            const clientNeedsReauthResult = await clientNeedsReauth();
+            if (clientBiometricEnabled === "true" && !clientNeedsReauthResult) {
+              // Recently used AND client biometric enabled → auto-route, Face ID will guard
+              router.replace("/(client-tabs)/discover" as any);
+              setTimeout(() => setSplashDone(true), 80);
+              return;
+            }
+            // Biometric not enabled or needs re-auth → show portal selector.
+            // User taps Client Portal → goes to discover.
           }
-          // Either way, always show portal selector for clients — no auto-routing
         }
       }
     } catch { /* ignore */ }
@@ -274,6 +291,7 @@ function RootLayout() {
           <StoreProvider>
             <LogoMigration />
             <ClientStoreProvider>
+            <SplashDoneProvider splashDone={splashDone}>
             <AppLockProvider splashDone={splashDone}>
             <NotificationProvider>
             {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
@@ -357,6 +375,7 @@ function RootLayout() {
             <SessionExpiredToast />
             </NotificationProvider>
             </AppLockProvider>
+            </SplashDoneProvider>
             </ClientStoreProvider>
           </StoreProvider>
         </QueryClientProvider>
