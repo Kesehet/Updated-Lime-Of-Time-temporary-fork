@@ -51,6 +51,7 @@ interface GiftItem {
   price: number;
   description: string | null;
   category?: string | null;
+  brand?: string | null;
   photoUri?: string | null;
   type: "service" | "product";
 }
@@ -87,7 +88,7 @@ interface PaymentMethods {
   cashEnabled: boolean;
 }
 
-const STEPS = ["Items", "Details", "Date", "Staff", "Payment"];
+const STEPS = ["Items", "Products", "Details", "Date", "Staff", "Payment"];
 
 function formatPrice(n: number) {
   return `$${n.toFixed(2)}`;
@@ -126,6 +127,9 @@ export default function ClientBuyGiftScreen() {
   // ── Wizard state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState(0);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  // Product cart for Products step (step 1)
+  const [productCart, setProductCart] = useState<Record<string, number>>({});
+  const [selectedProductBrand, setSelectedProductBrand] = useState<string | null>(null);
   const [packages, setPackages] = useState<GiftPackage[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [giftTab, setGiftTab] = useState<"services" | "packages">("services");
@@ -276,12 +280,25 @@ export default function ClientBuyGiftScreen() {
     })();
   }, [selectedDate, selectedLocation, recipientChoosesDate, slug, apiBase]);
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+   // ── Helpers ──────────────────────────────────────────────────────────
   const allItems: GiftItem[] = [...services, ...products];
   const selectedItemsList = allItems.filter(i => selectedItems.has(i.localId));
+  // Product cart helpers
+  const productBrands = useMemo(() => {
+    const brands = new Set<string>();
+    products.forEach(p => { if (p.brand) brands.add(p.brand); });
+    return Array.from(brands).sort();
+  }, [products]);
+  const filteredGiftProducts = useMemo(() => {
+    if (!selectedProductBrand) return products;
+    return products.filter(p => p.brand === selectedProductBrand);
+  }, [products, selectedProductBrand]);
+  const productCartTotal = useMemo(() => {
+    return products.reduce((sum, p) => sum + (productCart[p.localId] ?? 0) * p.price, 0);
+  }, [products, productCart]);
   const totalValue = giftMode === "balance"
     ? (parseFloat(balanceAmount) || 0)
-    : selectedItemsList.reduce((sum, i) => sum + i.price, 0);
+    : selectedItemsList.reduce((sum, i) => sum + i.price, 0) + productCartTotal;
 
   const toggleItem = useCallback((id: string) => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -297,8 +314,9 @@ export default function ClientBuyGiftScreen() {
     if (step === 0) { router.back(); return; }
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (giftMode === "balance") {
-      // Balance mode: skip steps 2 (Date) and 3 (Staff)
-      if (step === 4) { setStep(1); return; }
+      // Balance mode: skip steps 3 (Date) and 4 (Staff)
+      // Steps: 0=Items, 1=Products, 2=Details, 3=Date, 4=Staff, 5=Payment
+      if (step === 5) { setStep(2); return; }
     }
     setStep(s => s - 1);
   };
@@ -306,8 +324,9 @@ export default function ClientBuyGiftScreen() {
   const handleNext = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (giftMode === "balance") {
-      // Balance mode: skip steps 2 (Date) and 3 (Staff) — go directly from 1 to 4
-      if (step === 1) { setStep(4); return; }
+      // Balance mode: skip steps 3 (Date) and 4 (Staff) — go directly from 2 to 5
+      // Steps: 0=Items, 1=Products, 2=Details, 3=Date, 4=Staff, 5=Payment
+      if (step === 2) { setStep(5); return; }
     }
     setStep(s => Math.min(s + 1, STEPS.length - 1));
   };
@@ -317,8 +336,12 @@ export default function ClientBuyGiftScreen() {
       if (giftMode === "balance") return parseFloat(balanceAmount) > 0;
       return selectedItems.size > 0 || !!selectedPackageId;
     }
-    if (step === 1) return purchaserName.trim().length > 0 && recipientName.trim().length > 0;
-    if (step === 2) {
+    // step 1 = Products: always can proceed (products are optional add-ons)
+    if (step === 1) return true;
+    // step 2 = Details
+    if (step === 2) return purchaserName.trim().length > 0 && recipientName.trim().length > 0;
+    // step 3 = Date
+    if (step === 3) {
       if (recipientChoosesDate) return true;
       // Must have selected a date; time slot is optional
       return selectedDate !== null;
@@ -332,6 +355,11 @@ export default function ClientBuyGiftScreen() {
     try {
       const serviceIds = giftMode === "balance" ? [] : selectedItemsList.filter(i => i.type === "service").map(i => i.localId);
       const productIds = giftMode === "balance" ? [] : selectedItemsList.filter(i => i.type === "product").map(i => i.localId);
+      // Include product cart items (from Products step)
+      const addedProductItems = products
+        .filter(p => (productCart[p.localId] ?? 0) > 0)
+        .map(p => ({ localId: p.localId, name: p.name, price: p.price, qty: productCart[p.localId] }));
+      const addedProductTotal = productCartTotal;
       const preselectedDate = selectedDate ? selectedDate.toISOString().split("T")[0] : undefined;
       const body: any = {
         purchaserName: purchaserName.trim(),
@@ -342,6 +370,8 @@ export default function ClientBuyGiftScreen() {
         personalMessage: personalMessage.trim() || undefined,
         serviceIds,
         productIds,
+        addedProductItems: addedProductItems.length > 0 ? addedProductItems : undefined,
+        addedProductTotal: addedProductTotal > 0 ? addedProductTotal : undefined,
         giftType: giftMode === "balance" ? "balance" : "service",
         balanceAmount: giftMode === "balance" ? parseFloat(balanceAmount) : undefined,
         paymentMethod,
@@ -670,8 +700,78 @@ export default function ClientBuyGiftScreen() {
           </View>
         )}
 
-        {/* ── Step 1: Details ───────────────────────────────────────── */}
+        {/* ── Step 1: Productss ───────────────────────────────────────────────────── */}
         {step === 1 && (
+          <View style={s.stepContent}>
+            <Text style={s.stepTitle}>Add Products</Text>
+            <Text style={s.stepSub}>Optionally include retail products in the gift. This step is optional.</Text>
+            {/* Brand filter pills */}
+            {productBrands.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
+                <Pressable
+                  onPress={() => setSelectedProductBrand(null)}
+                  style={({ pressed }) => [{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: !selectedProductBrand ? LIME : CARD_BG, borderWidth: 1, borderColor: !selectedProductBrand ? LIME : CARD_BORDER, opacity: pressed ? 0.85 : 1 }]}
+                >
+                  <Text style={{ color: !selectedProductBrand ? "#FFF" : TEXT_MUTED, fontSize: 13, fontWeight: "600" }}>All</Text>
+                </Pressable>
+                {productBrands.map((brand) => (
+                  <Pressable
+                    key={brand}
+                    onPress={() => setSelectedProductBrand(selectedProductBrand === brand ? null : brand)}
+                    style={({ pressed }) => [{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: selectedProductBrand === brand ? LIME : CARD_BG, borderWidth: 1, borderColor: selectedProductBrand === brand ? LIME : CARD_BORDER, opacity: pressed ? 0.85 : 1 }]}
+                  >
+                    <Text style={{ color: selectedProductBrand === brand ? "#FFF" : TEXT_MUTED, fontSize: 13, fontWeight: "600" }}>{brand}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            )}
+            {/* Product list */}
+            {filteredGiftProducts.length === 0 && (
+              <View style={s.emptyState}>
+                <Text style={{ fontSize: 32 }}>🛍️</Text>
+                <Text style={{ color: TEXT_MUTED, textAlign: "center" }}>No products available.</Text>
+              </View>
+            )}
+            {filteredGiftProducts.map((product) => {
+              const qty = productCart[product.localId] ?? 0;
+              return (
+                <View key={product.localId} style={{ backgroundColor: CARD_BG, borderRadius: 12, borderWidth: 1, borderColor: qty > 0 ? GREEN_ACCENT : CARD_BORDER, padding: 14, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "600" }}>{product.name}</Text>
+                    {product.brand && <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }}>{product.brand}</Text>}
+                    {product.description ? <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }} numberOfLines={2}>{product.description}</Text> : null}
+                    <Text style={{ color: GREEN_ACCENT, fontSize: 14, fontWeight: "700", marginTop: 4 }}>{formatPrice(product.price)}</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                    <Pressable
+                      onPress={() => setProductCart(prev => { const next = { ...prev }; if ((next[product.localId] ?? 0) > 0) next[product.localId] = (next[product.localId] ?? 0) - 1; return next; })}
+                      style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: qty > 0 ? LIME : "rgba(255,255,255,0.10)", alignItems: "center", justifyContent: "center" }}
+                    >
+                      <Text style={{ color: "#FFF", fontSize: 18, fontWeight: "700", lineHeight: 20 }}>-</Text>
+                    </Pressable>
+                    <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700", minWidth: 20, textAlign: "center" }}>{qty}</Text>
+                    <Pressable
+                      onPress={() => setProductCart(prev => ({ ...prev, [product.localId]: (prev[product.localId] ?? 0) + 1 }))}
+                      style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: LIME, alignItems: "center", justifyContent: "center" }}
+                    >
+                      <Text style={{ color: "#FFF", fontSize: 18, fontWeight: "700", lineHeight: 20 }}>+</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })}
+            {/* Cart summary */}
+            {productCartTotal > 0 && (
+              <View style={{ backgroundColor: `${GREEN_ACCENT}15`, borderRadius: 12, borderWidth: 1, borderColor: `${GREEN_ACCENT}40`, padding: 14, marginTop: 8, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={{ color: TEXT_MUTED, fontSize: 14 }}>Products subtotal</Text>
+                <Text style={{ color: GREEN_ACCENT, fontSize: 16, fontWeight: "700" }}>+{formatPrice(productCartTotal)}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* ── Step 2: Details ────────────────────────────────────────────────── */}
+        {step === 2 && (
           <View style={s.stepContent}>
             <Text style={s.stepTitle}>Gift Details</Text>
             <Text style={s.stepSub}>Who is this gift from, and who is it for?</Text>
@@ -747,8 +847,8 @@ export default function ClientBuyGiftScreen() {
           </View>
         )}
 
-        {/* ── Step 2: Date ──────────────────────────────────────────── */}
-        {step === 2 && (
+        {/* ── Step 3: Date ──────────────────────────────────────────── */}
+        {step === 3 && (
           <View style={s.stepContent}>
             <Text style={s.stepTitle}>Appointment Date</Text>
             <Text style={s.stepSub}>Let the recipient choose, or pre-select a date now.</Text>
@@ -1013,8 +1113,8 @@ export default function ClientBuyGiftScreen() {
           </View>
         )}
 
-        {/* ── Step 3: Staff ─────────────────────────────────────────── */}
-        {step === 3 && (
+        {/* ── Step 4: Staff ─────────────────────────────────────────── */}
+        {step === 4 && (
           <View style={s.stepContent}>
             <Text style={s.stepTitle}>Staff Preference</Text>
             <Text style={s.stepSub}>Optional — choose a preferred staff member for the recipient.</Text>
@@ -1068,8 +1168,8 @@ export default function ClientBuyGiftScreen() {
           </View>
         )}
 
-        {/* ── Step 4: Payment ───────────────────────────────────────── */}
-        {step === 4 && (
+        {/* ── Step 5: Payment ───────────────────────────────────────── */}
+        {step === 5 && (
           <View style={s.stepContent}>
             <Text style={s.stepTitle}>Payment</Text>
             <Text style={s.stepSub}>How would you like to pay for this gift?</Text>

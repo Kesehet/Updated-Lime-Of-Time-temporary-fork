@@ -183,6 +183,27 @@ export default function PackagesScreen() {
     }
   }, []);
 
+  // Derive package usage from appointments (same logic as bookings.tsx)
+  const packageUsageMap = useMemo(() => {
+    const map = new Map<string, { usedSessions: number; totalSessions: number }>();
+    for (const appt of state.appointments) {
+      if (!appt.packageGroupId || !appt.sessionTotal) continue;
+      // The packageGroupId is "<packageId>-<clientId>-<timestamp>" — extract the base packageId
+      // by matching against known package IDs as a prefix
+      const matchingPkg = (state.packages ?? []).find(
+        (p) => appt.packageGroupId!.startsWith(p.id)
+      );
+      if (!matchingPkg) continue;
+      const existing = map.get(matchingPkg.id) ?? { usedSessions: 0, totalSessions: appt.sessionTotal };
+      if (appt.status !== 'cancelled') {
+        existing.usedSessions += 1;
+      }
+      existing.totalSessions = appt.sessionTotal;
+      map.set(matchingPkg.id, existing);
+    }
+    return map;
+  }, [state.appointments, state.packages]);
+
   const renderPackage = useCallback(({ item }: { item: ServicePackage }) => {
     const includedServices = item.serviceIds
       .map((id) => state.services.find((s) => s.id === id)?.name)
@@ -192,6 +213,9 @@ export default function PackagesScreen() {
       return sum + (svc?.price ?? 0);
     }, 0);
     const savingsAmt = retailTotal - item.price;
+    const usage = packageUsageMap.get(item.id);
+    const isFullyUsed = usage && usage.usedSessions >= usage.totalSessions;
+    const isPartiallyUsed = usage && usage.usedSessions > 0 && !isFullyUsed;
 
     return (
       <View
@@ -214,6 +238,16 @@ export default function PackagesScreen() {
               {!item.active && (
                 <View style={[styles.badge, { backgroundColor: colors.muted + "20" }]}>
                   <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "600" }}>INACTIVE</Text>
+                </View>
+              )}
+              {isFullyUsed && (
+                <View style={[styles.badge, { backgroundColor: colors.error + "20" }]}>
+                  <Text style={{ fontSize: 10, color: colors.error, fontWeight: "700" }}>USED</Text>
+                </View>
+              )}
+              {isPartiallyUsed && (
+                <View style={[styles.badge, { backgroundColor: "#F59E0B20" }]}>
+                  <Text style={{ fontSize: 10, color: "#F59E0B", fontWeight: "700" }}>{usage!.usedSessions}/{usage!.totalSessions} USED</Text>
                 </View>
               )}
             </View>
@@ -289,7 +323,7 @@ export default function PackagesScreen() {
         </View>
       </View>
     );
-  }, [colors, state.services, openEdit, handleDelete]);
+  }, [colors, state.services, openEdit, handleDelete, packageUsageMap]);
 
   return (
     <ScreenContainer>

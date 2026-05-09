@@ -112,6 +112,10 @@ export default function AppointmentDetailScreen() {
   const [editConfirmNumber, setEditConfirmNumber] = useState('');
   const [editAmount, setEditAmount] = useState('');
   const [savingPayment, setSavingPayment] = useState(false);
+  // Partial gift redemption sheet
+  const [showGiftRedeemSheet, setShowGiftRedeemSheet] = useState(false);
+  const [giftRedeemAmount, setGiftRedeemAmount] = useState('');
+  const [savingGiftRedeem, setSavingGiftRedeem] = useState(false);
 
 
   // Derived variables — safe with optional chaining (appointment may be null during hydration)
@@ -825,21 +829,78 @@ Would you also like to charge a no-show fee via Stripe?`,
     router.push({ pathname: '/send-reminder' as any, params: { appointmentId: appointment.id } });
   };
 
-  const handleConfirmGiftRedemption = async () => {
-    if (!appointment || !appointment.id) return;
+  const handleConfirmGiftRedemption = () => {
+    if (!appointment) return;
+    // For balance gift cards, open the partial redemption sheet so staff can enter amount
+    const giftCard = state.giftCards.find(
+      (gc) => gc.id === (appointment as any).giftCardId ||
+               gc.code === (appointment as any).giftCode
+    );
+    const isBalance = giftCard?.giftType === 'balance' || (appointment as any).giftCardType === 'balance';
+    if (isBalance) {
+      // Pre-fill with the amount already recorded on the appointment (or the full remaining balance)
+      const preAmount = appointment.giftUsedAmount ?? giftCard?.remainingBalance ?? 0;
+      setGiftRedeemAmount(preAmount > 0 ? String(preAmount) : '');
+      setShowGiftRedeemSheet(true);
+    } else {
+      // Specific-service gift: confirm full redemption directly
+      Alert.alert(
+        'Confirm Gift Redemption',
+        'Mark this gift certificate as fully redeemed?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Confirm',
+            onPress: async () => {
+              try {
+                const token = await getSessionToken();
+                const res = await fetch(`/api/business/appointments/${appointment.id}/confirm-gift-redemption`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+                  body: JSON.stringify({ appointmentId: appointment.id }),
+                });
+                if (!res.ok) throw new Error('Failed to confirm redemption');
+                Alert.alert('Gift Redeemed', 'The gift certificate has been marked as redeemed.');
+                dispatch({ type: 'LOAD_DATA', payload: {} });
+              } catch (err) {
+                const e = err as any;
+                Alert.alert('Error', e?.message ?? 'Could not confirm gift redemption.');
+              }
+            },
+          },
+        ]
+      );
+    }
+  };
+
+  const handleSaveGiftRedeem = async () => {
+    if (!appointment) return;
+    const parsed = parseFloat(giftRedeemAmount.trim());
+    if (isNaN(parsed) || parsed <= 0) {
+      Alert.alert('Invalid Amount', 'Please enter a valid redemption amount greater than $0.');
+      return;
+    }
+    setSavingGiftRedeem(true);
     try {
       const token = await getSessionToken();
-      const res = await fetch('/api/business/confirm-gift-redemption', {
+      const res = await fetch(`/api/business/appointments/${appointment.id}/confirm-gift-redemption`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
-        body: JSON.stringify({ appointmentId: appointment.id }),
+        body: JSON.stringify({ appointmentId: appointment.id, redeemAmount: parsed }),
       });
       if (!res.ok) throw new Error('Failed to confirm redemption');
-      Alert.alert('Gift Redeemed', 'The gift certificate has been marked as redeemed.');
+      // Update local appointment with the used amount
+      const updated = { ...appointment, giftUsedAmount: parsed };
+      dispatch({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
+      syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
+      setShowGiftRedeemSheet(false);
+      Alert.alert('Gift Redeemed', `$${parsed.toFixed(2)} has been deducted from the gift card balance.`);
       dispatch({ type: 'LOAD_DATA', payload: {} });
     } catch (err) {
       const e = err as any;
       Alert.alert('Error', e?.message ?? 'Could not confirm gift redemption.');
+    } finally {
+      setSavingGiftRedeem(false);
     }
   };
 
@@ -2674,6 +2735,111 @@ Would you also like to charge a no-show fee via Stripe?`,
             </View>
           </View>
         </View>
+      </Modal>
+      {/* ── Partial Gift Redemption Sheet ── */}
+      <Modal visible={showGiftRedeemSheet} transparent animationType="slide" onRequestClose={() => setShowGiftRedeemSheet(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: 'rgba(0,0,0,0.45)', ...StyleSheet.absoluteFillObject }} />
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+            {/* Handle bar */}
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 16 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground }}>🎁 Redeem Gift Card</Text>
+              <Pressable onPress={() => setShowGiftRedeemSheet(false)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
+                <IconSymbol name="xmark" size={22} color={colors.muted} />
+              </Pressable>
+            </View>
+            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 20 }}>
+              Enter the amount to deduct from the gift card balance. You can redeem a partial amount and use the rest later.
+            </Text>
+
+            {/* Gift card balance info */}
+            {(() => {
+              const giftCard = state.giftCards.find(
+                (gc) => gc.id === (appointment as any).giftCardId ||
+                         gc.code === (appointment as any).giftCode
+              );
+              if (!giftCard) return null;
+              return (
+                <View style={{ backgroundColor: colors.background, borderRadius: 14, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View>
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>Gift Card Balance</Text>
+                    <Text style={{ fontSize: 22, fontWeight: '700', color: colors.success, marginTop: 2 }}>${(giftCard.remainingBalance ?? giftCard.originalValue ?? 0).toFixed(2)}</Text>
+                  </View>
+                  {giftCard.code && (
+                    <View style={{ backgroundColor: colors.success + '18', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.success }}>{giftCard.code}</Text>
+                    </View>
+                  )}
+                </View>
+              );
+            })()}
+
+            {/* Amount input */}
+            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Amount to Redeem</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, borderRadius: 12, borderWidth: 1.5, borderColor: giftRedeemAmount.trim() ? colors.success : colors.border, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 24 }}>
+              <Text style={{ color: colors.success, fontWeight: '700', fontSize: 20, marginRight: 4 }}>$</Text>
+              <TextInput
+                value={giftRedeemAmount}
+                onChangeText={(v) => setGiftRedeemAmount(v.replace(/[^0-9.]/g, ''))}
+                placeholder="0.00"
+                placeholderTextColor={colors.muted}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                style={{ flex: 1, color: colors.foreground, fontSize: 20, fontWeight: '700' }}
+                autoFocus
+              />
+            </View>
+
+            {/* Quick-fill buttons */}
+            {(() => {
+              const giftCard = state.giftCards.find(
+                (gc) => gc.id === (appointment as any).giftCardId ||
+                         gc.code === (appointment as any).giftCode
+              );
+              const balance = giftCard?.remainingBalance ?? giftCard?.originalValue ?? 0;
+              const apptTotal = appointment?.totalPrice ?? 0;
+              if (balance <= 0) return null;
+              const suggestions = [
+                { label: 'Full Balance', value: balance },
+                ...(apptTotal > 0 && apptTotal < balance ? [{ label: `Appt Total ($${apptTotal.toFixed(2)})`, value: apptTotal }] : []),
+              ];
+              return (
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
+                  {suggestions.map((s) => (
+                    <Pressable
+                      key={s.label}
+                      onPress={() => setGiftRedeemAmount(String(s.value))}
+                      style={({ pressed }) => ({
+                        flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center',
+                        backgroundColor: colors.success + '18', borderWidth: 1, borderColor: colors.success + '40',
+                        opacity: pressed ? 0.7 : 1,
+                      })}
+                    >
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.success }}>{s.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              );
+            })()}
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity
+                onPress={() => setShowGiftRedeemSheet(false)}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.muted }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSaveGiftRedeem}
+                disabled={savingGiftRedeem || !giftRedeemAmount.trim()}
+                style={{ flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.success, alignItems: 'center', opacity: (savingGiftRedeem || !giftRedeemAmount.trim()) ? 0.5 : 1 }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>{savingGiftRedeem ? 'Saving…' : 'Confirm Redemption'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </ScreenContainer>
   );
