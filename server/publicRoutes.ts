@@ -7710,13 +7710,7 @@ function reviewPage(slug: string, owner: any): string {
       <div class="subtitle">Leave a Review</div>
     </div>
 
-    <!-- Existing Reviews -->
-    <div class="card" id="reviewsCard">
-      <h2>Reviews</h2>
-      <div id="reviewsList"><div class="loading">Loading reviews...</div></div>
-    </div>
-
-    <!-- Write Review Form -->
+     <!-- Write Review Form -->
     <div class="card" id="reviewForm">
       <h2>Write a Review</h2>
       <div class="input-group">
@@ -7744,12 +7738,16 @@ function reviewPage(slug: string, owner: any): string {
       <div id="reviewError" class="error-msg" style="display:none"></div>
       <button class="btn btn-primary" onclick="submitReview()" id="btnReview">Submit Review</button>
     </div>
-
     <!-- Success -->
     <div class="card" id="reviewSuccess" style="display:none;text-align:center;">
       <div class="success-icon">✓</div>
       <h2 style="font-size:20px;margin-bottom:8px;">Thank You!</h2>
       <p style="color:#666;font-size:14px;">Your review has been submitted.</p>
+    </div>
+    <!-- Existing Reviews -->
+    <div class="card" id="reviewsCard">
+      <h2>Reviews</h2>
+      <div id="reviewsList"><div class="loading">Loading reviews...</div></div>
     </div>
   </div>
 
