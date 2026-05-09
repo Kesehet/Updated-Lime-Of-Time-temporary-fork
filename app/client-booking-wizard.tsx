@@ -40,6 +40,7 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { getCategoryDef, ALL_CATEGORY } from "@/constants/categories";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as WebBrowser from "expo-web-browser";
 
 const LIME_GREEN = "#4A7C59";
 // ─── Portal palette (same as business detail) ────────────────────────────────
@@ -90,13 +91,13 @@ interface AvailableSlot {
   time: string;
 }
 
-const PAYMENT_METHODS = [
-  { id: "zelle", label: "Zelle", icon: "💜", hint: "Send to business Zelle number" },
-  { id: "venmo", label: "Venmo", icon: "💙", hint: "Send via @username" },
+type PaymentMethodId = "zelle" | "venmo" | "cashapp" | "cash" | "card";
+const BASE_PAYMENT_METHODS: { id: PaymentMethodId; label: string; icon: string; hint: string }[] = [
+  { id: "zelle",   label: "Zelle",    icon: "💜", hint: "Send to business Zelle number" },
+  { id: "venmo",   label: "Venmo",    icon: "💙", hint: "Send via @username" },
   { id: "cashapp", label: "Cash App", icon: "💚", hint: "Send via $cashtag" },
-  { id: "cash", label: "Cash", icon: "💵", hint: "Pay in person at appointment" },
-] as const;
-type PaymentMethodId = typeof PAYMENT_METHODS[number]["id"];
+  { id: "cash",    label: "Cash",     icon: "💵", hint: "Pay in person at appointment" },
+];
 
 function formatPhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
@@ -167,6 +168,15 @@ export default function ClientBookingWizardScreen() {
   const [giftError, setGiftError] = useState("");
   const [giftLoading, setGiftLoading] = useState(false);
   const [businessDisplayName, setBusinessDisplayName] = useState<string>("");
+  const [stripeConnectEnabled, setStripeConnectEnabled] = useState(false);
+  // Build dynamic payment methods list — Card only shown when Stripe is connected
+  const PAYMENT_METHODS = useMemo(() => {
+    const methods = [...BASE_PAYMENT_METHODS];
+    if (stripeConnectEnabled) {
+      methods.unshift({ id: "card", label: "Credit / Debit Card", icon: "💳", hint: "Pay securely online via Stripe" });
+    }
+    return methods;
+  }, [stripeConnectEnabled]);
   // Category filter for the service selection step
   const [wizardCatFilter, setWizardCatFilter] = useState<string | null>(null);
   // ── Products step state ──────────────────────────────────────────────────
@@ -249,6 +259,7 @@ export default function ClientBookingWizardScreen() {
         setWizardProducts(Array.isArray(prodData) ? prodData : []);
         setDiscounts(Array.isArray(discData) ? discData : []);
         if (bizData?.businessName) setBusinessDisplayName(bizData.businessName);
+        if (bizData?.stripeConnectEnabled) setStripeConnectEnabled(true);
         setPackages(Array.isArray(pkgData) ? pkgData : []);
         const svcList: PublicService[] = Array.isArray(svcData) ? svcData : [];
         const staffList: PublicStaff[] = Array.isArray(staffData) ? staffData : [];
@@ -477,7 +488,8 @@ export default function ClientBookingWizardScreen() {
       Alert.alert("Payment Required", "Please select a payment method before confirming.");
       return;
     }
-    if (paymentMethod !== "cash" && !paymentConfirmationNumber.trim()) {
+    // Card payments don't need a confirmation number — Stripe handles it
+    if (paymentMethod !== "cash" && paymentMethod !== "card" && !paymentConfirmationNumber.trim()) {
       Alert.alert("Confirmation Number Required", "Please enter your payment confirmation number.");
       return;
     }
@@ -594,6 +606,36 @@ export default function ClientBookingWizardScreen() {
         }).catch(() => {});
       }
       const selectedStaffMember = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
+
+      // ── Card payment: request Stripe payment link and open it ────────────
+      if (paymentMethod === "card" && finalPrice > 0) {
+        try {
+          const stripeRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
+            body: JSON.stringify({
+              appointmentId,
+              businessSlug: effectiveSlug,
+              amount: finalPrice,
+              description: `${selectedService.name} — ${dateStr} at ${selectedSlot.time}`,
+              clientEmail: state.account?.email ?? undefined,
+            }),
+          });
+          if (stripeRes.ok) {
+            const { paymentUrl } = await stripeRes.json();
+            if (paymentUrl) {
+              if (Platform.OS === "web") {
+                window.open(paymentUrl, "_blank");
+              } else {
+                await WebBrowser.openBrowserAsync(paymentUrl);
+              }
+            }
+          }
+        } catch {
+          // Non-blocking — booking is already confirmed, payment link failure is recoverable
+        }
+      }
+
       router.replace({
         pathname: "/client-booking-confirmation",
         params: {

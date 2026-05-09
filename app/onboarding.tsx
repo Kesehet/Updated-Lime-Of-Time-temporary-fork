@@ -64,6 +64,8 @@ import { GoogleLogo, MicrosoftLogo, AppleLogo } from "@/components/brand-icons";
 import * as Notifications from "expo-notifications";
 import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Auth from "@/lib/_core/auth";
 import { recordBusinessActivity } from "@/hooks/use-app-lock";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -561,6 +563,41 @@ export default function OnboardingScreen() {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [onboardingErrors, setOnboardingErrors] = useState<{ businessName?: string; businessPhone?: string }>({});
+  const [logoUri, setLogoUri] = useState<string>("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const uploadImageMut = trpc.files.uploadImage.useMutation();
+  const updateBusinessMut = trpc.business.update.useMutation();
+  const pickLogo = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission Required", "Please allow access to your photo library to upload a logo.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const localUri = result.assets[0].uri;
+      if (Platform.OS !== "web") {
+        try {
+          setUploadingLogo(true);
+          const base64 = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+          const mimeType = result.assets[0].mimeType ?? "image/jpeg";
+          const { url } = await uploadImageMut.mutateAsync({ base64, mimeType, folder: "logos" });
+          setLogoUri(url);
+        } catch {
+          setLogoUri(localUri);
+        } finally {
+          setUploadingLogo(false);
+        }
+      } else {
+        setLogoUri(localUri);
+      }
+    }
+  };
   const [inputFocused, setInputFocused] = useState(false);
 
   const trpcUtils = trpc.useUtils();
@@ -968,6 +1005,14 @@ export default function OnboardingScreen() {
           },
         },
       });
+      // Upload logo if one was selected during onboarding
+      if (logoUri && !logoUri.startsWith("file:///")) {
+        // Already uploaded to S3 — update the owner record
+        try {
+          await updateBusinessMut.mutateAsync({ businessLogoUri: logoUri });
+          dispatch({ type: "UPDATE_SETTINGS", payload: { businessLogoUri: logoUri } });
+        } catch { /* non-blocking */ }
+      }
       // Request push notification permission after successful onboarding
       await requestPushPermission();
       // Always go to subscription step next
@@ -1554,6 +1599,45 @@ export default function OnboardingScreen() {
                       <View style={styles.bizIntroDot} />
                       <Text style={styles.bizIntroItem}>You get notified for every new request</Text>
                     </View>
+                  </View>
+
+                  {/* Logo Upload */}
+                  <View style={{ alignItems: "center", marginBottom: 20 }}>
+                    <Pressable
+                      onPress={pickLogo}
+                      disabled={uploadingLogo || loading}
+                      style={({ pressed }) => ({
+                        width: 90,
+                        height: 90,
+                        borderRadius: 45,
+                        backgroundColor: "rgba(74,124,89,0.12)",
+                        borderWidth: 2,
+                        borderColor: "rgba(74,124,89,0.35)",
+                        borderStyle: "dashed",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        overflow: "hidden",
+                        opacity: pressed ? 0.7 : 1,
+                      })}
+                    >
+                      {uploadingLogo ? (
+                        <ActivityIndicator color="#4A7C59" size="small" />
+                      ) : logoUri ? (
+                        <Image source={{ uri: logoUri }} style={{ width: 90, height: 90, borderRadius: 45 }} />
+                      ) : (
+                        <View style={{ alignItems: "center", gap: 4 }}>
+                          <Text style={{ fontSize: 28 }}>📷</Text>
+                          <Text style={{ fontSize: 10, color: "#4A7C59", fontWeight: "600", textAlign: "center" }}>ADD LOGO</Text>
+                        </View>
+                      )}
+                    </Pressable>
+                    {logoUri ? (
+                      <Pressable onPress={pickLogo} style={{ marginTop: 6 }}>
+                        <Text style={{ fontSize: 12, color: "#4A7C59", fontWeight: "600" }}>Change Logo</Text>
+                      </Pressable>
+                    ) : (
+                      <Text style={{ fontSize: 11, color: "#9CA3AF", marginTop: 6 }}>Optional — shown on your booking page</Text>
+                    )}
                   </View>
 
                   {/* Required field */}

@@ -34,6 +34,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { getCategoryDef, ALL_CATEGORY, SERVICE_CATEGORIES } from "@/constants/categories";
+import * as WebBrowser from "expo-web-browser";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
 const GREEN_DARK   = "#1A3A28";
@@ -86,6 +87,7 @@ interface PaymentMethods {
   cashApp: string | null;
   venmo: string | null;
   cashEnabled: boolean;
+  stripeEnabled?: boolean;
 }
 
 const STEPS = ["Items", "Products", "Details", "Date", "Staff", "Payment"];
@@ -121,7 +123,7 @@ export default function ClientBuyGiftScreen() {
   const [products, setProducts] = useState<GiftItem[]>([]);
   const [staffList, setStaffList] = useState<GiftStaff[]>([]);
   const [locations, setLocations] = useState<GiftLocation[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethods>({ zelle: null, cashApp: null, venmo: null, cashEnabled: true });
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethods>({ zelle: null, cashApp: null, venmo: null, cashEnabled: true, stripeEnabled: false });
   const [businessName, setBusinessName] = useState(bizNameParam ?? "");
 
   // ── Wizard state ──────────────────────────────────────────────────────────
@@ -393,6 +395,36 @@ export default function ClientBuyGiftScreen() {
         throw new Error((err as any).error ?? `HTTP ${res.status}`);
       }
       const result = await res.json();
+
+      // ── Card payment: request Stripe payment link and open it ────────────
+      if (paymentMethod === "card" && totalValue > 0) {
+        try {
+          const stripeRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              giftCode: result.code,
+              businessSlug: slug,
+              amount: totalValue,
+              description: `Gift Card — ${businessName}`,
+              clientEmail: purchaserEmail.trim() || undefined,
+            }),
+          });
+          if (stripeRes.ok) {
+            const { paymentUrl } = await stripeRes.json();
+            if (paymentUrl) {
+              if (Platform.OS === "web") {
+                window.open(paymentUrl, "_blank");
+              } else {
+                await WebBrowser.openBrowserAsync(paymentUrl);
+              }
+            }
+          }
+        } catch {
+          // Non-blocking — gift card is created, payment link failure is recoverable
+        }
+      }
+
       // Navigate to confirmation
       router.replace({
         pathname: "/client-gift-confirmation",
@@ -427,6 +459,7 @@ export default function ClientBuyGiftScreen() {
   }
 
   const availablePaymentOptions = [
+    paymentMethods.stripeEnabled && { id: "card", label: "Credit / Debit Card", icon: "💳", hint: "Pay securely online via Stripe" },
     paymentMethods.zelle && { id: "zelle", label: "Zelle", icon: "💜", hint: "Send to business Zelle" },
     paymentMethods.venmo && { id: "venmo", label: "Venmo", icon: "💙", hint: "Send via @username" },
     paymentMethods.cashApp && { id: "cashapp", label: "Cash App", icon: "💚", hint: "Send via $cashtag" },

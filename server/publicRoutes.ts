@@ -202,6 +202,10 @@ export function registerPublicRoutes(app: Express) {
         coverPhotoUri: (owner as any).coverPhotoUri ?? null,
         avgRating,
         reviewCount,
+        stripeConnectEnabled: (owner as any).stripeConnectEnabled ?? false,
+        zelleHandle: (owner as any).zelleHandle ?? "",
+        cashAppHandle: (owner as any).cashAppHandle ?? "",
+        venmoHandle: (owner as any).venmoHandle ?? "",
       });
     } catch (err) {
       console.error("[Public API] Error fetching business:", err);
