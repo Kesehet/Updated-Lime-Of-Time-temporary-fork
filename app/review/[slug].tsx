@@ -159,17 +159,17 @@ export default function ReviewSlugScreen() {
 
 const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  title: { fontSize: fs.xl, fontWeight: "700", textAlign: "center" },
-  subtitle: { fontSize: fs.sm, textAlign: "center" },
-  sectionTitle: { fontSize: fs.md, fontWeight: "600" },
-  label: { fontSize: fs.sm, fontWeight: "600", marginBottom: 6 },
+  title: { fontSize: 20, fontWeight: "700", textAlign: "center" },
+  subtitle: { fontSize: 13, textAlign: "center" },
+  sectionTitle: { fontSize: 15, fontWeight: "600" },
+  label: { fontSize: 13, fontWeight: "600", marginBottom: 6 },
   input: {
     width: "100%",
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: fs.md,
+    fontSize: 15,
     lineHeight: 22,
   },
   textArea: {
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   submitText: {
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "700",
   },
 });

@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backBtn: { padding: 4 },
-  headerTitle: { flex: 1, fontSize: fs.md, fontWeight: "700" },
+  headerTitle: { flex: 1, fontSize: 15, fontWeight: "700" },
   addBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   card: {
     borderRadius: 14,
@@ -307,13 +307,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 0.5,
   },
-  label: { fontSize: fs.xs, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginTop: 14 },
+  label: { fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginTop: 14 },
   input: {
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: fs.sm,
+    fontSize: 13,
     marginBottom: 4,
   },
 });

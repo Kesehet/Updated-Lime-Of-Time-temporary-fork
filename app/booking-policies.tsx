@@ -320,11 +320,11 @@ export default function BookingPoliciesScreen() {
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 0.5 },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: fs.md, fontWeight: "700" },
+  headerTitle: { fontSize: 15, fontWeight: "700" },
   card: { borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1 },
   switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   switchLabel: { flexDirection: "row", alignItems: "center", flex: 1 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, alignItems: "center", justifyContent: "center", minHeight: 36 },
-  input: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, fontSize: fs.sm, lineHeight: 20, borderWidth: 1 },
+  input: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, fontSize: 13, lineHeight: 20, borderWidth: 1 },
 });

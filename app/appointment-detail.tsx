@@ -2869,5 +2869,5 @@ const styles = StyleSheet.create({
   actionButton: { width: "100%", flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 14, minHeight: 52 },
   deleteButton: { width: "100%", alignItems: "center", justifyContent: "center", paddingVertical: 12, borderRadius: 14, borderWidth: 1, minHeight: 48 },
   messageBtn: { width: "100%", flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 14, borderWidth: 1.5, marginBottom: 12, minHeight: 52 },
-  messageBtnText: { fontSize: fs.sm, fontWeight: "600", marginLeft: 8 },
+  messageBtnText: { fontSize: 13, fontWeight: "600", marginLeft: 8 },
 });

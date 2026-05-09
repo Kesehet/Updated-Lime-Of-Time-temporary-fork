@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: "#FFFFFF",
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "700",
   },
   cardInfo: {

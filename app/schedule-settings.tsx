@@ -843,7 +843,7 @@ export default function ScheduleSettingsScreen() {
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 0.5 },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: fs.md, fontWeight: "700" },
+  headerTitle: { fontSize: 15, fontWeight: "700" },
   card: { borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1 },
   cardRow: { flexDirection: "row", alignItems: "center" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
   timeButton: { flex: 1, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, borderWidth: 1, alignItems: "center", justifyContent: "center", minHeight: 36, marginLeft: 4 },
   calNavRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   calWeekRow: { flexDirection: "row", marginBottom: 6 },
-  calDayHeader: { width: "14.28%", textAlign: "center", fontSize: fs.xs, fontWeight: "600", lineHeight: 18 },
+  calDayHeader: { width: "14.28%", textAlign: "center", fontSize: 11, fontWeight: "600", lineHeight: 18 },
   calGrid: { flexDirection: "row", flexWrap: "wrap", marginBottom: 0 },
   calCell: { width: "14.28%", aspectRatio: 1, alignItems: "center", justifyContent: "center", padding: 1 },
   calDot: { width: 5, height: 5, borderRadius: 2.5, marginTop: 2 },

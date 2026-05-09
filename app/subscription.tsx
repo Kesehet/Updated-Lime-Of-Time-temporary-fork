@@ -886,7 +886,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionLabel: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -924,11 +924,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   infoLabel: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "500",
   },
   infoValue: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "600",
     textAlign: "right",
     flex: 1,

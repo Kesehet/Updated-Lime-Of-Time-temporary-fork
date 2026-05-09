@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   requiredNote: {
-    fontSize: fs.xs,
+    fontSize: 11,
     marginBottom: 16,
     marginTop: 4,
   },
@@ -584,11 +584,11 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   sectionTitle: {
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "700",
   },
   sectionNote: {
-    fontSize: fs.xs,
+    fontSize: 11,
     lineHeight: 17,
     marginBottom: 12,
   },
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   fieldLabel: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "600",
   },
   input: {
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: fs.sm,
+    fontSize: 13,
   },
   errorRow: {
     flexDirection: "row",
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   errorText: {
-    fontSize: fs.xs,
+    fontSize: 11,
   },
   websiteRow: {
     flexDirection: "row",

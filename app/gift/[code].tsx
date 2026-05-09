@@ -152,8 +152,8 @@ export default function GiftCodeScreen() {
 
 const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  title: { fontSize: fs.xl, fontWeight: "700", textAlign: "center" },
-  subtitle: { fontSize: fs.sm, textAlign: "center" },
+  title: { fontSize: 20, fontWeight: "700", textAlign: "center" },
+  subtitle: { fontSize: 13, textAlign: "center" },
   card: {
     width: "100%",
     borderWidth: 1,
@@ -161,10 +161,10 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 12,
   },
-  cardTitle: { fontSize: fs.md, fontWeight: "700", textAlign: "center", marginBottom: 4 },
+  cardTitle: { fontSize: 15, fontWeight: "700", textAlign: "center", marginBottom: 4 },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  rowLabel: { fontSize: fs.sm },
-  rowValue: { fontSize: fs.sm, fontWeight: "500" },
+  rowLabel: { fontSize: 13 },
+  rowValue: { fontSize: 13, fontWeight: "500" },
   messageBox: {
     borderWidth: 1,
     borderRadius: 12,
@@ -187,5 +187,5 @@ const styles = StyleSheet.create({
     marginTop: 20,
     minHeight: 52,
   },
-  bookBtnText: { fontSize: fs.md, fontWeight: "700" },
+  bookBtnText: { fontSize: 15, fontWeight: "700" },
 });

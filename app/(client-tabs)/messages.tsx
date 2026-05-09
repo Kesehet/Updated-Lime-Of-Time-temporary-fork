@@ -401,12 +401,12 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   title: {
-    fontSize: fs.xl,
+    fontSize: 20,
     fontWeight: "700",
     color: TEXT_PRIMARY,
   },
   subtitle: {
-    fontSize: fs.xs,
+    fontSize: 11,
     color: TEXT_MUTED,
     marginTop: 2,
   },
@@ -431,12 +431,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   emptyTitle: {
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "700",
     color: TEXT_PRIMARY,
   },
   emptySubtitle: {
-    fontSize: fs.sm,
+    fontSize: 13,
     textAlign: "center",
     lineHeight: 20,
     color: TEXT_MUTED,
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   avatarText: {
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "700",
     color: GREEN_ACCENT,
   },
@@ -476,23 +476,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   businessName: {
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "700",
     flex: 1,
     color: TEXT_PRIMARY,
   },
   timeAgo: {
-    fontSize: fs.xs,
+    fontSize: 11,
     marginLeft: 8,
     color: TEXT_MUTED,
   },
   serviceName: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "600",
     color: GREEN_ACCENT,
   },
   lastMessage: {
-    fontSize: fs.xs,
+    fontSize: 11,
     lineHeight: 18,
     color: TEXT_MUTED,
   },
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
   },
   unreadText: {
     color: GREEN_DARK,
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "700",
   },
   guestContainer: {
@@ -527,13 +527,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   guestTitle: {
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "700",
     color: TEXT_PRIMARY,
     textAlign: "center",
   },
   guestSub: {
-    fontSize: fs.sm,
+    fontSize: 13,
     color: TEXT_MUTED,
     textAlign: "center",
     lineHeight: 20,
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
   },
   signInBtnText: {
     color: GREEN_DARK,
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "700",
   },
 });

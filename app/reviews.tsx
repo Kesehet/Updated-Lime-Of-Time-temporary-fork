@@ -147,7 +147,7 @@ export default function ReviewsScreen() {
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 0.5 },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: fs.md, fontWeight: "700" },
+  headerTitle: { fontSize: 15, fontWeight: "700" },
   summaryCard: { marginHorizontal: 16, marginTop: 16, borderRadius: 16, padding: 16, borderWidth: 1, flexDirection: "row" },
   summaryLeft: { alignItems: "center", justifyContent: "center", paddingRight: 20, borderRightWidth: 0.5, borderRightColor: "#e5e7eb" },
   summaryRight: { flex: 1, paddingLeft: 16, justifyContent: "center", gap: 4 },

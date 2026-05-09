@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     flex: 1,
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "700",
     letterSpacing: -0.3,
   },
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveBtnText: {
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "700",
     color: "#fff",
     letterSpacing: 0.2,
@@ -470,16 +470,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   durationValue: {
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "700",
   },
   fieldLabel: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "600",
     marginBottom: 6,
   },
   fieldHint: {
-    fontSize: fs.xs,
+    fontSize: 11,
     lineHeight: 17,
     marginBottom: 10,
   },
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: fs.sm,
+    fontSize: 13,
   },
   textArea: {
     minHeight: 80,
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipText: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "500",
   },
   categoryGrid: {
@@ -528,11 +528,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   categoryTileEmoji: {
-    fontSize: fs.lg,
+    fontSize: 17,
     lineHeight: 28,
   },
   categoryTileLabel: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "600",
     textAlign: "center",
     lineHeight: 14,
@@ -563,11 +563,11 @@ const styles = StyleSheet.create({
     borderRadius: 7,
   },
   previewName: {
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "600",
   },
   previewMeta: {
-    fontSize: fs.xs,
+    fontSize: 11,
     marginTop: 2,
   },
   reminderRow: {
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   reminderUnit: {
-    fontSize: fs.sm,
+    fontSize: 13,
     minWidth: 28,
   },
   lockedRow: {
@@ -588,11 +588,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   lockedTitle: {
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "600",
   },
   lockedSub: {
-    fontSize: fs.xs,
+    fontSize: 11,
     marginTop: 2,
     lineHeight: 16,
   },
@@ -615,11 +615,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   imageHint: {
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "600",
   },
   imageSubHint: {
-    fontSize: fs.xs,
+    fontSize: 11,
     textAlign: "center",
     paddingHorizontal: 20,
   },
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   imageOverlayText: {
-    fontSize: fs.xs,
+    fontSize: 11,
     color: "#fff",
     fontWeight: "500",
   },
@@ -667,7 +667,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   imageActionText: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "600",
   },
   deleteBtn: {
@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   deleteBtnText: {
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "600",
   },
   lightboxOverlay: {

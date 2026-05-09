@@ -1810,14 +1810,14 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   appName: {
-    fontSize: fs.xxl,
+    fontSize: 24,
     fontWeight: "800",
     color: "#FFFFFF",
     letterSpacing: -0.5,
     fontFamily: Platform.OS === "ios" ? "Inter_700Bold" : undefined,
   },
   appTagline: {
-    fontSize: fs.sm,
+    fontSize: 13,
     color: "rgba(255,255,255,0.7)",
     marginTop: 3,
     fontFamily: Platform.OS === "ios" ? "Inter_400Regular" : undefined,
@@ -1844,14 +1844,14 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   stepTitle: {
-    fontSize: fs.lg,
+    fontSize: 17,
     fontWeight: "700",
     color: "#111827",
     marginBottom: 6,
     fontFamily: Platform.OS === "ios" ? "Inter_700Bold" : undefined,
   },
   stepSubtitle: {
-    fontSize: fs.sm,
+    fontSize: 13,
     color: "#6B7280",
     marginBottom: 24,
     lineHeight: 20,
@@ -1862,7 +1862,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   inputLabel: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "600",
     color: "#374151",
     marginBottom: 6,
@@ -1876,7 +1876,7 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    fontSize: fs.sm,
+    fontSize: 13,
     lineHeight: 20,
     color: "#111827",
     backgroundColor: "#F9FAFB",
@@ -1905,7 +1905,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "#EF4444",
-    fontSize: fs.xs,
+    fontSize: 11,
     marginTop: 4,
     fontFamily: Platform.OS === "ios" ? "Inter_400Regular" : undefined,
   },
@@ -1920,7 +1920,7 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: {
     color: "#FFFFFF",
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "700",
     lineHeight: 22,
     fontFamily: Platform.OS === "ios" ? "Inter_700Bold" : undefined,
@@ -1937,7 +1937,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   secondaryBtnText: {
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "600",
     color: "#374151",
     fontFamily: Platform.OS === "ios" ? "Inter_600SemiBold" : undefined,
@@ -1965,7 +1965,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   skipBtnText: {
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "600",
     color: "#6B7280",
     fontFamily: Platform.OS === "ios" ? "Inter_600SemiBold" : undefined,
@@ -1983,7 +1983,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E5E7EB",
   },
   dividerText: {
-    fontSize: fs.xs,
+    fontSize: 11,
     color: "#9CA3AF",
     fontWeight: "500",
   },
@@ -2006,12 +2006,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9FAFB",
   },
   socialBtnIcon: {
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "700",
     color: "#374151",
   },
   socialBtnText: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "600",
     color: "#374151",
     fontFamily: Platform.OS === "ios" ? "Inter_600SemiBold" : undefined,
@@ -2049,7 +2049,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4A7C59",
   },
   bizIntroItem: {
-    fontSize: fs.xs,
+    fontSize: 11,
     color: "#374151",
     fontWeight: "500",
     flex: 1,
@@ -2100,7 +2100,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 56,
     textAlign: "center",
-    fontSize: fs.lg,
+    fontSize: 17,
     fontWeight: "700",
     color: "#111827",
     padding: 0,
@@ -2117,7 +2117,7 @@ const styles = StyleSheet.create({
   },
   otpErrorText: {
     color: "#EF4444",
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "600",
     textAlign: "center",
   },

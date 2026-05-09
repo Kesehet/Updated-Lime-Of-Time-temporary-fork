@@ -338,7 +338,7 @@ export default function BirthdayCampaignsScreen() {
 const styles = StyleSheet.create({
   topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12 },
   settingsCard: { borderRadius: 14, padding: 14, borderWidth: 1, marginBottom: 12 },
-  input: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 10, fontSize: fs.sm, borderWidth: 1 },
+  input: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 10, fontSize: 13, borderWidth: 1 },
   todayBanner: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 14, padding: 14, borderWidth: 1, marginBottom: 12 },
   filterRow: { flexDirection: "row", borderBottomWidth: 1, marginBottom: 8 },
   filterTab: { flex: 1, alignItems: "center", paddingVertical: 10, borderBottomWidth: 2, flexDirection: "row", justifyContent: "center", gap: 4 },

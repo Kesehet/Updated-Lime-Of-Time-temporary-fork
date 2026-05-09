@@ -4003,7 +4003,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,
-    fontSize: fs.sm,
+    fontSize: 13,
     minHeight: 80,
     textAlignVertical: "top",
   },

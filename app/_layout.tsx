@@ -181,19 +181,25 @@ function RootLayout() {
 
   // Hide the native splash screen after the first render so our AnimatedSplash
   // is guaranteed to be on screen before the native splash disappears.
-  // Using requestAnimationFrame ensures the JS thread has committed the first frame.
+  // On production builds (TestFlight) the JS bundle takes longer to parse;
+  // we wait 150 ms after the first two rAFs to ensure the AnimatedSplash
+  // view is fully composited on the native layer before the native splash
+  // is dismissed — preventing a black/white flash between the two.
   useEffect(() => {
     let cancelled = false;
     const hide = async () => {
-      // Wait two animation frames so the AnimatedSplash View is fully painted
       requestAnimationFrame(() => {
-        requestAnimationFrame(async () => {
+        requestAnimationFrame(() => {
           if (cancelled) return;
-          try {
-            await SplashScreen.hideAsync();
-          } catch {
-            // Ignore — harmless Expo Go timing issue
-          }
+          // Extra 150 ms for production bundle parse + native compositing
+          setTimeout(async () => {
+            if (cancelled) return;
+            try {
+              await SplashScreen.hideAsync();
+            } catch {
+              // Ignore — harmless Expo Go timing issue
+            }
+          }, 150);
         });
       });
     };
@@ -258,6 +264,13 @@ function RootLayout() {
 
   const content = (
     <View style={{ flex: 1 }}>
+    {/* AnimatedSplash is rendered first so it is composited before the Stack navigator
+        mounts — this guarantees it is on screen when the native splash is dismissed. */}
+    {!splashDone && (
+      <View style={StyleSheet.absoluteFill} pointerEvents="none" importantForAccessibility="no-hide-descendants">
+        <AnimatedSplash onFinish={handleSplashFinish} />
+      </View>
+    )}
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
@@ -363,11 +376,6 @@ function RootLayout() {
           <SafeAreaFrameContext.Provider value={frame}>
             <SafeAreaInsetsContext.Provider value={insets}>
               {content}
-              {!splashDone && (
-                <View style={StyleSheet.absoluteFill} pointerEvents="none">
-                  <AnimatedSplash onFinish={handleSplashFinish} />
-                </View>
-              )}
             </SafeAreaInsetsContext.Provider>
           </SafeAreaFrameContext.Provider>
         </SafeAreaProvider>
@@ -379,11 +387,6 @@ function RootLayout() {
     <ThemeProvider>
       <SafeAreaProvider initialMetrics={providerInitialMetrics}>
         {content}
-        {!splashDone && (
-          <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            <AnimatedSplash onFinish={handleSplashFinish} />
-          </View>
-        )}
       </SafeAreaProvider>
     </ThemeProvider>
   );

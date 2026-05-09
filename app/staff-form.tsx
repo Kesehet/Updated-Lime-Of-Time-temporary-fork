@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
-    fontSize: fs.sm,
+    fontSize: 13,
   },
   switchRow: {
     flexDirection: "row",
@@ -758,7 +758,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
-    fontSize: fs.sm,
+    fontSize: 13,
     textAlign: "center",
   },
   radioSelected: {

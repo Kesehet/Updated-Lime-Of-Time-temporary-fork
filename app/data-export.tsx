@@ -155,11 +155,11 @@ export default function DataExportScreen() {
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 0.5 },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: fs.md, fontWeight: "700" },
+  headerTitle: { fontSize: 15, fontWeight: "700" },
   exportCard: { flexDirection: "row", alignItems: "center", borderRadius: 16, padding: 16, borderWidth: 1, marginBottom: 12, gap: 14 },
   iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   statsCard: { borderRadius: 16, padding: 16, borderWidth: 1, marginTop: 8 },
   statsGrid: { flexDirection: "row", justifyContent: "space-between" },
   statItem: { flex: 1, alignItems: "center" },
-  statNum: { fontSize: fs.lg, fontWeight: "700", lineHeight: 28 },
+  statNum: { fontSize: 17, fontWeight: "700", lineHeight: 28 },
 });

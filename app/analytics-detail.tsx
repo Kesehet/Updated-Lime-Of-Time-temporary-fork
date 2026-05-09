@@ -1729,7 +1729,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "700",
   },
   reportButton: {
@@ -1743,7 +1743,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   reportButtonText: {
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "700",
     color: "#FFF",
   },

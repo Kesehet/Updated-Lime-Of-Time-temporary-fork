@@ -2632,7 +2632,7 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   monthHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8 },
-  monthTitle: { fontSize: fs.md, fontWeight: "700" },
+  monthTitle: { fontSize: 15, fontWeight: "700" },
   navBtn: { padding: 8 },
   dayHeaderRow: { flexDirection: "row", marginBottom: 4 },
   calendarGrid: { flexDirection: "row", flexWrap: "wrap", width: "100%" },
@@ -2643,7 +2643,7 @@ const styles = StyleSheet.create({
   dotLegend: { flexDirection: "row", justifyContent: "center", gap: 12, marginTop: 6, marginBottom: 8, flexWrap: "wrap" },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   legendDot: { width: 7, height: 7, borderRadius: 3.5 },
-  sectionTitle: { fontSize: fs.md, fontWeight: "700", marginBottom: 8 },
+  sectionTitle: { fontSize: 15, fontWeight: "700", marginBottom: 8 },
   apptCard: { flexDirection: "column", padding: 12, borderRadius: 12, borderWidth: 1, borderLeftWidth: 4, marginBottom: 8 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, alignSelf: "flex-start" },
   filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, marginRight: 8 },
@@ -2687,9 +2687,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  undoToastText: { flex: 1, color: "#FFF", fontSize: fs.sm, fontWeight: "500" },
+  undoToastText: { flex: 1, color: "#FFF", fontSize: 13, fontWeight: "500" },
   undoBtn: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: "#00C896", borderRadius: 10 },
-  undoBtnText: { color: "#FFF", fontWeight: "700", fontSize: fs.xs },
+  undoBtnText: { color: "#FFF", fontWeight: "700", fontSize: 11 },
   payModal: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -2697,7 +2697,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   payModalTitle: {
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 8,
@@ -2706,7 +2706,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
-    fontSize: fs.md,
+    fontSize: 15,
     marginBottom: 16,
   },
 });

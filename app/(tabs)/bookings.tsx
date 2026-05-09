@@ -1455,9 +1455,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  undoToastText: { flex: 1, color: "#FFF", fontSize: fs.sm, fontWeight: "500" },
+  undoToastText: { flex: 1, color: "#FFF", fontSize: 13, fontWeight: "500" },
   undoBtn: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: "#00C896", borderRadius: 10 },
-  undoBtnText: { color: "#FFF", fontWeight: "700", fontSize: fs.xs },
+  undoBtnText: { color: "#FFF", fontWeight: "700", fontSize: 11 },
   payModal: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -1465,7 +1465,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   payModalTitle: {
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 8,
@@ -1474,7 +1474,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
-    fontSize: fs.md,
+    fontSize: 15,
     marginBottom: 16,
   },
 });

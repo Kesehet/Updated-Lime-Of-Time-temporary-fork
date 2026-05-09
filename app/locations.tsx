@@ -741,7 +741,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   bookingUrlPreview: {
-    fontSize: fs.xs,
+    fontSize: 11,
     lineHeight: 16,
   },
   bookingLinkActions: {

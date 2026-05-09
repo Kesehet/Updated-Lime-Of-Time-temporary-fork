@@ -3035,11 +3035,11 @@ const styles = StyleSheet.create({
     marginLeft: 14,
   },
   businessName: {
-    fontSize: fs.lg,
+    fontSize: 17,
     fontWeight: "700",
   },
   greetingText: {
-    fontSize: fs.xs,
+    fontSize: 11,
     marginTop: 2,
   },
   closedBadge: {
@@ -3048,7 +3048,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   dateLabel: {
-    fontSize: fs.sm,
+    fontSize: 13,
     marginTop: 2,
     marginBottom: 4,
   },
@@ -3062,7 +3062,7 @@ const styles = StyleSheet.create({
   },
   pendingText: {
     color: "#E65100",
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "600",
     marginLeft: 8,
     flex: 1,
@@ -3078,7 +3078,7 @@ const styles = StyleSheet.create({
 
   // ─── Section ─────────────────────────────────────────────
   sectionTitle: {
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "700",
     marginBottom: 12,
   },
@@ -3117,17 +3117,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   kpiValue: {
-    fontSize: fs.lg,
+    fontSize: 17,
     fontWeight: "800",
     lineHeight: 28,
   },
   kpiLabel: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "500",
     marginTop: 2,
   },
   kpiTotal: {
-    fontSize: fs.xs,
+    fontSize: 11,
     marginTop: 4,
   },
   miniStatRow: {
@@ -3155,11 +3155,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   chartTitle: {
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "700",
   },
   chartSubtitle: {
-    fontSize: fs.xs,
+    fontSize: 11,
   },
   sideBySideRow: {
     flexDirection: "row",
@@ -3177,10 +3177,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statusLabel: {
-    fontSize: fs.xs,
+    fontSize: 11,
   },
   statusValue: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "700",
   },
 
@@ -3200,13 +3200,13 @@ const styles = StyleSheet.create({
     minHeight: 90,
   },
   quickActionLabel: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "600",
     marginTop: 6,
     textAlign: "center",
   },
   quickActionCount: {
-    fontSize: fs.md,
+    fontSize: 15,
     fontWeight: "800",
     marginTop: 2,
   },
@@ -3226,7 +3226,7 @@ const styles = StyleSheet.create({
   },
   bookBtnText: {
     color: "#FFF",
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "600",
   },
   apptCard: {
@@ -3253,12 +3253,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   apptTime: {
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "700",
     lineHeight: 20,
   },
   apptService: {
-    fontSize: fs.sm,
+    fontSize: 13,
     fontWeight: "600",
     lineHeight: 19,
   },
@@ -3309,7 +3309,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   tutorialTitle: {
-    fontSize: fs.lg,
+    fontSize: 17,
     fontWeight: "800",
     textAlign: "center",
     marginBottom: 8,
@@ -3317,7 +3317,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   tutorialDesc: {
-    fontSize: fs.sm,
+    fontSize: 13,
     lineHeight: 22,
     textAlign: "center",
     marginBottom: 20,

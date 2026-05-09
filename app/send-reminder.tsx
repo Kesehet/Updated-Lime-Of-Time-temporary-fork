@@ -809,7 +809,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   categoryPillText: {
-    fontSize: fs.xs,
+    fontSize: 11,
     fontWeight: "600",
   },
 });
