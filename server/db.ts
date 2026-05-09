@@ -270,6 +270,12 @@ export function sanitizeSlug(raw: string): string {
 export async function getBusinessOwnerBySlug(slug: string): Promise<BusinessOwner | undefined> {
   const db = await getDb();
   if (!db) return undefined;
+  // Numeric ID fallback: when the slug is a plain integer (e.g. from gift card businessSlug fallback)
+  const numericId = /^\d+$/.test(slug.trim()) ? parseInt(slug.trim(), 10) : NaN;
+  if (!isNaN(numericId)) {
+    const result = await db.select().from(businessOwners);
+    return result.find((owner) => owner.id === numericId);
+  }
   // Get all business owners and match by customSlug first, then by auto-generated slug
   const result = await db.select().from(businessOwners);
   const lowerSlug = slug.toLowerCase();

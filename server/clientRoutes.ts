@@ -484,7 +484,7 @@ export function registerClientRoutes(app: Express) {
           return {
             ...appt,
             businessName: owner?.businessName ?? "Unknown",
-            businessSlug: owner?.customSlug ?? db.sanitizeSlug(owner?.businessName ?? ""),
+            businessSlug: owner?.customSlug || (owner?.id ? String(owner.id) : null),
             businessLogoUri: owner?.businessLogoUri ?? null,
             coverPhotoUri: (owner as any)?.coverPhotoUri ?? null,
             businessCategory: owner?.businessCategory ?? null,
@@ -540,7 +540,7 @@ export function registerClientRoutes(app: Express) {
       res.json({
         ...appt,
         businessName: owner?.businessName ?? "Unknown",
-        businessSlug: owner?.customSlug ?? db.sanitizeSlug(owner?.businessName ?? ""),
+        businessSlug: owner?.customSlug || (owner?.id ? String(owner.id) : null),
         businessLogoUri: owner?.businessLogoUri ?? null,
         coverPhotoUri: (owner as any)?.coverPhotoUri ?? null,
         businessCategory: owner?.businessCategory ?? null,

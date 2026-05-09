@@ -603,12 +603,19 @@ export default function ClientHomeScreen() {
                           <Text style={{ color: canRedeem ? "#1A3A28" : TEXT_MUTED, fontWeight: "700", fontSize: 14 }}>{canRedeem ? "Redeem Gift →" : "Gift not redeemable"}</Text>
                         </Pressable>
                         <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>How to use</Text>
-                        {[
-                          "1. Tap the card or 'Redeem Gift' button to start booking",
-                          "2. Service is pre-selected — go straight to staff & time",
-                          "3. Your gift code is pre-filled at checkout automatically",
-                        ].map((step, i) => (
-                          <Text key={i} style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18 }}>{step}</Text>
+                        {(gift.giftType === "balance" || (!gift.serviceLocalId && !gift.serviceName)
+                          ? [
+                              "1. Tap this card or 'Redeem Gift' to start booking",
+                              "2. Choose any service from the full menu",
+                              "3. Your gift balance is applied automatically at checkout",
+                            ]
+                          : [
+                              "1. Tap this card or 'Redeem Gift' to start booking",
+                              "2. Your service is pre-selected — go straight to staff & time",
+                              "3. Your gift code is pre-filled at checkout automatically",
+                            ]
+                        ).map((howStep, i) => (
+                          <Text key={i} style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18 }}>{howStep}</Text>
                         ))}
                       </View>
                     )}
