@@ -85,19 +85,12 @@ function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
   const router = useRouter();
 
-  // ── Immediate navigation reset on mount ──────────────────────────────────
-  // Expo Router persists navigation state between launches. If the user last
-  // visited the client profile tab, that screen would flash briefly before the
-  // AnimatedSplash overlay fires. We reset to profile-select immediately on
-  // mount (before any async work) so the navigation stack is always clean.
-  useEffect(() => {
-    // Single rAF ensures the router is fully mounted before we navigate.
-    const id = requestAnimationFrame(() => {
-      router.replace("/profile-select" as any);
-    });
-    return () => cancelAnimationFrame(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // NOTE: Navigation to /profile-select is handled exclusively by handleSplashFinish
+  // (called when the AnimatedSplash overlay completes). The AnimatedSplash covers
+  // the entire screen with pointerEvents="none" during startup, so there is no
+  // risk of the last-visited route flashing before the portal selector appears.
+  // A redundant mount-time router.replace() was previously here but caused the
+  // portal selector to appear twice on cold launch — it has been removed.
 
   const handleSplashFinish = useCallback(async () => {
     // NOTE: Do NOT call setSplashDone(true) here yet.
