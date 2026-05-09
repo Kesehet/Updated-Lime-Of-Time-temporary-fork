@@ -24,7 +24,7 @@ export default function ServiceFormScreen() {
   const { state, dispatch, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth } = useResponsive();
   const { checkLimit, planInfo } = usePlanLimitCheck();
   const smsLevel: string = (planInfo?.limits as { smsLevel?: string } | undefined)?.smsLevel ?? "none";
   const hasSms = smsLevel !== "none";

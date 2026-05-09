@@ -136,7 +136,7 @@ export default function GiftCardsScreen() {
   const publicRedeemed = publicGiftCards.filter(c => c.redeemed);
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth } = useResponsive();
 
   const [showForm, setShowForm] = useState(false);
   const [giftCreateMode, setGiftCreateMode] = useState<"items" | "balance">("items");
@@ -1169,6 +1169,9 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 40,
     paddingHorizontal: 20,
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center' as const,
   },
   modalHeader: {
     flexDirection: "row",

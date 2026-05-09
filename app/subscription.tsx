@@ -26,6 +26,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from "react-native-reanimated";
 import { useColors } from "@/hooks/use-colors";
+import { useResponsive } from "@/hooks/use-responsive";
 import { useStore } from "@/lib/store";
 import { trpc } from "@/lib/trpc";
 import { getApiBaseUrl } from "@/constants/oauth";
@@ -141,6 +142,7 @@ function UsageMeter({
   color: string;
 }) {
   const colors = useColors();
+  const { modalMaxWidth } = useResponsive();
   const isUnlimited = max === -1 || max >= 9999;
   const pct = isUnlimited ? 0 : Math.min(1, current / Math.max(max, 1));
   const barColor = pct >= 0.9 ? "#EF4444" : pct >= 0.7 ? "#F59E0B" : color;

@@ -139,6 +139,7 @@ export default function ClientBuyGiftScreen() {
   const [previewItem, setPreviewItem] = useState<GiftItem | null>(null);
   const [previewPackage, setPreviewPackage] = useState<GiftPackage | null>(null);
   const SCREEN_WIDTH = Dimensions.get("window").width;
+  const MODAL_MAX_WIDTH = Math.min(SCREEN_WIDTH, 560);
   // Details
   const [purchaserName, setPurchaserName] = useState("");
   const [purchaserEmail, setPurchaserEmail] = useState("");
@@ -1254,9 +1255,9 @@ export default function ClientBuyGiftScreen() {
       <Modal visible={!!previewItem} transparent animationType="fade" onRequestClose={() => setPreviewItem(null)}>
         <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.9)", alignItems: "center", justifyContent: "center" }} onPress={() => setPreviewItem(null)}>
           {previewItem?.photoUri ? (
-            <Image source={{ uri: previewItem.photoUri }} style={{ width: SCREEN_WIDTH - 40, height: SCREEN_WIDTH - 40, borderRadius: 16 }} contentFit="cover" />
+            <Image source={{ uri: previewItem.photoUri }} style={{ width: MODAL_MAX_WIDTH - 40, height: MODAL_MAX_WIDTH - 40, borderRadius: 16 }} contentFit="cover" />
           ) : (
-            <View style={{ width: SCREEN_WIDTH - 40, height: 200, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" }}>
+            <View style={{ width: MODAL_MAX_WIDTH - 40, height: 200, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" }}>
               <Text style={{ fontSize: 48 }}>{getCategoryDef(previewItem?.category).emoji}</Text>
             </View>
           )}

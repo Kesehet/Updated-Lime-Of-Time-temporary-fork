@@ -15,7 +15,7 @@ export default function ReviewsScreen() {
   const { state } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
   const [sort, setSort] = useState<SortMode>("newest");
 
   const avgRating = useMemo(() => {
@@ -112,7 +112,7 @@ export default function ReviewsScreen() {
         <FlatList
           data={sorted}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40 }}
+          contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
           renderItem={({ item: review }) => {
             const client = state.clients.find((c) => c.id === review.clientId);
             const stars = Array.from({ length: 5 }, (_, i) => i < review.rating ? "★" : "☆").join("");

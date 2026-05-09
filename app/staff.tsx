@@ -25,7 +25,7 @@ export default function StaffScreen() {
   const { state, dispatch, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const { activeLocation, activeLocations, hasMultipleLocations, staffForLocation, setActiveLocation } = useActiveLocation();
@@ -429,7 +429,7 @@ export default function StaffScreen() {
           data={filteredStaff}
           keyExtractor={(item) => item.id}
           renderItem={renderStaffCard}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 100, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
           showsVerticalScrollIndicator={false}
         />
       )}

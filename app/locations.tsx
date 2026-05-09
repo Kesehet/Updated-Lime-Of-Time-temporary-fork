@@ -29,7 +29,7 @@ export default function LocationsScreen() {
   const { activeLocation, setActiveLocation } = useActiveLocation();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
 
   // Track which location just had its link copied (for toast feedback)
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -536,7 +536,7 @@ export default function LocationsScreen() {
           renderItem={renderLocation}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 100, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
         />
       )}
 

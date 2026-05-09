@@ -24,6 +24,7 @@ import {
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useColors } from "@/hooks/use-colors";
+import { useResponsive } from "@/hooks/use-responsive";
 import { useClientStore } from "@/lib/client-store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ClientPortalBackground } from "@/components/client-portal-background";
@@ -87,6 +88,7 @@ async function saveHiddenThreadIds(ids: Set<number>): Promise<void> {
 
 export default function MessagesScreen() {
   const colors = useColors();
+  const { modalMaxWidth } = useResponsive();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { state, dispatch, apiCall } = useClientStore();

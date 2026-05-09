@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
+import { useResponsive } from "@/hooks/use-responsive";
 import { useClientStore, SavedBusiness } from "@/lib/client-store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { getApiBaseUrl } from "@/constants/oauth";
@@ -113,6 +114,7 @@ const isRemoteUri = (uri: string | null | undefined) =>
 
 export default function ClientBusinessDetailScreen() {
   const colors = useColors();
+  const { modalMaxWidth } = useResponsive();
   const router = useRouter();
   const { slug, distanceKm } = useLocalSearchParams<{ slug: string; distanceKm?: string }>();
   const distanceMiles = distanceKm && distanceKm !== "" ? (parseFloat(distanceKm) * 0.621371).toFixed(1) : null;
@@ -1013,7 +1015,10 @@ const s = StyleSheet.create({
   reviewDate: { fontSize: 11 },
   writeReviewBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: ACCENT, borderRadius: 12, paddingVertical: 12, marginBottom: 4 },
   writeReviewBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
-  reviewModal: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  reviewModal: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40,
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center' as const },
   reviewModalTitle: { fontSize: 18, fontWeight: "700" },
   reviewInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 14, minHeight: 80, textAlignVertical: "top", marginBottom: 16 },
   reviewSubmitBtn: { backgroundColor: ACCENT, borderRadius: 12, paddingVertical: 14, alignItems: "center" },

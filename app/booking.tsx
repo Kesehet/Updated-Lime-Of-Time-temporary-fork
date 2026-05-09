@@ -49,7 +49,7 @@ export default function PublicBookingScreen() {
   const { state, dispatch, getServiceById, syncToDb, getStaffById } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
 
   // Read optional location pre-selection from URL params (e.g. ?location=<locationId>)
   const { location: locationParam } = useLocalSearchParams<{ location?: string }>();
@@ -547,7 +547,7 @@ export default function PublicBookingScreen() {
       )}
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={{ paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}>
         {/* Closed message */}
         {isClosed && step !== "location" && (
           <View style={{ alignItems: "center", paddingVertical: 40 }}>

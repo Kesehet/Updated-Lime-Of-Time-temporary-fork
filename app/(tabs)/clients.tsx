@@ -37,7 +37,7 @@ export default function ClientsScreen() {
   const { hasMultipleLocations } = useActiveLocation();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, isLargeTablet, hp, maxContentWidth } = useResponsive();
+  const { isTablet, isLargeTablet, hp, maxContentWidth, modalMaxWidth } = useResponsive();
   const { checkLimit } = usePlanLimitCheck();
 
   // ── Tab state ─────────────────────────────────────────────────────────────

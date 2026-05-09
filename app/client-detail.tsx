@@ -58,7 +58,7 @@ export default function ClientDetailScreen() {
   const { state, dispatch, getClientById, getAppointmentsForClient, getServiceById, getReviewsForClient, getPhotosForClient, getLocationById, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
 
   const client = getClientById(id ?? "");
   const appointments = getAppointmentsForClient(id ?? "");
@@ -439,7 +439,7 @@ export default function ClientDetailScreen() {
   return (
     <ScreenContainer edges={["top", "bottom", "left", "right"]} tabletMaxWidth={720}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40 }}
+<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
       >

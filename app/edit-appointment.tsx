@@ -54,7 +54,7 @@ export default function EditAppointmentScreen() {
   const { state, dispatch, getServiceById, getLocationById, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { hp, width: screenWidth } = useResponsive();
+  const { hp, width: screenWidth, modalMaxWidth, maxContentWidth } = useResponsive();
 
   const appointment = useMemo(
     () => state.appointments.find((a) => a.id === id),
@@ -473,7 +473,7 @@ export default function EditAppointmentScreen() {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
 <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
       
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}

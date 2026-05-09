@@ -52,7 +52,7 @@ export default function NewBookingScreen() {
   const { activeLocations: _allActiveLocations } = useActiveLocation();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, width: screenWidth } = useResponsive();
+  const { isTablet, hp, width: screenWidth, modalMaxWidth, maxContentWidth } = useResponsive();
   const params = useLocalSearchParams<{ date?: string }>();
 
   const sendSmsMutation = trpc.twilio.sendSms.useMutation();
@@ -792,7 +792,7 @@ export default function NewBookingScreen() {
       {/* Step 1: Select Service — category drill-down */}
       {step === 1 && (
               <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: hp }}
+<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: hp, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
       >
@@ -1113,7 +1113,7 @@ export default function NewBookingScreen() {
 
       {/* Step 3: Pick Date & Time */}
       {step === 3 && (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}>
           <View className="flex-row items-center justify-between mb-3">
             <Pressable onPress={() => setStep(2)} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
               <Text className="text-sm" style={{ color: colors.primary }}>← Back</Text>
@@ -1718,7 +1718,7 @@ export default function NewBookingScreen() {
 
       {/* Step 4: Add More & Confirm */}
       {step === 4 && (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}>
           <View className="flex-row items-center justify-between mb-3">
             <Pressable onPress={() => setStep(3)} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
               <Text className="text-sm" style={{ color: colors.primary }}>← Back</Text>
@@ -2253,7 +2253,7 @@ export default function NewBookingScreen() {
 
       {/* ── Step 5: Payment Method ── */}
       {step === 5 && (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}>
           <View className="flex-row items-center justify-between mb-3">
             <Pressable onPress={() => setStep(4)} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
               <Text className="text-sm" style={{ color: colors.primary }}>← Back</Text>

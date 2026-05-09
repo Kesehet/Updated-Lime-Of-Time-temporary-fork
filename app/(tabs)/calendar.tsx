@@ -278,7 +278,7 @@ export default function CalendarScreen() {
   const colors = useColors();
   const router = useRouter();
   const params = useLocalSearchParams<{ filter?: string; date?: string; view?: string }>();
-  const { width, isTablet, isLargeTablet, hp, maxContentWidth } = useResponsive();
+  const { width, isTablet, isLargeTablet, hp, maxContentWidth, modalMaxWidth } = useResponsive();
 
   // Live clock for the current-time indicator and countdown timers — updates every 60 seconds
   // NOTE: Do NOT use a bare `const now = new Date()` here; it becomes stale after the component
@@ -2306,7 +2306,7 @@ export default function CalendarScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              style={{ marginBottom: 10 }}
+              style={{ flex: 1 }}
               contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 2, paddingVertical: 2 }}
             >
               {/* All chip */}
@@ -2416,7 +2416,7 @@ export default function CalendarScreen() {
       {/* Time Override Modal */}
       <Modal visible={showTimePickerModal} transparent animationType="slide">
         <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }} onPress={() => { setShowTimePickerModal(false); setCalSubPicker(null); }}>
-          <Pressable style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 16, paddingBottom: 40, paddingHorizontal: 20, backgroundColor: colors.background }} onPress={() => {}}>
+          <Pressable style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 16, paddingBottom: 40, paddingHorizontal: 20, backgroundColor: colors.background, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }} onPress={() => {}}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>
                 {editingDate ? (() => { const d = new Date(editingDate + "T12:00:00"); return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }); })() : ""} Hours
@@ -2466,7 +2466,7 @@ export default function CalendarScreen() {
       {/* Payment Method Modal */}
       <Modal visible={!!payModalAppt || payModalIsBulk} transparent animationType="slide">
         <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }} onPress={() => { setPayModalAppt(null); setPayModalIsBulk(false); }}>
-          <Pressable style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20, backgroundColor: colors.background }} onPress={() => {}}>
+          <Pressable style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20, backgroundColor: colors.background, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }} onPress={() => {}}>
             {/* Header */}
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>

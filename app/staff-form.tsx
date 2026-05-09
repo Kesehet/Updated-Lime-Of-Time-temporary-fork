@@ -58,7 +58,7 @@ export default function StaffFormScreen() {
   const { state, dispatch, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth } = useResponsive();
   const { checkLimit } = usePlanLimitCheck();
   const [upgradeSheetVisible, setUpgradeSheetVisible] = useState(false);
   const [upgradeSheetInfo, setUpgradeSheetInfo] = useState<{ planKey: string; planName: string; limit: number } | null>(null);

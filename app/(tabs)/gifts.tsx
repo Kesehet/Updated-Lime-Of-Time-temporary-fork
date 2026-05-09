@@ -141,7 +141,7 @@ export default function GiftCardsScreen() {
   const publicPaid = publicGiftCards.filter(c => (c as any).paymentStatus === "paid" && !c.redeemed);
   const publicRedeemed = publicGiftCards.filter(c => c.redeemed);
   const colors = useColors();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
   const giftsListRef = useScrollToTopOnFocus<FlatList>();
   const publicScrollRef = useScrollToTopOnFocus<ScrollView>();
 
@@ -799,7 +799,7 @@ export default function GiftCardsScreen() {
             data={allCards}
             keyExtractor={(item) => item.id}
             renderItem={renderCard}
-            contentContainerStyle={{ paddingHorizontal: hp, paddingTop: 16, paddingBottom: 100 }}
+            contentContainerStyle={{ paddingHorizontal: hp, paddingTop: 16, paddingBottom: 100, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
             ListHeaderComponent={formContent}
           />
         )
@@ -814,7 +814,7 @@ export default function GiftCardsScreen() {
             </Text>
           </View>
         ) : (
-          <ScrollView ref={publicScrollRef} contentContainerStyle={{ paddingHorizontal: hp, paddingTop: 12, paddingBottom: 100 }}>
+          <ScrollView ref={publicScrollRef} contentContainerStyle={{ paddingHorizontal: hp, paddingTop: 12, paddingBottom: 100, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}>
             {/* Pending Payment Section */}
             {publicPendingPayment.length > 0 && (
               <View style={{ marginBottom: 16 }}>
@@ -1161,6 +1161,9 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 40,
     paddingHorizontal: 20,
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center' as const,
   },
   modalHeader: {
     flexDirection: "row",

@@ -303,7 +303,7 @@ export default function HomeScreen() {
     useStore();
   const colors = useColors();
   const router = useRouter();
-  const { width, height, isTablet, isLargeTablet, hp, maxContentWidth, cardGap, kpiCols, fontScale: fs } = useResponsive();
+  const { width, height, isTablet, isLargeTablet, hp, maxContentWidth, cardGap, kpiCols, fontScale: fs, modalMaxWidth } = useResponsive();
   const contentWidth = maxContentWidth - hp * 2;
   const cardW = Math.floor((contentWidth - cardGap * (kpiCols - 1)) / kpiCols);
 

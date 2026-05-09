@@ -91,7 +91,7 @@ export default function BookingsScreen() {
   const colors = useColors();
   const router = useRouter();
   const params = useLocalSearchParams<{ filter?: string; packageGroupId?: string }>();
-  const { hp, width } = useResponsive();
+  const { hp, width, maxContentWidth, isTablet, fs, modalMaxWidth } = useResponsive();
   const { state, dispatch, getServiceById, getClientById, getStaffById, getLocationById, syncToDb, filterAppointmentsByLocation, bulkMarkPaid, bulkMarkUnpaid } = useStore();
   const { activeLocation, activeLocations, hasMultipleLocations: hasMultiLoc } = useActiveLocation();
   const scrollRef = useScrollToTopOnFocus<ScrollView>();
@@ -661,7 +661,7 @@ export default function BookingsScreen() {
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: 120, maxWidth: maxContentWidth, alignSelf: "center", width: "100%" }}
       >
         {/* Header */}
         <View style={{ paddingHorizontal: hp, paddingTop: 16, paddingBottom: 8 }}>
@@ -986,7 +986,7 @@ export default function BookingsScreen() {
       {/* Payment Method Modal */}
       <Modal visible={!!payModalAppt || payModalIsBulk} transparent animationType="slide">
         <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }} onPress={() => { setPayModalAppt(null); setPayModalIsBulk(false); }}>
-          <Pressable style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20, backgroundColor: colors.background }} onPress={() => {}}>
+          <Pressable style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20, backgroundColor: colors.background, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }} onPress={() => {}}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>
                 {payModalIsBulk ? `Mark All ${filteredAppointments.length} as Paid` : "Mark as Paid"}

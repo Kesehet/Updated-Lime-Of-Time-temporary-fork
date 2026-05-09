@@ -43,6 +43,38 @@ export interface ResponsiveLayout {
   iconSize: number;
   /** Tab bar height (excluding safe area) */
   tabBarBaseHeight: number;
+  /** Max width for modals and bottom sheets (centered on tablet) */
+  modalMaxWidth: number;
+  /** Max height for bottom sheets as fraction of screen height */
+  sheetMaxHeight: number;
+  /** Minimum touch target size (44 on phone, 48 on tablet) */
+  touchTarget: number;
+  /** Standard border radius for cards */
+  cardRadius: number;
+  /** Standard border radius for modals/sheets */
+  sheetRadius: number;
+  /** Helper: returns centered container style for tablet content */
+  centeredContainer: {
+    width: "100%";
+    maxWidth: number;
+    alignSelf: "center";
+  };
+  /** Helper: returns centered container style for modals/sheets */
+  modalContainer: {
+    width: "100%";
+    maxWidth: number;
+    alignSelf: "center";
+  };
+  /** Responsive font sizes */
+  fs: {
+    xs: number;   // 11 / 12 / 13
+    sm: number;   // 13 / 14 / 15
+    md: number;   // 15 / 16 / 17
+    lg: number;   // 17 / 18 / 20
+    xl: number;   // 20 / 22 / 24
+    xxl: number;  // 24 / 28 / 32
+    hero: number; // 32 / 36 / 42
+  };
 }
 
 export function useResponsive(): ResponsiveLayout {
@@ -75,6 +107,14 @@ export function useResponsive(): ResponsiveLayout {
       : width;
 
     const formMaxWidth = isLargeTablet ? 720 : isPhysicalTablet ? 640 : 0;
+    const modalMaxWidth = isLargeTablet ? 640 : isPhysicalTablet ? 560 : width;
+
+    // Font sizes — scale up on tablet
+    const fs = isLargeTablet
+      ? { xs: 13, sm: 15, md: 17, lg: 20, xl: 24, xxl: 32, hero: 42 }
+      : isPhysicalTablet
+      ? { xs: 12, sm: 14, md: 16, lg: 18, xl: 22, xxl: 28, hero: 36 }
+      : { xs: 11, sm: 13, md: 15, lg: 17, xl: 20, xxl: 24, hero: 32 };
 
     return {
       isPhone: !isPhysicalTablet,
@@ -96,6 +136,22 @@ export function useResponsive(): ResponsiveLayout {
       useSideBySide: isPhysicalTablet && isLandscape,
       iconSize: isLargeTablet ? 28 : isPhysicalTablet ? 26 : 22,
       tabBarBaseHeight: isLargeTablet ? 76 : isPhysicalTablet ? 68 : 60,
+      modalMaxWidth,
+      sheetMaxHeight: isPhysicalTablet ? 0.8 : 0.92,
+      touchTarget: isPhysicalTablet ? 48 : 44,
+      cardRadius: isPhysicalTablet ? 18 : 14,
+      sheetRadius: isPhysicalTablet ? 28 : 24,
+      centeredContainer: {
+        width: "100%",
+        maxWidth: maxContentWidth,
+        alignSelf: "center",
+      },
+      modalContainer: {
+        width: "100%",
+        maxWidth: modalMaxWidth,
+        alignSelf: "center",
+      },
+      fs,
     };
   }, [width, height]);
 }

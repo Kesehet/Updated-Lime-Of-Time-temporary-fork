@@ -49,7 +49,7 @@ export default function AppointmentDetailScreen() {
   const { state, dispatch, getServiceById, getClientById, getStaffById, getLocationById, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
   const sendSmsMutation = trpc.twilio.sendSms.useMutation();
   const { planInfo } = usePlanLimitCheck();
   const isGrowthPlan = planInfo && planInfo.planKey !== "solo";
@@ -941,7 +941,7 @@ Would you also like to charge a no-show fee via Stripe?`,
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40 }}>
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}>
         {/* Service Card — multi-service aware */}
         {(() => {
           const extras = appointment.extraItems ?? [];
@@ -1820,7 +1820,7 @@ Would you also like to charge a no-show fee via Stripe?`,
       <Modal visible={showPaymentModal} transparent animationType="slide">
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
-          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>
               Mark as Paid
             </Text>
@@ -1885,7 +1885,7 @@ Would you also like to charge a no-show fee via Stripe?`,
       <Modal visible={showEditPaymentSheet} transparent animationType="slide" onRequestClose={() => setShowEditPaymentSheet(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
           <View style={{ backgroundColor: 'rgba(0,0,0,0.45)', ...StyleSheet.absoluteFillObject }} />
-          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '90%' }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '90%', width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
             {/* Handle bar */}
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 16 }} />
@@ -1996,7 +1996,7 @@ Would you also like to charge a no-show fee via Stripe?`,
       {/* Refund Modal */}
       <Modal visible={showRefundModal} transparent animationType="slide">
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
-          <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 }}>
+          <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground }}>💳 Issue Refund</Text>
               <Pressable onPress={() => { setShowRefundModal(false); setRefundAmount(''); }} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
@@ -2121,7 +2121,7 @@ Would you also like to charge a no-show fee via Stripe?`,
       {/* No-Show Fee Modal */}
       <Modal visible={showNoShowFeeModal} transparent animationType="slide" onRequestClose={() => setShowNoShowFeeModal(false)}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
-          <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 }}>
+          <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground }}>💳 Charge No-Show Fee</Text>
               <Pressable onPress={() => setShowNoShowFeeModal(false)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
@@ -2177,7 +2177,7 @@ Would you also like to charge a no-show fee via Stripe?`,
       {/* Reschedule Modal */}
       <Modal visible={showRescheduleModal} transparent animationType="slide">
         <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.45)" }}>
-          <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, maxHeight: "85%" }}>
+          <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, maxHeight: "85%", width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>Reschedule Appointment</Text>
               <Pressable onPress={() => { setShowRescheduleModal(false); setRescheduleReason(""); }} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
@@ -2441,7 +2441,7 @@ Would you also like to charge a no-show fee via Stripe?`,
       {/* Cancellation Reason Modal */}
       <Modal visible={cancelReasonModal} transparent animationType="slide">
         <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.45)" }}>
-          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, marginBottom: 4 }}>Cancel Appointment</Text>
             <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 20 }}>Select a reason for cancellation</Text>
             {CANCEL_REASONS.map((r) => (
@@ -2612,7 +2612,7 @@ Would you also like to charge a no-show fee via Stripe?`,
       {/* ── Add / Edit Discount Modal ── */}
       <Modal visible={showDiscountModal} transparent animationType="slide" onRequestClose={() => setShowDiscountModal(false)}>
         <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             {/* Header */}
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
               <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>Apply Discount</Text>
@@ -2740,7 +2740,7 @@ Would you also like to charge a no-show fee via Stripe?`,
       <Modal visible={showGiftRedeemSheet} transparent animationType="slide" onRequestClose={() => setShowGiftRedeemSheet(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
           <View style={{ backgroundColor: 'rgba(0,0,0,0.45)', ...StyleSheet.absoluteFillObject }} />
-          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             {/* Handle bar */}
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 16 }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>

@@ -30,7 +30,7 @@ export default function ServicesScreen() {
   const { state } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { hp } = useResponsive();
+  const { hp, modalMaxWidth, maxContentWidth } = useResponsive();
   const [activeTab, setActiveTab] = useState<Tab>("services");
   const servicesListRef = useScrollToTopOnFocus<FlatList>();
   const productsListRef = useScrollToTopOnFocus<FlatList>();
@@ -426,10 +426,11 @@ export default function ServicesScreen() {
                 <Text style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>Tap + to add your first product</Text>
               </View>
             }
-            contentContainerStyle={{ paddingBottom: 80 }}
+            contentContainerStyle={{ paddingBottom: 80, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
           />
         </View>
-      )}
+
+     )}
       </KeyboardAvoidingView>
     </ScreenContainer>
   );

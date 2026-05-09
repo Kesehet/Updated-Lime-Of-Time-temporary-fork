@@ -93,7 +93,7 @@ export default function SettingsScreen() {
   const updateBusinessMut = trpc.business.update.useMutation();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, maxContentWidth } = useResponsive();
+  const { isTablet, hp, maxContentWidth, modalMaxWidth } = useResponsive();
   const { setThemeMode: setThemeOverrideMode } = useThemeContext();
   const { biometricAvailable, biometricEnabled, biometricType, toggleBiometric } = useAppLockContext();
   const settings = state.settings;

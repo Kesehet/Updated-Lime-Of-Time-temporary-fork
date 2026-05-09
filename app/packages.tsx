@@ -42,7 +42,7 @@ export default function PackagesScreen() {
   const { state, dispatch } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -348,7 +348,7 @@ export default function PackagesScreen() {
         data={packages}
         keyExtractor={(item) => item.id}
         renderItem={renderPackage}
-        contentContainerStyle={{ padding: hp, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: hp, paddingBottom: 100, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
         ListEmptyComponent={
           <View style={styles.empty}>
             <IconSymbol name="gift.fill" size={48} color={colors.muted} />

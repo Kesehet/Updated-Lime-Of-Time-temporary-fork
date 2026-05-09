@@ -199,7 +199,7 @@ export default function ScheduleSettingsScreen() {
   const { state, dispatch, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth } = useResponsive();
   const settings = state.settings;
   const { activeLocation, activeLocations, hasMultipleLocations, setActiveLocation: setActiveLocationForOverride } = useActiveLocation();
 
@@ -863,7 +863,10 @@ const styles = StyleSheet.create({
   actionBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, alignItems: "center", justifyContent: "center", minHeight: 40 },
   overrideRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 0.5 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
-  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 16, paddingBottom: 40, paddingHorizontal: 20 },
+  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 16, paddingBottom: 40, paddingHorizontal: 20,
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center' as const, },
   modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
   saveBtn: { paddingVertical: 16, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   dateChip: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },

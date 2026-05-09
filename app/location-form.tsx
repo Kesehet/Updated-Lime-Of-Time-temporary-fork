@@ -62,7 +62,7 @@ export default function LocationFormScreen() {
   const { setActiveLocation } = useActiveLocation();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, modalMaxWidth } = useResponsive();
   const { checkLimit } = usePlanLimitCheck();
   const [upgradeSheetVisible, setUpgradeSheetVisible] = useState(false);
   const [upgradeSheetInfo, setUpgradeSheetInfo] = useState<{ planKey: string; planName: string; limit: number } | null>(null);
@@ -1153,9 +1153,15 @@ const styles = StyleSheet.create({
   dayRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10 },
   timeButton: { flex: 1, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, borderWidth: 1, alignItems: "center", justifyContent: "center", minHeight: 36, marginLeft: 4 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
-  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 16, paddingBottom: 40, paddingHorizontal: 20 },
+  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 16, paddingBottom: 40, paddingHorizontal: 20,
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center' as const, },
   modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
-  qrModalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 16, paddingBottom: 40, paddingHorizontal: 20, alignItems: "center" },
+  qrModalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 16, paddingBottom: 40, paddingHorizontal: 20, alignItems: "center",
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center' as const },
   // First-action prompt
   firstActionOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", alignItems: "center", paddingHorizontal: 24 },
   firstActionCard: { width: "100%", maxWidth: 360, backgroundColor: "#fff", borderRadius: 24, padding: 28, alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.18, shadowRadius: 24, elevation: 12 },
