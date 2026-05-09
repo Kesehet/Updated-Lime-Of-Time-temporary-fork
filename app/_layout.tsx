@@ -76,7 +76,11 @@ const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
 
 export const unstable_settings = {
-  anchor: "profile-select",
+  // index is the true entry point — Expo Router renders this first on cold launch.
+  // Without this, Expo Router would fall back to the first alphabetical route
+  // in app/ which is "(client-tabs)", causing the Client Portal to open instead
+  // of the Portal Selector.
+  anchor: "index",
 };
 
 function RootLayout() {
@@ -276,6 +280,7 @@ function RootLayout() {
             {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
             {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
             <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="new-booking" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="calendar-booking" options={{ presentation: "fullScreenModal" }} />
