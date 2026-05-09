@@ -1206,7 +1206,7 @@ export function registerClientRoutes(app: Express) {
       );
       // Enrich with business name and service name
       const result = await Promise.all(cards.map(async (card: any) => {
-        const [owner] = await dbase.select({ businessName: businessOwners.businessName, businessLogoUri: businessOwners.businessLogoUri, customSlug: businessOwners.customSlug, businessName2: businessOwners.businessName }).from(businessOwners).where(eq(businessOwners.id, card.businessOwnerId));
+        const [owner] = await dbase.select({ id: businessOwners.id, businessName: businessOwners.businessName, businessLogoUri: businessOwners.businessLogoUri, customSlug: businessOwners.customSlug }).from(businessOwners).where(eq(businessOwners.id, card.businessOwnerId));
         let serviceName = null;
         if (card.serviceLocalId) {
           const { services: svcTable2 } = await import("../drizzle/schema");
@@ -1237,7 +1237,7 @@ export function registerClientRoutes(app: Express) {
           serviceName,
           businessName: owner?.businessName || "Unknown Business",
           businessLogoUri: owner?.businessLogoUri || null,
-          businessSlug: owner?.customSlug || null,
+          businessSlug: owner?.customSlug || (owner?.id ? String(owner.id) : null),
           purchaserName: card.purchaserName || null,
           message: cleanMessage,
           redeemed: card.redeemed,
@@ -1286,7 +1286,7 @@ export function registerClientRoutes(app: Express) {
           packageName: pkg.packageName,
           businessName: owner?.businessName || "Unknown Business",
           businessLogoUri: owner?.businessLogoUri || null,
-          businessSlug: owner?.customSlug || null,
+          businessSlug: owner?.customSlug || (owner?.id ? String(owner.id) : null),
           totalSessions: pkg.totalSessions,
           sessionsCompleted: pkg.sessionsCompleted,
           totalValue: pkg.totalValue ? parseFloat(String(pkg.totalValue)) : null,

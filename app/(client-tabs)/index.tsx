@@ -515,8 +515,8 @@ export default function ClientHomeScreen() {
                     onPress={handleRedeemGift}
                     style={({ pressed }) => ({
                       marginBottom: 12,
-                      opacity: pressed && canRedeem ? 0.88 : 1,
-                      transform: [{ scale: pressed && canRedeem ? 0.985 : 1 }],
+                      opacity: pressed ? 0.88 : 1,
+                      transform: [{ scale: pressed ? 0.985 : 1 }],
                     })}
                   >
                   <View
@@ -592,21 +592,19 @@ export default function ClientHomeScreen() {
                         {isExpired ? "Expired" : "Expires"}: {new Date(gift.expiresAt).toLocaleDateString()}
                       </Text>
                     ) : null}
-                    {/* How to use steps */}
+                    {/* How to use steps + redeem button */}
                     {!gift.redeemed && !isExpired && (
                       <View style={{ gap: 8, paddingTop: 6, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }}>
                         {/* Redeem button — navigates to booking wizard with service pre-selected and gift code pre-filled */}
-                        {gift.businessSlug ? (
-                          <Pressable
-                            onPress={handleRedeemGift}
-                            style={({ pressed }) => [{ backgroundColor: GREEN_ACCENT, borderRadius: 10, paddingVertical: 11, alignItems: "center", opacity: pressed ? 0.85 : 1 }]}
-                          >
-                            <Text style={{ color: "#1A3A28", fontWeight: "700", fontSize: 14 }}>Redeem Gift →</Text>
-                          </Pressable>
-                        ) : null}
+                        <Pressable
+                          onPress={handleRedeemGift}
+                          style={({ pressed }) => [{ backgroundColor: canRedeem ? GREEN_ACCENT : "rgba(143,191,106,0.35)", borderRadius: 10, paddingVertical: 11, alignItems: "center", opacity: pressed ? 0.85 : 1 }]}
+                        >
+                          <Text style={{ color: canRedeem ? "#1A3A28" : TEXT_MUTED, fontWeight: "700", fontSize: 14 }}>{canRedeem ? "Redeem Gift →" : "Gift not redeemable"}</Text>
+                        </Pressable>
                         <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>How to use</Text>
                         {[
-                          "1. Tap this card or 'Redeem Gift' to start booking",
+                          "1. Tap the card or 'Redeem Gift' button to start booking",
                           "2. Service is pre-selected — go straight to staff & time",
                           "3. Your gift code is pre-filled at checkout automatically",
                         ].map((step, i) => (
