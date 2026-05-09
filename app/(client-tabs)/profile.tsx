@@ -174,29 +174,118 @@ export default function ClientProfileScreen() {
   };
 
   if (!state.account) {
+    const features = [
+      { icon: 'calendar', title: 'Book Appointments', desc: 'Schedule services at your favourite businesses' },
+      { icon: 'message.fill', title: 'Message Businesses', desc: 'Chat directly with salons, spas, and more' },
+      { icon: 'bell.fill', title: 'Smart Reminders', desc: 'Get notified 24h, 1h, and 30 min before each visit' },
+      { icon: 'gift.fill', title: 'Gifts & Packages', desc: 'Buy and redeem gift cards and service bundles' },
+    ] as const;
     return (
       <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
         <ClientPortalBackground />
-        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top }} showsVerticalScrollIndicator={false}>
-          <View style={[styles.guestContainer, { paddingTop: 0 }]}>
-          <View style={styles.guestAvatar}>
-            <IconSymbol name="person.crop.circle.fill" size={48} color={GREEN_ACCENT} />
+        <ScrollView
+          contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Page title */}
+          <View style={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 4 }}>
+            <Text style={{ fontSize: 28, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.5 }}>Profile</Text>
           </View>
-          <Text style={styles.guestTitle}>Create your client account</Text>
-          <Text style={styles.guestSubtitle}>
-            Sign in to save your bookings, message businesses, and get reminders.
-          </Text>
+
+          {/* Hero card */}
+          <View style={{
+            marginHorizontal: 16, marginTop: 16,
+            borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.07)',
+            borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+            padding: 24, alignItems: 'center',
+          }}>
+            {/* Avatar ring */}
+            <View style={{
+              width: 88, height: 88, borderRadius: 44,
+              backgroundColor: 'rgba(143,191,106,0.14)',
+              borderWidth: 2.5, borderColor: 'rgba(143,191,106,0.35)',
+              alignItems: 'center', justifyContent: 'center', marginBottom: 18,
+            }}>
+              <IconSymbol name="person.crop.circle.fill" size={50} color={GREEN_ACCENT} />
+            </View>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: '#FFFFFF', marginBottom: 6, textAlign: 'center', letterSpacing: -0.3 }}>
+              Welcome to Lime Of Time
+            </Text>
+            <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', textAlign: 'center', lineHeight: 21, marginBottom: 22, maxWidth: 270 }}>
+              Sign in to manage your bookings, message businesses, and receive appointment reminders.
+            </Text>
+            {/* Primary CTA */}
+            <Pressable
+              style={({ pressed }) => ({
+                backgroundColor: GREEN_ACCENT,
+                paddingVertical: 15,
+                borderRadius: 30,
+                width: '100%',
+                alignItems: 'center',
+                opacity: pressed ? 0.82 : 1,
+                shadowColor: GREEN_ACCENT,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.35,
+                shadowRadius: 10,
+                elevation: 6,
+              })}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push('/client-signin' as any);
+              }}
+            >
+              <Text style={{ color: GREEN_DARK, fontSize: 16, fontWeight: '800', letterSpacing: 0.2 }}>Sign In / Create Account</Text>
+            </Pressable>
+          </View>
+
+          {/* Feature list */}
+          <View style={{ marginHorizontal: 16, marginTop: 14, gap: 10 }}>
+            {features.map((f) => (
+              <View
+                key={f.icon}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 14,
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: 16, borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.08)',
+                  padding: 14,
+                }}
+              >
+                <View style={{
+                  width: 44, height: 44, borderRadius: 13,
+                  backgroundColor: 'rgba(143,191,106,0.14)',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <IconSymbol name={f.icon as any} size={22} color={GREEN_ACCENT} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF', marginBottom: 2 }}>{f.title}</Text>
+                  <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.48)', lineHeight: 17 }}>{f.desc}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* Switch to Business link */}
           <Pressable
-            style={({ pressed }) => [styles.signInBtn, pressed && { opacity: 0.85 }]}
-            onPress={() => router.push("/client-signin" as any)}
+            style={({ pressed }) => ({
+              marginHorizontal: 16, marginTop: 16,
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+              paddingVertical: 14, borderRadius: 16,
+              borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              opacity: pressed ? 0.7 : 1,
+            })}
+            onPress={handleSwitchToBusiness}
           >
-            <Text style={styles.signInBtnText}>Sign In / Create Account</Text>
+            <IconSymbol name="briefcase.fill" size={16} color={'rgba(255,255,255,0.5)'} />
+            <Text style={{ fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.55)' }}>Switch to Business Portal</Text>
           </Pressable>
-          </View>
-          {/* App Branding - bottom */}
-          <View style={styles.brandingWrap}>
+
+          {/* App Branding */}
+          <View style={[styles.brandingWrap, { marginTop: 28 }]}>
             <View style={styles.brandLogoRing}>
-              <Image source={require("../../assets/images/icon.png")} style={styles.brandLogo} resizeMode="cover" />
+              <Image source={require('../../assets/images/icon.png')} style={styles.brandLogo} resizeMode="cover" />
             </View>
             <View style={styles.brandTitleWrap}>
               <Text style={styles.brandAppName}>Lime Of Time</Text>

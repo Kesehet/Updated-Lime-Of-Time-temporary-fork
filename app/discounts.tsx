@@ -69,6 +69,18 @@ export default function DiscountsScreen() {
   const [maxUses, setMaxUses] = useState("");
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[] | null>(null);
   const [selectedProductIds, setSelectedProductIds] = useState<string[] | null>(null);
+  const [expandedServiceCats, setExpandedServiceCats] = useState<Set<string>>(new Set());
+  const [expandedProductBrands, setExpandedProductBrands] = useState<Set<string>>(new Set());
+  const toggleServiceCat = (cat: string) => setExpandedServiceCats(prev => {
+    const next = new Set(prev);
+    if (next.has(cat)) next.delete(cat); else next.add(cat);
+    return next;
+  });
+  const toggleProductBrand = (brand: string) => setExpandedProductBrands(prev => {
+    const next = new Set(prev);
+    if (next.has(brand)) next.delete(brand); else next.add(brand);
+    return next;
+  });
   const [showTimePicker, setShowTimePicker] = useState<"start" | "end" | null>(null);
   const draftStartRef = useRef(startTime);
   const draftEndRef = useRef(endTime);
@@ -618,141 +630,168 @@ export default function DiscountsScreen() {
         />
       </View>
 
-      {/* Service Filter */}
+      {/* Service Filter — Accordion */}
       <Text style={[styles.fieldLabel, { color: colors.muted }]}>Applies To (Services)</Text>
-      <View style={styles.serviceWrap}>
-        <Pressable
-          onPress={() => setSelectedServiceIds(null)}
-          style={[
-            styles.serviceChip,
-            {
-              backgroundColor: selectedServiceIds === null ? colors.primary : colors.background,
-              borderColor: selectedServiceIds === null ? colors.primary : colors.border,
-            },
-          ]}
-        >
-          <Text style={{ color: selectedServiceIds === null ? "#fff" : colors.foreground, fontSize: 13, fontWeight: "600" }}>
-            All Services
-          </Text>
-        </Pressable>
-        {(() => {
-          const catMap = new Map<string, typeof state.services>();
-          state.services.forEach((s) => {
-            const cat = s.category?.trim() || "General";
-            if (!catMap.has(cat)) catMap.set(cat, []);
-            catMap.get(cat)!.push(s);
-          });
-          const catEntries = Array.from(catMap.entries()).sort((a, b) => {
-            if (a[0] === "General") return 1;
-            if (b[0] === "General") return -1;
-            return a[0].localeCompare(b[0]);
-          });
-          const hasMultiCat = catEntries.length > 1;
-          return catEntries.map(([cat, svcs]) => (
-            <View key={cat} style={{ width: "100%" }}>
-              {hasMultiCat && (
-                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.muted, marginTop: 6, marginBottom: 2 }}>{cat}</Text>
-              )}
-              <View style={styles.serviceWrap}>
-                {svcs.map((svc) => (
-                  <Pressable
-                    key={svc.id}
-                    onPress={() => toggleServiceFilter(svc.id)}
-                    style={[
-                      styles.serviceChip,
-                      {
-                        backgroundColor: selectedServiceIds?.includes(svc.id) ? svc.color : colors.background,
-                        borderColor: selectedServiceIds?.includes(svc.id) ? svc.color : colors.border,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                      },
-                    ]}
-                  >
-                    <Text style={{ color: selectedServiceIds?.includes(svc.id) ? "#fff" : colors.foreground, fontSize: 13, fontWeight: "600" }}>
-                      {svc.name}
-                    </Text>
-                    {selectedServiceIds?.includes(svc.id) && (
-                      <View style={{ backgroundColor: "rgba(0,0,0,0.18)", borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 }}>
-                        <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>−{percentage}%</Text>
-                      </View>
-                    )}
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          ));
-        })()}
-      </View>
-
-      {/* Product Filter */}
-      {availableProducts.length > 0 && (
-        <>
-          <Text style={[styles.fieldLabel, { color: colors.muted }]}>Applies To (Products)</Text>
-          <View style={styles.serviceWrap}>
-            <Pressable
-              onPress={() => setSelectedProductIds(null)}
-              style={[
-                styles.serviceChip,
-                {
-                  backgroundColor: selectedProductIds === null ? colors.primary : colors.background,
-                  borderColor: selectedProductIds === null ? colors.primary : colors.border,
-                },
-              ]}
-            >
-              <Text style={{ color: selectedProductIds === null ? "#fff" : colors.foreground, fontSize: 13, fontWeight: "600" }}>
-                All Products
-              </Text>
-            </Pressable>
-            {(() => {
-              const brandMap = new Map<string, typeof availableProducts>();
-              availableProducts.forEach((p) => {
-                const br = p.brand?.trim() || "Other";
-                if (!brandMap.has(br)) brandMap.set(br, []);
-                brandMap.get(br)!.push(p);
-              });
-              const brandEntries = Array.from(brandMap.entries()).sort((a, b) => {
-                if (a[0] === "Other") return 1;
-                if (b[0] === "Other") return -1;
-                return a[0].localeCompare(b[0]);
-              });
-              const hasMultiBrand = brandEntries.length > 1;
-              return brandEntries.map(([brand, prods]) => (
-                <View key={brand} style={{ width: "100%" }}>
-                  {hasMultiBrand && (
-                    <Text style={{ fontSize: 11, fontWeight: "700", color: colors.muted, marginTop: 6, marginBottom: 2 }}>{brand}</Text>
-                  )}
-                  <View style={styles.serviceWrap}>
-                    {prods.map((prod) => (
+      {/* All Services toggle */}
+      <Pressable
+        onPress={() => setSelectedServiceIds(null)}
+        style={[styles.allToggleRow, { borderColor: selectedServiceIds === null ? colors.primary : colors.border, backgroundColor: selectedServiceIds === null ? colors.primary + "18" : colors.surface }]}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 14, fontWeight: "600", color: selectedServiceIds === null ? colors.primary : colors.foreground }}>All Services</Text>
+          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Discount applies to every service</Text>
+        </View>
+        {selectedServiceIds === null && <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}><Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>✓</Text></View>}
+      </Pressable>
+      {/* Category accordions */}
+      {(() => {
+        const catMap = new Map<string, typeof state.services>();
+        state.services.forEach((s) => {
+          const cat = s.category?.trim() || "General";
+          if (!catMap.has(cat)) catMap.set(cat, []);
+          catMap.get(cat)!.push(s);
+        });
+        const catEntries = Array.from(catMap.entries()).sort((a, b) => {
+          if (a[0] === "General") return 1;
+          if (b[0] === "General") return -1;
+          return a[0].localeCompare(b[0]);
+        });
+        return catEntries.map(([cat, svcs]) => {
+          const isOpen = expandedServiceCats.has(cat);
+          const selectedInCat = svcs.filter(s => selectedServiceIds?.includes(s.id)).length;
+          return (
+            <View key={cat} style={[styles.accordionCard, { borderColor: colors.border }]}>
+              <Pressable
+                onPress={() => toggleServiceCat(cat)}
+                style={styles.accordionHeader}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{cat}</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
+                    {selectedInCat > 0 ? `${selectedInCat} of ${svcs.length} selected` : `${svcs.length} service${svcs.length !== 1 ? "s" : ""}`}
+                  </Text>
+                </View>
+                {selectedInCat > 0 && (
+                  <View style={{ backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, marginRight: 8 }}>
+                    <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>{selectedInCat}</Text>
+                  </View>
+                )}
+                <Text style={{ fontSize: 18, color: colors.muted, fontWeight: "300" }}>{isOpen ? "−" : "+"}</Text>
+              </Pressable>
+              {isOpen && (
+                <View style={styles.accordionBody}>
+                  {svcs.map((svc) => {
+                    const sel = selectedServiceIds?.includes(svc.id) ?? false;
+                    return (
                       <Pressable
-                        key={prod.id}
-                        onPress={() => toggleProductFilter(prod.id)}
-                        style={[
-                          styles.serviceChip,
-                          {
-                            backgroundColor: selectedProductIds?.includes(prod.id) ? colors.primary : colors.background,
-                            borderColor: selectedProductIds?.includes(prod.id) ? colors.primary : colors.border,
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 4,
-                          },
-                        ]}
+                        key={svc.id}
+                        onPress={() => toggleServiceFilter(svc.id)}
+                        style={[styles.accordionItem, { backgroundColor: sel ? svc.color + "18" : "transparent", borderColor: sel ? svc.color : colors.border }]}
                       >
-                        <Text style={{ color: selectedProductIds?.includes(prod.id) ? "#fff" : colors.foreground, fontSize: 13, fontWeight: "600" }}>
-                          {prod.name}
-                        </Text>
-                        {selectedProductIds?.includes(prod.id) && (
-                          <View style={{ backgroundColor: "rgba(0,0,0,0.18)", borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 }}>
+                        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: svc.color, marginRight: 10, marginTop: 2 }} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 14, fontWeight: sel ? "600" : "400", color: colors.foreground }}>{svc.name}</Text>
+                          {svc.price != null && <Text style={{ fontSize: 12, color: colors.muted }}>${svc.price}</Text>}
+                        </View>
+                        {sel && (
+                          <View style={{ backgroundColor: svc.color, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2, marginRight: 6 }}>
                             <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>−{percentage}%</Text>
                           </View>
                         )}
+                        <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: sel ? svc.color : colors.border, backgroundColor: sel ? svc.color : "transparent", alignItems: "center", justifyContent: "center" }}>
+                          {sel && <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>✓</Text>}
+                        </View>
                       </Pressable>
-                    ))}
-                  </View>
+                    );
+                  })}
                 </View>
-              ));
-            })()}
-          </View>
+              )}
+            </View>
+          );
+        });
+      })()}
+
+      {/* Product Filter — Accordion */}
+      {availableProducts.length > 0 && (
+        <>
+          <Text style={[styles.fieldLabel, { color: colors.muted }]}>Applies To (Products)</Text>
+          {/* All Products toggle */}
+          <Pressable
+            onPress={() => setSelectedProductIds(null)}
+            style={[styles.allToggleRow, { borderColor: selectedProductIds === null ? colors.primary : colors.border, backgroundColor: selectedProductIds === null ? colors.primary + "18" : colors.surface }]}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: selectedProductIds === null ? colors.primary : colors.foreground }}>All Products</Text>
+              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Discount applies to every product</Text>
+            </View>
+            {selectedProductIds === null && <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}><Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>✓</Text></View>}
+          </Pressable>
+          {/* Brand accordions */}
+          {(() => {
+            const brandMap = new Map<string, typeof availableProducts>();
+            availableProducts.forEach((p) => {
+              const br = p.brand?.trim() || "Other";
+              if (!brandMap.has(br)) brandMap.set(br, []);
+              brandMap.get(br)!.push(p);
+            });
+            const brandEntries = Array.from(brandMap.entries()).sort((a, b) => {
+              if (a[0] === "Other") return 1;
+              if (b[0] === "Other") return -1;
+              return a[0].localeCompare(b[0]);
+            });
+            return brandEntries.map(([brand, prods]) => {
+              const isOpen = expandedProductBrands.has(brand);
+              const selectedInBrand = prods.filter(p => selectedProductIds?.includes(p.id)).length;
+              return (
+                <View key={brand} style={[styles.accordionCard, { borderColor: colors.border }]}>
+                  <Pressable
+                    onPress={() => toggleProductBrand(brand)}
+                    style={styles.accordionHeader}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{brand}</Text>
+                      <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
+                        {selectedInBrand > 0 ? `${selectedInBrand} of ${prods.length} selected` : `${prods.length} product${prods.length !== 1 ? "s" : ""}`}
+                      </Text>
+                    </View>
+                    {selectedInBrand > 0 && (
+                      <View style={{ backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, marginRight: 8 }}>
+                        <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>{selectedInBrand}</Text>
+                      </View>
+                    )}
+                    <Text style={{ fontSize: 18, color: colors.muted, fontWeight: "300" }}>{isOpen ? "−" : "+"}</Text>
+                  </Pressable>
+                  {isOpen && (
+                    <View style={styles.accordionBody}>
+                      {prods.map((prod) => {
+                        const sel = selectedProductIds?.includes(prod.id) ?? false;
+                        return (
+                          <Pressable
+                            key={prod.id}
+                            onPress={() => toggleProductFilter(prod.id)}
+                            style={[styles.accordionItem, { backgroundColor: sel ? colors.primary + "12" : "transparent", borderColor: sel ? colors.primary : colors.border }]}
+                          >
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ fontSize: 14, fontWeight: sel ? "600" : "400", color: colors.foreground }}>{prod.name}</Text>
+                              {prod.price != null && <Text style={{ fontSize: 12, color: colors.muted }}>${prod.price}</Text>}
+                            </View>
+                            {sel && (
+                              <View style={{ backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2, marginRight: 6 }}>
+                                <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>−{percentage}%</Text>
+                              </View>
+                            )}
+                            <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: sel ? colors.primary : colors.border, backgroundColor: sel ? colors.primary : "transparent", alignItems: "center", justifyContent: "center" }}>
+                              {sel && <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>✓</Text>}
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              );
+            });
+          })()}
         </>
       )}
 
@@ -1052,6 +1091,41 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 16,
     width: "100%",
+  },
+  allToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+    width: "100%",
+  },
+  accordionCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+    overflow: "hidden",
+    width: "100%",
+  },
+  accordionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  accordionBody: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.07)",
+  },
+  accordionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   formActions: { flexDirection: "row", gap: 10, marginTop: 8, width: "100%" },
   formBtnCancel: {

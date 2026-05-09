@@ -43,6 +43,9 @@ import {
   servicePhotos,
   InsertServicePhoto,
   ServicePhoto,
+  servicePackages,
+  InsertServicePackage,
+  DbServicePackage,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -837,7 +840,7 @@ export async function incrementPromoCodeUsage(localId: string, businessOwnerId: 
 }
 
 export async function getFullBusinessData(businessOwnerId: number) {
-  const [owner, svcList, clientList, apptList, reviewList, discountList, giftCardList, scheduleList, productList, staffList, locationList, promoList] = await Promise.all([
+  const [owner, svcList, clientList, apptList, reviewList, discountList, giftCardList, scheduleList, productList, staffList, locationList, promoList, packageList] = await Promise.all([
     getBusinessOwnerById(businessOwnerId),
     getServicesByOwner(businessOwnerId),
     getClientsByOwner(businessOwnerId),
@@ -850,6 +853,7 @@ export async function getFullBusinessData(businessOwnerId: number) {
     getStaffByOwner(businessOwnerId),
     getLocationsByOwner(businessOwnerId),
     getPromoCodesByOwner(businessOwnerId),
+    getServicePackagesByOwner(businessOwnerId),
   ]);
   return {
     owner,
@@ -864,6 +868,7 @@ export async function getFullBusinessData(businessOwnerId: number) {
     staff: staffList,
     locations: locationList,
     promoCodes: promoList,
+    servicePackages: packageList,
   };
 }
 
@@ -1398,4 +1403,40 @@ export async function getClientReviewForAppointment(clientAccountId: number, app
     )
     .limit(1);
   return results[0] ?? null;
+}
+
+// ─── Service Packages / Bundles ──────────────────────────────────────────────
+
+export async function getServicePackagesByOwner(businessOwnerId: number): Promise<DbServicePackage[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(servicePackages).where(eq(servicePackages.businessOwnerId, businessOwnerId));
+}
+
+export async function createServicePackage(data: InsertServicePackage): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(servicePackages).values(data);
+  return result.insertId;
+}
+
+export async function updateServicePackage(
+  localId: string,
+  businessOwnerId: number,
+  data: Partial<InsertServicePackage>
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(servicePackages)
+    .set(data)
+    .where(and(eq(servicePackages.localId, localId), eq(servicePackages.businessOwnerId, businessOwnerId)));
+}
+
+export async function deleteServicePackage(localId: string, businessOwnerId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .delete(servicePackages)
+    .where(and(eq(servicePackages.localId, localId), eq(servicePackages.businessOwnerId, businessOwnerId)));
 }

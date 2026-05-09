@@ -907,6 +907,27 @@ export function dbPromoCodeToLocal(p: any): import("./types").PromoCode {
   };
 }
 
+export function dbServicePackageToLocal(p: any): import("./types").ServicePackage {
+  let serviceIds: string[] = [];
+  try {
+    const items = typeof p.packageItems === "string" ? JSON.parse(p.packageItems) : (p.packageItems ?? []);
+    serviceIds = Array.isArray(items) ? items.map((i: any) => i.serviceLocalId ?? i.serviceId ?? i).filter(Boolean) : [];
+  } catch {}
+  return {
+    id: p.localId,
+    name: p.name,
+    description: p.description ?? "",
+    serviceIds,
+    price: typeof p.packagePrice === "string" ? parseFloat(p.packagePrice) : (p.packagePrice ?? 0),
+    sessions: p.totalSessions ?? null,
+    expiryDays: p.expiryDays ?? null,
+    bufferDays: p.bufferDays ?? null,
+    bufferMinutes: p.bufferMinutes ?? null,
+    active: p.isActive ?? true,
+    photoUri: p.photoUri ?? null,
+    createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString(),
+  };
+}
 export function dbProductToLocal(p: any): Product {
   return {
     id: p.localId,
@@ -1088,6 +1109,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const createPromoCodeMut = trpc.promoCodes.create.useMutation();
   const updatePromoCodeMut = trpc.promoCodes.update.useMutation();
   const deletePromoCodeMut = trpc.promoCodes.delete.useMutation();
+  const createPackageMut = trpc.packages.create.useMutation();
+  const updatePackageMut = trpc.packages.update.useMutation();
+  const deletePackageMut = trpc.packages.delete.useMutation();
   const mutsRef = useRef({
     createServiceMut, updateServiceMut, deleteServiceMut,
     createClientMut, updateClientMut, deleteClientMut,
@@ -1101,6 +1125,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     createStaffMut, updateStaffMut, deleteStaffMut,
     createLocationMut, updateLocationMut, deleteLocationMut,
     createPromoCodeMut, updatePromoCodeMut, deletePromoCodeMut,
+    createPackageMut, updatePackageMut, deletePackageMut,
   });
   // Update ref every render so syncToDb always has the latest mutateAsync
   mutsRef.current = {
@@ -1116,6 +1141,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     createStaffMut, updateStaffMut, deleteStaffMut,
     createLocationMut, updateLocationMut, deleteLocationMut,
     createPromoCodeMut, updatePromoCodeMut, deletePromoCodeMut,
+    createPackageMut, updatePackageMut, deletePackageMut,
   };
 
   // --- Bootstrap: Load from DB or fallback to AsyncStorage ---
@@ -1270,6 +1296,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                   settings: { ...initialSettings, ...settingsFromDb },
                   businessOwnerId: ownerId,
                   promoCodes: (fullData.promoCodes || []).map(dbPromoCodeToLocal),
+                  packages: (fullData.servicePackages || []).map(dbServicePackageToLocal),
                 },
               });
               // Sync inbox from appointments (populates inbox even when push notifications were missed)
@@ -1365,6 +1392,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                         settings: { ...initialSettings, ...settingsFromDb2 },
                         businessOwnerId: ownerByPhone.id,
                         promoCodes: (fullData2.promoCodes || []).map(dbPromoCodeToLocal),
+                        packages: (fullData2.servicePackages || []).map(dbServicePackageToLocal),
                       },
                     });
                     dispatch({ type: "SYNC_INBOX_FROM_APPOINTMENTS" });
@@ -1633,6 +1661,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           locations: dbLocations,
           settings: { ...initialSettings, ...dbOwnerToSettings(fullData.owner) },
           promoCodes: (fullData.promoCodes || []).map(dbPromoCodeToLocal),
+          packages: (fullData.servicePackages || []).map(dbServicePackageToLocal),
         },
       });
       dispatch({ type: "SYNC_INBOX_FROM_APPOINTMENTS" });
@@ -1747,6 +1776,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         createProductMut, updateProductMut, deleteProductMut,
         createStaffMut, updateStaffMut, deleteStaffMut,
         createLocationMut, updateLocationMut, deleteLocationMut,
+        createPromoCodeMut, updatePromoCodeMut, deletePromoCodeMut,
+        createPackageMut, updatePackageMut, deletePackageMut,
       } = mutsRef.current;
 
       try {
@@ -2294,6 +2325,49 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           }
           case "DELETE_PROMO_CODE": {
             await deletePromoCodeMut.mutateAsync({
+              localId: action.payload as string,
+              businessOwnerId: ownerId,
+            });
+            break;
+          }
+          case "ADD_PACKAGE": {
+            const pkg = action.payload as import("./types").ServicePackage;
+            await createPackageMut.mutateAsync({
+              businessOwnerId: ownerId,
+              localId: pkg.id,
+              name: pkg.name,
+              description: pkg.description || null,
+              serviceIds: pkg.serviceIds,
+              price: pkg.price,
+              sessions: pkg.sessions ?? null,
+              expiryDays: pkg.expiryDays ?? null,
+              bufferDays: pkg.bufferDays ?? null,
+              bufferMinutes: pkg.bufferMinutes ?? null,
+              active: pkg.active,
+              photoUri: pkg.photoUri ?? null,
+            });
+            break;
+          }
+          case "UPDATE_PACKAGE": {
+            const pkg = action.payload as import("./types").ServicePackage;
+            await updatePackageMut.mutateAsync({
+              localId: pkg.id,
+              businessOwnerId: ownerId,
+              name: pkg.name,
+              description: pkg.description || null,
+              serviceIds: pkg.serviceIds,
+              price: pkg.price,
+              sessions: pkg.sessions ?? null,
+              expiryDays: pkg.expiryDays ?? null,
+              bufferDays: pkg.bufferDays ?? null,
+              bufferMinutes: pkg.bufferMinutes ?? null,
+              active: pkg.active,
+              photoUri: pkg.photoUri ?? null,
+            });
+            break;
+          }
+          case "DELETE_PACKAGE": {
+            await deletePackageMut.mutateAsync({
               localId: action.payload as string,
               businessOwnerId: ownerId,
             });

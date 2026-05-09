@@ -10,7 +10,7 @@
  * 5. Payment
  * 6. Confirm & notes
  */
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -169,6 +169,22 @@ export default function ClientBookingWizardScreen() {
   const [businessDisplayName, setBusinessDisplayName] = useState<string>("");
   // Category filter for the service selection step
   const [wizardCatFilter, setWizardCatFilter] = useState<string | null>(null);
+  // ── Products step state ──────────────────────────────────────────────────
+  const [wizardProducts, setWizardProducts] = useState<{ localId: string; name: string; price: string; description?: string; brand?: string }[]>([]);
+  const [productCart, setProductCart] = useState<Record<string, number>>({});
+  const [selectedBrandFilter, setSelectedBrandFilter] = useState<string | null>(null);
+  const productBrands = useMemo(() => {
+    const brands = new Set<string>();
+    wizardProducts.forEach((p) => { if (p.brand) brands.add(p.brand); });
+    return Array.from(brands).sort();
+  }, [wizardProducts]);
+  const filteredWizardProducts = useMemo(() => {
+    if (!selectedBrandFilter || selectedBrandFilter === "__all__") return wizardProducts;
+    return wizardProducts.filter((p) => p.brand === selectedBrandFilter);
+  }, [wizardProducts, selectedBrandFilter]);
+  const productCartTotal = useMemo(() => {
+    return wizardProducts.reduce((sum, p) => sum + (productCart[p.localId] ?? 0) * parseFloat(p.price), 0);
+  }, [wizardProducts, productCart]);
   // Full-screen photo preview state
   const [previewUri, setPreviewUri] = useState<string | null>(null);
 
@@ -194,30 +210,34 @@ export default function ClientBookingWizardScreen() {
   const showLocationStep = locations.length > 1;
 
   // Build the step list dynamically — Date & Time are merged into one step
+  // Products step is only shown when the business has products available
+  const hasProducts = wizardProducts.length > 0;
   const STEPS = showLocationStep
-    ? ["Service", "Staff", "Location", "Date & Time", "Promo", "Payment", "Confirm"]
-    : ["Service", "Staff", "Date & Time", "Promo", "Payment", "Confirm"];
-  // Step indices (dynamic based on whether location step is shown)
+    ? (hasProducts ? ["Service", "Staff", "Location", "Date & Time", "Products", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Location", "Date & Time", "Promo", "Payment", "Confirm"])
+    : (hasProducts ? ["Service", "Staff", "Date & Time", "Products", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Date & Time", "Promo", "Payment", "Confirm"]);
+  // Step indices (dynamic based on whether location step is shown and whether products exist)
   const STEP_SERVICE = 0;
   const STEP_STAFF = 1;
   const STEP_LOCATION = showLocationStep ? 2 : -1;
   const STEP_DATE = showLocationStep ? 3 : 2;   // merged Date+Time step
   const STEP_TIME = STEP_DATE;                   // same step as date
-  const STEP_PROMO = showLocationStep ? 4 : 3;
-  const STEP_PAYMENT = showLocationStep ? 5 : 4;
-  const STEP_CONFIRM = showLocationStep ? 6 : 5;
+  const STEP_PRODUCTS = hasProducts ? (showLocationStep ? 4 : 3) : -1;
+  const STEP_PROMO = hasProducts ? (showLocationStep ? 5 : 4) : (showLocationStep ? 4 : 3);
+  const STEP_PAYMENT = hasProducts ? (showLocationStep ? 6 : 5) : (showLocationStep ? 5 : 4);
+  const STEP_CONFIRM = hasProducts ? (showLocationStep ? 7 : 6) : (showLocationStep ? 6 : 5);
 
   // Load services, staff, locations, and discounts
   useEffect(() => {
     (async () => {
       try {
-        const [svcRes, staffRes, locRes, discRes, bizRes, pkgRes] = await Promise.all([
+        const [svcRes, staffRes, locRes, discRes, bizRes, pkgRes, prodRes] = await Promise.all([
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/services`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/staff`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/locations`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}/discounts`),
           fetch(`${apiBase}/api/public/business/${effectiveSlug}`),
           fetch(`${apiBase}/api/client/packages/${effectiveSlug}`),
+          fetch(`${apiBase}/api/public/business/${effectiveSlug}/products`),
         ]);
         const svcData = svcRes.ok ? await svcRes.json() : [];
         const staffData = staffRes.ok ? await staffRes.json() : [];
@@ -225,6 +245,8 @@ export default function ClientBookingWizardScreen() {
         const discData = discRes.ok ? await discRes.json() : [];
         const bizData = bizRes.ok ? await bizRes.json() : {};
         const pkgData = pkgRes.ok ? await pkgRes.json() : [];
+        const prodData = prodRes.ok ? await prodRes.json() : [];
+        setWizardProducts(Array.isArray(prodData) ? prodData : []);
         setDiscounts(Array.isArray(discData) ? discData : []);
         if (bizData?.businessName) setBusinessDisplayName(bizData.businessName);
         setPackages(Array.isArray(pkgData) ? pkgData : []);
@@ -512,6 +534,11 @@ export default function ClientBookingWizardScreen() {
         }
         finalPrice = Math.max(0, finalPrice - promoSaving);
       }
+      // Add product cart total to final price
+      const selectedProductItems = wizardProducts
+        .filter(p => (productCart[p.localId] ?? 0) > 0)
+        .map(p => ({ localId: p.localId, name: p.name, price: p.price, qty: productCart[p.localId] }));
+      finalPrice += productCartTotal;
       const res = await fetch(`${apiBase}/api/public/business/${effectiveSlug}/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -541,6 +568,7 @@ export default function ClientBookingWizardScreen() {
           discountAmount,
           subtotal: servicePrice,
           totalPrice: finalPrice,
+          products: selectedProductItems.length > 0 ? selectedProductItems : undefined,
         }),
       });
       if (!res.ok) {
@@ -1321,6 +1349,70 @@ export default function ClientBookingWizardScreen() {
           </View>
         )}
 
+        {/* Products step */}
+        {step === STEP_PRODUCTS && hasProducts && (
+          <View style={s.stepContent}>
+            <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Add Products</Text>
+            <Text style={{ color: TEXT_MUTED, fontSize: 13, marginBottom: 16 }}>Optionally add retail products to your appointment.</Text>
+            {/* Brand filter pills */}
+            {productBrands.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
+                <Pressable
+                  onPress={() => setSelectedBrandFilter(null)}
+                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: !selectedBrandFilter ? LIME_GREEN : "rgba(255,255,255,0.10)", borderWidth: 1, borderColor: !selectedBrandFilter ? LIME_GREEN : CARD_BORDER }}
+                >
+                  <Text style={{ color: !selectedBrandFilter ? "#FFF" : TEXT_MUTED, fontSize: 13, fontWeight: "600" }}>All</Text>
+                </Pressable>
+                {productBrands.map((brand) => (
+                  <Pressable
+                    key={brand}
+                    onPress={() => setSelectedBrandFilter(selectedBrandFilter === brand ? null : brand)}
+                    style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: selectedBrandFilter === brand ? LIME_GREEN : "rgba(255,255,255,0.10)", borderWidth: 1, borderColor: selectedBrandFilter === brand ? LIME_GREEN : CARD_BORDER }}
+                  >
+                    <Text style={{ color: selectedBrandFilter === brand ? "#FFF" : TEXT_MUTED, fontSize: 13, fontWeight: "600" }}>{brand}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            )}
+            {/* Product list */}
+            {filteredWizardProducts.map((product) => {
+              const qty = productCart[product.localId] ?? 0;
+              return (
+                <View key={product.localId} style={{ backgroundColor: CARD_BG, borderRadius: 12, borderWidth: 1, borderColor: CARD_BORDER, padding: 14, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "600" }}>{product.name}</Text>
+                    {product.brand && <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }}>{product.brand}</Text>}
+                    {product.description ? <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }} numberOfLines={2}>{product.description}</Text> : null}
+                    <Text style={{ color: LIME_GREEN, fontSize: 14, fontWeight: "700", marginTop: 4 }}>${parseFloat(product.price).toFixed(2)}</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                    <Pressable
+                      onPress={() => setProductCart(prev => { const next = { ...prev }; if ((next[product.localId] ?? 0) > 0) next[product.localId] = (next[product.localId] ?? 0) - 1; return next; })}
+                      style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: qty > 0 ? LIME_GREEN : "rgba(255,255,255,0.10)", alignItems: "center", justifyContent: "center" }}
+                    >
+                      <Text style={{ color: "#FFF", fontSize: 18, fontWeight: "700", lineHeight: 20 }}>-</Text>
+                    </Pressable>
+                    <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700", minWidth: 20, textAlign: "center" }}>{qty}</Text>
+                    <Pressable
+                      onPress={() => setProductCart(prev => ({ ...prev, [product.localId]: (prev[product.localId] ?? 0) + 1 }))}
+                      style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: LIME_GREEN, alignItems: "center", justifyContent: "center" }}
+                    >
+                      <Text style={{ color: "#FFF", fontSize: 18, fontWeight: "700", lineHeight: 20 }}>+</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })}
+            {/* Cart summary */}
+            {productCartTotal > 0 && (
+              <View style={{ backgroundColor: "rgba(74,124,89,0.12)", borderRadius: 12, borderWidth: 1, borderColor: `${LIME_GREEN}40`, padding: 14, marginTop: 8, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={{ color: TEXT_MUTED, fontSize: 14 }}>Products subtotal</Text>
+                <Text style={{ color: LIME_GREEN, fontSize: 16, fontWeight: "700" }}>+${productCartTotal.toFixed(2)}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Payment step */}
         {step === STEP_PAYMENT && selectedService && (() => {
           // Price breakdown calculation (same logic as Confirm step)
@@ -1335,7 +1427,7 @@ export default function ClientBookingWizardScreen() {
             : 0;
           const _afterPromo = Math.max(0, _afterDiscount - _promoSaving);
           const _giftSaving = giftApplied ? Math.min(giftApplied.value, _afterPromo) : 0;
-          const _finalPrice = Math.max(0, _afterPromo - _giftSaving);
+          const _finalPrice = Math.max(0, _afterPromo - _giftSaving) + productCartTotal;
           const _hasDiscounts = _discSaving > 0 || _promoSaving > 0 || _giftSaving > 0;
           return (
           <View style={s.stepContent}>
@@ -1347,6 +1439,12 @@ export default function ClientBookingWizardScreen() {
                 <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>{selectedService.name}</Text>
                 <Text style={{ color: TEXT_PRIMARY, fontSize: 13 }}>${_svcPrice.toFixed(2)}</Text>
               </View>
+              {productCartTotal > 0 && (
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>Products ({Object.values(productCart).reduce((a,b) => a+b, 0)} items)</Text>
+                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13 }}>+${productCartTotal.toFixed(2)}</Text>
+                </View>
+              )}
               {_discSaving > 0 && (
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                   <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>Discount ({_activeDiscount!.percentage}%)</Text>

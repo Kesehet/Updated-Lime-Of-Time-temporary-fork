@@ -281,6 +281,11 @@ export const appointments = mysqlTable("appointments", {
    * Used to prevent duplicate reminders when the server restarts within the same reminder window.
    */
   reminderSentAt: timestamp("reminderSentAt"),
+  /**
+   * Tracks which client-facing in-app reminders have been sent.
+   * JSON: { sent24h?: boolean, sent1h?: boolean, sent30m?: boolean }
+   */
+  clientReminderFlags: json("clientReminderFlags"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

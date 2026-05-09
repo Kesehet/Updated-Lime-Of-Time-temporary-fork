@@ -16,6 +16,7 @@ import { registerClientRoutes } from "../clientRoutes";
 import { startRenewalNotificationCron } from "../renewalNotificationCron";
 import { startAppointmentReminderCron } from "../appointmentReminderCron";
 import { startRequestExpiryCron } from "../requestExpiryCron";
+import { startClientReminderCron } from "../clientReminderCron";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -111,3 +112,4 @@ startServer().catch(console.error);
 startRenewalNotificationCron();
 startAppointmentReminderCron();
 startRequestExpiryCron();
+startClientReminderCron();

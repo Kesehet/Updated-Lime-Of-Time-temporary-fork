@@ -595,7 +595,7 @@ export default function ClientAppointmentDetailScreen() {
     </View>
   );
 }
-function StaffRoww({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
+function StaffRow({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
   const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return (
     <View style={[infoStyles.row, { alignItems: "center" }]}>

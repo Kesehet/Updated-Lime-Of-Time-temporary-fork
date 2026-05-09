@@ -139,6 +139,9 @@ export default function GiftCardsScreen() {
   const { isTablet, hp } = useResponsive();
 
   const [showForm, setShowForm] = useState(false);
+  const [giftCreateMode, setGiftCreateMode] = useState<"items" | "balance">("items");
+  const [balanceAmount, setBalanceAmount] = useState("");
+  const PRESET_AMOUNTS = [25, 50, 100, 200];
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [recipientName, setRecipientName] = useState("");
@@ -157,6 +160,8 @@ export default function GiftCardsScreen() {
     setRecipientPhone("");
     setMessage("");
     setExpiresInDays(String(state.settings.giftValidDays ?? 90));
+    setGiftCreateMode("items");
+    setBalanceAmount("");
     setShowForm(false);
   }, [state.settings.giftValidDays]);
 
@@ -203,9 +208,16 @@ export default function GiftCardsScreen() {
   }, [markAsPaidMut, state.businessOwnerId, dispatch]);
 
   const handleCreate = useCallback(() => {
-    if (selectedServiceIds.length === 0 && selectedProductIds.length === 0) {
+    if (giftCreateMode === "items" && selectedServiceIds.length === 0 && selectedProductIds.length === 0) {
       Alert.alert("Required", "Please select at least one service or product for this gift card.");
       return;
+    }
+    if (giftCreateMode === "balance") {
+      const amt = parseFloat(balanceAmount);
+      if (isNaN(amt) || amt <= 0) {
+        Alert.alert("Required", "Please enter a valid balance amount.");
+        return;
+      }
     }
 
     const days = parseInt(expiresInDays, 10);
@@ -214,26 +226,29 @@ export default function GiftCardsScreen() {
         ? new Date(Date.now() + days * 86400000).toISOString().split("T")[0]
         : undefined;
 
+    const cardValue = giftCreateMode === "balance" ? parseFloat(balanceAmount) : totalValue;
+
     const newCard: GiftCard = {
       id: generateId(),
       code: generateGiftCode(),
-      serviceLocalId: selectedServiceIds[0] || "",
-      serviceIds: selectedServiceIds,
-      productIds: selectedProductIds,
-      originalValue: totalValue,
-      remainingBalance: totalValue,
+      serviceLocalId: giftCreateMode === "items" ? (selectedServiceIds[0] || "") : "",
+      serviceIds: giftCreateMode === "items" ? selectedServiceIds : [],
+      productIds: giftCreateMode === "items" ? selectedProductIds : [],
+      originalValue: cardValue,
+      remainingBalance: cardValue,
       recipientName: recipientName.trim(),
       recipientPhone: recipientPhone.trim(),
       message: message.trim(),
       redeemed: false,
       expiresAt,
       createdAt: new Date().toISOString(),
-    };
+      ...(giftCreateMode === "balance" ? { isBalanceCard: true, balanceAmount: cardValue } : {}),
+    } as GiftCard;
 
     dispatch({ type: "ADD_GIFT_CARD", payload: newCard });
     syncToDb({ type: "ADD_GIFT_CARD", payload: newCard });
     resetForm();
-  }, [selectedServiceIds, selectedProductIds, recipientName, recipientPhone, message, expiresInDays, totalValue, dispatch, syncToDb, resetForm]);
+  }, [giftCreateMode, balanceAmount, selectedServiceIds, selectedProductIds, recipientName, recipientPhone, message, expiresInDays, totalValue, dispatch, syncToDb, resetForm]);
 
   const handleRedeem = useCallback(
     (card: GiftCard) => {
@@ -410,21 +425,33 @@ export default function GiftCardsScreen() {
                   </Pressable>
                 )}
               </View>
-              {/* Items list */}
-              {items.map((it, idx) => (
-                <Text key={idx} style={[styles.serviceName, { color: colors.muted }]}>
-                  {it.type === "product" ? "📦 " : "✂️ "}{it.name} — {it.price}
-                </Text>
-              ))}
-              {total > 0 && (
-                <Text style={{ fontSize: 13, fontWeight: "700", color: colors.primary, marginTop: 4 }}>
-                  Value: ${total.toFixed(2)}
-                </Text>
-              )}
-              {!item.redeemed && item.remainingBalance != null && item.remainingBalance < total && (
-                <Text style={{ fontSize: 13, fontWeight: "600", color: colors.success, marginTop: 2 }}>
-                  Balance: ${item.remainingBalance.toFixed(2)}
-                </Text>
+              {/* Balance card badge */}
+              {(item as any).isBalanceCard ? (
+                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4, gap: 6 }}>
+                  <Text style={{ fontSize: 22, fontWeight: "800", color: colors.primary }}>
+                    ${(item.remainingBalance ?? item.originalValue ?? 0).toFixed(2)}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>balance card</Text>
+                </View>
+              ) : (
+                <>
+                  {/* Items list */}
+                  {items.map((it, idx) => (
+                    <Text key={idx} style={[styles.serviceName, { color: colors.muted }]}>
+                      {it.type === "product" ? "📦 " : "✂️ "}{it.name} — {it.price}
+                    </Text>
+                  ))}
+                  {total > 0 && (
+                    <Text style={{ fontSize: 13, fontWeight: "700", color: colors.primary, marginTop: 4 }}>
+                      Value: ${total.toFixed(2)}
+                    </Text>
+                  )}
+                  {!item.redeemed && item.remainingBalance != null && item.remainingBalance < total && (
+                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.success, marginTop: 2 }}>
+                      Balance: ${item.remainingBalance.toFixed(2)}
+                    </Text>
+                  )}
+                </>
               )}
             </View>
             <View style={[styles.badge, { backgroundColor: item.redeemed ? colors.success + "20" : isExpired ? colors.error + "20" : colors.primary + "20" }]}>
@@ -507,51 +534,111 @@ export default function GiftCardsScreen() {
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderLeftWidth: 1 }]}>
       <Text style={[styles.formTitle, { color: colors.foreground }]}>New Gift Card</Text>
 
-      {/* Services & Products */}
-      <Text style={[styles.fieldLabel, { color: colors.muted }]}>Services & Products *</Text>
-      <Pressable
-        onPress={() => setShowItemPicker(true)}
-        style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, justifyContent: "center" }]}
-      >
-        <Text
-          style={{ color: selectedItemsSummary.length > 0 ? colors.foreground : colors.muted + "80", fontSize: 15, lineHeight: 20 }}
-          numberOfLines={1}
-        >
-          {selectedItemsSummary.length > 0
-            ? `${selectedItemsSummary.length} item${selectedItemsSummary.length > 1 ? "s" : ""} selected`
-            : "Select services and/or products"}
-        </Text>
-      </Pressable>
+      {/* Mode Toggle */}
+      <View style={{ flexDirection: "row", backgroundColor: colors.background, borderRadius: 10, padding: 3, marginBottom: 16, borderWidth: 1, borderColor: colors.border }}>
+        {(["items", "balance"] as const).map((mode) => (
+          <Pressable
+            key={mode}
+            onPress={() => setGiftCreateMode(mode)}
+            style={({ pressed }) => [{
+              flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center",
+              backgroundColor: giftCreateMode === mode ? colors.primary : "transparent",
+            }, pressed && { opacity: 0.8 }]}
+          >
+            <Text style={{ fontSize: 13, fontWeight: "700", color: giftCreateMode === mode ? "#fff" : colors.muted }}>
+              {mode === "items" ? "Services & Products" : "Balance Card"}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
 
-      {/* Selected items preview */}
-      {selectedItemsSummary.length > 0 && (
-        <View style={{ marginTop: 4, marginBottom: 4 }}>
-          {selectedServiceIds.map((sid) => {
-            const s = getServiceById(sid);
-            if (!s) return null;
-            return (
-              <View key={sid} style={styles.selectedItemRow}>
-                <View style={[styles.serviceColorDot, { backgroundColor: s.color }]} />
-                <Text style={{ flex: 1, fontSize: 13, color: colors.foreground }}>{s.name}</Text>
-                <Text style={{ fontSize: 13, color: colors.primary, fontWeight: "600" }}>${parseFloat(String(s.price)).toFixed(2)}</Text>
+      {giftCreateMode === "items" ? (
+        <>
+          {/* Services & Products */}
+          <Text style={[styles.fieldLabel, { color: colors.muted }]}>Services & Products *</Text>
+          <Pressable
+            onPress={() => setShowItemPicker(true)}
+            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, justifyContent: "center" }]}
+          >
+            <Text
+              style={{ color: selectedItemsSummary.length > 0 ? colors.foreground : colors.muted + "80", fontSize: 15, lineHeight: 20 }}
+              numberOfLines={1}
+            >
+              {selectedItemsSummary.length > 0
+                ? `${selectedItemsSummary.length} item${selectedItemsSummary.length > 1 ? "s" : ""} selected`
+                : "Select services and/or products"}
+            </Text>
+          </Pressable>
+
+          {/* Selected items preview */}
+          {selectedItemsSummary.length > 0 && (
+            <View style={{ marginTop: 4, marginBottom: 4 }}>
+              {selectedServiceIds.map((sid) => {
+                const s = getServiceById(sid);
+                if (!s) return null;
+                return (
+                  <View key={sid} style={styles.selectedItemRow}>
+                    <View style={[styles.serviceColorDot, { backgroundColor: s.color }]} />
+                    <Text style={{ flex: 1, fontSize: 13, color: colors.foreground }}>{s.name}</Text>
+                    <Text style={{ fontSize: 13, color: colors.primary, fontWeight: "600" }}>${parseFloat(String(s.price)).toFixed(2)}</Text>
+                  </View>
+                );
+              })}
+              {selectedProductIds.map((pid) => {
+                const p = state.products.find((pr) => pr.id === pid);
+                if (!p) return null;
+                return (
+                  <View key={pid} style={styles.selectedItemRow}>
+                    <IconSymbol name="bag.fill" size={12} color={colors.primary} />
+                    <Text style={{ flex: 1, fontSize: 13, color: colors.foreground, marginLeft: 4 }}>{p.name}</Text>
+                    <Text style={{ fontSize: 13, color: colors.primary, fontWeight: "600" }}>${parseFloat(String(p.price)).toFixed(2)}</Text>
+                  </View>
+                );
+              })}
+              <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 4 }}>
+                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.primary }}>Total: ${totalValue.toFixed(2)}</Text>
               </View>
-            );
-          })}
-          {selectedProductIds.map((pid) => {
-            const p = state.products.find((pr) => pr.id === pid);
-            if (!p) return null;
-            return (
-              <View key={pid} style={styles.selectedItemRow}>
-                <IconSymbol name="bag.fill" size={12} color={colors.primary} />
-                <Text style={{ flex: 1, fontSize: 13, color: colors.foreground, marginLeft: 4 }}>{p.name}</Text>
-                <Text style={{ fontSize: 13, color: colors.primary, fontWeight: "600" }}>${parseFloat(String(p.price)).toFixed(2)}</Text>
-              </View>
-            );
-          })}
-          <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 4 }}>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.primary }}>Total: ${totalValue.toFixed(2)}</Text>
+            </View>
+          )}
+        </>
+      ) : (
+        <>
+          {/* Balance Amount */}
+          <Text style={[styles.fieldLabel, { color: colors.muted }]}>Gift Card Amount *</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+            {PRESET_AMOUNTS.map((amt) => {
+              const isSelected = balanceAmount === String(amt);
+              return (
+                <Pressable
+                  key={amt}
+                  onPress={() => setBalanceAmount(String(amt))}
+                  style={({ pressed }) => [{
+                    paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5,
+                    borderColor: isSelected ? colors.primary : colors.border,
+                    backgroundColor: isSelected ? colors.primary + "20" : colors.background,
+                  }, pressed && { opacity: 0.7 }]}
+                >
+                  <Text style={{ fontSize: 15, fontWeight: "700", color: isSelected ? colors.primary : colors.foreground }}>${amt}</Text>
+                </Pressable>
+              );
+            })}
           </View>
-        </View>
+          <Text style={[styles.fieldLabel, { color: colors.muted }]}>Custom Amount</Text>
+          <TextInput
+            style={[styles.input, { color: colors.foreground, backgroundColor: colors.background, borderColor: colors.border }]}
+            value={PRESET_AMOUNTS.includes(Number(balanceAmount)) ? "" : balanceAmount}
+            onChangeText={(v) => setBalanceAmount(v.replace(/[^0-9.]/g, ""))}
+            placeholder="Enter custom amount (e.g. 75)"
+            placeholderTextColor={colors.muted + "80"}
+            keyboardType="decimal-pad"
+            returnKeyType="done"
+          />
+          {balanceAmount && !isNaN(parseFloat(balanceAmount)) && parseFloat(balanceAmount) > 0 && (
+            <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: 8 }}>
+              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.primary }}>Card Value: ${parseFloat(balanceAmount).toFixed(2)}</Text>
+            </View>
+          )}
+        </>
       )}
 
       {/* Recipient Name */}

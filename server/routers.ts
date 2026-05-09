@@ -313,9 +313,34 @@ const appointmentsRouter = router({
       if (input.giftUsedAmount != null) dbInput.giftUsedAmount = String(input.giftUsedAmount);
       if (input.extraItems) dbInput.extraItems = input.extraItems;
       const id = await db.createAppointment(dbInput);
+      // ── Auto in-app message to client on new booking ─────────────────────────
+      try {
+        const [owner, enrichedAppt] = await Promise.all([
+          db.getBusinessOwnerById(input.businessOwnerId),
+          db.getEnrichedAppointment(input.localId, input.businessOwnerId),
+        ]);
+        if (owner && enrichedAppt?.clientPhone) {
+          const rawDigits = enrichedAppt.clientPhone.replace(/\D/g, "");
+          const normPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
+          const clientAcc = await db.getClientAccountByPhone(normPhone)
+            ?? await db.getClientAccountByPhone(enrichedAppt.clientPhone);
+          if (clientAcc) {
+            const sName = enrichedAppt.serviceName ?? "appointment";
+            const dateStr = enrichedAppt.date ?? input.date;
+            const timeStr = enrichedAppt.time ?? input.time;
+            const locName = (enrichedAppt as any).locationName ?? "";
+            const locAddr = (enrichedAppt as any).locationAddress
+              ? `${(enrichedAppt as any).locationAddress}${(enrichedAppt as any).locationCity ? ", " + (enrichedAppt as any).locationCity : ""}`
+              : "";
+            const locLine = locName || locAddr ? `\n\ud83d\udccd ${locName}${locAddr ? (locName ? " \u2014 " : "") + locAddr : ""}` : "";
+            const statusLabel = input.status === "confirmed" ? "confirmed" : "received and pending confirmation";
+            const msgBody = `\ud83d\udcc5 Your ${sName} booking has been ${statusLabel}!\n\ud83d\udd52 ${dateStr} at ${timeStr}${locLine}\n\nWe look forward to seeing you! Reply here if you have any questions. \u2014 ${owner.businessName}`;
+            await db.insertClientMessage({ businessOwnerId: input.businessOwnerId, clientAccountId: clientAcc.id, senderType: "business", body: msgBody }).catch(() => {});
+          }
+        }
+      } catch { /* non-blocking */ }
       return { id, localId: input.localId };
     }),
-
   update: publicProcedure
     .input(
       z.object({
@@ -499,6 +524,47 @@ const appointmentsRouter = router({
         }
       }
 
+      // ── Auto in-app message to client on status change ──────────────────────
+      if (data.status === "confirmed" || data.status === "cancelled" || data.status === "completed" || data.status === "no_show") {
+        try {
+          const [owner2, enrichedAppt2] = await Promise.all([
+            db.getBusinessOwnerById(businessOwnerId),
+            db.getEnrichedAppointment(localId, businessOwnerId),
+          ]);
+          if (owner2 && enrichedAppt2?.clientPhone) {
+            const rawDigits2 = enrichedAppt2.clientPhone.replace(/\D/g, "");
+            const normPhone2 = rawDigits2.length === 11 && rawDigits2.startsWith("1") ? rawDigits2.slice(1) : rawDigits2;
+            const clientAcc2 = await db.getClientAccountByPhone(normPhone2)
+              ?? await db.getClientAccountByPhone(enrichedAppt2.clientPhone);
+            if (clientAcc2) {
+              const bName2 = owner2.businessName;
+              const sName2 = enrichedAppt2.serviceName ?? "appointment";
+              const dateStr2 = enrichedAppt2.date ?? "";
+              const timeStr2 = enrichedAppt2.time ?? "";
+              const locName2 = (enrichedAppt2 as any).locationName ?? "";
+              const locAddr2 = (enrichedAppt2 as any).locationAddress
+                ? `${(enrichedAppt2 as any).locationAddress}${(enrichedAppt2 as any).locationCity ? ", " + (enrichedAppt2 as any).locationCity : ""}${(enrichedAppt2 as any).locationState ? ", " + (enrichedAppt2 as any).locationState : ""}`
+                : "";
+              const locLine2 = locName2 || locAddr2 ? `\n\ud83d\udccd ${locName2}${locAddr2 ? (locName2 ? " \u2014 " : "") + locAddr2 : ""}` : "";
+              let autoMsg = "";
+              if (data.status === "confirmed") {
+                autoMsg = `\u2705 Your ${sName2} appointment has been confirmed!\n\ud83d\udcc5 ${dateStr2} at ${timeStr2}${locLine2}\n\nWe look forward to seeing you! Reply here if you have any questions. \u2014 ${bName2}`;
+              } else if (data.status === "cancelled") {
+                autoMsg = `\u274c Your ${sName2} appointment on ${dateStr2} has been cancelled. We\u2019re sorry for any inconvenience.\n\nPlease reply or call us to reschedule. \u2014 ${bName2}`;
+              } else if (data.status === "completed") {
+                autoMsg = `\u2b50 Thank you for your visit! We hope you enjoyed your ${sName2}.\n\nWe\u2019d love to hear your feedback \u2014 feel free to leave a review. See you next time! \u2014 ${bName2}`;
+              } else if (data.status === "no_show") {
+                autoMsg = `We missed you today for your ${sName2} appointment on ${dateStr2}. We hope everything is okay!\n\nPlease reply to reschedule at your convenience. \u2014 ${bName2}`;
+              }
+              if (autoMsg) {
+                await db.insertClientMessage({ businessOwnerId, clientAccountId: clientAcc2.id, senderType: "business", body: autoMsg }).catch(() => {});
+              }
+            }
+          }
+        } catch (inAppErr) {
+          console.error("[InAppMsg] Failed to send auto in-app message:", inAppErr);
+        }
+      }
       // ── Notify client when owner declines a reschedule request ─────────────
       if (data.rescheduleRequest && (data.rescheduleRequest as any).status === "declined") {
         try {
@@ -518,7 +584,7 @@ const appointmentsRouter = router({
             if (masterNotifOn && prefs.smsClientOnConfirmation !== false && enrichedAppt.clientPhone) {
               try { await sendStatusSms(enrichedAppt.clientPhone, smsBody); } catch { /* non-blocking */ }
             }
-            // Push notification to client portal user
+            // Push notification + in-app message to client portal user
             if (enrichedAppt.clientPhone) {
               try {
                 const rawDigits = enrichedAppt.clientPhone.replace(/\D/g, "");
@@ -533,6 +599,9 @@ const appointmentsRouter = router({
                     channelId: "appointments",
                     sound: "default",
                   });
+                }
+                if (clientAcc) {
+                  await db.insertClientMessage({ businessOwnerId, clientAccountId: clientAcc.id, senderType: "business", body: `\u274c Your reschedule request for ${svcName} on ${originalDate} was declined. Your original appointment is still confirmed.\n\nPlease reply or call us if you need to make changes. \u2014 ${bName}` }).catch(() => {});
                 }
               } catch { /* non-blocking */ }
             }
@@ -564,7 +633,7 @@ const appointmentsRouter = router({
             if (masterNotifOn && prefs.smsClientOnConfirmation !== false && enrichedAppt.clientPhone) {
               try { await sendStatusSms(enrichedAppt.clientPhone, smsBody); } catch { /* non-blocking */ }
             }
-            // Push notification to client portal user
+            // Push notification + in-app message to client portal user
             if (enrichedAppt.clientPhone) {
               try {
                 const rawDigits = enrichedAppt.clientPhone.replace(/\D/g, "");
@@ -579,6 +648,12 @@ const appointmentsRouter = router({
                     channelId: "appointments",
                     sound: "default",
                   });
+                }
+                if (clientAcc) {
+                  const locName3 = (enrichedAppt as any).locationName ?? "";
+                  const locAddr3 = (enrichedAppt as any).locationAddress ? `${(enrichedAppt as any).locationAddress}${(enrichedAppt as any).locationCity ? ", " + (enrichedAppt as any).locationCity : ""}` : "";
+                  const locLine3 = locName3 || locAddr3 ? `\n\ud83d\udccd ${locName3}${locAddr3 ? (locName3 ? " \u2014 " : "") + locAddr3 : ""}` : "";
+                  await db.insertClientMessage({ businessOwnerId, clientAccountId: clientAcc.id, senderType: "business", body: `\u2705 Great news! Your reschedule request for ${svcName} has been approved.\n\ud83d\udcc5 New appointment: ${newDate}${newTime ? ` at ${newTime}` : ""}${locLine3}\n\nSee you then! \u2014 ${bName}` }).catch(() => {});
                 }
               } catch { /* non-blocking */ }
             }
@@ -1515,6 +1590,85 @@ const filesRouter = router({
     }),
 });
 
+// ─── Service Packages Router ───────────────────────────────────────
+
+const packagesRouter = router({
+  list: publicProcedure
+    .input(z.object({ businessOwnerId: z.number() }))
+    .query(async ({ input }) => {
+      return db.getServicePackagesByOwner(input.businessOwnerId);
+    }),
+  create: publicProcedure
+    .input(z.object({
+      businessOwnerId: z.number(),
+      localId: z.string(),
+      name: z.string().min(1),
+      description: z.string().optional().nullable(),
+      serviceIds: z.array(z.string()),
+      price: z.number(),
+      sessions: z.number().optional().nullable(),
+      expiryDays: z.number().optional().nullable(),
+      bufferDays: z.number().optional().nullable(),
+      bufferMinutes: z.number().optional().nullable(),
+      active: z.boolean().optional(),
+      photoUri: z.string().optional().nullable(),
+    }))
+    .mutation(async ({ input }) => {
+      const { serviceIds, price, sessions, expiryDays, active, ...rest } = input;
+      const id = await db.createServicePackage({
+        ...rest,
+        packageItems: JSON.stringify(serviceIds.map((sid) => ({ serviceLocalId: sid, sessions: sessions ?? 1 }))),
+        totalSessions: sessions ?? 1,
+        sessionDurationMinutes: 60,
+        originalPrice: String(price),
+        packagePrice: String(price),
+        expiryDays: expiryDays ?? null,
+        isActive: active ?? true,
+        description: rest.description ?? null,
+        photoUri: rest.photoUri ?? null,
+        category: null,
+      } as any);
+      return { id, localId: input.localId };
+    }),
+  update: publicProcedure
+    .input(z.object({
+      localId: z.string(),
+      businessOwnerId: z.number(),
+      name: z.string().optional(),
+      description: z.string().optional().nullable(),
+      serviceIds: z.array(z.string()).optional(),
+      price: z.number().optional(),
+      sessions: z.number().optional().nullable(),
+      expiryDays: z.number().optional().nullable(),
+      bufferDays: z.number().optional().nullable(),
+      bufferMinutes: z.number().optional().nullable(),
+      active: z.boolean().optional(),
+      photoUri: z.string().optional().nullable(),
+    }))
+    .mutation(async ({ input }) => {
+      const { localId, businessOwnerId, serviceIds, price, sessions, expiryDays, active, ...rest } = input;
+      const updateData: Record<string, unknown> = { ...rest };
+      if (serviceIds !== undefined) {
+        updateData.packageItems = JSON.stringify(serviceIds.map((sid) => ({ serviceLocalId: sid, sessions: sessions ?? 1 })));
+        updateData.totalSessions = sessions ?? 1;
+      }
+      if (price !== undefined) {
+        updateData.originalPrice = String(price);
+        updateData.packagePrice = String(price);
+      }
+      if (expiryDays !== undefined) updateData.expiryDays = expiryDays;
+      if (active !== undefined) updateData.isActive = active;
+      await db.updateServicePackage(localId, businessOwnerId, updateData as any);
+      return { success: true };
+    }),
+  delete: publicProcedure
+    .input(z.object({ localId: z.string(), businessOwnerId: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.deleteServicePackage(input.localId, input.businessOwnerId);
+      return { success: true };
+    }),
+});
+
 // ─── Root Router ─────────────────────────────────────────────────────
 
 export const appRouter = router({
@@ -1543,6 +1697,7 @@ export const appRouter = router({
   subscription: subscriptionRouter,
   promoCodes: promoCodesRouter,
   files: filesRouter,
+  packages: packagesRouter,
 });
 
 export type AppRouter = typeof appRouter;
