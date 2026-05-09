@@ -29,7 +29,7 @@ export default function LocationsScreen() {
   const { activeLocation, setActiveLocation } = useActiveLocation();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   // Track which location just had its link copied (for toast feedback)
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -203,7 +203,7 @@ export default function LocationsScreen() {
         <View style={[styles.toggleRow, { borderBottomColor: colors.border }]}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
             <View style={[styles.colorDot, { backgroundColor: locColor }]} />
-            <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground, flex: 1 }} numberOfLines={1}>
+            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, flex: 1 }} numberOfLines={1}>
               {item.name}
             </Text>
 
@@ -227,7 +227,7 @@ export default function LocationsScreen() {
               style={({ pressed }) => [styles.infoRow, { opacity: pressed ? 0.6 : 1 }]}
             >
               <IconSymbol name="mappin" size={13} color={colors.primary} />
-              <Text style={{ fontSize: 13, color: colors.primary, flex: 1, textDecorationLine: "underline" }} numberOfLines={2}>
+              <Text style={{ fontSize: fs.xs, color: colors.primary, flex: 1, textDecorationLine: "underline" }} numberOfLines={2}>
                 {formattedAddress}
               </Text>
               <IconSymbol name="arrow.up.right.square" size={13} color={colors.primary} />
@@ -237,18 +237,18 @@ export default function LocationsScreen() {
           {!!item.phone && (
             <View style={styles.infoRow}>
               <IconSymbol name="phone.fill" size={13} color={colors.muted} />
-              <Text style={{ fontSize: 13, color: colors.muted }}>{formatPhoneNumber(item.phone)}</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted }}>{formatPhoneNumber(item.phone)}</Text>
             </View>
           )}
           {!!item.email && (
             <View style={styles.infoRow}>
               <IconSymbol name="envelope.fill" size={13} color={colors.muted} />
-              <Text style={{ fontSize: 13, color: colors.muted }} numberOfLines={1}>{item.email}</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted }} numberOfLines={1}>{item.email}</Text>
             </View>
           )}
 
           <View style={[styles.editRow, { borderTopColor: colors.border }]}>
-            <Text style={{ fontSize: 12, color: colors.muted, flex: 1 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, flex: 1 }}>
               {isActiveContext ? "Currently active location" : item.active ? "Tap to edit" : "Inactive — toggle to activate"}
             </Text>
             <IconSymbol name="chevron.right" size={14} color={colors.muted} />
@@ -258,10 +258,10 @@ export default function LocationsScreen() {
         {/* Temporarily Closed toggle */}
         <View style={[styles.tempClosedRow, { borderTopColor: colors.border }]}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: "600", color: item.temporarilyClosed ? colors.warning : colors.foreground }}>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: item.temporarilyClosed ? colors.warning : colors.foreground }}>
               {item.temporarilyClosed ? "⏸ Temporarily Closed" : "Accepting Bookings"}
             </Text>
-            <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
               {item.temporarilyClosed
                 ? (item.reopenOn
                     ? `Reopens ${formatReopenDate(item.reopenOn)}`
@@ -284,7 +284,7 @@ export default function LocationsScreen() {
               <>
                 {/* Month navigation */}
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.warning }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.warning }}>
                     Set Reopen Date
                   </Text>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -297,7 +297,7 @@ export default function LocationsScreen() {
                     >
                       <IconSymbol name="chevron.left" size={14} color={colors.foreground} />
                     </Pressable>
-                    <Text style={{ fontSize: 12, fontWeight: "600", color: colors.foreground, minWidth: 80, textAlign: "center" }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, minWidth: 80, textAlign: "center" }}>
                       {CAL_MONTHS[calPickerMonth]} {calPickerYear}
                     </Text>
                     <Pressable
@@ -344,7 +344,7 @@ export default function LocationsScreen() {
                         ])}
                       >
                         <Text style={{
-                          fontSize: 12,
+                          fontSize: fs.xs,
                           fontWeight: isSelected || isToday ? "700" : "400",
                           color: isSelected ? "#FFF" : isToday ? colors.warning : colors.foreground,
                         }}>{day}</Text>
@@ -362,7 +362,7 @@ export default function LocationsScreen() {
                       borderWidth: 1, borderColor: colors.border, opacity: pressed ? 0.7 : 1,
                     }]}
                   >
-                    <Text style={{ fontSize: 12, color: colors.muted }}>No date</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>No date</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => handleSaveReopenDate(item, calPickerSelected)}
@@ -372,7 +372,7 @@ export default function LocationsScreen() {
                       opacity: pressed ? 0.8 : 1,
                     }]}
                   >
-                    <Text style={{ fontSize: 12, fontWeight: "700", color: calPickerSelected ? "#FFF" : colors.muted }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "700", color: calPickerSelected ? "#FFF" : colors.muted }}>
                       {calPickerSelected ? `Reopen ${formatReopenDate(calPickerSelected)}` : "Confirm"}
                     </Text>
                   </Pressable>
@@ -399,7 +399,7 @@ export default function LocationsScreen() {
                 style={({ pressed }) => [{ flexDirection: "row", alignItems: "center", gap: 6, opacity: pressed ? 0.7 : 1 }]}
               >
                 <IconSymbol name="calendar" size={13} color={colors.warning} />
-                <Text style={{ fontSize: 12, color: colors.warning, fontWeight: "600" }}>
+                <Text style={{ fontSize: fs.xs, color: colors.warning, fontWeight: "600" }}>
                   {item.reopenOn
                     ? `Reopens ${formatReopenDate(item.reopenOn)} • Tap to change`
                     : "Set reopen date (optional)"}
@@ -435,7 +435,7 @@ export default function LocationsScreen() {
                 size={14}
                 color={isCopied ? colors.success : colors.primary}
               />
-              <Text style={{ fontSize: 12, fontWeight: "600", color: isCopied ? colors.success : colors.primary }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: isCopied ? colors.success : colors.primary }}>
                 {isCopied ? "Copied!" : "Copy Link"}
               </Text>
             </Pressable>
@@ -453,7 +453,7 @@ export default function LocationsScreen() {
               ]}
             >
               <IconSymbol name="square.and.arrow.up" size={14} color={colors.primary} />
-              <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary }}>Share</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>Share</Text>
             </Pressable>
 
             {/* QR Code button */}
@@ -469,7 +469,7 @@ export default function LocationsScreen() {
               ]}
             >
               <IconSymbol name="qrcode" size={14} color={colors.primary} />
-              <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary }}>QR</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>QR</Text>
             </Pressable>
           </View>
         </View>
@@ -498,14 +498,14 @@ export default function LocationsScreen() {
           ]}
         >
           <IconSymbol name="plus" size={18} color="#FFFFFF" />
-          <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 14 }}>Add</Text>
+          <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: fs.sm }}>Add</Text>
         </Pressable>
       </View>
 
       {state.locations.length > 1 && (
         <View style={[styles.infoBox, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "30" }]}>
           <IconSymbol name="info.circle.fill" size={14} color={colors.primary} />
-          <Text style={{ fontSize: 12, color: colors.primary, flex: 1, lineHeight: 18 }}>
+          <Text style={{ fontSize: fs.xs, color: colors.primary, flex: 1, lineHeight: 18 }}>
             Only one location can be active at a time. Toggle a location on to switch the entire app to that location's data.
           </Text>
         </View>
@@ -525,7 +525,7 @@ export default function LocationsScreen() {
               { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
             ]}
           >
-            <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 15 }}>
+            <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: fs.sm }}>
               Add First Location
             </Text>
           </Pressable>
@@ -566,8 +566,8 @@ export default function LocationsScreen() {
             {/* Header */}
             <View style={{ flexDirection: "row", alignItems: "center", width: "100%", marginBottom: 4 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 18, fontWeight: "800", color: colors.foreground }}>Location QR Code</Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }} numberOfLines={1}>
+                <Text style={{ fontSize: fs.md, fontWeight: "800", color: colors.foreground }}>Location QR Code</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }} numberOfLines={1}>
                   {qrLocation?.name}
                 </Text>
               </View>
@@ -598,7 +598,7 @@ export default function LocationsScreen() {
 
             {/* URL pill */}
             <View style={[{ borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, width: "100%" }, { backgroundColor: colors.background }]}>
-              <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center" }} numberOfLines={2}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "center" }} numberOfLines={2}>
                 {qrLocation ? getLocationBookingUrl(qrLocation) : ""}
               </Text>
             </View>
@@ -618,7 +618,7 @@ export default function LocationsScreen() {
                 }, { backgroundColor: qrCopied ? colors.success + "20" : colors.border }]}
               >
                 <IconSymbol name={qrCopied ? "checkmark.circle.fill" : "doc.on.doc.fill"} size={16} color={qrCopied ? colors.success : colors.foreground} />
-                <Text style={{ fontSize: 13, fontWeight: "700", color: qrCopied ? colors.success : colors.foreground }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: qrCopied ? colors.success : colors.foreground }}>
                   {qrCopied ? "Copied!" : "Copy Link"}
                 </Text>
               </Pressable>
@@ -642,11 +642,11 @@ export default function LocationsScreen() {
                 }, { backgroundColor: colors.primary }]}
               >
                 <IconSymbol name="paperplane.fill" size={16} color="#fff" />
-                <Text style={{ fontSize: 13, fontWeight: "700", color: "#fff" }}>Share</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#fff" }}>Share</Text>
               </Pressable>
             </View>
 
-            <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center" }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "center" }}>
               Scan to book at this specific location
             </Text>
           </View>
@@ -741,7 +741,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   bookingUrlPreview: {
-    fontSize: 11,
+    fontSize: fs.xs,
     lineHeight: 16,
   },
   bookingLinkActions: {

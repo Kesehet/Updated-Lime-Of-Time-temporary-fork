@@ -42,7 +42,7 @@ export default function PackagesScreen() {
   const { state, dispatch } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -234,7 +234,7 @@ export default function PackagesScreen() {
         <View style={styles.cardHeader}>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}>{item.name}</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>{item.name}</Text>
               {!item.active && (
                 <View style={[styles.badge, { backgroundColor: colors.muted + "20" }]}>
                   <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "600" }}>INACTIVE</Text>
@@ -252,17 +252,17 @@ export default function PackagesScreen() {
               )}
             </View>
             {item.description ? (
-              <Text style={{ fontSize: 13, color: colors.muted, marginTop: 2 }} numberOfLines={2}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }} numberOfLines={2}>
                 {item.description}
               </Text>
             ) : null}
           </View>
           <View style={{ alignItems: "flex-end", gap: 4 }}>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.primary }}>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>
               ${item.price.toFixed(2)}
             </Text>
             {savingsAmt > 0 && (
-              <Text style={{ fontSize: 11, color: "#22C55E", fontWeight: "600" }}>
+              <Text style={{ fontSize: fs.xs, color: "#22C55E", fontWeight: "600" }}>
                 Save ${savingsAmt.toFixed(2)}
               </Text>
             )}
@@ -274,7 +274,7 @@ export default function PackagesScreen() {
           {includedServices.map((name, idx) => (
             <View key={idx} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
-              <Text style={{ fontSize: 13, color: colors.foreground }}>{name}</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.foreground }}>{name}</Text>
             </View>
           ))}
         </View>
@@ -284,7 +284,7 @@ export default function PackagesScreen() {
           {item.sessions != null && (
             <View style={[styles.metaChip, { backgroundColor: colors.primary + "15" }]}>
               <IconSymbol name="calendar" size={12} color={colors.primary} />
-              <Text style={{ fontSize: 11, color: colors.primary, fontWeight: "600" }}>
+              <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }}>
                 {item.sessions} session{item.sessions !== 1 ? "s" : ""}
               </Text>
             </View>
@@ -292,13 +292,13 @@ export default function PackagesScreen() {
           {item.expiryDays != null && (
             <View style={[styles.metaChip, { backgroundColor: "#F59E0B15" }]}>
               <IconSymbol name="clock.fill" size={12} color="#F59E0B" />
-              <Text style={{ fontSize: 11, color: "#F59E0B", fontWeight: "600" }}>
+              <Text style={{ fontSize: fs.xs, color: "#F59E0B", fontWeight: "600" }}>
                 Expires in {item.expiryDays} days
               </Text>
             </View>
           )}
           <View style={[styles.metaChip, { backgroundColor: colors.border }]}>
-            <Text style={{ fontSize: 11, color: colors.muted }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted }}>
               {item.serviceIds.length} service{item.serviceIds.length !== 1 ? "s" : ""}
             </Text>
           </View>
@@ -311,14 +311,14 @@ export default function PackagesScreen() {
             style={({ pressed }) => [styles.actionBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
           >
             <IconSymbol name="pencil" size={14} color={colors.primary} />
-            <Text style={{ fontSize: 13, color: colors.primary, fontWeight: "600" }}>Edit</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }}>Edit</Text>
           </Pressable>
           <Pressable
             onPress={() => handleDelete(item)}
             style={({ pressed }) => [styles.actionBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
           >
             <IconSymbol name="trash.fill" size={14} color={colors.error} />
-            <Text style={{ fontSize: 13, color: colors.error, fontWeight: "600" }}>Delete</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.error, fontWeight: "600" }}>Delete</Text>
           </Pressable>
         </View>
       </View>
@@ -352,10 +352,10 @@ export default function PackagesScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <IconSymbol name="gift.fill" size={48} color={colors.muted} />
-            <Text style={{ fontSize: 17, fontWeight: "600", color: colors.foreground, marginTop: 12 }}>
+            <Text style={{ fontSize: fs.md, fontWeight: "600", color: colors.foreground, marginTop: 12 }}>
               No Packages Yet
             </Text>
-            <Text style={{ fontSize: 14, color: colors.muted, textAlign: "center", marginTop: 6 }}>
+            <Text style={{ fontSize: fs.sm, color: colors.muted, textAlign: "center", marginTop: 6 }}>
               Create service bundles to offer clients a better deal and increase booking value.
             </Text>
             <Pressable
@@ -365,7 +365,7 @@ export default function PackagesScreen() {
                 { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
               ]}
             >
-              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Create Package</Text>
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: fs.sm }}>Create Package</Text>
             </Pressable>
           </View>
         }
@@ -376,13 +376,13 @@ export default function PackagesScreen() {
         <View style={[styles.modal, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <Pressable onPress={() => setShowForm(false)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
-              <Text style={{ fontSize: 16, color: colors.muted }}>Cancel</Text>
+              <Text style={{ fontSize: fs.md, color: colors.muted }}>Cancel</Text>
             </Pressable>
-            <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>
               {editingId ? "Edit Package" : "New Package"}
             </Text>
             <Pressable onPress={handleSave} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
-              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.primary }}>Save</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>Save</Text>
             </Pressable>
           </View>
 
@@ -405,14 +405,14 @@ export default function PackagesScreen() {
                 <>
                   <Image source={{ uri: form.photoUri }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
                   <View style={{ position: "absolute", bottom: 8, right: 8, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-                    <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>Change Photo</Text>
+                    <Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "600" }}>Change Photo</Text>
                   </View>
                 </>
               ) : (
                 <View style={{ alignItems: "center", gap: 6 }}>
                   <Text style={{ fontSize: 28 }}>📷</Text>
-                  <Text style={{ fontSize: 13, color: colors.muted, fontWeight: "600" }}>Tap to add a photo</Text>
-                  <Text style={{ fontSize: 11, color: colors.muted }}>16:9 ratio recommended</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, fontWeight: "600" }}>Tap to add a photo</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>16:9 ratio recommended</Text>
                 </View>
               )}
             </Pressable>
@@ -426,7 +426,7 @@ export default function PackagesScreen() {
               placeholderTextColor={colors.muted}
               returnKeyType="next"
             />
-            {errors.name ? <Text style={{ color: colors.error, fontSize: 12, marginBottom: 8 }}>{errors.name}</Text> : null}
+            {errors.name ? <Text style={{ color: colors.error, fontSize: fs.xs, marginBottom: 8 }}>{errors.name}</Text> : null}
 
             {/* Description */}
             <Text style={[styles.label, { color: colors.muted }]}>Description</Text>
@@ -451,10 +451,10 @@ export default function PackagesScreen() {
               keyboardType="decimal-pad"
               returnKeyType="next"
             />
-            {errors.price ? <Text style={{ color: colors.error, fontSize: 12, marginBottom: 8 }}>{errors.price}</Text> : null}
+            {errors.price ? <Text style={{ color: colors.error, fontSize: fs.xs, marginBottom: 8 }}>{errors.price}</Text> : null}
             {form.serviceIds.length > 0 && selectedServicesTotal > 0 && (
               <View style={[styles.savingsRow, { backgroundColor: savings > 0 ? "#22C55E15" : colors.surface, borderColor: savings > 0 ? "#22C55E40" : colors.border }]}>
-                <Text style={{ fontSize: 13, color: savings > 0 ? "#22C55E" : colors.muted }}>
+                <Text style={{ fontSize: fs.xs, color: savings > 0 ? "#22C55E" : colors.muted }}>
                   Retail total: ${selectedServicesTotal.toFixed(2)}
                   {savings > 0 ? `  ·  Client saves $${savings.toFixed(2)}` : savings < 0 ? "  ·  ⚠️ Package price exceeds retail" : "  ·  No discount"}
                 </Text>
@@ -496,7 +496,7 @@ export default function PackagesScreen() {
               keyboardType="number-pad"
               returnKeyType="next"
             />
-            <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 8, marginTop: 2 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8, marginTop: 2 }}>
               Minimum days a client must wait between each session of this package.
             </Text>
 
@@ -511,15 +511,15 @@ export default function PackagesScreen() {
               keyboardType="number-pad"
               returnKeyType="done"
             />
-            <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 8, marginTop: 2 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8, marginTop: 2 }}>
               Extra padding time added after each session appointment.
             </Text>
 
             {/* Active toggle */}
             <View style={[styles.toggleRow, { borderColor: colors.border }]}>
               <View>
-                <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Active</Text>
-                <Text style={{ fontSize: 12, color: colors.muted }}>Clients can see and book this package</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Active</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>Clients can see and book this package</Text>
               </View>
               <Switch
                 value={form.active}
@@ -531,9 +531,9 @@ export default function PackagesScreen() {
 
             {/* Services */}
             <Text style={[styles.label, { color: colors.muted, marginTop: 8 }]}>Included Services *</Text>
-            {errors.serviceIds ? <Text style={{ color: colors.error, fontSize: 12, marginBottom: 8 }}>{errors.serviceIds}</Text> : null}
+            {errors.serviceIds ? <Text style={{ color: colors.error, fontSize: fs.xs, marginBottom: 8 }}>{errors.serviceIds}</Text> : null}
             {state.services.length === 0 ? (
-              <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 12 }}>No services yet. Add services first.</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 12 }}>No services yet. Add services first.</Text>
             ) : (
               <View style={{ gap: 8 }}>
                 {state.services.map((svc) => {
@@ -555,8 +555,8 @@ export default function PackagesScreen() {
                         {selected && <IconSymbol name="checkmark" size={12} color="#fff" />}
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{svc.name}</Text>
-                        <Text style={{ fontSize: 12, color: colors.muted }}>{svc.duration} min · ${svc.price.toFixed(2)}</Text>
+                        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{svc.name}</Text>
+                        <Text style={{ fontSize: fs.xs, color: colors.muted }}>{svc.duration} min · ${svc.price.toFixed(2)}</Text>
                       </View>
                     </Pressable>
                   );
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backBtn: { padding: 4 },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700" },
+  headerTitle: { flex: 1, fontSize: fs.md, fontWeight: "700" },
   addBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   card: {
     borderRadius: 14,
@@ -620,13 +620,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 0.5,
   },
-  label: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginTop: 14 },
+  label: { fontSize: fs.xs, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginTop: 14 },
   input: {
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: fs.sm,
     marginBottom: 4,
   },
   savingsRow: {

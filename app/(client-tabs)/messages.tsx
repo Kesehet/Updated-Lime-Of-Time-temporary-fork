@@ -88,7 +88,7 @@ async function saveHiddenThreadIds(ids: Set<number>): Promise<void> {
 
 export default function MessagesScreen() {
   const colors = useColors();
-  const { modalMaxWidth } = useResponsive();
+  const { modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { state, dispatch, apiCall } = useClientStore();
@@ -216,7 +216,7 @@ export default function MessagesScreen() {
             onPress={() => setShowRestoreModal(true)}
           >
             <IconSymbol name="arrow.counterclockwise" size={14} color={GREEN_ACCENT} />
-            <Text style={{ color: GREEN_ACCENT, fontSize: 12, fontWeight: "600" }}>Deleted ({hiddenThreads.length})</Text>
+            <Text style={{ color: GREEN_ACCENT, fontSize: fs.xs, fontWeight: "600" }}>Deleted ({hiddenThreads.length})</Text>
           </TouchableOpacity>
         )}
       </Animated.View>
@@ -225,7 +225,7 @@ export default function MessagesScreen() {
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
           <View style={{ backgroundColor: "#1A3A28", borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: insets.bottom + 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 20, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.1)" }}>
-              <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "700" }}>Deleted Conversations</Text>
+              <Text style={{ color: TEXT_PRIMARY, fontSize: fs.md, fontWeight: "700" }}>Deleted Conversations</Text>
               <TouchableOpacity onPress={() => setShowRestoreModal(false)}>
                 <IconSymbol name="xmark.circle.fill" size={24} color={TEXT_MUTED} />
               </TouchableOpacity>
@@ -239,18 +239,18 @@ export default function MessagesScreen() {
                       {item.businessLogoUri ? (
                         <Image source={{ uri: item.businessLogoUri }} style={{ width: 44, height: 44, borderRadius: 22 }} resizeMode="cover" />
                       ) : (
-                        <Text style={{ color: GREEN_ACCENT, fontWeight: "700", fontSize: 16 }}>{initials}</Text>
+                        <Text style={{ color: GREEN_ACCENT, fontWeight: "700", fontSize: fs.md }}>{initials}</Text>
                       )}
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: TEXT_PRIMARY, fontWeight: "600", fontSize: 14 }}>{item.businessName}</Text>
-                      {item.lastMessage ? <Text style={{ color: TEXT_MUTED, fontSize: 12 }} numberOfLines={1}>{item.lastMessage}</Text> : null}
+                      <Text style={{ color: TEXT_PRIMARY, fontWeight: "600", fontSize: fs.sm }}>{item.businessName}</Text>
+                      {item.lastMessage ? <Text style={{ color: TEXT_MUTED, fontSize: fs.xs }} numberOfLines={1}>{item.lastMessage}</Text> : null}
                     </View>
                     <TouchableOpacity
                       style={{ backgroundColor: GREEN_ACCENT, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 }}
                       onPress={() => handleRestoreThread(item)}
                     >
-                      <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "700" }}>Restore</Text>
+                      <Text style={{ color: "#FFFFFF", fontSize: fs.xs, fontWeight: "700" }}>Restore</Text>
                     </TouchableOpacity>
                   </View>
                 );
@@ -401,12 +401,12 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   title: {
-    fontSize: 24,
+    fontSize: fs.xl,
     fontWeight: "700",
     color: TEXT_PRIMARY,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: fs.xs,
     color: TEXT_MUTED,
     marginTop: 2,
   },
@@ -431,12 +431,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: fs.md,
     fontWeight: "700",
     color: TEXT_PRIMARY,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: fs.sm,
     textAlign: "center",
     lineHeight: 20,
     color: TEXT_MUTED,
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   avatarText: {
-    fontSize: 16,
+    fontSize: fs.md,
     fontWeight: "700",
     color: GREEN_ACCENT,
   },
@@ -476,23 +476,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   businessName: {
-    fontSize: 15,
+    fontSize: fs.sm,
     fontWeight: "700",
     flex: 1,
     color: TEXT_PRIMARY,
   },
   timeAgo: {
-    fontSize: 11,
+    fontSize: fs.xs,
     marginLeft: 8,
     color: TEXT_MUTED,
   },
   serviceName: {
-    fontSize: 12,
+    fontSize: fs.xs,
     fontWeight: "600",
     color: GREEN_ACCENT,
   },
   lastMessage: {
-    fontSize: 13,
+    fontSize: fs.xs,
     lineHeight: 18,
     color: TEXT_MUTED,
   },
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
   },
   unreadText: {
     color: GREEN_DARK,
-    fontSize: 11,
+    fontSize: fs.xs,
     fontWeight: "700",
   },
   guestContainer: {
@@ -527,13 +527,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   guestTitle: {
-    fontSize: 18,
+    fontSize: fs.md,
     fontWeight: "700",
     color: TEXT_PRIMARY,
     textAlign: "center",
   },
   guestSub: {
-    fontSize: 14,
+    fontSize: fs.sm,
     color: TEXT_MUTED,
     textAlign: "center",
     lineHeight: 20,
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
   },
   signInBtnText: {
     color: GREEN_DARK,
-    fontSize: 15,
+    fontSize: fs.sm,
     fontWeight: "700",
   },
 });

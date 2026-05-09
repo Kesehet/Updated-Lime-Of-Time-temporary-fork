@@ -60,7 +60,7 @@ export default function BirthdayCampaignsScreen() {
   const colors = useColors();
   const sendSmsMutation = trpc.twilio.sendSms.useMutation();
   const router = useRouter();
-  const { hp } = useResponsive();
+  const { hp, fs, buttonHeight, iconButtonSize } = useResponsive();
   const [filter, setFilter] = useState<BirthdayFilter>("upcoming");
   const [discountCode, setDiscountCode] = useState("BDAY15");
   const [discountPct, setDiscountPct] = useState("15");
@@ -180,7 +180,7 @@ export default function BirthdayCampaignsScreen() {
           <Pressable onPress={() => router.back()} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
             <IconSymbol name="chevron.left" size={24} color={colors.primary} />
           </Pressable>
-          <Text style={{ fontSize: 17, fontWeight: "600", color: colors.foreground }}>Birthday Campaigns</Text>
+          <Text style={{ fontSize: fs.md, fontWeight: "600", color: colors.foreground }}>Birthday Campaigns</Text>
           <Pressable onPress={() => setShowSettings(!showSettings)} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
             <IconSymbol name="gearshape.fill" size={20} color={colors.primary} />
           </Pressable>
@@ -189,10 +189,10 @@ export default function BirthdayCampaignsScreen() {
         {/* Campaign Settings Panel */}
         {showSettings && (
           <View style={[styles.settingsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>Birthday Discount Settings</Text>
+            <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>Birthday Discount Settings</Text>
             <View style={{ flexDirection: "row", gap: 8 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 4 }}>Discount %</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 4 }}>Discount %</Text>
                 <TextInput
                   style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
                   value={discountPct}
@@ -204,7 +204,7 @@ export default function BirthdayCampaignsScreen() {
                 />
               </View>
               <View style={{ flex: 2 }}>
-                <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 4 }}>Promo Code</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 4 }}>Promo Code</Text>
                 <TextInput
                   style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
                   value={discountCode}
@@ -216,7 +216,7 @@ export default function BirthdayCampaignsScreen() {
                 />
               </View>
             </View>
-            <Text style={{ fontSize: 11, color: colors.muted, marginTop: 4 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>
               Leave code empty to send a greeting without a discount.
             </Text>
           </View>
@@ -225,12 +225,12 @@ export default function BirthdayCampaignsScreen() {
         {/* Summary Banner */}
         {todayCount > 0 && (
           <View style={[styles.todayBanner, { backgroundColor: "#FF9800" + "18", borderColor: "#FF9800" + "40" }]}>
-            <Text style={{ fontSize: 22 }}>🎂</Text>
+            <Text style={{ fontSize: fs.lg }}>🎂</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: "700", color: "#FF9800" }}>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#FF9800" }}>
                 {todayCount === 1 ? "1 client has a birthday today!" : `${todayCount} clients have birthdays today!`}
               </Text>
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Send them a special message now.</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>Send them a special message now.</Text>
             </View>
           </View>
         )}
@@ -243,7 +243,7 @@ export default function BirthdayCampaignsScreen() {
               onPress={() => setFilter(f.key)}
               style={({ pressed }) => [styles.filterTab, { borderBottomColor: filter === f.key ? colors.primary : "transparent", opacity: pressed ? 0.7 : 1 }]}
             >
-              <Text style={{ fontSize: 12, fontWeight: "600", color: filter === f.key ? colors.primary : colors.muted }}>{f.label}</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: filter === f.key ? colors.primary : colors.muted }}>{f.label}</Text>
               {f.count > 0 && (
                 <View style={[styles.badge, { backgroundColor: filter === f.key ? colors.primary : colors.muted + "30" }]}>
                   <Text style={{ fontSize: 9, fontWeight: "700", color: filter === f.key ? "#FFF" : colors.muted }}>{f.count}</Text>
@@ -260,7 +260,7 @@ export default function BirthdayCampaignsScreen() {
             style={({ pressed }) => [styles.sendAllBtn, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "30", opacity: pressed ? 0.7 : 1 }]}
           >
             <IconSymbol name="paperplane.fill" size={14} color={colors.primary} />
-            <Text style={{ fontSize: 13, fontWeight: "600", color: colors.primary, marginLeft: 6 }}>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary, marginLeft: 6 }}>
               Send to All ({filteredClients.filter((e) => e.client.phone).length})
             </Text>
           </Pressable>
@@ -275,14 +275,14 @@ export default function BirthdayCampaignsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <IconSymbol name="birthday.cake" size={40} color={colors.muted + "60"} />
-              <Text style={{ color: colors.muted, fontSize: 14, marginTop: 12 }}>
+              <Text style={{ color: colors.muted, fontSize: fs.sm, marginTop: 12 }}>
                 {filter === "today"
                   ? "No birthdays today"
                   : filter === "upcoming"
                   ? "No birthdays in the next 30 days"
                   : "No clients have birthdays on file"}
               </Text>
-              <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4, textAlign: "center" }}>
+              <Text style={{ color: colors.muted, fontSize: fs.xs, marginTop: 4, textAlign: "center" }}>
                 Add birthdays to client profiles to see them here.
               </Text>
             </View>
@@ -295,29 +295,29 @@ export default function BirthdayCampaignsScreen() {
             return (
               <View style={[styles.clientCard, { backgroundColor: colors.surface, borderColor: isToday ? "#FF9800" + "50" : colors.border, borderLeftColor: accentColor }]}>
                 <View style={[styles.avatar, { backgroundColor: accentColor + "20" }]}>
-                  <Text style={{ fontSize: 16, fontWeight: "700", color: accentColor }}>
+                  <Text style={{ fontSize: fs.md, fontWeight: "700", color: accentColor }}>
                     {client.name.split(" ").map((p) => p[0]).join("").toUpperCase().slice(0, 2)}
                   </Text>
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{client.name}</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{client.name}</Text>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 3 }}>
                     <IconSymbol name="birthday.cake" size={12} color={accentColor} />
-                    <Text style={{ fontSize: 12, color: accentColor, fontWeight: "500" }}>{display}</Text>
+                    <Text style={{ fontSize: fs.xs, color: accentColor, fontWeight: "500" }}>{display}</Text>
                     {isToday ? (
                       <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: "#FF9800" + "20" }}>
                         <Text style={{ fontSize: 10, fontWeight: "700", color: "#FF9800" }}>TODAY</Text>
                       </View>
                     ) : (
-                      <Text style={{ fontSize: 11, color: colors.muted }}>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted }}>
                         {daysUntil === 1 ? "Tomorrow" : `in ${daysUntil} days`}
                       </Text>
                     )}
                   </View>
                   {client.phone ? (
-                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{formatPhoneNumber(client.phone)}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{formatPhoneNumber(client.phone)}</Text>
                   ) : (
-                    <Text style={{ fontSize: 11, color: colors.error, marginTop: 2 }}>No phone number</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.error, marginTop: 2 }}>No phone number</Text>
                   )}
                 </View>
                 <Pressable
@@ -338,7 +338,7 @@ export default function BirthdayCampaignsScreen() {
 const styles = StyleSheet.create({
   topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12 },
   settingsCard: { borderRadius: 14, padding: 14, borderWidth: 1, marginBottom: 12 },
-  input: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 10, fontSize: 14, borderWidth: 1 },
+  input: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 10, fontSize: fs.sm, borderWidth: 1 },
   todayBanner: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 14, padding: 14, borderWidth: 1, marginBottom: 12 },
   filterRow: { flexDirection: "row", borderBottomWidth: 1, marginBottom: 8 },
   filterTab: { flex: 1, alignItems: "center", paddingVertical: 10, borderBottomWidth: 2, flexDirection: "row", justifyContent: "center", gap: 4 },

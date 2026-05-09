@@ -114,7 +114,7 @@ const isRemoteUri = (uri: string | null | undefined) =>
 
 export default function ClientBusinessDetailScreen() {
   const colors = useColors();
-  const { modalMaxWidth } = useResponsive();
+  const { modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const router = useRouter();
   const { slug, distanceKm } = useLocalSearchParams<{ slug: string; distanceKm?: string }>();
   const distanceMiles = distanceKm && distanceKm !== "" ? (parseFloat(distanceKm) * 0.621371).toFixed(1) : null;
@@ -258,9 +258,9 @@ export default function ClientBusinessDetailScreen() {
       <ScreenContainer className="px-6" containerClassName="bg-[#0D2318]">
         <ClientPortalBackground />
         <View style={s.loadingContainer}>
-          <Text style={{ color: TEXT_PRIMARY, fontSize: 16 }}>Business not found.</Text>
+          <Text style={{ color: TEXT_PRIMARY, fontSize: fs.md }}>Business not found.</Text>
           <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
-            <Text style={{ color: ACCENT, fontSize: 14 }}>Go back</Text>
+            <Text style={{ color: ACCENT, fontSize: fs.sm }}>Go back</Text>
           </Pressable>
         </View>
       </ScreenContainer>
@@ -290,7 +290,7 @@ export default function ClientBusinessDetailScreen() {
             <IconSymbol name="chevron.left" size={20} color="#FFFFFF" />
           </Pressable>
           {scrollY > 120 && business?.businessName ? (
-            <Text numberOfLines={1} style={{ flex: 1, textAlign: "center", color: "#FFFFFF", fontSize: 16, fontWeight: "700", marginHorizontal: 8 }}>
+            <Text numberOfLines={1} style={{ flex: 1, textAlign: "center", color: "#FFFFFF", fontSize: fs.md, fontWeight: "700", marginHorizontal: 8 }}>
               {business.businessName}
             </Text>
           ) : <View style={{ flex: 1 }} />}
@@ -323,7 +323,7 @@ export default function ClientBusinessDetailScreen() {
           {distanceMiles ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
               <IconSymbol name="location.fill" size={12} color={TEXT_MUTED} />
-              <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>{distanceMiles} mi away</Text>
+              <Text style={{ color: TEXT_MUTED, fontSize: fs.xs }}>{distanceMiles} mi away</Text>
             </View>
           ) : null}
           {/* ── Prominent star rating (tappable → jumps to Reviews tab) ── */}
@@ -411,7 +411,7 @@ export default function ClientBusinessDetailScreen() {
                   onPress={() => setServiceCategory(null)}
                   style={[s.catChip, !serviceCategory && { backgroundColor: ALL_CATEGORY.color + "30", borderColor: ALL_CATEGORY.color }]}
                 >
-                  <Text style={{ fontSize: 14, lineHeight: 18 }}>{ALL_CATEGORY.emoji}</Text>
+                  <Text style={{ fontSize: fs.sm, lineHeight: 18 }}>{ALL_CATEGORY.emoji}</Text>
                   <Text style={[s.catChipText, !serviceCategory && { color: ALL_CATEGORY.color }]}>All</Text>
                 </Pressable>
                 {serviceCategories.map(cat => {
@@ -423,7 +423,7 @@ export default function ClientBusinessDetailScreen() {
                       onPress={() => setServiceCategory(isActive ? null : cat)}
                       style={[s.catChip, isActive && { backgroundColor: catDef.color + "30", borderColor: catDef.color }]}
                     >
-                      <Text style={{ fontSize: 14, lineHeight: 18 }}>{catDef.emoji}</Text>
+                      <Text style={{ fontSize: fs.sm, lineHeight: 18 }}>{catDef.emoji}</Text>
                       <Text style={[s.catChipText, isActive && { color: catDef.color }]}>{cat}</Text>
                     </Pressable>
                   );
@@ -440,13 +440,13 @@ export default function ClientBusinessDetailScreen() {
                         <Image source={{ uri: svc.photoUri }} style={{ width: "100%", height: 160 }} contentFit="cover" />
                         <View style={{ position: "absolute", bottom: 8, right: 8, backgroundColor: "rgba(0,0,0,0.45)", borderRadius: 14, paddingHorizontal: 8, paddingVertical: 4, flexDirection: "row", alignItems: "center", gap: 4 }}>
                           <IconSymbol name="magnifyingglass" size={12} color="#FFFFFF" />
-                          <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "600" }}>Preview</Text>
+                          <Text style={{ color: "#FFFFFF", fontSize: fs.xs, fontWeight: "600" }}>Preview</Text>
                         </View>
                       </Pressable>
                     ) : (
                       <View style={{ width: "100%", height: 80, backgroundColor: `${LIME_GREEN}25`, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 10 }}>
                         <Text style={{ fontSize: 28 }}>{getCategoryEmoji(svc.category)}</Text>
-                        <Text style={{ fontSize: 13, fontWeight: "600", color: ACCENT }}>{svc.category || "Service"}</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: ACCENT }}>{svc.category || "Service"}</Text>
                       </View>
                     )}
                     <View style={{ padding: 14, flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -482,7 +482,7 @@ export default function ClientBusinessDetailScreen() {
                     <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}30` }]}>
                       {member.photoUri
                         ? <Image source={{ uri: member.photoUri }} style={{ width: 48, height: 48, borderRadius: 24 }} contentFit="cover" />
-                        : <Text style={{ fontSize: 20, fontWeight: "700", color: ACCENT }}>{member.name.charAt(0).toUpperCase()}</Text>}
+                        : <Text style={{ fontSize: fs.lg, fontWeight: "700", color: ACCENT }}>{member.name.charAt(0).toUpperCase()}</Text>}
                     </View>
                     <View style={[s.staffInfo, { flex: 1 }]}>
                       <Text style={[s.staffName, { color: TEXT_PRIMARY }]}>{member.name}</Text>
@@ -491,11 +491,11 @@ export default function ClientBusinessDetailScreen() {
                       {member.avgRating != null ? (
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 2, marginTop: 2 }}>
                           {[1,2,3,4,5].map((i) => (
-                            <Text key={i} style={{ fontSize: 11, color: i <= Math.round(member.avgRating!) ? "#FFD200" : "rgba(255,255,255,0.2)", lineHeight: 14 }}>
+                            <Text key={i} style={{ fontSize: fs.xs, color: i <= Math.round(member.avgRating!) ? "#FFD200" : "rgba(255,255,255,0.2)", lineHeight: 14 }}>
                               {i <= Math.round(member.avgRating!) ? "★" : "☆"}
                             </Text>
                           ))}
-                          <Text style={{ fontSize: 11, color: "#FFD200", fontWeight: "700", marginLeft: 3 }}>
+                          <Text style={{ fontSize: fs.xs, color: "#FFD200", fontWeight: "700", marginLeft: 3 }}>
                             {Number(member.avgRating).toFixed(1)}
                           </Text>
                           <Text style={{ fontSize: 10, color: TEXT_MUTED, marginLeft: 1 }}>
@@ -512,13 +512,13 @@ export default function ClientBusinessDetailScreen() {
                       {member.role ? (
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                           <IconSymbol name="person.fill" size={13} color={ACCENT} />
-                          <Text style={{ fontSize: 13, color: ACCENT, fontWeight: "600" }}>{member.role}</Text>
+                          <Text style={{ fontSize: fs.xs, color: ACCENT, fontWeight: "600" }}>{member.role}</Text>
                         </View>
                       ) : null}
                       {member.bio ? (
-                        <Text style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 19 }}>{member.bio}</Text>
+                        <Text style={{ fontSize: fs.xs, color: TEXT_MUTED, lineHeight: 19 }}>{member.bio}</Text>
                       ) : (
-                        <Text style={{ fontSize: 13, color: TEXT_MUTED, fontStyle: "italic" }}>No bio available.</Text>
+                        <Text style={{ fontSize: fs.xs, color: TEXT_MUTED, fontStyle: "italic" }}>No bio available.</Text>
                       )}
                     </View>
                   )}
@@ -539,16 +539,16 @@ export default function ClientBusinessDetailScreen() {
                       <IconSymbol name="location.fill" size={14} color={ACCENT} />
                       <Text style={s.locationHoursName}>{loc.name}</Text>
                     </View>
-                    {loc.address ? <Text style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 4 }}>{loc.address}</Text> : null}
+                    {loc.address ? <Text style={{ color: TEXT_MUTED, fontSize: fs.xs, marginBottom: 4 }}>{loc.address}</Text> : null}
                     {loc.phone ? (
                       <Pressable onPress={() => Linking.openURL(`tel:${loc.phone}`)} style={{ marginBottom: 8 }}>
-                        <Text style={{ color: ACCENT, fontSize: 12 }}>{formatPhone(loc.phone)}</Text>
+                        <Text style={{ color: ACCENT, fontSize: fs.xs }}>{formatPhone(loc.phone)}</Text>
                       </Pressable>
                     ) : null}
                     {loc.temporarilyClosed ? (
-                      <Text style={{ color: "#F87171", fontSize: 14, fontWeight: "600", textAlign: "center", paddingVertical: 12 }}>Temporarily Closed</Text>
+                      <Text style={{ color: "#F87171", fontSize: fs.sm, fontWeight: "600", textAlign: "center", paddingVertical: 12 }}>Temporarily Closed</Text>
                     ) : locHours.length === 0 ? (
-                      <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>Hours not set</Text>
+                      <Text style={{ color: TEXT_MUTED, fontSize: fs.xs }}>Hours not set</Text>
                     ) : (
                       locHours.map((h) => (
                         <View key={h.day} style={s.hoursRow}>
@@ -581,7 +581,7 @@ export default function ClientBusinessDetailScreen() {
                       </Pressable>
                     ) : null}
                     {loc.temporarilyClosed ? (
-                      <Text style={{ color: "#F87171", fontSize: 14, fontWeight: "600", textAlign: "center", paddingVertical: 16 }}>Temporarily Closed</Text>
+                      <Text style={{ color: "#F87171", fontSize: fs.sm, fontWeight: "600", textAlign: "center", paddingVertical: 16 }}>Temporarily Closed</Text>
                     ) : locHours.length === 0 ? (
                       <Text style={[s.emptyText, { color: TEXT_MUTED }]}>Hours not available.</Text>
                     ) : (
@@ -688,16 +688,16 @@ export default function ClientBusinessDetailScreen() {
                   <Text style={[s.serviceName, { color: TEXT_PRIMARY, marginBottom: 4 }]}>{pkg.name}</Text>
                   {pkg.description ? <Text style={[s.serviceDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{pkg.description}</Text> : null}
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 6 }}>
-                    <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>📋 {pkg.packageItems.length} service{pkg.packageItems.length !== 1 ? "s" : ""}</Text>
-                    <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>🔁 {pkg.totalSessions} sessions</Text>
+                    <Text style={{ color: TEXT_MUTED, fontSize: fs.xs }}>📋 {pkg.packageItems.length} service{pkg.packageItems.length !== 1 ? "s" : ""}</Text>
+                    <Text style={{ color: TEXT_MUTED, fontSize: fs.xs }}>🔁 {pkg.totalSessions} sessions</Text>
                   </View>
                   <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                      <Text style={{ color: TEXT_MUTED, fontSize: 13, textDecorationLine: "line-through" }}>${pkg.originalPrice.toFixed(2)}</Text>
-                      <Text style={{ color: ACCENT, fontWeight: "700", fontSize: 16 }}>${pkg.packagePrice.toFixed(2)}</Text>
+                      <Text style={{ color: TEXT_MUTED, fontSize: fs.xs, textDecorationLine: "line-through" }}>${pkg.originalPrice.toFixed(2)}</Text>
+                      <Text style={{ color: ACCENT, fontWeight: "700", fontSize: fs.md }}>${pkg.packagePrice.toFixed(2)}</Text>
                       {pkg.originalPrice > 0 && (
                         <View style={{ backgroundColor: `${ACCENT}20`, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
-                          <Text style={{ color: ACCENT, fontSize: 11, fontWeight: "700" }}>{Math.round((1 - pkg.packagePrice / pkg.originalPrice) * 100)}% OFF</Text>
+                          <Text style={{ color: ACCENT, fontSize: fs.xs, fontWeight: "700" }}>{Math.round((1 - pkg.packagePrice / pkg.originalPrice) * 100)}% OFF</Text>
                         </View>
                       )}
                     </View>
@@ -757,16 +757,16 @@ export default function ClientBusinessDetailScreen() {
               <Image source={{ uri: selectedPackageDetail.photoUri }} style={{ width: "100%", height: 200 }} contentFit="cover" />
             ) : null}
             <ScrollView contentContainerStyle={{ padding: 20 }}>
-              {selectedPackageDetail?.category ? <Text style={{ color: ACCENT, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>{selectedPackageDetail.category}</Text> : null}
-              <Text style={{ color: TEXT_PRIMARY, fontSize: 22, fontWeight: "700", marginBottom: 6 }}>{selectedPackageDetail?.name}</Text>
-              {selectedPackageDetail?.description ? <Text style={{ color: TEXT_MUTED, fontSize: 14, lineHeight: 22, marginBottom: 14 }}>{selectedPackageDetail.description}</Text> : null}
+              {selectedPackageDetail?.category ? <Text style={{ color: ACCENT, fontSize: fs.xs, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>{selectedPackageDetail.category}</Text> : null}
+              <Text style={{ color: TEXT_PRIMARY, fontSize: fs.lg, fontWeight: "700", marginBottom: 6 }}>{selectedPackageDetail?.name}</Text>
+              {selectedPackageDetail?.description ? <Text style={{ color: TEXT_MUTED, fontSize: fs.sm, lineHeight: 22, marginBottom: 14 }}>{selectedPackageDetail.description}</Text> : null}
               {/* Included services */}
               <View style={{ backgroundColor: CARD_BG, borderRadius: 12, padding: 14, marginBottom: 14 }}>
-                <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 14, marginBottom: 10 }}>What's Included</Text>
+                <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: fs.sm, marginBottom: 10 }}>What's Included</Text>
                 {selectedPackageDetail?.packageItems.map((item, idx) => (
                   <View key={idx} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
                     <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: ACCENT }} />
-                    <Text style={{ color: TEXT_PRIMARY, fontSize: 13, flex: 1 }}>
+                    <Text style={{ color: TEXT_PRIMARY, fontSize: fs.xs, flex: 1 }}>
                       {item.serviceName}
                       <Text style={{ color: TEXT_MUTED }}> × {item.sessions} session{item.sessions !== 1 ? "s" : ""}</Text>
                     </Text>
@@ -776,21 +776,21 @@ export default function ClientBusinessDetailScreen() {
               {/* Stats */}
               <View style={{ flexDirection: "row", gap: 10, marginBottom: 14 }}>
                 <View style={{ flex: 1, backgroundColor: CARD_BG, borderRadius: 10, padding: 12, alignItems: "center" }}>
-                  <Text style={{ color: ACCENT, fontSize: 20, fontWeight: "700" }}>{selectedPackageDetail?.totalSessions}</Text>
-                  <Text style={{ color: TEXT_MUTED, fontSize: 11, marginTop: 2 }}>Total Sessions</Text>
+                  <Text style={{ color: ACCENT, fontSize: fs.lg, fontWeight: "700" }}>{selectedPackageDetail?.totalSessions}</Text>
+                  <Text style={{ color: TEXT_MUTED, fontSize: fs.xs, marginTop: 2 }}>Total Sessions</Text>
                 </View>
                 <View style={{ flex: 1, backgroundColor: CARD_BG, borderRadius: 10, padding: 12, alignItems: "center" }}>
-                  <Text style={{ color: ACCENT, fontSize: 20, fontWeight: "700" }}>{selectedPackageDetail?.sessionDurationMinutes} min</Text>
-                  <Text style={{ color: TEXT_MUTED, fontSize: 11, marginTop: 2 }}>Per Session</Text>
+                  <Text style={{ color: ACCENT, fontSize: fs.lg, fontWeight: "700" }}>{selectedPackageDetail?.sessionDurationMinutes} min</Text>
+                  <Text style={{ color: TEXT_MUTED, fontSize: fs.xs, marginTop: 2 }}>Per Session</Text>
                 </View>
               </View>
               {/* Pricing */}
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                <Text style={{ color: TEXT_MUTED, fontSize: 14, textDecorationLine: "line-through" }}>${selectedPackageDetail?.originalPrice.toFixed(2)}</Text>
-                <Text style={{ color: ACCENT, fontWeight: "700", fontSize: 22 }}>${selectedPackageDetail?.packagePrice.toFixed(2)}</Text>
+                <Text style={{ color: TEXT_MUTED, fontSize: fs.sm, textDecorationLine: "line-through" }}>${selectedPackageDetail?.originalPrice.toFixed(2)}</Text>
+                <Text style={{ color: ACCENT, fontWeight: "700", fontSize: fs.lg }}>${selectedPackageDetail?.packagePrice.toFixed(2)}</Text>
                 {selectedPackageDetail && selectedPackageDetail.originalPrice > 0 && (
                   <View style={{ backgroundColor: `${ACCENT}20`, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                    <Text style={{ color: ACCENT, fontSize: 12, fontWeight: "700" }}>
+                    <Text style={{ color: ACCENT, fontSize: fs.xs, fontWeight: "700" }}>
                       {Math.round((1 - selectedPackageDetail.packagePrice / selectedPackageDetail.originalPrice) * 100)}% OFF
                     </Text>
                   </View>
@@ -810,7 +810,7 @@ export default function ClientBusinessDetailScreen() {
                   }}
                   style={({ pressed }) => [{ flex: 1, backgroundColor: LIME_GREEN, paddingVertical: 14, borderRadius: 12, alignItems: "center", opacity: pressed ? 0.85 : 1 }]}
                 >
-                  <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Book This Package</Text>
+                  <Text style={{ color: "#fff", fontWeight: "700", fontSize: fs.sm }}>Book This Package</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => setPackageDetailVisible(false)}
@@ -879,7 +879,7 @@ export default function ClientBusinessDetailScreen() {
                 <IconSymbol name="xmark" size={20} color={TEXT_MUTED} />
               </Pressable>
             </View>
-            <Text style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 8 }}>{business?.businessName}</Text>
+            <Text style={{ fontSize: fs.xs, color: TEXT_MUTED, marginBottom: 8 }}>{business?.businessName}</Text>
             <View style={{ flexDirection: "row", justifyContent: "center", gap: 10, marginBottom: 8 }}>
               {[1,2,3,4,5].map(star => (
                 <Pressable key={star} onPress={() => setDetailReviewRating(star)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.9 : 1 }] })}>
@@ -887,7 +887,7 @@ export default function ClientBusinessDetailScreen() {
                 </Pressable>
               ))}
             </View>
-            <Text style={{ textAlign: "center", color: ACCENT, fontWeight: "700", fontSize: 14, marginBottom: 12 }}>
+            <Text style={{ textAlign: "center", color: ACCENT, fontWeight: "700", fontSize: fs.sm, marginBottom: 12 }}>
               {["Terrible","Poor","Okay","Good","Excellent!"][detailReviewRating - 1]}
             </Text>
             <TextInput
@@ -936,7 +936,7 @@ export default function ClientBusinessDetailScreen() {
               router.push({ pathname: "/client-buy-gift", params: { slug, businessName: business?.businessName ?? "" } } as any);
             }}
           >
-            <Text style={{ fontSize: 16 }}>🎁</Text>
+            <Text style={{ fontSize: fs.md }}>🎁</Text>
             <Text style={s.stickyGiftBtnText}>Gift</Text>
           </Pressable>
           <Pressable
@@ -968,72 +968,72 @@ const s = StyleSheet.create({
   saveBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center" },
   infoSection: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, alignItems: "center", gap: 6 },
   logoCircle: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginTop: -36, borderWidth: 3 },
-  bizName: { fontSize: 22, fontWeight: "700", textAlign: "center" },
-  bizCategory: { fontSize: 13, fontWeight: "600" },
+  bizName: { fontSize: fs.lg, fontWeight: "700", textAlign: "center" },
+  bizCategory: { fontSize: fs.xs, fontWeight: "600" },
   ratingRow: { flexDirection: "row", alignItems: "center", gap: 2, marginTop: 2 },
-  ratingText: { fontSize: 12, marginLeft: 4 },
-  starFilled: { fontSize: 16, color: "#FFD200", lineHeight: 20 },
-  starEmpty: { fontSize: 16, color: "rgba(255,255,255,0.22)", lineHeight: 20 },
-  ratingValue: { fontSize: 14, fontWeight: "700", color: "#FFD200", marginLeft: 6 },
-  ratingCount: { fontSize: 12, fontWeight: "400" },
+  ratingText: { fontSize: fs.xs, marginLeft: 4 },
+  starFilled: { fontSize: fs.md, color: "#FFD200", lineHeight: 20 },
+  starEmpty: { fontSize: fs.md, color: "rgba(255,255,255,0.22)", lineHeight: 20 },
+  ratingValue: { fontSize: fs.sm, fontWeight: "700", color: "#FFD200", marginLeft: 6 },
+  ratingCount: { fontSize: fs.xs, fontWeight: "400" },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  metaText: { fontSize: 13 },
-  description: { fontSize: 14, textAlign: "center", lineHeight: 20, marginTop: 4 },
+  metaText: { fontSize: fs.xs },
+  description: { fontSize: fs.sm, textAlign: "center", lineHeight: 20, marginTop: 4 },
   tabBar: { flexDirection: "row", borderBottomWidth: 1, marginHorizontal: 0, paddingHorizontal: 8 },
   tab: { flex: 1, alignItems: "center", paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: "transparent", paddingHorizontal: 4 },
-  tabText: { fontSize: 12, fontWeight: "600", textAlign: "center" },
+  tabText: { fontSize: fs.xs, fontWeight: "600", textAlign: "center" },
   tabContent: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
-  emptyText: { textAlign: "center", fontSize: 14, paddingVertical: 24 },
+  emptyText: { textAlign: "center", fontSize: fs.sm, paddingVertical: 24 },
   serviceCard: { borderRadius: 14, borderWidth: 1 },
   catChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: ACCENT, backgroundColor: "transparent", flexDirection: "row", alignItems: "center", gap: 5 },
-  catChipText: { fontSize: 13, fontWeight: "600", color: ACCENT },
+  catChipText: { fontSize: fs.xs, fontWeight: "600", color: ACCENT },
   serviceInfo: { flex: 1, gap: 4 },
-  serviceName: { fontSize: 15, fontWeight: "600" },
-  serviceDesc: { fontSize: 12, lineHeight: 17 },
+  serviceName: { fontSize: fs.sm, fontWeight: "600" },
+  serviceDesc: { fontSize: fs.xs, lineHeight: 17 },
   serviceMeta: { flexDirection: "row", gap: 12 },
-  serviceDuration: { fontSize: 12 },
-  servicePrice: { fontSize: 13, fontWeight: "700" },
+  serviceDuration: { fontSize: fs.xs },
+  servicePrice: { fontSize: fs.xs, fontWeight: "700" },
   bookBtn: { backgroundColor: ACCENT, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  bookBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
+  bookBtnText: { color: "#FFFFFF", fontSize: fs.xs, fontWeight: "700" },
   staffCard: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 12 },
   staffAvatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
   staffInfo: { flex: 1, gap: 3 },
-  staffName: { fontSize: 15, fontWeight: "600" },
-  staffRole: { fontSize: 12, fontWeight: "600" },
-  staffBio: { fontSize: 12, lineHeight: 17 },
+  staffName: { fontSize: fs.sm, fontWeight: "600" },
+  staffRole: { fontSize: fs.xs, fontWeight: "600" },
+  staffBio: { fontSize: fs.xs, lineHeight: 17 },
   hoursRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: DIVIDER },
-  hoursDay: { fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY },
-  hoursTime: { fontSize: 14 },
+  hoursDay: { fontSize: fs.sm, fontWeight: "600", color: TEXT_PRIMARY },
+  hoursTime: { fontSize: fs.sm },
   locationHoursCard: { borderRadius: 14, borderWidth: 1, borderColor: CARD_BORDER, backgroundColor: CARD_BG, padding: 14, marginBottom: 4 },
   locationHoursHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
-  locationHoursName: { fontSize: 15, fontWeight: "700", color: TEXT_PRIMARY },
+  locationHoursName: { fontSize: fs.sm, fontWeight: "700", color: TEXT_PRIMARY },
   reviewCard: { borderRadius: 14, borderWidth: 1, borderColor: CARD_BORDER, backgroundColor: CARD_BG, padding: 14, gap: 6 },
   reviewHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  reviewerName: { fontSize: 14, fontWeight: "600" },
+  reviewerName: { fontSize: fs.sm, fontWeight: "600" },
   reviewStars: { flexDirection: "row", gap: 2 },
-  reviewComment: { fontSize: 13, lineHeight: 18 },
-  reviewDate: { fontSize: 11 },
+  reviewComment: { fontSize: fs.xs, lineHeight: 18 },
+  reviewDate: { fontSize: fs.xs },
   writeReviewBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: ACCENT, borderRadius: 12, paddingVertical: 12, marginBottom: 4 },
-  writeReviewBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  writeReviewBtnText: { color: "#fff", fontSize: fs.sm, fontWeight: "700" },
   reviewModal: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40,
     width: '100%',
     maxWidth: 560,
     alignSelf: 'center' as const },
-  reviewModalTitle: { fontSize: 18, fontWeight: "700" },
-  reviewInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 14, minHeight: 80, textAlignVertical: "top", marginBottom: 16 },
+  reviewModalTitle: { fontSize: fs.md, fontWeight: "700" },
+  reviewInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: fs.sm, minHeight: 80, textAlignVertical: "top", marginBottom: 16 },
   reviewSubmitBtn: { backgroundColor: ACCENT, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
-  reviewSubmitBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  reviewSubmitBtnText: { color: "#fff", fontSize: fs.sm, fontWeight: "700" },
   stickyBook: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 16, borderTopWidth: 1 },
   stickyGiftBtn: { backgroundColor: "rgba(255,255,255,0.10)", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 18, borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.18)" },
-  stickyGiftBtnText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
+  stickyGiftBtnText: { color: "#FFFFFF", fontSize: fs.sm, fontWeight: "700" },
   stickyBookBtn: { backgroundColor: LIME_GREEN, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 14 },
-  stickyBookBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  stickyBookBtnText: { color: "#FFFFFF", fontSize: fs.md, fontWeight: "700" },
   photoCaptionBar: { position: "absolute", bottom: 0, left: 0, right: 0, paddingHorizontal: 16, paddingVertical: 8 },
-  photoCaptionText: { color: "#FFFFFF", fontSize: 13, fontWeight: "500" },
+  photoCaptionText: { color: "#FFFFFF", fontSize: fs.xs, fontWeight: "500" },
   dotRow: { flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 10 },
   dot: { width: 6, height: 6, borderRadius: 3 },
   thumbnail: { width: 72, height: 72, borderRadius: 10, borderWidth: 0, borderColor: "transparent" },
   lightboxOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.95)", justifyContent: "center" },
   lightboxClose: { position: "absolute", top: 56, right: 20, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
-  lightboxCaption: { textAlign: "center", fontSize: 14, marginTop: 12, paddingHorizontal: 24 },
+  lightboxCaption: { textAlign: "center", fontSize: fs.sm, marginTop: 12, paddingHorizontal: 24 },
 });

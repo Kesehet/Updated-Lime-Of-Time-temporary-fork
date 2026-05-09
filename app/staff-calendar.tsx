@@ -39,7 +39,7 @@ export default function StaffCalendarScreen() {
   const { activeLocation } = useActiveLocation();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, width } = useResponsive();
+  const { isTablet, hp, width, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   const staff = getStaffById(id ?? "");
   const now = new Date();
@@ -260,7 +260,7 @@ export default function StaffCalendarScreen() {
           <Pressable onPress={() => router.back()} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, marginRight: 12 })}>
             <IconSymbol name="chevron.left" size={24} color={colors.foreground} />
           </Pressable>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground }}>Staff Calendar</Text>
+          <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.foreground }}>Staff Calendar</Text>
         </View>
         <Text style={{ color: colors.muted, textAlign: "center", marginTop: 40 }}>Staff member not found</Text>
       </ScreenContainer>
@@ -283,11 +283,11 @@ export default function StaffCalendarScreen() {
             </Pressable>
             <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
               <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: staff.color || "#6366f1", alignItems: "center", justifyContent: "center", marginRight: 10 }}>
-                <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 16 }}>{staff.name.charAt(0).toUpperCase()}</Text>
+                <Text style={{ color: "#FFF", fontWeight: "700", fontSize: fs.md }}>{staff.name.charAt(0).toUpperCase()}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground }}>{staff.name}</Text>
-                <Text style={{ fontSize: 13, color: colors.muted }}>{staff.role || "Staff Member"}</Text>
+                <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.foreground }}>{staff.name}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>{staff.role || "Staff Member"}</Text>
               </View>
             </View>
             <Pressable
@@ -306,7 +306,7 @@ export default function StaffCalendarScreen() {
               })}
             >
               <IconSymbol name="paperplane.fill" size={14} color={colors.primary} />
-              <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary }}>Export .ics</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>Export .ics</Text>
             </Pressable>
           </View>
         </View>
@@ -327,8 +327,8 @@ export default function StaffCalendarScreen() {
           }}>
             <IconSymbol name="exclamationmark.triangle.fill" size={16} color={colors.error} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: "700", color: colors.error }}>Location Temporarily Closed</Text>
-              <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.error }}>Location Temporarily Closed</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
                 {activeLocation.reopenOn
                   ? `All dates unavailable. Reopens ${new Date(activeLocation.reopenOn + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.`
                   : "All dates unavailable. Closed indefinitely — no new bookings."}
@@ -340,20 +340,20 @@ export default function StaffCalendarScreen() {
         {/* Stats Row */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: hp, marginBottom: 12 }}>
           <View style={[styles.statCard, { backgroundColor: colors.success + "15", borderColor: colors.success + "30" }]}>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.success }}>{stats.upcoming}</Text>
-            <Text style={{ fontSize: 11, color: colors.muted }}>Upcoming</Text>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.success }}>{stats.upcoming}</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted }}>Upcoming</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: "#FF9800" + "15", borderColor: "#FF9800" + "30" }]}>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: "#FF9800" }}>{stats.pending}</Text>
-            <Text style={{ fontSize: 11, color: colors.muted }}>Pending</Text>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: "#FF9800" }}>{stats.pending}</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted }}>Pending</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30" }]}>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.primary }}>{stats.completed}</Text>
-            <Text style={{ fontSize: 11, color: colors.muted }}>Completed</Text>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>{stats.completed}</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted }}>Completed</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.foreground + "08", borderColor: colors.border }]}>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>${stats.totalRevenue.toFixed(0)}</Text>
-            <Text style={{ fontSize: 11, color: colors.muted }}>Revenue</Text>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>${stats.totalRevenue.toFixed(0)}</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted }}>Revenue</Text>
           </View>
         </ScrollView>
 
@@ -363,13 +363,13 @@ export default function StaffCalendarScreen() {
             onPress={() => setViewMode("calendar")}
             style={({ pressed }) => [styles.viewToggle, { backgroundColor: viewMode === "calendar" ? colors.primary : colors.surface, borderColor: viewMode === "calendar" ? colors.primary : colors.border, opacity: pressed ? 0.7 : 1 }]}
           >
-            <Text style={{ fontSize: 13, fontWeight: "600", color: viewMode === "calendar" ? "#FFF" : colors.foreground }}>Calendar</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: viewMode === "calendar" ? "#FFF" : colors.foreground }}>Calendar</Text>
           </Pressable>
           <Pressable
             onPress={() => setViewMode("timeline")}
             style={({ pressed }) => [styles.viewToggle, { backgroundColor: viewMode === "timeline" ? colors.primary : colors.surface, borderColor: viewMode === "timeline" ? colors.primary : colors.border, opacity: pressed ? 0.7 : 1 }]}
           >
-            <Text style={{ fontSize: 13, fontWeight: "600", color: viewMode === "timeline" ? "#FFF" : colors.foreground }}>Timeline</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: viewMode === "timeline" ? "#FFF" : colors.foreground }}>Timeline</Text>
           </Pressable>
         </View>
 
@@ -390,7 +390,7 @@ export default function StaffCalendarScreen() {
         <View style={[styles.dayHeaderRow, { paddingHorizontal: hp }]}>
           {DAY_HEADERS.map((d) => (
             <View key={d} style={{ width: cellSize, alignItems: "center" }}>
-              <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted }}>{d}</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>{d}</Text>
             </View>
           ))}
         </View>
@@ -437,7 +437,7 @@ export default function StaffCalendarScreen() {
               >
                 <Text
                   style={{
-                    fontSize: 15,
+                    fontSize: fs.sm,
                     fontWeight: isToday || isSelected ? "700" : "400",
                     color: isSelected
                       ? "#FFF"
@@ -464,7 +464,7 @@ export default function StaffCalendarScreen() {
         {selectedDaySchedule && (
           <View style={{ paddingHorizontal: hp, marginTop: 8, marginBottom: 4 }}>
             <View style={[styles.scheduleBar, { backgroundColor: (staff.color || colors.primary) + "12", borderColor: (staff.color || colors.primary) + "30" }]}>
-              <Text style={{ fontSize: 12, fontWeight: "600", color: staff.color || colors.primary }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: staff.color || colors.primary }}>
                 {selectedDaySchedule.enabled
                   ? `Working: ${formatTimeDisplay(selectedDaySchedule.start)} - ${formatTimeDisplay(selectedDaySchedule.end)}`
                   : "Day Off"}
@@ -482,7 +482,7 @@ export default function StaffCalendarScreen() {
             </Text>
             {selectedDateAppts.length === 0 ? (
               <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ color: colors.muted, fontSize: 13 }}>No appointments on this day</Text>
+                <Text style={{ color: colors.muted, fontSize: fs.xs }}>No appointments on this day</Text>
               </View>
             ) : (
               selectedDateAppts.map((appt) => {
@@ -500,16 +500,16 @@ export default function StaffCalendarScreen() {
                     style={({ pressed }) => [styles.apptCard, { backgroundColor: colors.surface, borderColor: colors.border, borderLeftColor: svc?.color ?? (staff.color || colors.primary), opacity: pressed ? 0.8 : 1 }]}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>
+                      <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>
                         {formatTime(appt.time)} - {getEndTime(appt.time, appt.duration)}
                       </Text>
-                      <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, marginTop: 2 }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.foreground, marginTop: 2 }}>
                         {svc ? getServiceDisplayName(svc) : "Service"}
                       </Text>
-                      <Text style={{ fontSize: 12, color: colors.muted }}>{client?.name}</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted }}>{client?.name}</Text>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: statusColor + "18" }]}>
-                      <Text style={{ fontSize: 11, fontWeight: "600", color: statusColor, textTransform: "capitalize" }}>{appt.status}</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "600", color: statusColor, textTransform: "capitalize" }}>{appt.status}</Text>
                     </View>
                   </Pressable>
                 );
@@ -585,7 +585,7 @@ export default function StaffCalendarScreen() {
                           },
                         ])}
                       >
-                        <Text style={{ fontSize: 11, fontWeight: "700", color: colors.foreground }} numberOfLines={1}>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground }} numberOfLines={1}>
                           {formatTime(appt.time)} {svc ? getServiceDisplayName(svc) : "Service"} ({appt.duration} min)
                         </Text>
                         {height > 36 && (
@@ -659,7 +659,7 @@ export default function StaffCalendarScreen() {
                   }]}
                 >
                   <IconSymbol name="clock.fill" size={13} color="#fff" />
-                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Jump to Now</Text>
+                  <Text style={{ color: '#fff', fontSize: fs.xs, fontWeight: '700' }}>Jump to Now</Text>
                 </Pressable>
                 </View>
               </View>
@@ -671,13 +671,13 @@ export default function StaffCalendarScreen() {
         <View style={{ paddingHorizontal: hp, marginTop: 20 }}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Assigned Services</Text>
           {assignedServices.length === 0 ? (
-            <Text style={{ color: colors.muted, fontSize: 13 }}>No services assigned</Text>
+            <Text style={{ color: colors.muted, fontSize: fs.xs }}>No services assigned</Text>
           ) : (
             assignedServices.map((svc) => (
               <View key={svc.id} style={[styles.serviceChip, { backgroundColor: (svc.color || colors.primary) + "15", borderColor: (svc.color || colors.primary) + "30" }]}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: svc.color || colors.primary, marginRight: 8 }} />
-                <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, flex: 1 }}>{getServiceDisplayName(svc)}</Text>
-                <Text style={{ fontSize: 12, color: colors.muted }}>{svc.duration} min · ${svc.price}</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.foreground, flex: 1 }}>{getServiceDisplayName(svc)}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>{svc.duration} min · ${svc.price}</Text>
               </View>
             ))
           )}
@@ -692,13 +692,13 @@ export default function StaffCalendarScreen() {
               const isEnabled = schedule?.enabled ?? false;
               return (
                 <View key={day} style={[styles.scheduleRow, { borderBottomColor: colors.border }]}>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground, width: 90, textTransform: "capitalize" }}>{day}</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, width: 90, textTransform: "capitalize" }}>{day}</Text>
                   {isEnabled && schedule ? (
-                    <Text style={{ fontSize: 13, color: colors.foreground }}>
+                    <Text style={{ fontSize: fs.xs, color: colors.foreground }}>
                       {formatTimeDisplay(schedule.start)} - {formatTimeDisplay(schedule.end)}
                     </Text>
                   ) : (
-                    <Text style={{ fontSize: 13, color: colors.muted }}>Day Off</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>Day Off</Text>
                   )}
                 </View>
               );
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
   statCard: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1, marginRight: 10, alignItems: "center", minWidth: 80 },
   viewToggle: { flex: 1, paddingVertical: 8, borderRadius: 10, borderWidth: 1, alignItems: "center" },
   monthHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8 },
-  monthTitle: { fontSize: 18, fontWeight: "700" },
+  monthTitle: { fontSize: fs.md, fontWeight: "700" },
   navBtn: { padding: 8 },
   dayHeaderRow: { flexDirection: "row", marginBottom: 4 },
   calendarGrid: { flexDirection: "row", flexWrap: "wrap", width: "100%" },
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
   dotsRow: { flexDirection: "row", gap: 2, position: "absolute", bottom: 4 },
   dot: { width: 5, height: 5, borderRadius: 2.5 },
   scheduleBar: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, alignItems: "center" },
-  sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 8 },
+  sectionTitle: { fontSize: fs.md, fontWeight: "700", marginBottom: 8 },
   emptyState: { alignItems: "center", paddingVertical: 24, borderRadius: 14, borderWidth: 1 },
   apptCard: { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 12, borderWidth: 1, borderLeftWidth: 4, marginBottom: 8 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },

@@ -15,7 +15,7 @@ export default function ReviewsScreen() {
   const { state } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const [sort, setSort] = useState<SortMode>("newest");
 
   const avgRating = useMemo(() => {
@@ -55,10 +55,10 @@ export default function ReviewsScreen() {
       <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border, marginHorizontal: hp }]}>
         <View style={styles.summaryLeft}>
           <Text style={[styles.bigRating, { color: colors.foreground }]}>{avgRating.toFixed(1)}</Text>
-          <Text style={{ fontSize: 22, color: "#f59e0b", marginTop: 2 }}>
+          <Text style={{ fontSize: fs.lg, color: "#f59e0b", marginTop: 2 }}>
             {Array.from({ length: 5 }, (_, i) => i < Math.round(avgRating) ? "★" : "☆").join("")}
           </Text>
-          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>{state.reviews.length} review{state.reviews.length !== 1 ? "s" : ""}</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>{state.reviews.length} review{state.reviews.length !== 1 ? "s" : ""}</Text>
         </View>
         <View style={styles.summaryRight}>
           {[5, 4, 3, 2, 1].map((star) => {
@@ -66,11 +66,11 @@ export default function ReviewsScreen() {
             const pct = state.reviews.length > 0 ? (count / state.reviews.length) * 100 : 0;
             return (
               <View key={star} style={styles.distRow}>
-                <Text style={{ fontSize: 11, color: colors.muted, width: 14 }}>{star}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, width: 14 }}>{star}</Text>
                 <View style={[styles.distBar, { backgroundColor: colors.border }]}>
                   <View style={[styles.distFill, { width: `${pct}%`, backgroundColor: "#f59e0b" }]} />
                 </View>
-                <Text style={{ fontSize: 11, color: colors.muted, width: 24, textAlign: "right" }}>{count}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, width: 24, textAlign: "right" }}>{count}</Text>
               </View>
             );
           })}
@@ -92,7 +92,7 @@ export default function ReviewsScreen() {
               },
             ]}
           >
-            <Text style={{ fontSize: 12, fontWeight: "600", color: sort === s ? "#fff" : colors.foreground, textTransform: "capitalize" }}>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: sort === s ? "#fff" : colors.foreground, textTransform: "capitalize" }}>
               {s}
             </Text>
           </Pressable>
@@ -103,8 +103,8 @@ export default function ReviewsScreen() {
       {sorted.length === 0 ? (
         <View style={styles.empty}>
           <IconSymbol name="star.fill" size={40} color={colors.muted + "40"} />
-          <Text style={{ fontSize: 15, fontWeight: "500", color: colors.muted, marginTop: 12 }}>No reviews yet</Text>
-          <Text style={{ fontSize: 13, color: colors.muted, marginTop: 4, textAlign: "center" }}>
+          <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.muted, marginTop: 12 }}>No reviews yet</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4, textAlign: "center" }}>
             Reviews will appear here after clients leave feedback
           </Text>
         </View>
@@ -121,19 +121,19 @@ export default function ReviewsScreen() {
                 <View style={styles.reviewHeader}>
                   <View style={styles.reviewUser}>
                     <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
-                      <Text style={{ fontSize: 14, fontWeight: "600", color: colors.primary }}>
+                      <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.primary }}>
                         {(client?.name || "?")[0].toUpperCase()}
                       </Text>
                     </View>
                     <View>
-                      <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{client?.name || "Anonymous"}</Text>
-                      <Text style={{ fontSize: 11, color: colors.muted }}>{new Date(review.createdAt).toLocaleDateString()}</Text>
+                      <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{client?.name || "Anonymous"}</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted }}>{new Date(review.createdAt).toLocaleDateString()}</Text>
                     </View>
                   </View>
-                  <Text style={{ fontSize: 15, color: "#f59e0b" }}>{stars}</Text>
+                  <Text style={{ fontSize: fs.sm, color: "#f59e0b" }}>{stars}</Text>
                 </View>
                 {review.comment ? (
-                  <Text style={{ fontSize: 13, color: colors.foreground, lineHeight: 20, marginTop: 8 }}>{review.comment}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.foreground, lineHeight: 20, marginTop: 8 }}>{review.comment}</Text>
                 ) : null}
               </View>
             );
@@ -147,7 +147,7 @@ export default function ReviewsScreen() {
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 0.5 },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "700" },
+  headerTitle: { fontSize: fs.md, fontWeight: "700" },
   summaryCard: { marginHorizontal: 16, marginTop: 16, borderRadius: 16, padding: 16, borderWidth: 1, flexDirection: "row" },
   summaryLeft: { alignItems: "center", justifyContent: "center", paddingRight: 20, borderRightWidth: 0.5, borderRightColor: "#e5e7eb" },
   summaryRight: { flex: 1, paddingLeft: 16, justifyContent: "center", gap: 4 },

@@ -58,7 +58,7 @@ export default function ClientDetailScreen() {
   const { state, dispatch, getClientById, getAppointmentsForClient, getServiceById, getReviewsForClient, getPhotosForClient, getLocationById, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   const client = getClientById(id ?? "");
   const appointments = getAppointmentsForClient(id ?? "");
@@ -355,7 +355,7 @@ export default function ClientDetailScreen() {
             <IconSymbol name="chevron.left" size={24} color={colors.foreground} />
           </Pressable>
           <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <Text style={{ color: colors.muted, fontSize: 16 }}>Client not found</Text>
+            <Text style={{ color: colors.muted, fontSize: fs.md }}>Client not found</Text>
           </View>
         </View>
       </ScreenContainer>
@@ -448,7 +448,7 @@ export default function ClientDetailScreen() {
           <Pressable onPress={() => router.back()} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
             <IconSymbol name="chevron.left" size={24} color={colors.primary} />
           </Pressable>
-          <Text style={{ fontSize: 17, fontWeight: "600", color: colors.foreground }}>Client</Text>
+          <Text style={{ fontSize: fs.md, fontWeight: "600", color: colors.foreground }}>Client</Text>
           {!editing ? (
             <Pressable
               onPress={() => { setEditName(client.name); setEditPhone(client.phone); setEditEmail(client.email); setEditNotes(client.notes); setEditBirthday(client.birthday ?? ""); setEditing(true); }}
@@ -464,7 +464,7 @@ export default function ClientDetailScreen() {
         {/* Profile Card */}
         {editing ? (
           <View style={[styles.editCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>Edit Client</Text>
+            <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>Edit Client</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.background, borderColor: editErrors.name ? colors.error : colors.border, color: colors.foreground }]}
               placeholder="Full Name *"
@@ -473,7 +473,7 @@ export default function ClientDetailScreen() {
               onChangeText={(v) => { setEditName(v); if (editErrors.name) setEditErrors((e) => ({ ...e, name: undefined })); }}
               returnKeyType="next"
             />
-            {editErrors.name ? <Text style={{ color: colors.error, fontSize: 12, marginBottom: 6, marginTop: -4 }}>{editErrors.name}</Text> : null}
+            {editErrors.name ? <Text style={{ color: colors.error, fontSize: fs.xs, marginBottom: 6, marginTop: -4 }}>{editErrors.name}</Text> : null}
             <TextInput
               style={[styles.input, { backgroundColor: colors.background, borderColor: editErrors.phone ? colors.error : colors.border, color: colors.foreground }]}
               placeholder="(000) 000-0000"
@@ -483,7 +483,7 @@ export default function ClientDetailScreen() {
               keyboardType="phone-pad"
               returnKeyType="next"
             />
-            {editErrors.phone ? <Text style={{ color: colors.error, fontSize: 12, marginBottom: 6, marginTop: -4 }}>{editErrors.phone}</Text> : null}
+            {editErrors.phone ? <Text style={{ color: colors.error, fontSize: fs.xs, marginBottom: 6, marginTop: -4 }}>{editErrors.phone}</Text> : null}
             <TextInput
               style={[styles.input, { backgroundColor: colors.background, borderColor: editErrors.email ? colors.error : colors.border, color: colors.foreground }]}
               placeholder="Email"
@@ -494,7 +494,7 @@ export default function ClientDetailScreen() {
               autoCapitalize="none"
               returnKeyType="next"
             />
-            {editErrors.email ? <Text style={{ color: colors.error, fontSize: 12, marginBottom: 6, marginTop: -4 }}>{editErrors.email}</Text> : null}
+            {editErrors.email ? <Text style={{ color: colors.error, fontSize: fs.xs, marginBottom: 6, marginTop: -4 }}>{editErrors.email}</Text> : null}
             <TextInput style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground, minHeight: 60, textAlignVertical: "top" }]} placeholder="Notes" placeholderTextColor={colors.muted} value={editNotes} onChangeText={setEditNotes} multiline numberOfLines={3} returnKeyType="done" />
             <BirthdayPicker
               value={editBirthday}
@@ -503,52 +503,52 @@ export default function ClientDetailScreen() {
             />
             <View style={styles.editActions}>
               <Pressable onPress={() => setEditing(false)} style={({ pressed }) => [styles.cancelBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}>
-                <Text style={{ fontSize: 14, color: colors.foreground }}>Cancel</Text>
+                <Text style={{ fontSize: fs.sm, color: colors.foreground }}>Cancel</Text>
               </Pressable>
               <Pressable onPress={handleSave} style={({ pressed }) => [styles.saveBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}>
-                <Text style={{ fontSize: 14, fontWeight: "600", color: "#FFF" }}>Save</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "600", color: "#FFF" }}>Save</Text>
               </Pressable>
             </View>
           </View>
         ) : (
           <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[styles.bigAvatar, { backgroundColor: colors.primary + "20" }]}>
-              <Text style={{ fontSize: 24, fontWeight: "700", color: colors.primary }}>{getInitials(client.name)}</Text>
+              <Text style={{ fontSize: fs.xl, fontWeight: "700", color: colors.primary }}>{getInitials(client.name)}</Text>
             </View>
-            <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground, marginTop: 12 }}>{client.name}</Text>
+            <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.foreground, marginTop: 12 }}>{client.name}</Text>
             {avgRating && (
               <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
                 <IconSymbol name="star.fill" size={14} color="#FFB300" />
-                <Text style={{ fontSize: 14, fontWeight: "600", color: "#FFB300", marginLeft: 4 }}>{avgRating}</Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginLeft: 4 }}>({reviews.length})</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "600", color: "#FFB300", marginLeft: 4 }}>{avgRating}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginLeft: 4 }}>({reviews.length})</Text>
               </View>
             )}
             <View style={styles.contactRow}>
               {client.phone ? (
                 <Pressable onPress={() => Linking.openURL(`tel:${stripPhoneFormat(client.phone)}`)} style={({ pressed }) => [styles.contactChip, { backgroundColor: colors.primary + "12", opacity: pressed ? 0.7 : 1 }]}>
                   <IconSymbol name="phone.fill" size={14} color={colors.primary} />
-                  <Text style={{ fontSize: 12, color: colors.primary, marginLeft: 6 }}>{formatPhoneNumber(client.phone)}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.primary, marginLeft: 6 }}>{formatPhoneNumber(client.phone)}</Text>
                 </Pressable>
               ) : null}
               {client.email ? (
                 <Pressable onPress={() => Linking.openURL(`mailto:${client.email}`)} style={({ pressed }) => [styles.contactChip, { backgroundColor: colors.primary + "12", opacity: pressed ? 0.7 : 1 }]}>
                   <IconSymbol name="envelope.fill" size={14} color={colors.primary} />
-                  <Text style={{ fontSize: 12, color: colors.primary, marginLeft: 6 }} numberOfLines={1}>{client.email}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.primary, marginLeft: 6 }} numberOfLines={1}>{client.email}</Text>
                 </Pressable>
               ) : null}
             </View>
             {client.notes ? (
               <View style={[styles.notesBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 2 }}>Notes</Text>
-                <Text style={{ fontSize: 13, color: colors.foreground, lineHeight: 18 }}>{client.notes}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 2 }}>Notes</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.foreground, lineHeight: 18 }}>{client.notes}</Text>
               </View>
             ) : null}
             {client.birthday ? (
               <View style={[styles.notesBox, { backgroundColor: colors.background, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: 8 }]}>
 
                 <View>
-                  <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 2 }}>Birthday</Text>
-                  <Text style={{ fontSize: 13, color: colors.foreground }}>{client.birthday}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 2 }}>Birthday</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.foreground }}>{client.birthday}</Text>
                 </View>
               </View>
             ) : null}
@@ -577,7 +577,7 @@ export default function ClientDetailScreen() {
                 }]}
               >
                 <IconSymbol name="calendar" size={17} color="#FFF" />
-                <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Book</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Book</Text>
               </Pressable>
 
               {/* Call — only shown when phone exists */}
@@ -598,7 +598,7 @@ export default function ClientDetailScreen() {
                   }]}
                 >
                   <IconSymbol name="phone.fill" size={17} color="#FFF" />
-                  <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Call</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Call</Text>
                 </Pressable>
               ) : null}
 
@@ -620,7 +620,7 @@ export default function ClientDetailScreen() {
                   }]}
                 >
                   <IconSymbol name="paperplane.fill" size={17} color="#FFF" />
-                  <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Message</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Message</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -643,7 +643,7 @@ export default function ClientDetailScreen() {
                 }]}
               >
                 <IconSymbol name="phone.fill" size={13} color={colors.muted} />
-                <Text style={{ fontSize: 12, color: colors.muted, fontStyle: "italic" }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, fontStyle: "italic" }}>
                   Add phone to unlock Call &amp; Message
                 </Text>
               </Pressable>
@@ -657,7 +657,7 @@ export default function ClientDetailScreen() {
             <View style={[styles.tabBar, { borderColor: colors.border }]}>
               {tabs.map((tab) => (
                 <Pressable key={tab.key} onPress={() => setActiveTab(tab.key)} style={({ pressed }) => [styles.tabItem, { borderBottomColor: activeTab === tab.key ? colors.primary : "transparent", opacity: pressed ? 0.7 : 1 }]}>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: activeTab === tab.key ? colors.primary : colors.muted }}>{tab.label}</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: activeTab === tab.key ? colors.primary : colors.muted }}>{tab.label}</Text>
                   {tab.count !== undefined && tab.count > 0 && (
                     <View style={[styles.tabBadge, { backgroundColor: activeTab === tab.key ? colors.primary : colors.muted + "30" }]}>
                       <Text style={{ fontSize: 10, fontWeight: "700", color: activeTab === tab.key ? "#FFF" : colors.muted }}>{tab.count}</Text>
@@ -680,8 +680,8 @@ export default function ClientDetailScreen() {
                   return (
                     <Pressable key={appt.id} onPress={() => router.push({ pathname: "/appointment-detail", params: { id: appt.id } })} style={({ pressed }) => [styles.apptCard, { backgroundColor: colors.surface, borderColor: colors.border, borderLeftColor: svc?.color ?? colors.primary, opacity: pressed ? 0.8 : 1 }]}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{svc ? getServiceDisplayName(svc) : "Service"}</Text>
-                        <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{formatDateDisplay(appt.date)} · {formatTime(appt.time)} - {formatTime(minutesToTime(timeToMinutes(appt.time) + appt.duration))}</Text>
+                        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{svc ? getServiceDisplayName(svc) : "Service"}</Text>
+                        <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{formatDateDisplay(appt.date)} · {formatTime(appt.time)} - {formatTime(minutesToTime(timeToMinutes(appt.time) + appt.duration))}</Text>
                         {isRefunded && (
                           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>
                             <View style={{ backgroundColor: '#EF444418', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
@@ -713,8 +713,8 @@ export default function ClientDetailScreen() {
                   return (
                     <Pressable key={appt.id} onPress={() => router.push({ pathname: "/appointment-detail", params: { id: appt.id } })} style={({ pressed }) => [styles.apptCard, { backgroundColor: colors.surface, borderColor: colors.border, borderLeftColor: svc?.color ?? colors.primary, opacity: pressed ? 0.8 : 1 }]}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{svc ? getServiceDisplayName(svc) : "Service"}</Text>
-                        <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{formatDateDisplay(appt.date)} · {formatTime(appt.time)} - {formatTime(minutesToTime(timeToMinutes(appt.time) + appt.duration))}</Text>
+                        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{svc ? getServiceDisplayName(svc) : "Service"}</Text>
+                        <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{formatDateDisplay(appt.date)} · {formatTime(appt.time)} - {formatTime(minutesToTime(timeToMinutes(appt.time) + appt.duration))}</Text>
                         {isRefunded && (
                           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>
                             <View style={{ backgroundColor: '#EF444418', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
@@ -739,7 +739,7 @@ export default function ClientDetailScreen() {
                 {appointments.length === 0 && (
                   <View style={styles.emptyState}>
                     <IconSymbol name="calendar" size={36} color={colors.muted + "60"} />
-                    <Text style={{ color: colors.muted, fontSize: 14, marginTop: 8 }}>No appointments yet</Text>
+                    <Text style={{ color: colors.muted, fontSize: fs.sm, marginTop: 8 }}>No appointments yet</Text>
                   </View>
                 )}
               </View>
@@ -762,23 +762,23 @@ export default function ClientDetailScreen() {
                         <IconSymbol name="mappin.and.ellipse" size={18} color={colors.primary} />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }} numberOfLines={1}>
+                        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }} numberOfLines={1}>
                           {entry.location.name}
                         </Text>
                         {!!entry.location.address && (
-                          <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }} numberOfLines={1}>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }} numberOfLines={1}>
                             {entry.location.address}{entry.location.city ? `, ${entry.location.city}` : ""}{entry.location.state ? ` ${entry.location.state}` : ""}{entry.location.zipCode ? ` ${entry.location.zipCode}` : ""}
                           </Text>
                         )}
                         {entry.lastVisitDate && (
-                          <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
                             Last visit: {formatDateDisplay(entry.lastVisitDate)}
                           </Text>
                         )}
                       </View>
                     </View>
                     <View style={{ alignItems: "flex-end", gap: 2 }}>
-                      <Text style={{ fontSize: 20, fontWeight: "700", color: colors.primary }}>{entry.totalVisits}</Text>
+                      <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.primary }}>{entry.totalVisits}</Text>
                       <Text style={{ fontSize: 10, color: colors.muted, textAlign: "right" }}>{entry.totalVisits === 1 ? "visit" : "visits"}</Text>
                       {entry.completedVisits > 0 && entry.completedVisits !== entry.totalVisits && (
                         <Text style={{ fontSize: 10, color: colors.success }}>{entry.completedVisits} done</Text>
@@ -795,7 +795,7 @@ export default function ClientDetailScreen() {
                 {appointments.length === 0 ? (
                   <View style={styles.emptyState}>
                     <IconSymbol name="paperplane.fill" size={36} color={colors.muted + "60"} />
-                    <Text style={{ color: colors.muted, fontSize: 14, marginTop: 8 }}>No appointments to message about</Text>
+                    <Text style={{ color: colors.muted, fontSize: fs.sm, marginTop: 8 }}>No appointments to message about</Text>
                   </View>
                 ) : (
                   appointments.map((appt) => {
@@ -816,8 +816,8 @@ export default function ClientDetailScreen() {
                     }
                     return (
                       <View key={appt.id} style={[styles.msgCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{svc ? getServiceDisplayName(svc) : "Service"}</Text>
-                        <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{formatDateDisplay(appt.date)} at {formatTime(appt.time)} - {formatTime(minutesToTime(timeToMinutes(appt.time) + appt.duration))}</Text>
+                        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{svc ? getServiceDisplayName(svc) : "Service"}</Text>
+                        <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{formatDateDisplay(appt.date)} at {formatTime(appt.time)} - {formatTime(minutesToTime(timeToMinutes(appt.time) + appt.duration))}</Text>
                         <View style={styles.msgButtons}>
                           {msgTypes.map((mt) => (
                             <Pressable
@@ -826,7 +826,7 @@ export default function ClientDetailScreen() {
                               style={({ pressed }) => [styles.msgBtn, { backgroundColor: mt.color + "12", borderColor: mt.color + "30", opacity: pressed ? 0.7 : 1 }]}
                             >
                               <IconSymbol name={mt.icon as any} size={14} color={mt.color} />
-                              <Text style={{ fontSize: 12, fontWeight: "600", color: mt.color, marginLeft: 6 }}>{mt.label}</Text>
+                              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: mt.color, marginLeft: 6 }}>{mt.label}</Text>
                             </Pressable>
                           ))}
                         </View>
@@ -843,8 +843,8 @@ export default function ClientDetailScreen() {
                 {reviews.length === 0 ? (
                   <View style={styles.emptyState}>
                     <IconSymbol name="star.fill" size={36} color={colors.muted + "60"} />
-                    <Text style={{ color: colors.muted, fontSize: 14, marginTop: 8 }}>No reviews yet</Text>
-                    <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4, textAlign: "center" }}>Reviews are submitted by clients after their appointments.</Text>
+                    <Text style={{ color: colors.muted, fontSize: fs.sm, marginTop: 8 }}>No reviews yet</Text>
+                    <Text style={{ color: colors.muted, fontSize: fs.xs, marginTop: 4, textAlign: "center" }}>Reviews are submitted by clients after their appointments.</Text>
                   </View>
                 ) : (
                   reviews.map((rev) => (
@@ -855,11 +855,11 @@ export default function ClientDetailScreen() {
                             <IconSymbol key={star} name="star.fill" size={14} color={star <= rev.rating ? "#FFB300" : colors.border} />
                           ))}
                         </View>
-                        <Text style={{ fontSize: 11, color: colors.muted }}>
+                        <Text style={{ fontSize: fs.xs, color: colors.muted }}>
                           {new Date(rev.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                         </Text>
                       </View>
-                      {rev.comment ? <Text style={{ fontSize: 13, color: colors.foreground, marginTop: 6, lineHeight: 18 }}>{rev.comment}</Text> : null}
+                      {rev.comment ? <Text style={{ fontSize: fs.xs, color: colors.foreground, marginTop: 6, lineHeight: 18 }}>{rev.comment}</Text> : null}
                     </View>
                   ))
                 )}
@@ -875,28 +875,28 @@ export default function ClientDetailScreen() {
                     style={({ pressed }) => ({ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderStyle: "dashed", borderColor: "#3B82F6", backgroundColor: pressed ? "#3B82F610" : "transparent", opacity: pressed ? 0.7 : 1 })}
                   >
                     <IconSymbol name="plus" size={16} color="#3B82F6" />
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: "#3B82F6" }}>Before</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#3B82F6" }}>Before</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => handleAddPhoto("after")}
                     style={({ pressed }) => ({ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderStyle: "dashed", borderColor: "#10B981", backgroundColor: pressed ? "#10B98110" : "transparent", opacity: pressed ? 0.7 : 1 })}
                   >
                     <IconSymbol name="plus" size={16} color="#10B981" />
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: "#10B981" }}>After</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#10B981" }}>After</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => handleAddPhoto("other")}
                     style={({ pressed }) => ({ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderStyle: "dashed", borderColor: colors.muted, backgroundColor: pressed ? colors.muted + "10" : "transparent", opacity: pressed ? 0.7 : 1 })}
                   >
                     <IconSymbol name="plus" size={16} color={colors.muted} />
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.muted }}>Other</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>Other</Text>
                   </Pressable>
                 </View>
                 {photos.length === 0 ? (
                   <View style={styles.emptyState}>
                     <IconSymbol name="photo" size={36} color={colors.muted + "60"} />
-                    <Text style={{ color: colors.muted, fontSize: 14, marginTop: 8 }}>No photos yet</Text>
-                    <Text style={{ color: colors.muted, fontSize: 12, marginTop: 4, textAlign: "center" }}>Add before/after photos to track client transformations.</Text>
+                    <Text style={{ color: colors.muted, fontSize: fs.sm, marginTop: 8 }}>No photos yet</Text>
+                    <Text style={{ color: colors.muted, fontSize: fs.xs, marginTop: 4, textAlign: "center" }}>Add before/after photos to track client transformations.</Text>
                   </View>
                 ) : (
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -907,7 +907,7 @@ export default function ClientDetailScreen() {
                         </Pressable>
                         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 8, paddingVertical: 6 }}>
                           <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: photo.label === "before" ? "#3B82F620" : photo.label === "after" ? "#10B98120" : colors.muted + "20" }}>
-                            <Text style={{ fontSize: 11, fontWeight: "700", color: photo.label === "before" ? "#3B82F6" : photo.label === "after" ? "#10B981" : colors.muted, textTransform: "uppercase" }}>{photo.label}</Text>
+                            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: photo.label === "before" ? "#3B82F6" : photo.label === "after" ? "#10B981" : colors.muted, textTransform: "uppercase" }}>{photo.label}</Text>
                           </View>
                           <Pressable onPress={() => handleDeletePhoto(photo.id)} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 4 })}>
                             <IconSymbol name="trash" size={14} color={colors.error} />
@@ -933,7 +933,7 @@ export default function ClientDetailScreen() {
             )}
             {/* Delete Client */}
             <Pressable onPress={handleDelete} style={({ pressed }) => [styles.deleteBtn, { borderColor: colors.error, opacity: pressed ? 0.7 : 1 }]}>
-              <Text style={{ fontSize: 14, fontWeight: "500", color: colors.error }}>Delete Client</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.error }}>Delete Client</Text>
             </Pressable>
           </>
         )}
@@ -952,14 +952,14 @@ const styles = StyleSheet.create({
   contactChip: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   notesBox: { borderRadius: 12, padding: 12, marginTop: 12, borderWidth: 1, width: "100%" },
   quickMsgBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, marginTop: 14, width: "100%" },
-  input: { width: "100%", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, fontSize: 14, lineHeight: 20, marginBottom: 8, borderWidth: 1 },
+  input: { width: "100%", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, fontSize: fs.sm, lineHeight: 20, marginBottom: 8, borderWidth: 1 },
   editActions: { flexDirection: "row", gap: 8, marginTop: 4, width: "100%" },
   cancelBtn: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center", minHeight: 44 },
   saveBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center", justifyContent: "center", minHeight: 44 },
   tabBar: { flexDirection: "row", borderBottomWidth: 1, marginBottom: 16 },
   tabItem: { flex: 1, alignItems: "center", paddingVertical: 12, borderBottomWidth: 2, flexDirection: "row", justifyContent: "center", gap: 6 },
   tabBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, minWidth: 20, alignItems: "center" },
-  sectionLabel: { fontSize: 14, fontWeight: "600", marginBottom: 8 },
+  sectionLabel: { fontSize: fs.sm, fontWeight: "600", marginBottom: 8 },
   apptCard: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 14, marginBottom: 8, borderWidth: 1, borderLeftWidth: 4 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   emptyState: { alignItems: "center", paddingVertical: 40 },
@@ -969,7 +969,7 @@ const styles = StyleSheet.create({
   addReviewBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, borderRadius: 12, marginBottom: 14 },
   reviewForm: { borderRadius: 16, padding: 16, borderWidth: 1, marginBottom: 14 },
   starsRow: { flexDirection: "row", justifyContent: "center", marginBottom: 12 },
-  reviewInput: { width: "100%", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, lineHeight: 20, borderWidth: 1, minHeight: 80, textAlignVertical: "top" },
+  reviewInput: { width: "100%", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: fs.sm, lineHeight: 20, borderWidth: 1, minHeight: 80, textAlignVertical: "top" },
   reviewActions: { flexDirection: "row", gap: 8, marginTop: 12, width: "100%" },
   reviewCancelBtn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10, borderWidth: 1, alignItems: "center", justifyContent: "center", minHeight: 40 },
   reviewSaveBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", justifyContent: "center", minHeight: 40 },

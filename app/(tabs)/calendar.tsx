@@ -228,7 +228,7 @@ function TimelineView({
               },
             ])}
           >
-            <Text style={{ fontSize: 11, fontWeight: "700", color: colors.foreground }} numberOfLines={1}>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground }} numberOfLines={1}>
               {formatTime(appt.time)} {svcName} ({appt.duration} min)
             </Text>
             {height > 36 && (
@@ -278,7 +278,7 @@ export default function CalendarScreen() {
   const colors = useColors();
   const router = useRouter();
   const params = useLocalSearchParams<{ filter?: string; date?: string; view?: string }>();
-  const { width, isTablet, isLargeTablet, hp, maxContentWidth, modalMaxWidth } = useResponsive();
+  const { width, isTablet, isLargeTablet, hp, maxContentWidth, modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   // Live clock for the current-time indicator and countdown timers — updates every 60 seconds
   // NOTE: Do NOT use a bare `const now = new Date()` here; it becomes stale after the component
@@ -1223,34 +1223,34 @@ export default function CalendarScreen() {
           delayLongPress={500}
           style={{ alignSelf: "stretch" }}
         >
-          <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>
+          <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>
             {showDate ? `${formatDateDisplay(appt.date)} · ` : ""}{formatTime(appt.time)} – {getEndTime(appt.time, appt.duration)}
           </Text>
-          <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, marginTop: 2 }}>
+          <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.foreground, marginTop: 2 }}>
             {svc ? getServiceDisplayName(svc) : "Service"}
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1 }}>
-            <Text style={{ fontSize: 12, color: colors.muted }}>{client?.name}</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted }}>{client?.name}</Text>
             {staff && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginLeft: 4 }}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: staff.color || colors.primary }} />
-                <Text style={{ fontSize: 11, color: staff.color || colors.primary, fontWeight: "500" }}>{staff.name}</Text>
+                <Text style={{ fontSize: fs.xs, color: staff.color || colors.primary, fontWeight: "500" }}>{staff.name}</Text>
               </View>
             )}
           </View>
         </Pressable>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <View style={[styles.statusBadge, { backgroundColor: statusColor + "18" }]}>
-            <Text style={{ fontSize: 11, fontWeight: "600", color: statusColor, textTransform: "capitalize" }}>{appt.status}</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: statusColor, textTransform: "capitalize" }}>{appt.status}</Text>
           </View>
           {appt.paymentMethod === "card" && appt.paymentStatus === "paid" && (
             <View style={{ backgroundColor: "#635BFF18", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
-              <Text style={{ fontSize: 11, fontWeight: "600", color: "#635BFF" }}>💳 Card</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#635BFF" }}>💳 Card</Text>
             </View>
           )}
           {appt.clientPaidNotifiedAt && appt.paymentStatus !== "paid" && (
             <View style={{ backgroundColor: "#FFF7ED", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, borderWidth: 1, borderColor: "#FED7AA" }}>
-              <Text style={{ fontSize: 11, fontWeight: "600", color: "#C2410C" }}>💰 Payment Sent</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#C2410C" }}>💰 Payment Sent</Text>
             </View>
           )}
           {hasMultiLoc && appt.locationId && (() => {
@@ -1260,7 +1260,7 @@ export default function CalendarScreen() {
             return (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: locColor + "18", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
                 <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: locColor }} />
-                <Text style={{ fontSize: 11, fontWeight: "600", color: locColor }} numberOfLines={1}>{loc.name}</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: locColor }} numberOfLines={1}>{loc.name}</Text>
               </View>
             );
           })()}
@@ -1276,18 +1276,18 @@ export default function CalendarScreen() {
               marginLeft: "auto" as any,
             }]}
           >
-            <Text style={{ fontSize: 11, fontWeight: "700", color: "#FFF" }}>Mark Paid</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FFF" }}>Mark Paid</Text>
           </Pressable>
         )}
         {isRequest && (
           <View style={[styles.actionRow, { borderTopColor: colors.border }]}>
             <Pressable onPress={() => handleAccept(appt)} style={({ pressed }) => [styles.acceptBtn, { backgroundColor: "#1B5E20", opacity: pressed ? 0.8 : 1 }]}>
               <IconSymbol name="checkmark" size={16} color="#FFF" />
-              <Text style={{ color: "#FFF", fontSize: 13, fontWeight: "600", marginLeft: 4 }}>Accept</Text>
+              <Text style={{ color: "#FFF", fontSize: fs.xs, fontWeight: "600", marginLeft: 4 }}>Accept</Text>
             </Pressable>
             <Pressable onPress={() => handleReject(appt)} style={({ pressed }) => [styles.rejectBtn, { borderColor: "#F44336", opacity: pressed ? 0.8 : 1 }]}>
               <IconSymbol name="xmark" size={16} color="#F44336" />
-              <Text style={{ color: "#F44336", fontSize: 13, fontWeight: "600", marginLeft: 4 }}>Reject</Text>
+              <Text style={{ color: "#F44336", fontSize: fs.xs, fontWeight: "600", marginLeft: 4 }}>Reject</Text>
             </Pressable>
           </View>
         )}
@@ -1304,8 +1304,8 @@ export default function CalendarScreen() {
         <View style={[styles.workdayPanel, { backgroundColor: colors.surface, borderColor: colors.border, opacity: 0.4 }]}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>Workday</Text>
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Add a location to configure working hours</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>Workday</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>Add a location to configure working hours</Text>
             </View>
             <Switch
               value={false}
@@ -1323,8 +1323,8 @@ export default function CalendarScreen() {
     if (calLocationFilter === null && hasMultiLoc) {
       return (
         <View style={[styles.workdayPanel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground, marginBottom: 4 }}>Workday</Text>
-          <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18 }}>
+          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 4 }}>Workday</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, lineHeight: 18 }}>
             Workday hours are configured per location. Select a specific location to set or edit custom hours for this date.
           </Text>
         </View>
@@ -1342,8 +1342,8 @@ export default function CalendarScreen() {
       <View style={[styles.workdayPanel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>Workday</Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>Workday</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
               {isAvailable
                 ? effectiveHours
                   ? `${formatTimeDisplay(effectiveHours.start)} – ${formatTimeDisplay(effectiveHours.end)}`
@@ -1376,7 +1376,7 @@ export default function CalendarScreen() {
             style={({ pressed }) => [styles.editHoursBtn, { borderColor: colors.primary + "40", backgroundColor: colors.primary + "10", opacity: pressed ? 0.7 : 1 }]}
           >
             <IconSymbol name="pencil" size={14} color={colors.primary} />
-            <Text style={{ fontSize: 13, fontWeight: "600", color: colors.primary, marginLeft: 6 }}>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary, marginLeft: 6 }}>
               {hasCustomOverride && custom?.startTime ? "Edit Hours" : "Set Custom Hours"}
             </Text>
           </Pressable>
@@ -1394,7 +1394,7 @@ export default function CalendarScreen() {
             }}
             style={({ pressed }) => [styles.resetBtn, { opacity: pressed ? 0.7 : 1 }]}
           >
-            <Text style={{ fontSize: 12, color: colors.muted }}>Reset to Business Hours</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted }}>Reset to Business Hours</Text>
           </Pressable>
         )}
         {hasCustomOverride && !isPast && (
@@ -1420,11 +1420,11 @@ export default function CalendarScreen() {
             }}
             style={({ pressed }) => [styles.resetBtn, { opacity: pressed ? 0.7 : 1 }]}
           >
-            <Text style={{ fontSize: 12, color: colors.primary }}>Repeat Next Week</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.primary }}>Repeat Next Week</Text>
           </Pressable>
         )}
         {bh && (
-          <Text style={{ fontSize: 11, color: colors.muted, marginTop: 6 }}>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
             Business Hours: {formatTimeDisplay(bh.start)} – {formatTimeDisplay(bh.end)}
           </Text>
         )}
@@ -1474,7 +1474,7 @@ export default function CalendarScreen() {
       <View style={[styles.dayHeaderRow, { paddingHorizontal: hp }]}>
         {DAY_HEADERS.map((d) => (
           <View key={d} style={{ width: cellSize, alignItems: "center" }}>
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted }}>{d}</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>{d}</Text>
           </View>
         ))}
       </View>
@@ -1538,7 +1538,7 @@ export default function CalendarScreen() {
               }}>
                 <Text
                   style={{
-                    fontSize: 15,
+                    fontSize: fs.sm,
                     fontWeight: isToday || isSelected ? "700" : "400",
                     color: noLocation
                       ? colors.muted
@@ -1625,7 +1625,7 @@ export default function CalendarScreen() {
           <View style={{ marginHorizontal: hp, marginTop: 8, marginBottom: 4, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.border, overflow: "hidden" }}>
             {/* Panel header */}
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground }}>
                 {availableSlots.length > 0 ? `${availableSlots.length} slot${availableSlots.length !== 1 ? "s" : ""} available — tap a time` : "No slots available"}
               </Text>
               <Pressable onPress={() => { setExpandedDate(null); setSelectedSlotTime(null); setShowAllSlots(false); }} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
@@ -1671,7 +1671,7 @@ export default function CalendarScreen() {
                               opacity: pressed ? 0.7 : 1,
                             })}
                           >
-                            <Text style={{ fontSize: 11, fontWeight: "700", color: isActive ? "#FFFFFF" : colors.muted }}>{iv.label}</Text>
+                            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isActive ? "#FFFFFF" : colors.muted }}>{iv.label}</Text>
                           </Pressable>
                         );
                       })}
@@ -1709,7 +1709,7 @@ export default function CalendarScreen() {
                             elevation: 3,
                           } : {}),
                         }}>
-                          <Text style={{ fontSize: 13, fontWeight: "700", color: isChipSelected ? "#FFF" : colors.foreground }}>
+                          <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isChipSelected ? "#FFF" : colors.foreground }}>
                             {formatTimeDisplay(slotTime)}
                           </Text>
                         </View>
@@ -1750,7 +1750,7 @@ export default function CalendarScreen() {
                         opacity: pressed ? 0.7 : 1,
                       })}
                     >
-                      <Text style={{ fontSize: 13, fontWeight: "600", color: colors.muted }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>
                         +{availableSlots.length - 20} more →
                       </Text>
                     </Pressable>
@@ -1763,8 +1763,8 @@ export default function CalendarScreen() {
                       <View style={{ borderRadius: 12, borderWidth: 1.5, borderColor: colors.warning, backgroundColor: colors.warning + '15', paddingVertical: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                         <IconSymbol name="location.fill" size={16} color={colors.warning} />
                         <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 13, fontWeight: '700', color: colors.warning }}>Select a Location First</Text>
-                          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Use the location filter at the top to pick a specific location before booking.</Text>
+                          <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.warning }}>Select a Location First</Text>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>Use the location filter at the top to pick a specific location before booking.</Text>
                         </View>
                       </View>
                     ) : (
@@ -1795,7 +1795,7 @@ export default function CalendarScreen() {
                         })}
                       >
                         <IconSymbol name="plus" size={16} color="#FFF" />
-                        <Text style={{ color: "#FFF", fontSize: 14, fontWeight: "700" }}>Book Appointment</Text>
+                        <Text style={{ color: "#FFF", fontSize: fs.sm, fontWeight: "700" }}>Book Appointment</Text>
                       </Pressable>
                     )}
                   </View>
@@ -1803,17 +1803,17 @@ export default function CalendarScreen() {
               </>
             ) : (
               <View style={{ paddingHorizontal: 14, paddingVertical: 16, alignItems: "center", gap: 8 }}>
-                <Text style={{ fontSize: 22 }}>📅</Text>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>
+                <Text style={{ fontSize: fs.lg }}>📅</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>
                   No available slots
                 </Text>
-                <Text style={{ fontSize: 12, color: colors.muted, textAlign: "center" }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "center" }}>
                   All time slots for this day are fully booked.
                 </Text>
                 {(() => {
                   const nextDate = findNextAvailableDate(expandedDate!);
                   if (!nextDate) return (
-                    <Text style={{ fontSize: 12, color: colors.muted, textAlign: "center", marginTop: 2 }}>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "center", marginTop: 2 }}>
                       No upcoming availability found in the next 60 days.
                     </Text>
                   );
@@ -1841,7 +1841,7 @@ export default function CalendarScreen() {
                       })}
                     >
                       <IconSymbol name="chevron.right" size={12} color={colors.primary} />
-                      <Text style={{ fontSize: 13, fontWeight: "600", color: colors.primary }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>
                         Next available: {nextLabel}
                       </Text>
                     </Pressable>
@@ -1876,7 +1876,7 @@ export default function CalendarScreen() {
         </View>
 
         {selectedDateAppts.length === 0 ? (
-          <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 12 }}>
+          <Text style={{ color: colors.muted, fontSize: fs.xs, marginBottom: 12 }}>
             {isDayAvailable(selectedDate) ? "No appointments on this day" : "Closed — not a working day"}
           </Text>
         ) : (
@@ -1943,7 +1943,7 @@ export default function CalendarScreen() {
                 })}
               >
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: pillColor }} />
-                <Text style={{ fontSize: 12, fontWeight: "700", color: pillColor }}>{pillLabel}</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: pillColor }}>{pillLabel}</Text>
                 {canExpand && (
                   <Text style={{ fontSize: 10, color: pillColor, marginLeft: 2 }}>{showDaySlotTooltip ? "▲" : "▼"}</Text>
                 )}
@@ -1954,7 +1954,7 @@ export default function CalendarScreen() {
                   borderRadius: 12, borderWidth: 1, borderColor: colors.border,
                   padding: 10, alignSelf: "flex-start", maxWidth: "100%",
                 }}>
-                  <Text style={{ fontSize: 11, fontWeight: "700", color: colors.muted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Available Times</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Available Times</Text>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                     {availTimes.map((t) => (
                       <Pressable
@@ -1970,7 +1970,7 @@ export default function CalendarScreen() {
                           opacity: pressed ? 0.7 : 1,
                         })}
                       >
-                        <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary }}>{formatTimeDisplay(t)}</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>{formatTimeDisplay(t)}</Text>
                       </Pressable>
                     ))}
                   </View>
@@ -1993,7 +1993,7 @@ export default function CalendarScreen() {
                 style={({ pressed }) => [styles.bookBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}
               >
                 <IconSymbol name="plus" size={16} color="#FFF" />
-                <Text style={{ color: "#FFF", fontSize: 14, fontWeight: "700", marginLeft: 6 }}>Book Appointment</Text>
+                <Text style={{ color: "#FFF", fontSize: fs.sm, fontWeight: "700", marginLeft: 6 }}>Book Appointment</Text>
               </Pressable>
             </View>
           )}
@@ -2035,7 +2035,7 @@ export default function CalendarScreen() {
                 }]}
               >
                 <IconSymbol name="clock.fill" size={13} color="#fff" />
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Jump to Now</Text>
+                <Text style={{ color: '#fff', fontSize: fs.xs, fontWeight: '700' }}>Jump to Now</Text>
               </Pressable>
             </View>
           </View>
@@ -2095,7 +2095,7 @@ export default function CalendarScreen() {
                   minWidth: 52,
                 })}
               >
-                <Text style={{ fontSize: 11, fontWeight: "600", color: noLoc ? colors.muted : isToday ? colors.primary : colors.muted }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: noLoc ? colors.muted : isToday ? colors.primary : colors.muted }}>
                   {DAY_SHORT[d.getDay()]}
                 </Text>
                 <View style={{
@@ -2103,7 +2103,7 @@ export default function CalendarScreen() {
                   backgroundColor: noLoc ? "transparent" : isSelected ? colors.primary : "transparent",
                   alignItems: "center", justifyContent: "center",
                 }}>
-                  <Text style={{ fontSize: 15, fontWeight: "700", color: noLoc ? colors.muted : isSelected ? "#FFF" : isToday ? colors.primary : colors.foreground, textDecorationLine: noLoc ? "line-through" : "none" }}>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: noLoc ? colors.muted : isSelected ? "#FFF" : isToday ? colors.primary : colors.foreground, textDecorationLine: noLoc ? "line-through" : "none" }}>
                     {d.getDate()}
                   </Text>
                 </View>
@@ -2139,7 +2139,7 @@ export default function CalendarScreen() {
           return (
             <View style={{ marginHorizontal: hp, marginBottom: 8, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border, padding: 10 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>
                   {formatDateDisplay(weekSlotTooltipDate)} — Available Times
                 </Text>
                 <Pressable onPress={() => setWeekSlotTooltipDate(null)} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
@@ -2161,7 +2161,7 @@ export default function CalendarScreen() {
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary }}>{formatTimeDisplay(t)}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>{formatTimeDisplay(t)}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -2180,7 +2180,7 @@ export default function CalendarScreen() {
             }} style={({ pressed }) => [styles.navBtn, { opacity: pressed ? 0.5 : 1 }]}>
               <IconSymbol name="chevron.left" size={20} color={colors.foreground} />
             </Pressable>
-            <Text style={[styles.monthTitle, { color: colors.foreground, fontSize: 16 }]}>
+            <Text style={[styles.monthTitle, { color: colors.foreground, fontSize: fs.md }]}>
               {selectedDate === todayStr
                 ? `Today, ${DAY_SHORT[new Date(selectedDate + "T12:00:00").getDay()]}, ${formatDateDisplay(selectedDate)}`
                 : `${DAY_FULL[new Date(selectedDate + "T12:00:00").getDay()]}, ${formatDateDisplay(selectedDate)}`}
@@ -2208,7 +2208,7 @@ export default function CalendarScreen() {
               style={({ pressed }) => [styles.bookBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1, marginBottom: 12 }]}
             >
               <IconSymbol name="plus" size={16} color="#FFF" />
-              <Text style={{ color: "#FFF", fontSize: 14, fontWeight: "700", marginLeft: 6 }}>Book Appointment</Text>
+              <Text style={{ color: "#FFF", fontSize: fs.sm, fontWeight: "700", marginLeft: 6 }}>Book Appointment</Text>
             </Pressable>
           )}
 
@@ -2253,7 +2253,7 @@ export default function CalendarScreen() {
               }]}
             >
               <IconSymbol name="clock.fill" size={13} color="#fff" />
-              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Jump to Now</Text>
+              <Text style={{ color: '#fff', fontSize: fs.xs, fontWeight: '700' }}>Jump to Now</Text>
             </Pressable>
           </View>
         </View>
@@ -2275,7 +2275,7 @@ export default function CalendarScreen() {
         {/* Header */}
         <View style={{ paddingHorizontal: hp, paddingTop: 4 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <Text style={{ fontSize: 24, fontWeight: "700", color: colors.foreground }}>Calendar</Text>
+            <Text style={{ fontSize: fs.xl, fontWeight: "700", color: colors.foreground }}>Calendar</Text>
           </View>
 
           {/* No-location setup banner */}
@@ -2294,8 +2294,8 @@ export default function CalendarScreen() {
                 <IconSymbol name="location.fill" size={20} color={colors.warning} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.warning, marginBottom: 2 }}>No Location Added</Text>
-                <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 17 }}>Add your business address to enable booking. Tap here to set up your first location.</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.warning, marginBottom: 2 }}>No Location Added</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, lineHeight: 17 }}>Add your business address to enable booking. Tap here to set up your first location.</Text>
               </View>
               <IconSymbol name="chevron.right" size={16} color={colors.muted} />
             </Pressable>
@@ -2323,7 +2323,7 @@ export default function CalendarScreen() {
                   justifyContent: 'center',
                 })}
               >
-                <Text style={{ fontSize: 13, fontWeight: '600', color: calLocationFilter === null ? colors.primary : colors.muted }}>All</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: '600', color: calLocationFilter === null ? colors.primary : colors.muted }}>All</Text>
               </Pressable>
               {activeLocations.map((loc) => {
                 const isChosen = calLocationFilter === loc.id;
@@ -2343,11 +2343,11 @@ export default function CalendarScreen() {
                       maxWidth: 200,
                     })}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: isChosen ? colors.primary : colors.foreground }} numberOfLines={1}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: '700', color: isChosen ? colors.primary : colors.foreground }} numberOfLines={1}>
                       {loc.name}
                     </Text>
                     {!!fullAddr && (
-                      <Text style={{ fontSize: 11, color: isChosen ? colors.primary + 'cc' : colors.muted, marginTop: 2 }} numberOfLines={1}>
+                      <Text style={{ fontSize: fs.xs, color: isChosen ? colors.primary + 'cc' : colors.muted, marginTop: 2 }} numberOfLines={1}>
                         {fullAddr}
                       </Text>
                     )}
@@ -2373,7 +2373,7 @@ export default function CalendarScreen() {
                   },
                 ]}
               >
-                <Text style={{ fontSize: 13, fontWeight: "600", color: calendarView === v ? "#FFF" : colors.foreground, textTransform: "capitalize" }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: calendarView === v ? "#FFF" : colors.foreground, textTransform: "capitalize" }}>
                   {v}
                 </Text>
               </Pressable>
@@ -2397,8 +2397,8 @@ export default function CalendarScreen() {
           }}>
             <IconSymbol name="exclamationmark.triangle.fill" size={16} color={colors.error} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: "700", color: colors.error }}>Location Temporarily Closed</Text>
-              <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.error }}>Location Temporarily Closed</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
                 {activeLocation.reopenOn
                   ? `All dates are unavailable. Reopens ${new Date(activeLocation.reopenOn + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.`
                   : "All dates are unavailable. Closed indefinitely — no new bookings."}
@@ -2418,7 +2418,7 @@ export default function CalendarScreen() {
         <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }} onPress={() => { setShowTimePickerModal(false); setCalSubPicker(null); }}>
           <Pressable style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 16, paddingBottom: 40, paddingHorizontal: 20, backgroundColor: colors.background, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }} onPress={() => {}}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>
                 {editingDate ? (() => { const d = new Date(editingDate + "T12:00:00"); return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }); })() : ""} Hours
               </Text>
               <Pressable onPress={() => { setShowTimePickerModal(false); setCalSubPicker(null); }} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
@@ -2431,8 +2431,8 @@ export default function CalendarScreen() {
               onPress={() => setCalSubPicker(calSubPicker === "start" ? null : "start")}
               style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14, paddingHorizontal: 4, borderRadius: 12, backgroundColor: calSubPicker === "start" ? colors.primary + "18" : "transparent", marginBottom: 4 }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Start Time</Text>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.primary }}>{(() => { const [h, m] = draftStart.split(":").map(Number); const ap = h >= 12 ? "PM" : "AM"; const hr = h === 0 ? 12 : h > 12 ? h - 12 : h; return `${hr}:${String(m).padStart(2,"0")} ${ap}`; })()}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Start Time</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>{(() => { const [h, m] = draftStart.split(":").map(Number); const ap = h >= 12 ? "PM" : "AM"; const hr = h === 0 ? 12 : h > 12 ? h - 12 : h; return `${hr}:${String(m).padStart(2,"0")} ${ap}`; })()}</Text>
             </Pressable>
             {calSubPicker === "start" && (
               <TapTimePicker value={draftStart} onChange={(v) => { setDraftStart(v); setTimeError(null); }} stepMinutes={15} />
@@ -2443,21 +2443,21 @@ export default function CalendarScreen() {
               onPress={() => setCalSubPicker(calSubPicker === "end" ? null : "end")}
               style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14, paddingHorizontal: 4, borderRadius: 12, backgroundColor: calSubPicker === "end" ? colors.primary + "18" : "transparent", marginBottom: 4 }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>End Time</Text>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.primary }}>{(() => { const [h, m] = draftEnd.split(":").map(Number); const ap = h >= 12 ? "PM" : "AM"; const hr = h === 0 ? 12 : h > 12 ? h - 12 : h; return `${hr}:${String(m).padStart(2,"0")} ${ap}`; })()}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>End Time</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>{(() => { const [h, m] = draftEnd.split(":").map(Number); const ap = h >= 12 ? "PM" : "AM"; const hr = h === 0 ? 12 : h > 12 ? h - 12 : h; return `${hr}:${String(m).padStart(2,"0")} ${ap}`; })()}</Text>
             </Pressable>
             {calSubPicker === "end" && (
               <TapTimePicker value={draftEnd} onChange={(v) => { setDraftEnd(v); setTimeError(null); }} stepMinutes={15} />
             )}
 
             {timeError ? (
-              <Text style={{ color: colors.error, fontSize: 13, textAlign: "center", marginVertical: 8 }}>⚠ {timeError}</Text>
+              <Text style={{ color: colors.error, fontSize: fs.xs, textAlign: "center", marginVertical: 8 }}>⚠ {timeError}</Text>
             ) : null}
             <Pressable
               onPress={handleSaveTimeOverride}
               style={({ pressed }) => [{ backgroundColor: timeError ? colors.border : colors.primary, paddingVertical: 16, borderRadius: 14, alignItems: "center", opacity: pressed ? 0.8 : 1, marginTop: 12 }]}
             >
-              <Text style={{ color: timeError ? colors.muted : "#fff", fontWeight: "700", fontSize: 16 }}>Save Hours</Text>
+              <Text style={{ color: timeError ? colors.muted : "#fff", fontWeight: "700", fontSize: fs.md }}>Save Hours</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -2469,7 +2469,7 @@ export default function CalendarScreen() {
           <Pressable style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20, backgroundColor: colors.background, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }} onPress={() => {}}>
             {/* Header */}
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>
                 {payModalIsBulk ? `Mark All ${filteredAppointments.length} as Paid` : "Mark as Paid"}
               </Text>
               <Pressable onPress={() => { setPayModalAppt(null); setPayModalIsBulk(false); }} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
@@ -2477,21 +2477,21 @@ export default function CalendarScreen() {
               </Pressable>
             </View>
             {payModalAppt && (
-              <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 16 }}>
                 {getClientById(payModalAppt.clientId)?.name ?? "Client"}{payModalAppt.totalPrice != null ? ` · $${payModalAppt.totalPrice.toFixed(2)}` : ""}
               </Text>
             )}
             {payModalIsBulk && (() => {
               const total = filteredAppointments.reduce((s, a) => s + (a.totalPrice ?? 0), 0);
               return (
-                <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16 }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 16 }}>
                   {filteredAppointments.length} appointment{filteredAppointments.length !== 1 ? "s" : ""} · ${total.toFixed(2)} total
                 </Text>
               );
             })()}
 
             {/* Method picker */}
-            <Text style={{ fontSize: 13, fontWeight: "600", color: colors.muted, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Payment Method</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Payment Method</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
               {PAYMENT_METHODS.map((pm) => (
                 <Pressable
@@ -2505,7 +2505,7 @@ export default function CalendarScreen() {
                     opacity: pressed ? 0.7 : 1,
                   }]}
                 >
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: payModalMethod === pm.key ? "#FFF" : colors.foreground }}>{pm.label}</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: payModalMethod === pm.key ? "#FFF" : colors.foreground }}>{pm.label}</Text>
                 </Pressable>
               ))}
             </View>
@@ -2530,7 +2530,7 @@ export default function CalendarScreen() {
               }}
               style={({ pressed }) => [{ backgroundColor: "#22C55E", paddingVertical: 16, borderRadius: 14, alignItems: "center", opacity: pressed ? 0.8 : 1 }]}
             >
-              <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 16 }}>
+              <Text style={{ color: "#FFF", fontWeight: "700", fontSize: fs.md }}>
                 {payModalIsBulk ? `Mark All Paid · ${payModalMethod.charAt(0).toUpperCase() + payModalMethod.slice(1)}` : `Confirm Payment · ${PAYMENT_METHODS.find((p) => p.key === payModalMethod)?.label ?? payModalMethod}`}
               </Text>
             </Pressable>
@@ -2550,7 +2550,7 @@ export default function CalendarScreen() {
           <View style={[styles.payModal, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
             <Text style={[styles.payModalTitle, { color: colors.foreground }]}>Issue Refund</Text>
             {calRefundAppt && (
-              <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 12, textAlign: "center" }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 12, textAlign: "center" }}>
                 {getClientById(calRefundAppt.clientId)?.name ?? "Client"} · {calRefundAppt.date} · ${(calRefundAppt.totalPrice ?? 0).toFixed(2)} total
               </Text>
             )}
@@ -2567,13 +2567,13 @@ export default function CalendarScreen() {
                 marginBottom: 10,
               }]}
             >
-              <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 15 }}>
+              <Text style={{ color: "#FFF", fontWeight: "700", fontSize: fs.sm }}>
                 Full Refund · ${(calRefundAppt?.totalPrice ?? 0).toFixed(2)}
               </Text>
             </Pressable>
             <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
               <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-              <Text style={{ color: colors.muted, fontSize: 12, marginHorizontal: 10 }}>or partial amount</Text>
+              <Text style={{ color: colors.muted, fontSize: fs.xs, marginHorizontal: 10 }}>or partial amount</Text>
               <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             </View>
             <TextInput
@@ -2597,11 +2597,11 @@ export default function CalendarScreen() {
             >
               {calRefundLoading
                 ? <ActivityIndicator color="#FFF" />
-                : <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 15 }}>Confirm Refund</Text>
+                : <Text style={{ color: "#FFF", fontWeight: "700", fontSize: fs.sm }}>Confirm Refund</Text>
               }
             </Pressable>
             <Pressable onPress={() => setCalRefundAppt(null)} style={{ alignItems: "center", paddingVertical: 10 }}>
-              <Text style={{ color: colors.muted, fontSize: 14 }}>Cancel</Text>
+              <Text style={{ color: colors.muted, fontSize: fs.sm }}>Cancel</Text>
             </Pressable>
           </View>
         </KeyboardAvoidingView>
@@ -2632,7 +2632,7 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   monthHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8 },
-  monthTitle: { fontSize: 18, fontWeight: "700" },
+  monthTitle: { fontSize: fs.md, fontWeight: "700" },
   navBtn: { padding: 8 },
   dayHeaderRow: { flexDirection: "row", marginBottom: 4 },
   calendarGrid: { flexDirection: "row", flexWrap: "wrap", width: "100%" },
@@ -2643,7 +2643,7 @@ const styles = StyleSheet.create({
   dotLegend: { flexDirection: "row", justifyContent: "center", gap: 12, marginTop: 6, marginBottom: 8, flexWrap: "wrap" },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   legendDot: { width: 7, height: 7, borderRadius: 3.5 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 8 },
+  sectionTitle: { fontSize: fs.md, fontWeight: "700", marginBottom: 8 },
   apptCard: { flexDirection: "column", padding: 12, borderRadius: 12, borderWidth: 1, borderLeftWidth: 4, marginBottom: 8 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, alignSelf: "flex-start" },
   filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, marginRight: 8 },
@@ -2687,9 +2687,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  undoToastText: { flex: 1, color: "#FFF", fontSize: 14, fontWeight: "500" },
+  undoToastText: { flex: 1, color: "#FFF", fontSize: fs.sm, fontWeight: "500" },
   undoBtn: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: "#00C896", borderRadius: 10 },
-  undoBtnText: { color: "#FFF", fontWeight: "700", fontSize: 13 },
+  undoBtnText: { color: "#FFF", fontWeight: "700", fontSize: fs.xs },
   payModal: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -2697,7 +2697,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   payModalTitle: {
-    fontSize: 18,
+    fontSize: fs.md,
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 8,
@@ -2706,7 +2706,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
-    fontSize: 16,
+    fontSize: fs.md,
     marginBottom: 16,
   },
 });

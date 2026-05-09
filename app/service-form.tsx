@@ -24,7 +24,7 @@ export default function ServiceFormScreen() {
   const { state, dispatch, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, modalMaxWidth } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const { checkLimit, planInfo } = usePlanLimitCheck();
   const smsLevel: string = (planInfo?.limits as { smsLevel?: string } | undefined)?.smsLevel ?? "none";
   const hasSms = smsLevel !== "none";
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
+    fontSize: fs.md,
     fontWeight: "700",
     letterSpacing: -0.3,
   },
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveBtnText: {
-    fontSize: 14,
+    fontSize: fs.sm,
     fontWeight: "700",
     color: "#fff",
     letterSpacing: 0.2,
@@ -470,16 +470,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   durationValue: {
-    fontSize: 15,
+    fontSize: fs.sm,
     fontWeight: "700",
   },
   fieldLabel: {
-    fontSize: 12,
+    fontSize: fs.xs,
     fontWeight: "600",
     marginBottom: 6,
   },
   fieldHint: {
-    fontSize: 12,
+    fontSize: fs.xs,
     lineHeight: 17,
     marginBottom: 10,
   },
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: fs.sm,
   },
   textArea: {
     minHeight: 80,
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipText: {
-    fontSize: 12,
+    fontSize: fs.xs,
     fontWeight: "500",
   },
   categoryGrid: {
@@ -528,11 +528,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   categoryTileEmoji: {
-    fontSize: 22,
+    fontSize: fs.lg,
     lineHeight: 28,
   },
   categoryTileLabel: {
-    fontSize: 11,
+    fontSize: fs.xs,
     fontWeight: "600",
     textAlign: "center",
     lineHeight: 14,
@@ -563,11 +563,11 @@ const styles = StyleSheet.create({
     borderRadius: 7,
   },
   previewName: {
-    fontSize: 15,
+    fontSize: fs.sm,
     fontWeight: "600",
   },
   previewMeta: {
-    fontSize: 12,
+    fontSize: fs.xs,
     marginTop: 2,
   },
   reminderRow: {
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   reminderUnit: {
-    fontSize: 14,
+    fontSize: fs.sm,
     minWidth: 28,
   },
   lockedRow: {
@@ -588,11 +588,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   lockedTitle: {
-    fontSize: 14,
+    fontSize: fs.sm,
     fontWeight: "600",
   },
   lockedSub: {
-    fontSize: 12,
+    fontSize: fs.xs,
     marginTop: 2,
     lineHeight: 16,
   },
@@ -615,11 +615,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   imageHint: {
-    fontSize: 15,
+    fontSize: fs.sm,
     fontWeight: "600",
   },
   imageSubHint: {
-    fontSize: 12,
+    fontSize: fs.xs,
     textAlign: "center",
     paddingHorizontal: 20,
   },
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   imageOverlayText: {
-    fontSize: 11,
+    fontSize: fs.xs,
     color: "#fff",
     fontWeight: "500",
   },
@@ -667,7 +667,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   imageActionText: {
-    fontSize: 13,
+    fontSize: fs.xs,
     fontWeight: "600",
   },
   deleteBtn: {
@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   deleteBtnText: {
-    fontSize: 14,
+    fontSize: fs.sm,
     fontWeight: "600",
   },
   lightboxOverlay: {

@@ -142,7 +142,7 @@ function UsageMeter({
   color: string;
 }) {
   const colors = useColors();
-  const { modalMaxWidth } = useResponsive();
+  const { modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const isUnlimited = max === -1 || max >= 9999;
   const pct = isUnlimited ? 0 : Math.min(1, current / Math.max(max, 1));
   const barColor = pct >= 0.9 ? "#EF4444" : pct >= 0.7 ? "#F59E0B" : color;
@@ -163,9 +163,9 @@ function UsageMeter({
   return (
     <View style={{ marginBottom: 16 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-        <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}>{label}</Text>
+        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground }}>{label}</Text>
         <Text style={{
-          fontSize: 12,
+          fontSize: fs.xs,
           fontWeight: "600",
           color: isUnlimited
             ? color
@@ -207,7 +207,7 @@ function PlanBadge({ planKey, displayName, isAdminOverride }: { planKey: string;
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
       <View style={{ backgroundColor: badgeColor + "20", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, flexDirection: "row", alignItems: "center", gap: 4 }}>
         <IconSymbol name="crown.fill" size={13} color={badgeColor} />
-        <Text style={{ fontSize: 13, fontWeight: "700", color: badgeColor }}>
+        <Text style={{ fontSize: fs.xs, fontWeight: "700", color: badgeColor }}>
           {isAdminOverride ? "Complimentary" : displayName}
         </Text>
       </View>
@@ -235,8 +235,8 @@ function FeatureRow({
         style={{ marginTop: 1 }}
       />
       <View style={{ flex: 1, marginLeft: 10 }}>
-        <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}>{label}</Text>
-        <Text style={{ fontSize: 12, color: dim ? colors.border : colors.muted, marginTop: 1 }}>{value}</Text>
+        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground }}>{label}</Text>
+        <Text style={{ fontSize: fs.xs, color: dim ? colors.border : colors.muted, marginTop: 1 }}>{value}</Text>
       </View>
     </View>
   );
@@ -279,18 +279,18 @@ function PlanBenefitsCard({
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 }}>
             <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: plan.color }} />
-            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}>{plan.displayName}</Text>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>{plan.displayName}</Text>
             {isCurrentPlan && (
               <View style={{ backgroundColor: plan.color + "20", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
-                <Text style={{ fontSize: 11, fontWeight: "700", color: plan.color }}>Current</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: plan.color }}>Current</Text>
               </View>
             )}
           </View>
-          <Text style={{ fontSize: 12, color: colors.muted }}>{plan.tagline}</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted }}>{plan.tagline}</Text>
         </View>
         <View style={{ alignItems: "flex-end", marginLeft: 12 }}>
           {plan.monthlyPrice === 0 ? (
-            <Text style={{ fontSize: 18, fontWeight: "800", color: colors.success }}>Free</Text>
+            <Text style={{ fontSize: fs.md, fontWeight: "800", color: colors.success }}>Free</Text>
           ) : (() => {
             const discPct = (plan as any).discountPercent ?? 0;
             const effMonthly = (plan as any).effectiveMonthlyPrice ?? plan.monthlyPrice;
@@ -306,10 +306,10 @@ function PlanBenefitsCard({
                   </View>
                 )}
                 {discPct > 0 && (
-                  <Text style={{ fontSize: 11, color: colors.muted, textDecorationLine: "line-through" }}>{formatPrice(plan.monthlyPrice)}/mo</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, textDecorationLine: "line-through" }}>{formatPrice(plan.monthlyPrice)}/mo</Text>
                 )}
-                <Text style={{ fontSize: 18, fontWeight: "800", color: colors.foreground }}>{formatPrice(effMonthly)}<Text style={{ fontSize: 12, fontWeight: "400", color: colors.muted }}>/mo</Text></Text>
-                <Text style={{ fontSize: 11, color: colors.muted }}>{formatPrice(effYearly)}/yr</Text>
+                <Text style={{ fontSize: fs.md, fontWeight: "800", color: colors.foreground }}>{formatPrice(effMonthly)}<Text style={{ fontSize: fs.xs, fontWeight: "400", color: colors.muted }}>/mo</Text></Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>{formatPrice(effYearly)}/yr</Text>
               </>
             );
           })()}
@@ -481,10 +481,10 @@ export default function SubscriptionScreen() {
         <FuturisticBackground />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
           <IconSymbol name="exclamationmark.triangle.fill" size={40} color={colors.warning} />
-          <Text style={{ fontSize: 16, color: colors.foreground, textAlign: "center", fontWeight: "700" }}>
+          <Text style={{ fontSize: fs.md, color: colors.foreground, textAlign: "center", fontWeight: "700" }}>
             {isError ? "Connection Error" : "Subscription Not Found"}
           </Text>
-          <Text style={{ fontSize: 14, color: colors.muted, textAlign: "center", lineHeight: 20 }}>
+          <Text style={{ fontSize: fs.sm, color: colors.muted, textAlign: "center", lineHeight: 20 }}>
             {isError
               ? "Could not reach the server.\nPlease check your connection and try again."
               : "Your account is not yet fully set up.\nPlease complete onboarding or contact support."}
@@ -493,7 +493,7 @@ export default function SubscriptionScreen() {
             onPress={() => refetch()}
             style={({ pressed }) => [styles.primaryBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}
           >
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Retry</Text>
+            <Text style={{ color: "#fff", fontWeight: "700", fontSize: fs.sm }}>Retry</Text>
           </Pressable>
         </View>
       </ScreenContainer>
@@ -556,7 +556,7 @@ export default function SubscriptionScreen() {
           >
             <IconSymbol name="arrow.left" size={24} color={colors.foreground} />
           </Pressable>
-          <Text style={{ fontSize: 22, fontWeight: "700", color: colors.foreground, flex: 1 }}>My Subscription</Text>
+          <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.foreground, flex: 1 }}>My Subscription</Text>
         </View>
 
         {/* Plan Card */}
@@ -564,7 +564,7 @@ export default function SubscriptionScreen() {
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <PlanBadge planKey={planKey} displayName={displayName} isAdminOverride={isAdminOverride} />
             <View style={{ backgroundColor: (statusColor[subscriptionStatus] ?? colors.muted) + "20", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }}>
-              <Text style={{ fontSize: 12, fontWeight: "700", color: statusColor[subscriptionStatus] ?? colors.muted }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: statusColor[subscriptionStatus] ?? colors.muted }}>
                 {statusLabel[subscriptionStatus] ?? subscriptionStatus}
               </Text>
             </View>
@@ -575,10 +575,10 @@ export default function SubscriptionScreen() {
             <View style={{ backgroundColor: colors.warning + "15", borderRadius: 10, padding: 12, marginBottom: 12, flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
               <IconSymbol name="clock.fill" size={18} color={colors.warning} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: "700", color: colors.warning }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.warning }}>
                   {(planInfo as any)?.cancelAtPeriodEnd ? "Subscription Cancelling" : "Downgrade Scheduled"}
                 </Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
                   {(planInfo as any)?.cancelAtPeriodEnd
                     ? `Cancels on ${new Date((planInfo as any).stripeCurrentPeriodEnd * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}. Full access until then.`
                     : `Changes to ${(planInfo as any)?.scheduledPlanKey ?? "lower tier"} on ${new Date((planInfo as any).stripeCurrentPeriodEnd * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.`
@@ -592,7 +592,7 @@ export default function SubscriptionScreen() {
           {subscriptionStatus === "trial" && trialDaysRemaining !== null && (
             <View style={{ backgroundColor: colors.warning + "15", borderRadius: 10, padding: 12, marginBottom: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
               <IconSymbol name="clock.fill" size={18} color={colors.warning} />
-              <Text style={{ fontSize: 13, fontWeight: "600", color: colors.warning, flex: 1 }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.warning, flex: 1 }}>
                 {trialDaysRemaining > 0
                   ? `${trialDaysRemaining} day${trialDaysRemaining !== 1 ? "s" : ""} remaining in your trial`
                   : "Your trial has ended"}
@@ -604,7 +604,7 @@ export default function SubscriptionScreen() {
           {subscriptionStatus === "expired" && (
             <View style={{ backgroundColor: colors.error + "15", borderRadius: 10, padding: 12, marginBottom: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
               <IconSymbol name="exclamationmark.triangle.fill" size={18} color={colors.error} />
-              <Text style={{ fontSize: 13, fontWeight: "600", color: colors.error, flex: 1 }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.error, flex: 1 }}>
                 Your subscription has expired. Upgrade to restore full access.
               </Text>
             </View>
@@ -725,7 +725,7 @@ export default function SubscriptionScreen() {
                 ) : (
                   <IconSymbol name="creditcard.fill" size={16} color={colors.primary} />
                 )}
-                <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 14, marginLeft: 6 }}>
+                <Text style={{ color: colors.primary, fontWeight: "600", fontSize: fs.sm, marginLeft: 6 }}>
                   Manage Billing
                 </Text>
               </Pressable>
@@ -742,7 +742,7 @@ export default function SubscriptionScreen() {
                   size={16}
                   color="#fff"
                 />
-                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15, marginLeft: 6 }}>
+                <Text style={{ color: "#fff", fontWeight: "700", fontSize: fs.sm, marginLeft: 6 }}>
                   {subscriptionStatus === "expired" || planKey === "solo"
                     ? "Upgrade Plan"
                     : planKey === "growth"
@@ -770,7 +770,7 @@ export default function SubscriptionScreen() {
                   ) : (
                     <IconSymbol name="arrow.clockwise" size={16} color={colors.success} />
                   )}
-                  <Text style={{ color: colors.success, fontWeight: "600", fontSize: 14, marginLeft: 6 }}>
+                  <Text style={{ color: colors.success, fontWeight: "600", fontSize: fs.sm, marginLeft: 6 }}>
                     Resume Subscription
                   </Text>
                 </Pressable>
@@ -783,7 +783,7 @@ export default function SubscriptionScreen() {
                   ]}
                 >
                   <IconSymbol name="xmark.circle" size={16} color={colors.error} />
-                  <Text style={{ color: colors.error, fontWeight: "600", fontSize: 14, marginLeft: 6 }}>
+                  <Text style={{ color: colors.error, fontWeight: "600", fontSize: fs.sm, marginLeft: 6 }}>
                     Cancel Subscription
                   </Text>
                 </Pressable>
@@ -800,8 +800,8 @@ export default function SubscriptionScreen() {
                 <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.error + "18", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
                   <IconSymbol name="xmark.circle.fill" size={28} color={colors.error} />
                 </View>
-                <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>Cancel Subscription?</Text>
-                <Text style={{ fontSize: 14, color: colors.muted, textAlign: "center", marginTop: 8, lineHeight: 20 }}>
+                <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>Cancel Subscription?</Text>
+                <Text style={{ fontSize: fs.sm, color: colors.muted, textAlign: "center", marginTop: 8, lineHeight: 20 }}>
                   Your subscription will remain active until the end of the current billing period. After that, you'll be moved to the free Solo plan.
                 </Text>
               </View>
@@ -810,7 +810,7 @@ export default function SubscriptionScreen() {
               {renewalDateStr && (
                 <View style={{ backgroundColor: colors.warning + "15", borderRadius: 10, padding: 12, marginBottom: 16, flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <IconSymbol name="calendar" size={16} color={colors.warning} />
-                  <Text style={{ fontSize: 13, color: colors.warning, flex: 1 }}>
+                  <Text style={{ fontSize: fs.xs, color: colors.warning, flex: 1 }}>
                     Access continues until {renewalDateStr}
                   </Text>
                 </View>
@@ -820,8 +820,8 @@ export default function SubscriptionScreen() {
               <View style={{ backgroundColor: colors.primary + "12", borderRadius: 10, padding: 12, marginBottom: 20, flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
                 <IconSymbol name="lightbulb.fill" size={16} color={colors.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: colors.primary }}>Thinking of pausing?</Text>
-                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 17 }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>Thinking of pausing?</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2, lineHeight: 17 }}>
                     Contact us to pause your subscription for up to 3 months instead of cancelling.
                   </Text>
                 </View>
@@ -837,14 +837,14 @@ export default function SubscriptionScreen() {
                 ) : (
                   <IconSymbol name="xmark.circle.fill" size={16} color="#fff" />
                 )}
-                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15, marginLeft: 6 }}>Yes, Cancel at Period End</Text>
+                <Text style={{ color: "#fff", fontWeight: "700", fontSize: fs.sm, marginLeft: 6 }}>Yes, Cancel at Period End</Text>
               </Pressable>
 
               <Pressable
                 onPress={() => setShowCancelModal(false)}
                 style={({ pressed }) => [styles.secondaryBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
               >
-                <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>Keep My Subscription</Text>
+                <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: fs.sm }}>Keep My Subscription</Text>
               </Pressable>
             </View>
           </View>
@@ -862,7 +862,7 @@ export default function SubscriptionScreen() {
 
         {/* Plan Comparison */}
         <Text style={[styles.sectionLabel, { color: colors.muted }]}>All Plans</Text>
-        <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 12, lineHeight: 18 }}>
+        <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 12, lineHeight: 18 }}>
           Tap any plan to see its full feature list. Your current plan is highlighted.
         </Text>
         {planBenefits.map((plan) => (
@@ -886,7 +886,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionLabel: {
-    fontSize: 12,
+    fontSize: fs.xs,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -924,11 +924,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   infoLabel: {
-    fontSize: 13,
+    fontSize: fs.xs,
     fontWeight: "500",
   },
   infoValue: {
-    fontSize: 13,
+    fontSize: fs.xs,
     fontWeight: "600",
     textAlign: "right",
     flex: 1,

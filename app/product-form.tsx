@@ -24,7 +24,7 @@ export default function ProductFormScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { hp } = useResponsive();
+  const { hp, fs, buttonHeight, iconButtonSize } = useResponsive();
   const { checkLimit } = usePlanLimitCheck();
   const [upgradeSheetVisible, setUpgradeSheetVisible] = useState(false);
   const [upgradeSheetInfo, setUpgradeSheetInfo] = useState<{ planKey: string; planName: string; limit: number } | null>(null);
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
+    fontSize: fs.md,
     fontWeight: "700",
     letterSpacing: -0.3,
   },
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveBtnText: {
-    fontSize: 14,
+    fontSize: fs.sm,
     fontWeight: "700",
     color: "#fff",
     letterSpacing: 0.2,
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   fieldLabel: {
-    fontSize: 12,
+    fontSize: fs.xs,
     fontWeight: "600",
     marginBottom: 6,
   },
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: fs.sm,
   },
   textArea: {
     minHeight: 80,
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipText: {
-    fontSize: 12,
+    fontSize: fs.xs,
     fontWeight: "500",
   },
   toggleRow: {
@@ -487,11 +487,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   toggleTitle: {
-    fontSize: 15,
+    fontSize: fs.sm,
     fontWeight: "600",
   },
   toggleSub: {
-    fontSize: 12,
+    fontSize: fs.xs,
     marginTop: 2,
     lineHeight: 16,
   },
@@ -514,11 +514,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   imageHint: {
-    fontSize: 15,
+    fontSize: fs.sm,
     fontWeight: "600",
   },
   imageSubHint: {
-    fontSize: 12,
+    fontSize: fs.xs,
     textAlign: "center",
     paddingHorizontal: 20,
   },
@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   imageOverlayText: {
-    fontSize: 11,
+    fontSize: fs.xs,
     color: "#fff",
     fontWeight: "500",
   },
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   imageActionText: {
-    fontSize: 13,
+    fontSize: fs.xs,
     fontWeight: "600",
   },
   deleteBtn: {
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   deleteBtnText: {
-    fontSize: 14,
+    fontSize: fs.sm,
     fontWeight: "600",
   },
   lightboxOverlay: {

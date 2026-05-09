@@ -62,7 +62,7 @@ export default function LocationFormScreen() {
   const { setActiveLocation } = useActiveLocation();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, modalMaxWidth } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const { checkLimit } = usePlanLimitCheck();
   const [upgradeSheetVisible, setUpgradeSheetVisible] = useState(false);
   const [upgradeSheetInfo, setUpgradeSheetInfo] = useState<{ planKey: string; planName: string; limit: number } | null>(null);
@@ -413,7 +413,7 @@ export default function LocationFormScreen() {
             { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
           ]}
         >
-          <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 15 }}>Save</Text>
+          <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: fs.sm }}>Save</Text>
         </Pressable>
       </View>
 
@@ -426,10 +426,10 @@ export default function LocationFormScreen() {
         {isFirstLocation && (
           <View style={[styles.section, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "30" }]}>
             <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
-              <Text style={{ fontSize: 22 }}>📍</Text>
+              <Text style={{ fontSize: fs.lg }}>📍</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 15, fontWeight: "700", color: colors.primary, marginBottom: 4 }}>Add Your Business Location</Text>
-                <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 19 }}>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.primary, marginBottom: 4 }}>Add Your Business Location</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, lineHeight: 19 }}>
                   Your address will appear on your booking page so clients know where to find you. You can always add more locations later.
                 </Text>
               </View>
@@ -449,7 +449,7 @@ export default function LocationFormScreen() {
             style={[styles.input, { backgroundColor: colors.background, borderColor: errors.name ? colors.error : colors.border, color: colors.foreground }]}
             returnKeyType="done"
           />
-          {errors.name ? <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.name}</Text> : null}
+          {errors.name ? <Text style={{ color: colors.error, fontSize: fs.xs, marginTop: 4 }}>{errors.name}</Text> : null}
 
           <Text className="text-xs font-medium text-muted mb-1 mt-3">Address *</Text>
           <TextInput
@@ -460,7 +460,7 @@ export default function LocationFormScreen() {
             style={[styles.input, { backgroundColor: colors.background, borderColor: errors.address ? colors.error : colors.border, color: colors.foreground }]}
             returnKeyType="done"
           />
-          {errors.address ? <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.address}</Text> : null}
+          {errors.address ? <Text style={{ color: colors.error, fontSize: fs.xs, marginTop: 4 }}>{errors.address}</Text> : null}
 
           {/* City / State / ZIP row */}
           <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
@@ -527,7 +527,7 @@ export default function LocationFormScreen() {
           />
           {/* Studio Photo */}
           <Text className="text-xs font-medium text-muted mb-1 mt-4">Studio Photo (optional)</Text>
-          <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 8, lineHeight: 15 }}>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8, lineHeight: 15 }}>
             Shown on the client booking page as a cover image for this location.
           </Text>
           <Pressable
@@ -560,13 +560,13 @@ export default function LocationFormScreen() {
                   flexDirection: "row", alignItems: "center", gap: 5,
                 }}>
                   <IconSymbol name="pencil" size={12} color="#fff" />
-                  <Text style={{ color: "#fff", fontSize: 11, fontWeight: "600" }}>Change</Text>
+                  <Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "600" }}>Change</Text>
                 </View>
               </>
             ) : (
               <View style={{ alignItems: "center", gap: 6 }}>
                 <IconSymbol name="photo.badge.plus" size={28} color={colors.muted} />
-                <Text style={{ fontSize: 12, color: colors.muted }}>Tap to add a studio photo</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>Tap to add a studio photo</Text>
               </View>
             )}
           </Pressable>
@@ -575,7 +575,7 @@ export default function LocationFormScreen() {
               onPress={() => setPhotoUri("")}
               style={({ pressed }) => ({ alignSelf: "flex-end", marginTop: 6, opacity: pressed ? 0.6 : 1 })}
             >
-              <Text style={{ fontSize: 12, color: colors.error }}>Remove photo</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.error }}>Remove photo</Text>
             </Pressable>
           ) : null}
         </View>
@@ -585,14 +585,14 @@ export default function LocationFormScreen() {
           <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
               <IconSymbol name="link" size={15} color={colors.primary} />
-              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>Booking Link</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>Booking Link</Text>
             </View>
-            <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 17, marginBottom: 10 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, lineHeight: 17, marginBottom: 10 }}>
               Share this link so clients can book directly at this location.
             </Text>
             {/* URL preview */}
             <View style={[styles.urlPreviewBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
-              <Text style={{ fontSize: 12, color: colors.muted, flex: 1 }} numberOfLines={1}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, flex: 1 }} numberOfLines={1}>
                 {locationBookingUrl}
               </Text>
             </View>
@@ -615,7 +615,7 @@ export default function LocationFormScreen() {
                   size={15}
                   color={copiedLink ? colors.success : colors.primary}
                 />
-                <Text style={{ fontSize: 13, fontWeight: "600", color: copiedLink ? colors.success : colors.primary }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: copiedLink ? colors.success : colors.primary }}>
                   {copiedLink ? "Copied!" : "Copy Link"}
                 </Text>
               </Pressable>
@@ -633,7 +633,7 @@ export default function LocationFormScreen() {
                   ]}
                 >
                   <IconSymbol name="square.and.arrow.up" size={15} color={colors.primary} />
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: colors.primary }}>Share</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>Share</Text>
                 </Pressable>
               )}
             </View>
@@ -645,8 +645,8 @@ export default function LocationFormScreen() {
           <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>Location Business Hours</Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 17 }}>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>Location Business Hours</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2, lineHeight: 17 }}>
                   {useLocationHours ? "Custom hours for this location." : "Using global business hours from Schedule Settings."}
                 </Text>
               </View>
@@ -671,7 +671,7 @@ export default function LocationFormScreen() {
                         thumbColor={wh.enabled ? colors.primary : colors.muted}
                         style={{ transform: [{ scale: 0.8 }] }}
                       />
-                      <Text style={{ fontSize: 13, fontWeight: "500", width: 44, marginLeft: 8, color: wh.enabled ? colors.foreground : colors.muted }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "500", width: 44, marginLeft: 8, color: wh.enabled ? colors.foreground : colors.muted }}>
                         {DAY_LABELS[day]}
                       </Text>
                       {wh.enabled && (
@@ -682,7 +682,7 @@ export default function LocationFormScreen() {
                             { backgroundColor: colors.background, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
                           ]}
                         >
-                          <Text style={{ fontSize: 12, color: colors.foreground }}>
+                          <Text style={{ fontSize: fs.xs, color: colors.foreground }}>
                             {formatTimeLabel(wh.start)} – {formatTimeLabel(wh.end)}
                           </Text>
                         </Pressable>
@@ -699,14 +699,14 @@ export default function LocationFormScreen() {
         <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <IconSymbol name="clock" size={16} color={colors.primary} />
-            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>Scheduling Overrides</Text>
+            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>Scheduling Overrides</Text>
           </View>
-          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 12, lineHeight: 17 }}>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 12, lineHeight: 17 }}>
             Override the global buffer time and slot interval for this location only. Leave blank to use the global setting.
           </Text>
           {/* Buffer Time */}
           <View style={{ marginBottom: 12 }}>
-            <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground, marginBottom: 6 }}>Buffer Time (minutes)</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 6 }}>Buffer Time (minutes)</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, flexDirection: "row" }}>
               {[null, 0, 5, 10, 15, 20, 30, 45, 60].map((mins) => {
                 const isActive = locBufferMinutes === mins;
@@ -722,7 +722,7 @@ export default function LocationFormScreen() {
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Text style={{ fontSize: 12, fontWeight: "600", color: isActive ? "#FFFFFF" : colors.foreground }}>{label}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: isActive ? "#FFFFFF" : colors.foreground }}>{label}</Text>
                   </Pressable>
                 );
               })}
@@ -730,7 +730,7 @@ export default function LocationFormScreen() {
           </View>
           {/* Slot Interval */}
           <View>
-            <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground, marginBottom: 6 }}>Slot Interval (minutes)</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 6 }}>Slot Interval (minutes)</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, flexDirection: "row" }}>
               {[null, 0, 5, 10, 15, 20, 25, 30, 45, 60].map((mins) => {
                 const isActive = locSlotIntervalMinutes === mins;
@@ -746,7 +746,7 @@ export default function LocationFormScreen() {
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Text style={{ fontSize: 12, fontWeight: "600", color: isActive ? "#FFFFFF" : colors.foreground }}>{label}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: isActive ? "#FFFFFF" : colors.foreground }}>{label}</Text>
                   </Pressable>
                 );
               })}
@@ -760,9 +760,9 @@ export default function LocationFormScreen() {
             <View style={{ flex: 1, marginRight: 12 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <IconSymbol name="calendar.badge.clock" size={16} color="#9C27B0" />
-                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>Active Until</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>Active Until</Text>
               </View>
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 3, lineHeight: 17 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 3, lineHeight: 17 }}>
                 {activeUntil
                   ? `Bookings accepted until ${formatActiveUntilLabel(activeUntil)}. After this date, no slots are shown.`
                   : "Optionally set an end date. After this date, no booking slots will be shown for this location."}
@@ -782,13 +782,13 @@ export default function LocationFormScreen() {
             <View style={{ marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#9C27B015", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: "#9C27B040" }}>
                 <IconSymbol name="calendar" size={14} color="#9C27B0" />
-                <Text style={{ fontSize: 13, fontWeight: "600", color: "#9C27B0" }}>{formatActiveUntilLabel(activeUntil)}</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#9C27B0" }}>{formatActiveUntilLabel(activeUntil)}</Text>
               </View>
               <Pressable
                 onPress={() => setShowActiveUntilPicker(true)}
                 style={({ pressed }) => [{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
               >
-                <Text style={{ fontSize: 12, color: colors.foreground }}>Change</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.foreground }}>Change</Text>
               </Pressable>
             </View>
           )}
@@ -805,7 +805,7 @@ export default function LocationFormScreen() {
                 >
                   <IconSymbol name="chevron.left" size={18} color={colors.foreground} />
                 </Pressable>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>
                   {CAL_MONTHS_AU[activeUntilCalMonth]} {activeUntilCalYear}
                 </Text>
                 <Pressable
@@ -821,7 +821,7 @@ export default function LocationFormScreen() {
               {/* Day headers */}
               <View style={{ flexDirection: "row", marginBottom: 4 }}>
                 {CAL_DAYS_AU.map(d => (
-                  <Text key={d} style={{ flex: 1, textAlign: "center", fontSize: 11, fontWeight: "600", color: colors.muted }}>{d}</Text>
+                  <Text key={d} style={{ flex: 1, textAlign: "center", fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>{d}</Text>
                 ))}
               </View>
               {/* Calendar grid */}
@@ -848,7 +848,7 @@ export default function LocationFormScreen() {
                             opacity: isPast ? 0.3 : pressed ? 0.7 : 1,
                           }]}
                         >
-                          <Text style={{ fontSize: 13, fontWeight: isSelected ? "700" : "400", color: isSelected ? "#fff" : colors.foreground }}>
+                          <Text style={{ fontSize: fs.xs, fontWeight: isSelected ? "700" : "400", color: isSelected ? "#fff" : colors.foreground }}>
                             {day ?? ""}
                           </Text>
                         </Pressable>
@@ -861,7 +861,7 @@ export default function LocationFormScreen() {
                 onPress={() => { setActiveUntil(undefined); setShowActiveUntilPicker(false); }}
                 style={({ pressed }) => [{ marginTop: 10, alignSelf: "center", opacity: pressed ? 0.6 : 1 }]}
               >
-                <Text style={{ fontSize: 13, color: colors.muted }}>Clear date</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>Clear date</Text>
               </Pressable>
             </View>
           )}
@@ -872,9 +872,9 @@ export default function LocationFormScreen() {
           <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
               <IconSymbol name="qrcode" size={15} color={colors.primary} />
-              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>QR Code</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>QR Code</Text>
             </View>
-            <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 17, marginBottom: 10 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, lineHeight: 17, marginBottom: 10 }}>
               Display or print this QR code so walk-in clients can scan it to book online.
             </Text>
             <Pressable
@@ -885,7 +885,7 @@ export default function LocationFormScreen() {
               ]}
             >
               <IconSymbol name="qrcode" size={15} color={colors.primary} />
-              <Text style={{ fontSize: 13, fontWeight: "600", color: colors.primary }}>View QR Code</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>View QR Code</Text>
             </Pressable>
           </View>
         )}
@@ -900,7 +900,7 @@ export default function LocationFormScreen() {
             ]}
           >
             <IconSymbol name="trash.fill" size={18} color={colors.error} />
-            <Text style={{ color: colors.error, fontWeight: "600", fontSize: 15 }}>
+            <Text style={{ color: colors.error, fontWeight: "600", fontSize: fs.sm }}>
               Delete Location
             </Text>
           </Pressable>
@@ -912,7 +912,7 @@ export default function LocationFormScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => { setTimePickerDay(null); setWeekSubPicker(null); }}>
           <Pressable style={[styles.modalContent, { backgroundColor: colors.background }]} onPress={() => {}}>
             <View style={styles.modalHeader}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>
                 {timePickerDay ? DAY_FULL[timePickerDay] : ""} Hours
               </Text>
               <Pressable onPress={() => { setTimePickerDay(null); setWeekSubPicker(null); }} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
@@ -923,8 +923,8 @@ export default function LocationFormScreen() {
               onPress={() => setWeekSubPicker(weekSubPicker === "start" ? null : "start")}
               style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14, paddingHorizontal: 4, borderRadius: 12, backgroundColor: weekSubPicker === "start" ? colors.primary + "18" : "transparent", marginBottom: 4 }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Start Time</Text>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.primary }}>{formatTimeLabel(draftStart)}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Start Time</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>{formatTimeLabel(draftStart)}</Text>
             </Pressable>
             {weekSubPicker === "start" && (
               <TapTimePicker value={draftStart} onChange={(v) => { setDraftStart(v); setWeekTimeError(null); }} stepMinutes={5} />
@@ -933,20 +933,20 @@ export default function LocationFormScreen() {
               onPress={() => setWeekSubPicker(weekSubPicker === "end" ? null : "end")}
               style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14, paddingHorizontal: 4, borderRadius: 12, backgroundColor: weekSubPicker === "end" ? colors.primary + "18" : "transparent", marginBottom: 4 }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>End Time</Text>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.primary }}>{formatTimeLabel(draftEnd)}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>End Time</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>{formatTimeLabel(draftEnd)}</Text>
             </Pressable>
             {weekSubPicker === "end" && (
               <TapTimePicker value={draftEnd} onChange={(v) => { setDraftEnd(v); setWeekTimeError(null); }} stepMinutes={5} />
             )}
             {weekTimeError ? (
-              <Text style={{ color: colors.error, fontSize: 13, textAlign: "center", marginVertical: 8 }}>{weekTimeError}</Text>
+              <Text style={{ color: colors.error, fontSize: fs.xs, textAlign: "center", marginVertical: 8 }}>{weekTimeError}</Text>
             ) : null}
             <Pressable
               onPress={saveTimePicker}
               style={({ pressed }) => [styles.saveBtn, { backgroundColor: weekTimeError ? colors.border : colors.primary, opacity: pressed ? 0.8 : 1, marginTop: 12 }]}
             >
-              <Text style={{ color: weekTimeError ? colors.muted : "#fff", fontWeight: "700", fontSize: 16 }}>Save Hours</Text>
+              <Text style={{ color: weekTimeError ? colors.muted : "#fff", fontWeight: "700", fontSize: fs.md }}>Save Hours</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -957,20 +957,20 @@ export default function LocationFormScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setShowQr(false)}>
           <Pressable style={[styles.qrModalContent, { backgroundColor: colors.background }]} onPress={() => {}}>
             <View style={[styles.modalHeader, { width: "100%" }]}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>Booking QR Code</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>Booking QR Code</Text>
               <Pressable onPress={() => setShowQr(false)} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
                 <IconSymbol name="xmark" size={22} color={colors.foreground} />
               </Pressable>
             </View>
             {existing && locationBookingUrl && (
               <>
-                <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center", marginBottom: 20, lineHeight: 18 }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "center", marginBottom: 20, lineHeight: 18 }}>
                   Scan to book at {existing.name}
                 </Text>
                 <ViewShot ref={qrRef} style={{ padding: 16, backgroundColor: "#FFFFFF", borderRadius: 16, marginBottom: 20 }}>
                   <QRCode value={locationBookingUrl} size={200} />
                 </ViewShot>
-                <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center", lineHeight: 16, marginBottom: 20 }} numberOfLines={2}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "center", lineHeight: 16, marginBottom: 20 }} numberOfLines={2}>
                   {locationBookingUrl}
                 </Text>
                 {/* Action buttons */}
@@ -986,7 +986,7 @@ export default function LocationFormScreen() {
                     }]}
                   >
                     <IconSymbol name="arrow.down.to.line" size={16} color="#FFF" />
-                    <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 14 }}>
+                    <Text style={{ color: "#FFF", fontWeight: "700", fontSize: fs.sm }}>
                       {savingQr ? "Saving..." : "Save to Photos"}
                     </Text>
                   </Pressable>
@@ -1001,7 +1001,7 @@ export default function LocationFormScreen() {
                     }]}
                   >
                     <IconSymbol name="square.and.arrow.up" size={16} color={colors.foreground} />
-                    <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>Share</Text>
+                    <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: fs.sm }}>Share</Text>
                   </Pressable>
                 </View>
               </>
@@ -1117,7 +1117,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
-    fontSize: 15,
+    fontSize: fs.sm,
   },
   switchRow: {
     flexDirection: "row",
@@ -1166,12 +1166,12 @@ const styles = StyleSheet.create({
   firstActionOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", alignItems: "center", paddingHorizontal: 24 },
   firstActionCard: { width: "100%", maxWidth: 360, backgroundColor: "#fff", borderRadius: 24, padding: 28, alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.18, shadowRadius: 24, elevation: 12 },
   firstActionEmoji: { fontSize: 48, marginBottom: 12 },
-  firstActionTitle: { fontSize: 22, fontWeight: "700", color: "#11181C", textAlign: "center", marginBottom: 8 },
-  firstActionSubtitle: { fontSize: 14, color: "#687076", textAlign: "center", lineHeight: 20, marginBottom: 24 },
+  firstActionTitle: { fontSize: fs.lg, fontWeight: "700", color: "#11181C", textAlign: "center", marginBottom: 8 },
+  firstActionSubtitle: { fontSize: fs.sm, color: "#687076", textAlign: "center", lineHeight: 20, marginBottom: 24 },
   firstActionButtons: { width: "100%", gap: 10, marginBottom: 16 },
   firstActionBtn: { flexDirection: "row", alignItems: "center", backgroundColor: "#F5F5F5", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, gap: 12 },
-  firstActionBtnEmoji: { fontSize: 22 },
-  firstActionBtnLabel: { fontSize: 15, fontWeight: "600", color: "#11181C" },
+  firstActionBtnEmoji: { fontSize: fs.lg },
+  firstActionBtnLabel: { fontSize: fs.sm, fontWeight: "600", color: "#11181C" },
   firstActionSkip: { paddingVertical: 8, paddingHorizontal: 16 },
-  firstActionSkipText: { fontSize: 13, color: "#687076", textDecorationLine: "underline" },
+  firstActionSkipText: { fontSize: fs.xs, color: "#687076", textDecorationLine: "underline" },
 });

@@ -99,7 +99,7 @@ function MiniCalendar({
         <Pressable onPress={() => navigateMonth(-1)} style={({ pressed }) => [{ padding: 6, opacity: pressed ? 0.6 : 1 }]}>
           <IconSymbol name="chevron.left" size={18} color={colors.foreground} />
         </Pressable>
-        <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>{calLabel}</Text>
+        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{calLabel}</Text>
         <Pressable onPress={() => navigateMonth(1)} style={({ pressed }) => [{ padding: 6, opacity: pressed ? 0.6 : 1 }]}>
           <IconSymbol name="chevron.right" size={18} color={colors.foreground} />
         </Pressable>
@@ -108,7 +108,7 @@ function MiniCalendar({
       {/* Day headers */}
       <View style={{ flexDirection: "row", marginBottom: 4 }}>
         {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-          <Text key={i} style={{ width: "14.28%", textAlign: "center", fontSize: 11, fontWeight: "600", color: colors.muted }}>{d}</Text>
+          <Text key={i} style={{ width: "14.28%", textAlign: "center", fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>{d}</Text>
         ))}
       </View>
 
@@ -138,7 +138,7 @@ function MiniCalendar({
               }]}
             >
               <Text style={{
-                fontSize: 13,
+                fontSize: fs.xs,
                 fontWeight: isToday || isSelected ? "700" : "400",
                 color: isSelected ? "#fff" : colors.foreground,
               }}>{day}</Text>
@@ -187,7 +187,7 @@ function CalCell({
         },
       ]}
     >
-      <Text style={{ fontSize: 14, fontWeight: isToday ? "700" : "400", color: textColor }}>{day}</Text>
+      <Text style={{ fontSize: fs.sm, fontWeight: isToday ? "700" : "400", color: textColor }}>{day}</Text>
       {isClosed && <View style={[styles.calDot, { backgroundColor: colors.error }]} />}
       {hasCustomHours && <View style={[styles.calDot, { backgroundColor: colors.primary }]} />}
     </Pressable>
@@ -199,7 +199,7 @@ export default function ScheduleSettingsScreen() {
   const { state, dispatch, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, modalMaxWidth } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const settings = state.settings;
   const { activeLocation, activeLocations, hasMultipleLocations, setActiveLocation: setActiveLocationForOverride } = useActiveLocation();
 
@@ -443,9 +443,9 @@ export default function ScheduleSettingsScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.cardRow}>
             <IconSymbol name="timer" size={20} color="#2196F3" />
-            <Text style={{ fontSize: 15, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Slot Interval</Text>
+            <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Slot Interval</Text>
           </View>
-          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 10, marginTop: 4 }}>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 10, marginTop: 4 }}>
             How often time slots appear on the booking grid. "Auto" matches the service duration (max 30 min).
           </Text>
           <View style={styles.chipRow}>
@@ -464,7 +464,7 @@ export default function ScheduleSettingsScreen() {
                     },
                   ]}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: "500", color: isSelected ? "#FFFFFF" : colors.foreground }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "500", color: isSelected ? "#FFFFFF" : colors.foreground }}>
                     {mins === 0 ? "Auto" : `${mins}m`}
                   </Text>
                 </Pressable>
@@ -477,9 +477,9 @@ export default function ScheduleSettingsScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.cardRow}>
             <IconSymbol name="clock.fill" size={20} color="#FF9800" />
-            <Text style={{ fontSize: 15, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Buffer Time</Text>
+            <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Buffer Time</Text>
           </View>
-          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 10, marginTop: 4 }}>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 10, marginTop: 4 }}>
             Break between appointments (applied to booking page)
           </Text>
           <View style={styles.chipRow}>
@@ -496,7 +496,7 @@ export default function ScheduleSettingsScreen() {
                   },
                 ]}
               >
-                <Text style={{ fontSize: 13, fontWeight: "500", color: (settings.bufferTime ?? 0) === mins && !showCustomBuffer ? "#FFFFFF" : colors.foreground }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "500", color: (settings.bufferTime ?? 0) === mins && !showCustomBuffer ? "#FFFFFF" : colors.foreground }}>
                   {mins === 0 ? "None" : `${mins}m`}
                 </Text>
               </Pressable>
@@ -513,13 +513,13 @@ export default function ScheduleSettingsScreen() {
                 },
               ]}
             >
-              <Text style={{ fontSize: 13, fontWeight: "500", color: showCustomBuffer ? "#FFFFFF" : colors.foreground }}>Custom</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "500", color: showCustomBuffer ? "#FFFFFF" : colors.foreground }}>Custom</Text>
             </Pressable>
           </View>
           {showCustomBuffer && (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 }}>
               <TextInput
-                style={{ flex: 1, backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, borderWidth: 1 }}
+                style={{ flex: 1, backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: fs.sm, borderWidth: 1 }}
                 value={customBufferInput}
                 onChangeText={setCustomBufferInput}
                 keyboardType="number-pad"
@@ -531,7 +531,7 @@ export default function ScheduleSettingsScreen() {
                   if (!isNaN(v) && v >= 0 && v <= 480) { setBufferTime(v); setShowCustomBuffer(false); }
                 }}
               />
-              <Text style={{ fontSize: 13, color: colors.muted }}>min</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted }}>min</Text>
               <Pressable
                 onPress={() => {
                   const v = parseInt(customBufferInput, 10);
@@ -539,7 +539,7 @@ export default function ScheduleSettingsScreen() {
                 }}
                 style={({ pressed }) => [styles.chip, { backgroundColor: colors.primary, borderColor: colors.primary, opacity: pressed ? 0.7 : 1 }]}
               >
-                <Text style={{ fontSize: 13, fontWeight: "600", color: "#fff" }}>Set</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#fff" }}>Set</Text>
               </Pressable>
             </View>
           )}
@@ -547,14 +547,14 @@ export default function ScheduleSettingsScreen() {
 
         {/* ── Day Overrides ────────────────────────────────────────────────── */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={{ fontSize: 12, fontWeight: "500", color: colors.muted, marginBottom: 4 }}>Day Overrides</Text>
-          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 12, lineHeight: 18 }}>
+          <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.muted, marginBottom: 4 }}>Day Overrides</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 12, lineHeight: 18 }}>
             Override specific dates — mark a day closed or set custom hours that differ from the location's regular schedule.
           </Text>
 
           {hasMultipleLocations && (
             <View style={{ marginBottom: 12 }}>
-              <Text style={{ fontSize: 11, fontWeight: "600", color: colors.muted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Override for location</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Override for location</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={{ flexDirection: "row", gap: 6 }}>
                   {activeLocations.map((loc) => (
@@ -571,7 +571,7 @@ export default function ScheduleSettingsScreen() {
                         opacity: pressed ? 0.7 : 1,
                       })}
                     >
-                      <Text style={{ fontSize: 13, fontWeight: "600", color: activeLocation?.id === loc.id ? colors.primary : colors.muted }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "600", color: activeLocation?.id === loc.id ? colors.primary : colors.muted }}>
                         {loc.name}
                       </Text>
                     </Pressable>
@@ -582,8 +582,8 @@ export default function ScheduleSettingsScreen() {
           )}
 
           <View>
-              <Text style={{ fontSize: 12, fontWeight: "500", color: colors.muted, marginBottom: 12 }}>Custom Day Schedule</Text>
-              <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 12, lineHeight: 18 }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.muted, marginBottom: 12 }}>Custom Day Schedule</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 12, lineHeight: 18 }}>
                 Add dates with specific hours. Only dates you add here will be available for client booking.
               </Text>
 
@@ -592,7 +592,7 @@ export default function ScheduleSettingsScreen() {
                 <Pressable onPress={() => navigateMonth(-1)} style={({ pressed }) => [{ padding: 4, opacity: pressed ? 0.6 : 1 }]}>
                   <IconSymbol name="chevron.left" size={20} color={colors.foreground} />
                 </Pressable>
-                <Text style={{ fontSize: 16, fontWeight: "600", color: colors.foreground }}>{customCalLabel}</Text>
+                <Text style={{ fontSize: fs.md, fontWeight: "600", color: colors.foreground }}>{customCalLabel}</Text>
                 <Pressable onPress={() => navigateMonth(1)} style={({ pressed }) => [{ padding: 4, opacity: pressed ? 0.6 : 1 }]}>
                   <IconSymbol name="chevron.right" size={20} color={colors.foreground} />
                 </Pressable>
@@ -631,54 +631,54 @@ export default function ScheduleSettingsScreen() {
               {/* Selected Date Detail */}
               {selectedCustomDate && (
                 <View style={[styles.detailCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                  <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground, marginBottom: 10 }}>{selectedCustomDateLabel}</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground, marginBottom: 10 }}>{selectedCustomDateLabel}</Text>
                   {!selectedCustomDay ? (
                     <View>
-                      <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 10 }}>Using default weekly hours</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 10 }}>Using default weekly hours</Text>
                       <View style={{ flexDirection: "row", gap: 8 }}>
                         <Pressable
                           onPress={() => setCustomDayOpen(selectedCustomDate)}
                           style={({ pressed }) => [styles.actionBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}
                         >
-                          <Text style={{ color: "#fff", fontWeight: "600", fontSize: 13 }}>Set Custom Hours</Text>
+                          <Text style={{ color: "#fff", fontWeight: "600", fontSize: fs.xs }}>Set Custom Hours</Text>
                         </Pressable>
                         <Pressable
                           onPress={() => toggleCustomDayOpen(selectedCustomDate)}
                           style={({ pressed }) => [styles.actionBtn, { backgroundColor: colors.error, opacity: pressed ? 0.8 : 1 }]}
                         >
-                          <Text style={{ color: "#fff", fontWeight: "600", fontSize: 13 }}>Mark Closed</Text>
+                          <Text style={{ color: "#fff", fontWeight: "600", fontSize: fs.xs }}>Mark Closed</Text>
                         </Pressable>
                       </View>
                     </View>
                   ) : selectedCustomDay.isOpen === false ? (
                     <View>
                       <View style={[styles.closedTag, { backgroundColor: colors.error + "15" }]}>
-                        <Text style={{ fontSize: 13, fontWeight: "600", color: colors.error }}>CLOSED</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.error }}>CLOSED</Text>
                       </View>
                       <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
                         <Pressable
                           onPress={() => setCustomDayOpen(selectedCustomDate)}
                           style={({ pressed }) => [styles.actionBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}
                         >
-                          <Text style={{ color: "#fff", fontWeight: "600", fontSize: 13 }}>Set Hours Instead</Text>
+                          <Text style={{ color: "#fff", fontWeight: "600", fontSize: fs.xs }}>Set Hours Instead</Text>
                         </Pressable>
                         <Pressable
                           onPress={() => removeCustomOverride(selectedCustomDate)}
                           style={({ pressed }) => [styles.actionBtn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, opacity: pressed ? 0.8 : 1 }]}
                         >
-                          <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 13 }}>Remove Override</Text>
+                          <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: fs.xs }}>Remove Override</Text>
                         </Pressable>
                       </View>
                     </View>
                   ) : (
                     <View>
-                      <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 8 }}>Custom Hours</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8 }}>Custom Hours</Text>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                         <Pressable
                           onPress={() => openCustomTimePicker(selectedCustomDate)}
                           style={({ pressed }) => [styles.timeButton, { backgroundColor: colors.background, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
                         >
-                          <Text style={{ fontSize: 13, color: colors.foreground }}>
+                          <Text style={{ fontSize: fs.xs, color: colors.foreground }}>
                             {formatTimeLabel(selectedCustomDay.startTime ?? "09:00")} {"\u2013"} {formatTimeLabel(selectedCustomDay.endTime ?? "17:00")}
                           </Text>
                         </Pressable>
@@ -688,13 +688,13 @@ export default function ScheduleSettingsScreen() {
                           onPress={() => toggleCustomDayOpen(selectedCustomDate)}
                           style={({ pressed }) => [styles.actionBtn, { backgroundColor: colors.error + "15", opacity: pressed ? 0.8 : 1 }]}
                         >
-                          <Text style={{ color: colors.error, fontWeight: "600", fontSize: 13 }}>Mark Closed</Text>
+                          <Text style={{ color: colors.error, fontWeight: "600", fontSize: fs.xs }}>Mark Closed</Text>
                         </Pressable>
                         <Pressable
                           onPress={() => removeCustomOverride(selectedCustomDate)}
                           style={({ pressed }) => [styles.actionBtn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, opacity: pressed ? 0.8 : 1 }]}
                         >
-                          <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 13 }}>Remove Override</Text>
+                          <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: fs.xs }}>Remove Override</Text>
                         </Pressable>
                       </View>
                     </View>
@@ -705,20 +705,20 @@ export default function ScheduleSettingsScreen() {
               {/* Existing Overrides */}
               {(activeLocation ? (state.locationCustomSchedule[activeLocation.id] ?? []) : state.customSchedule).length > 0 && (
                 <View style={{ marginTop: 14 }}>
-                  <Text style={{ fontSize: 12, fontWeight: "500", color: colors.muted, marginBottom: 8 }}>Active Overrides</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.muted, marginBottom: 8 }}>Active Overrides</Text>
                   {(activeLocation ? (state.locationCustomSchedule[activeLocation.id] ?? []) : state.customSchedule)
                     .sort((a, b) => a.date.localeCompare(b.date))
                     .map((cs) => (
                       <View key={cs.date} style={[styles.overrideRow, { borderColor: colors.border }]}>
-                        <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, flex: 1 }}>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.foreground, flex: 1 }}>
                           {new Date(cs.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                         </Text>
                         {cs.isOpen ? (
-                          <Text style={{ fontSize: 12, color: colors.primary }}>
+                          <Text style={{ fontSize: fs.xs, color: colors.primary }}>
                             {formatTimeLabel(cs.startTime ?? "09:00")} {"-"} {formatTimeLabel(cs.endTime ?? "17:00")}
                           </Text>
                         ) : (
-                          <Text style={{ fontSize: 12, fontWeight: "600", color: colors.error }}>CLOSED</Text>
+                          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.error }}>CLOSED</Text>
                         )}
                         <Pressable
                           onPress={() => removeCustomOverride(cs.date)}
@@ -739,9 +739,9 @@ export default function ScheduleSettingsScreen() {
             <View style={{ flex: 1, marginRight: 12 }}>
               <View style={styles.cardRow}>
                 <IconSymbol name="calendar.badge.clock" size={20} color="#9C27B0" />
-                <Text style={{ fontSize: 15, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Active Until</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Active Until</Text>
               </View>
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4, lineHeight: 18 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4, lineHeight: 18 }}>
                 {activeUntilEnabled && settings.businessHoursEndDate
                   ? `Business Hours active until ${formatDateLabel(settings.businessHoursEndDate)}. After this date, no days are available for booking.`
                   : "Set an end date for your Business Hours. After this date, no days will be available for booking."}
@@ -760,7 +760,7 @@ export default function ScheduleSettingsScreen() {
             <View style={{ marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={[styles.dateChip, { backgroundColor: "#9C27B0" + "15", borderColor: "#9C27B0" + "40" }]}>
                 <IconSymbol name="calendar" size={14} color="#9C27B0" />
-                <Text style={{ fontSize: 13, fontWeight: "600", color: "#9C27B0", marginLeft: 6 }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#9C27B0", marginLeft: 6 }}>
                   {formatDateLabel(settings.businessHoursEndDate)}
                 </Text>
               </View>
@@ -768,7 +768,7 @@ export default function ScheduleSettingsScreen() {
                 onPress={() => setShowActiveUntilCal(true)}
                 style={({ pressed }) => [styles.changeBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
               >
-                <Text style={{ fontSize: 12, color: colors.foreground }}>Change</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.foreground }}>Change</Text>
               </Pressable>
             </View>
           )}
@@ -792,7 +792,7 @@ export default function ScheduleSettingsScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => { setCustomTimePicker(null); setCustomSubPicker(null); }}>
           <Pressable style={[styles.modalContent, { backgroundColor: colors.background }]} onPress={() => {}}>
             <View style={styles.modalHeader}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>
                 {customTimePickerLabel} Hours
               </Text>
               <Pressable onPress={() => { setCustomTimePicker(null); setCustomSubPicker(null); }} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
@@ -805,8 +805,8 @@ export default function ScheduleSettingsScreen() {
               onPress={() => setCustomSubPicker(customSubPicker === "start" ? null : "start")}
               style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14, paddingHorizontal: 4, borderRadius: 12, backgroundColor: customSubPicker === "start" ? colors.primary + "18" : "transparent", marginBottom: 4 }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Start Time</Text>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.primary }}>{formatTimeLabel(customDraftStart)}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Start Time</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>{formatTimeLabel(customDraftStart)}</Text>
             </Pressable>
             {customSubPicker === "start" && (
               <TapTimePicker value={customDraftStart} onChange={(v) => { setCustomDraftStart(v); setCustomTimeError(null); }} stepMinutes={5} />
@@ -817,21 +817,21 @@ export default function ScheduleSettingsScreen() {
               onPress={() => setCustomSubPicker(customSubPicker === "end" ? null : "end")}
               style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14, paddingHorizontal: 4, borderRadius: 12, backgroundColor: customSubPicker === "end" ? colors.primary + "18" : "transparent", marginBottom: 4 }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>End Time</Text>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.primary }}>{formatTimeLabel(customDraftEnd)}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>End Time</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>{formatTimeLabel(customDraftEnd)}</Text>
             </Pressable>
             {customSubPicker === "end" && (
               <TapTimePicker value={customDraftEnd} onChange={(v) => { setCustomDraftEnd(v); setCustomTimeError(null); }} stepMinutes={5} />
             )}
 
             {customTimeError ? (
-              <Text style={{ color: colors.error, fontSize: 13, textAlign: "center", marginVertical: 8 }}>{customTimeError}</Text>
+              <Text style={{ color: colors.error, fontSize: fs.xs, textAlign: "center", marginVertical: 8 }}>{customTimeError}</Text>
             ) : null}
             <Pressable
               onPress={saveCustomTimePicker}
               style={({ pressed }) => [styles.saveBtn, { backgroundColor: customTimeError ? colors.border : colors.primary, opacity: pressed ? 0.8 : 1, marginTop: 12 }]}
             >
-              <Text style={{ color: customTimeError ? colors.muted : "#fff", fontWeight: "700", fontSize: 16 }}>Save Hours</Text>
+              <Text style={{ color: customTimeError ? colors.muted : "#fff", fontWeight: "700", fontSize: fs.md }}>Save Hours</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -843,7 +843,7 @@ export default function ScheduleSettingsScreen() {
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 0.5 },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "700" },
+  headerTitle: { fontSize: fs.md, fontWeight: "700" },
   card: { borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1 },
   cardRow: { flexDirection: "row", alignItems: "center" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
   timeButton: { flex: 1, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, borderWidth: 1, alignItems: "center", justifyContent: "center", minHeight: 36, marginLeft: 4 },
   calNavRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   calWeekRow: { flexDirection: "row", marginBottom: 6 },
-  calDayHeader: { width: "14.28%", textAlign: "center", fontSize: 12, fontWeight: "600", lineHeight: 18 },
+  calDayHeader: { width: "14.28%", textAlign: "center", fontSize: fs.xs, fontWeight: "600", lineHeight: 18 },
   calGrid: { flexDirection: "row", flexWrap: "wrap", marginBottom: 0 },
   calCell: { width: "14.28%", aspectRatio: 1, alignItems: "center", justifyContent: "center", padding: 1 },
   calDot: { width: 5, height: 5, borderRadius: 2.5, marginTop: 2 },

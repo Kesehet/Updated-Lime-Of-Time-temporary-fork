@@ -25,7 +25,7 @@ export default function StaffScreen() {
   const { state, dispatch, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const { activeLocation, activeLocations, hasMultipleLocations, staffForLocation, setActiveLocation } = useActiveLocation();
@@ -175,7 +175,7 @@ export default function StaffScreen() {
                 >
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
                     <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor }} />
-                    <Text style={{ fontSize: 11, color: colors.muted, fontWeight: "500" }} numberOfLines={1}>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, fontWeight: "500" }} numberOfLines={1}>
                       {getLocationSubtitle(item)}
                     </Text>
                     {hasMultipleLocations && (
@@ -199,7 +199,7 @@ export default function StaffScreen() {
           >
             <Text
               style={{
-                fontSize: 11,
+                fontSize: fs.xs,
                 fontWeight: "600",
                 color: item.active ? colors.success : colors.error,
               }}
@@ -258,7 +258,7 @@ export default function StaffScreen() {
           ]}
         >
           <IconSymbol name="pencil" size={16} color={colors.primary} />
-          <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "500", marginLeft: 4 }}>
+          <Text style={{ color: colors.primary, fontSize: fs.xs, fontWeight: "500", marginLeft: 4 }}>
             Edit
           </Text>
         </Pressable>
@@ -272,7 +272,7 @@ export default function StaffScreen() {
           ]}
         >
           <IconSymbol name="calendar" size={16} color={item.color || colors.primary} />
-          <Text style={{ color: item.color || colors.primary, fontSize: 13, fontWeight: "500", marginLeft: 4 }}>
+          <Text style={{ color: item.color || colors.primary, fontSize: fs.xs, fontWeight: "500", marginLeft: 4 }}>
             Calendar
           </Text>
         </Pressable>
@@ -284,7 +284,7 @@ export default function StaffScreen() {
           ]}
         >
           <IconSymbol name="trash.fill" size={16} color={colors.error} />
-          <Text style={{ color: colors.error, fontSize: 13, fontWeight: "500", marginLeft: 4 }}>
+          <Text style={{ color: colors.error, fontSize: fs.xs, fontWeight: "500", marginLeft: 4 }}>
             Remove
           </Text>
         </Pressable>
@@ -337,7 +337,7 @@ export default function StaffScreen() {
             style={[{ width: "100%", maxWidth: 380, borderRadius: 16, borderWidth: 1, overflow: "hidden", backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => {}}
           >
-            <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground, paddingHorizontal: 18, paddingVertical: 14 }}>
+            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, paddingHorizontal: 18, paddingVertical: 14 }}>
               Switch Location
             </Text>
             {activeLocations.map((loc) => {
@@ -357,9 +357,9 @@ export default function StaffScreen() {
                   })}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: "500", color: isActive ? colors.primary : colors.foreground }} numberOfLines={1}>{loc.name}</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "500", color: isActive ? colors.primary : colors.foreground }} numberOfLines={1}>{loc.name}</Text>
                     {(loc.city || loc.address) && (
-                      <Text style={{ fontSize: 12, color: colors.muted }} numberOfLines={1}>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted }} numberOfLines={1}>
                         {loc.city ? [loc.address, loc.city, loc.state].filter(Boolean).join(", ") : loc.address}
                       </Text>
                     )}
@@ -388,7 +388,7 @@ export default function StaffScreen() {
           >
             <Text
               style={{
-                fontSize: 13,
+                fontSize: fs.xs,
                 fontWeight: "600",
                 color: filter === f ? "#FFFFFF" : colors.foreground,
               }}
@@ -418,7 +418,7 @@ export default function StaffScreen() {
                 { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
               ]}
             >
-              <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 15 }}>
+              <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: fs.sm }}>
                 Add Staff Member
               </Text>
             </Pressable>
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: "#FFFFFF",
-    fontSize: 18,
+    fontSize: fs.md,
     fontWeight: "700",
   },
   cardInfo: {

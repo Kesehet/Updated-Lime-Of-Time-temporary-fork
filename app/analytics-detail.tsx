@@ -32,7 +32,7 @@ export default function AnalyticsDetailScreen() {
   const { activeLocation, hasMultipleLocations: hasMultiLoc } = useActiveLocation();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, fs, buttonHeight, iconButtonSize } = useResponsive();
   const { planInfo } = usePlanLimitCheck();
   const isFreeplan = !planInfo || planInfo.planKey === "solo";
   const [generating, setGenerating] = useState(false);
@@ -655,7 +655,7 @@ export default function AnalyticsDetailScreen() {
                 },
               ]}
             >
-              <Text style={{ fontSize: 13, fontWeight: "600", color: dateRange === r.key ? "#fff" : colors.muted }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: dateRange === r.key ? "#fff" : colors.muted }}>
                 {r.key === "custom" && customStart && customEnd
                   ? `${customStart.substring(5)} – ${customEnd.substring(5)}`
                   : r.label}
@@ -682,7 +682,7 @@ export default function AnalyticsDetailScreen() {
         >
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
             <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 24, width: "100%", maxWidth: 360, borderWidth: 1, borderColor: colors.border }}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground, marginBottom: 16 }}>Custom Date Range</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground, marginBottom: 16 }}>Custom Date Range</Text>
               {/* Quick presets */}
               <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
                 {[
@@ -718,7 +718,7 @@ export default function AnalyticsDetailScreen() {
                         opacity: pressed ? 0.7 : 1,
                       })}
                     >
-                      <Text style={{ fontSize: 11, fontWeight: "600", color: colors.primary }}>{label}</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>{label}</Text>
                     </Pressable>
                   );
                 })}
@@ -756,7 +756,7 @@ export default function AnalyticsDetailScreen() {
                     >
                       {items.map((v) => (
                         <Pressable key={v} onPress={() => onSelect(v)} style={{ height: ITEM_H, alignItems: "center", justifyContent: "center" }}>
-                          <Text style={{ fontSize: 15, fontWeight: v === selected ? "700" : "400", color: v === selected ? colors.primary : colors.muted }}>
+                          <Text style={{ fontSize: fs.sm, fontWeight: v === selected ? "700" : "400", color: v === selected ? colors.primary : colors.muted }}>
                             {fmt ? fmt(v) : String(v).padStart(2, "0")}
                           </Text>
                         </Pressable>
@@ -766,15 +766,15 @@ export default function AnalyticsDetailScreen() {
                 );
                 return (
                   <View key={label} style={{ marginBottom: 14 }}>
-                    <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 6 }}>{label}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 6 }}>{label}</Text>
                     <View style={{ flexDirection: "row", gap: 6, backgroundColor: colors.background, borderRadius: 12, borderWidth: 1, borderColor: colors.border, padding: 8, alignItems: "center", justifyContent: "center" }}>
                       {mkPicker(years, year, setYear, (v) => String(v), 72)}
-                      <Text style={{ color: colors.muted, fontSize: 16 }}>/</Text>
+                      <Text style={{ color: colors.muted, fontSize: fs.md }}>/</Text>
                       {mkPicker(months, month, (v) => { setMonth(v); if (day > new Date(year, v, 0).getDate()) setDay(1); }, undefined, 52)}
-                      <Text style={{ color: colors.muted, fontSize: 16 }}>/</Text>
+                      <Text style={{ color: colors.muted, fontSize: fs.md }}>/</Text>
                       {mkPicker(days, day, setDay, undefined, 52)}
                     </View>
-                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 4, textAlign: "center" }}>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4, textAlign: "center" }}>
                       {String(year)}-{String(month).padStart(2, "0")}-{String(day).padStart(2, "0")}
                     </Text>
                   </View>
@@ -785,7 +785,7 @@ export default function AnalyticsDetailScreen() {
                   onPress={() => setShowCustomModal(false)}
                   style={({ pressed }) => ({ flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: "center", opacity: pressed ? 0.7 : 1 })}
                 >
-                  <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted }}>Cancel</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.muted }}>Cancel</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => {
@@ -804,7 +804,7 @@ export default function AnalyticsDetailScreen() {
                   }}
                   style={({ pressed }) => ({ flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: colors.primary, alignItems: "center", opacity: pressed ? 0.7 : 1 })}
                 >
-                  <Text style={{ fontSize: 15, fontWeight: "700", color: "#fff" }}>Apply</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#fff" }}>Apply</Text>
                 </Pressable>
               </View>
             </View>
@@ -881,8 +881,8 @@ export default function AnalyticsDetailScreen() {
                       <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: kpi.color + "18", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
                         <IconSymbol name={kpi.icon} size={18} color={kpi.color} />
                       </View>
-                      <Text style={{ fontSize: 22, fontWeight: "800", color: kpi.color }}>{String(kpi.value)}</Text>
-                      <Text style={{ fontSize: 11, color: colors.muted, marginTop: 4, textAlign: "center" }}>{kpi.label}</Text>
+                      <Text style={{ fontSize: fs.lg, fontWeight: "800", color: kpi.color }}>{String(kpi.value)}</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4, textAlign: "center" }}>{kpi.label}</Text>
                     </View>
                   ))}
                 </View>
@@ -907,18 +907,18 @@ export default function AnalyticsDetailScreen() {
               return (
                 <View style={[styles.sectionCard, { backgroundColor: goalColor + "10", borderColor: goalColor + "30", marginTop: 10 }]}>
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <Text style={{ fontSize: 14, fontWeight: "700", color: goalColor }}>This Month's Goal</Text>
-                    <Text style={{ fontSize: 13, fontWeight: "700", color: goalColor }}>{pct}%</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "700", color: goalColor }}>This Month's Goal</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "700", color: goalColor }}>{pct}%</Text>
                   </View>
                   <View style={{ height: 10, backgroundColor: goalColor + "25", borderRadius: 5, overflow: "hidden" }}>
                     <View style={{ height: 10, width: `${pct}%`, backgroundColor: goalColor, borderRadius: 5 }} />
                   </View>
                   <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-                    <Text style={{ fontSize: 12, color: goalColor + "CC" }}>${thisMonthRevenue.toLocaleString()} earned</Text>
-                    <Text style={{ fontSize: 12, color: goalColor + "CC" }}>Goal: ${goal.toLocaleString()}</Text>
+                    <Text style={{ fontSize: fs.xs, color: goalColor + "CC" }}>${thisMonthRevenue.toLocaleString()} earned</Text>
+                    <Text style={{ fontSize: fs.xs, color: goalColor + "CC" }}>Goal: ${goal.toLocaleString()}</Text>
                   </View>
                   {pct >= 100 && (
-                    <Text style={{ fontSize: 13, fontWeight: "700", color: goalColor, textAlign: "center", marginTop: 6 }}>🎉 Goal reached! Great work!</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "700", color: goalColor, textAlign: "center", marginTop: 6 }}>🎉 Goal reached! Great work!</Text>
                   )}
                 </View>
               );
@@ -926,7 +926,7 @@ export default function AnalyticsDetailScreen() {
 
             {/* Revenue Trend — last 6 months */}
             <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>Revenue — Last 6 Months</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>Revenue — Last 6 Months</Text>
               <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, height: 80 }}>
                 {overviewData.last6Months.map((m) => (
                   <View key={m.label} style={{ flex: 1, alignItems: "center" }}>
@@ -948,12 +948,12 @@ export default function AnalyticsDetailScreen() {
             {/* Highlights row */}
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={[styles.sectionCard, { flex: 1, backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 4 }}>Busiest Day</Text>
-                <Text style={{ fontSize: 22, fontWeight: "800", color: colors.primary }}>{overviewData.busiestDay}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 4 }}>Busiest Day</Text>
+                <Text style={{ fontSize: fs.lg, fontWeight: "800", color: colors.primary }}>{overviewData.busiestDay}</Text>
               </View>
               <View style={[styles.sectionCard, { flex: 1, backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 4 }}>Avg Rating</Text>
-                <Text style={{ fontSize: 22, fontWeight: "800", color: "#f59e0b" }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 4 }}>Avg Rating</Text>
+                <Text style={{ fontSize: fs.lg, fontWeight: "800", color: "#f59e0b" }}>
                   {overviewData.avgRating ? `${overviewData.avgRating} ★` : "—"}
                 </Text>
                 {overviewData.reviewCount > 0 && (
@@ -965,14 +965,14 @@ export default function AnalyticsDetailScreen() {
             {/* Top Client */}
             {overviewData.topClient && (
               <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground, marginBottom: 8 }}>Top Client</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground, marginBottom: 8 }}>Top Client</Text>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <View style={[styles.avatar, { backgroundColor: "#4CAF5018" }]}>
-                    <Text style={{ fontSize: 16, fontWeight: "700", color: "#4CAF50" }}>{overviewData.topClient.name.charAt(0).toUpperCase()}</Text>
+                    <Text style={{ fontSize: fs.md, fontWeight: "700", color: "#4CAF50" }}>{overviewData.topClient.name.charAt(0).toUpperCase()}</Text>
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>{overviewData.topClient.name}</Text>
-                    <Text style={{ fontSize: 12, color: colors.muted }}>{overviewData.topClient.apptCount} appointments · ${overviewData.topClient.totalSpent} spent</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{overviewData.topClient.name}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>{overviewData.topClient.apptCount} appointments · ${overviewData.topClient.totalSpent} spent</Text>
                   </View>
                 </View>
               </View>
@@ -981,21 +981,21 @@ export default function AnalyticsDetailScreen() {
             {/* Top Service */}
             {overviewData.topService && (
               <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground, marginBottom: 8 }}>Top Service</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground, marginBottom: 8 }}>Top Service</Text>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <View style={[styles.avatar, { backgroundColor: overviewData.topService.color + "18" }]}>
                     <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: overviewData.topService.color }} />
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>{overviewData.topService.name}</Text>
-                    <Text style={{ fontSize: 12, color: colors.muted }}>{overviewData.topService.bookings} bookings · ${overviewData.topService.price}</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{overviewData.topService.name}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>{overviewData.topService.bookings} bookings · ${overviewData.topService.price}</Text>
                   </View>
                 </View>
               </View>
             )}
 
             {/* Quick nav to detailed tabs */}
-            <Text style={{ fontSize: 13, fontWeight: "700", color: colors.muted, marginTop: 8, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Detailed Reports</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, marginTop: 8, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Detailed Reports</Text>
             {[
               { label: "Clients", tab: "clients", icon: "person.2.fill" as const, color: "#4CAF50" },
               { label: "Appointments", tab: "appointments", icon: "calendar" as const, color: "#2196F3" },
@@ -1012,7 +1012,7 @@ export default function AnalyticsDetailScreen() {
                 <View style={[styles.avatar, { backgroundColor: item.color + "18" }]}>
                   <IconSymbol name={item.icon} size={18} color={item.color} />
                 </View>
-                <Text style={{ flex: 1, marginLeft: 12, fontSize: 15, fontWeight: "600", color: colors.foreground }}>{item.label}</Text>
+                <Text style={{ flex: 1, marginLeft: 12, fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{item.label}</Text>
                 <IconSymbol name="chevron.right" size={16} color={colors.muted} />
               </Pressable>
             ))}
@@ -1029,23 +1029,23 @@ export default function AnalyticsDetailScreen() {
               <Text style={{ fontSize: 40, fontWeight: "800", color: "#4CAF50" }}>
                 {clientsForActiveLocation.length}
               </Text>
-              <Text style={{ fontSize: 14, color: colors.muted, marginTop: 4 }}>
+              <Text style={{ fontSize: fs.sm, color: colors.muted, marginTop: 4 }}>
                 Total Clients
               </Text>
             </View>
             {/* Quick stats */}
             <View style={styles.quickStats}>
               <View style={[styles.quickStatCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 20, fontWeight: "700", color: colors.primary }}>
+                <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.primary }}>
                   {clientsData.filter((c) => c.apptCount > 0).length}
                 </Text>
-                <Text style={{ fontSize: 11, color: colors.muted }}>Active</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>Active</Text>
               </View>
               <View style={[styles.quickStatCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 20, fontWeight: "700", color: "#FF9800" }}>
+                <Text style={{ fontSize: fs.lg, fontWeight: "700", color: "#FF9800" }}>
                   ${clientsData.reduce((s, c) => s + c.totalSpent, 0).toLocaleString()}
                 </Text>
-                <Text style={{ fontSize: 11, color: colors.muted }}>Total Spent</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>Total Spent</Text>
               </View>
             </View>
             {clientsData.map((c) => (
@@ -1071,7 +1071,7 @@ export default function AnalyticsDetailScreen() {
                 >
                   <Text
                     style={{
-                      fontSize: 16,
+                      fontSize: fs.md,
                       fontWeight: "700",
                       color: colors.primary,
                     }}
@@ -1082,14 +1082,14 @@ export default function AnalyticsDetailScreen() {
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text
                     style={{
-                      fontSize: 15,
+                      fontSize: fs.sm,
                       fontWeight: "600",
                       color: colors.foreground,
                     }}
                   >
                     {c.name}
                   </Text>
-                  <Text style={{ fontSize: 12, color: colors.muted }}>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>
                     {c.phone || c.email || "No contact info"}
                   </Text>
                 </View>
@@ -1102,7 +1102,7 @@ export default function AnalyticsDetailScreen() {
                   >
                     <Text
                       style={{
-                        fontSize: 12,
+                        fontSize: fs.xs,
                         fontWeight: "600",
                         color: colors.primary,
                       }}
@@ -1111,7 +1111,7 @@ export default function AnalyticsDetailScreen() {
                     </Text>
                   </View>
                   {c.totalSpent > 0 && (
-                    <Text style={{ fontSize: 11, color: "#FF9800", fontWeight: "600", marginTop: 4 }}>
+                    <Text style={{ fontSize: fs.xs, color: "#FF9800", fontWeight: "600", marginTop: 4 }}>
                       ${c.totalSpent}
                     </Text>
                   )}
@@ -1131,39 +1131,39 @@ export default function AnalyticsDetailScreen() {
               <Text style={{ fontSize: 40, fontWeight: "800", color: "#2196F3" }}>
                 {state.appointments.filter((a) => a.status !== "cancelled").length}
               </Text>
-              <Text style={{ fontSize: 14, color: colors.muted, marginTop: 4 }}>
+              <Text style={{ fontSize: fs.sm, color: colors.muted, marginTop: 4 }}>
                 Total Appointments
               </Text>
             </View>
             {/* Status breakdown */}
             <View style={styles.quickStats}>
               <View style={[styles.quickStatCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 18, fontWeight: "700", color: "#4CAF50" }}>
+                <Text style={{ fontSize: fs.md, fontWeight: "700", color: "#4CAF50" }}>
                   {state.appointments.filter((a) => a.status === "completed").length}
                 </Text>
                 <Text style={{ fontSize: 10, color: colors.muted }}>Completed</Text>
               </View>
               <View style={[styles.quickStatCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 18, fontWeight: "700", color: "#2196F3" }}>
+                <Text style={{ fontSize: fs.md, fontWeight: "700", color: "#2196F3" }}>
                   {state.appointments.filter((a) => a.status === "confirmed").length}
                 </Text>
                 <Text style={{ fontSize: 10, color: colors.muted }}>Confirmed</Text>
               </View>
               <View style={[styles.quickStatCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 18, fontWeight: "700", color: "#FF9800" }}>
+                <Text style={{ fontSize: fs.md, fontWeight: "700", color: "#FF9800" }}>
                   {state.appointments.filter((a) => a.status === "pending").length}
                 </Text>
                 <Text style={{ fontSize: 10, color: colors.muted }}>Pending</Text>
               </View>
               <View style={[styles.quickStatCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 18, fontWeight: "700", color: "#EF4444" }}>
+                <Text style={{ fontSize: fs.md, fontWeight: "700", color: "#EF4444" }}>
                   {state.appointments.filter((a) => a.status === "cancelled").length}
                 </Text>
                 <Text style={{ fontSize: 10, color: colors.muted }}>Cancelled</Text>
               </View>
             </View>
             <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: 4 }]}>
-              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>Monthly Breakdown</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>Monthly Breakdown</Text>
               {appointmentsData.map((m) => {
                 const total = m.confirmed + m.completed + m.pending;
                 const grandTotal = Math.max(total + m.cancelled, 1);
@@ -1173,7 +1173,7 @@ export default function AnalyticsDetailScreen() {
                 );
                 return (
                   <View key={m.month} style={[styles.barRow, { marginBottom: 14 }]}>
-                    <Text style={{ width: 56, fontSize: 12, fontWeight: "600", color: colors.muted }}>
+                    <Text style={{ width: 56, fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>
                       {monthLabel}
                     </Text>
                     <View style={{ flex: 1, marginHorizontal: 8 }}>
@@ -1183,7 +1183,7 @@ export default function AnalyticsDetailScreen() {
                         <View style={{ height: 20, width: `${(m.pending / grandTotal) * 100}%`, backgroundColor: "#FF9800" }} />
                       </View>
                     </View>
-                    <Text style={{ width: 32, fontSize: 13, color: colors.foreground, textAlign: "right", fontWeight: "700" }}>
+                    <Text style={{ width: 32, fontSize: fs.xs, color: colors.foreground, textAlign: "right", fontWeight: "700" }}>
                       {total}
                     </Text>
                   </View>
@@ -1193,15 +1193,15 @@ export default function AnalyticsDetailScreen() {
             <View style={styles.legend}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: "#4CAF50" }]} />
-                <Text style={{ fontSize: 11, color: colors.muted }}>Completed</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>Completed</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: "#2196F3" }]} />
-                <Text style={{ fontSize: 11, color: colors.muted }}>Confirmed</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>Confirmed</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: "#FF9800" }]} />
-                <Text style={{ fontSize: 11, color: colors.muted }}>Pending</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>Pending</Text>
               </View>
             </View>
             {appointmentsData.length === 0 && (
@@ -1229,19 +1229,19 @@ export default function AnalyticsDetailScreen() {
               const REASON_COLORS = ["#EF4444", "#F97316", "#EAB308", "#8B5CF6", "#06B6D4", "#64748B"];
               return (
                 <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: 12 }]}>
-                  <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>Cancellation Reasons</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>Cancellation Reasons</Text>
                   {sorted.map(([reason, count], idx) => (
                     <View key={reason} style={{ marginBottom: 10 }}>
                       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                        <Text style={{ fontSize: 13, color: colors.foreground, flex: 1 }} numberOfLines={1}>{reason}</Text>
-                        <Text style={{ fontSize: 13, fontWeight: "700", color: REASON_COLORS[idx % REASON_COLORS.length] }}>{count}</Text>
+                        <Text style={{ fontSize: fs.xs, color: colors.foreground, flex: 1 }} numberOfLines={1}>{reason}</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "700", color: REASON_COLORS[idx % REASON_COLORS.length] }}>{count}</Text>
                       </View>
                       <View style={{ height: 8, backgroundColor: colors.border, borderRadius: 4, overflow: "hidden" }}>
                         <View style={{ height: 8, width: `${Math.round((count / maxCount) * 100)}%`, backgroundColor: REASON_COLORS[idx % REASON_COLORS.length], borderRadius: 4 }} />
                       </View>
                     </View>
                   ))}
-                  <Text style={{ fontSize: 11, color: colors.muted, marginTop: 4 }}>{cancelledWithReason.length} of {state.appointments.filter((a) => a.status === "cancelled").length} cancelled appointments have a recorded reason</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>{cancelledWithReason.length} of {state.appointments.filter((a) => a.status === "cancelled").length} cancelled appointments have a recorded reason</Text>
                 </View>
               );
             })()}
@@ -1258,20 +1258,20 @@ export default function AnalyticsDetailScreen() {
               <Text style={{ fontSize: 40, fontWeight: "800", color: "#FF9800" }}>
                 ${totalRevenue.toLocaleString()}
               </Text>
-              <Text style={{ fontSize: 14, color: colors.muted, marginTop: 4 }}>
+              <Text style={{ fontSize: fs.sm, color: colors.muted, marginTop: 4 }}>
                 Total Revenue
               </Text>
             </View>
             {/* Revenue quick stats */}
             <View style={styles.quickStats}>
               <View style={[styles.quickStatCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 18, fontWeight: "700", color: colors.primary }}>
+                <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>
                   {state.appointments.filter((a) => a.status === "completed").length}
                 </Text>
                 <Text style={{ fontSize: 10, color: colors.muted }}>Paid Appts</Text>
               </View>
               <View style={[styles.quickStatCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 18, fontWeight: "700", color: "#FF9800" }}>
+                <Text style={{ fontSize: fs.md, fontWeight: "700", color: "#FF9800" }}>
                   ${state.appointments.filter((a) => a.status === "completed").length > 0
                     ? Math.round(totalRevenue / state.appointments.filter((a) => a.status === "completed").length)
                     : 0}
@@ -1281,7 +1281,7 @@ export default function AnalyticsDetailScreen() {
             </View>
             {revenueData.length > 0 && (
               <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 8 }]}>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>Revenue by Service</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>Revenue by Service</Text>
                 {revenueData.map((r) => {
                   const pct = totalRevenue > 0 ? Math.round((r.revenue / totalRevenue) * 100) : 0;
                   return (
@@ -1289,11 +1289,11 @@ export default function AnalyticsDetailScreen() {
                       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
                           <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: r.color }} />
-                          <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground, flex: 1 }} numberOfLines={1}>{r.name}</Text>
+                          <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground, flex: 1 }} numberOfLines={1}>{r.name}</Text>
                         </View>
                         <View style={{ alignItems: "flex-end" }}>
-                          <Text style={{ fontSize: 15, fontWeight: "800", color: "#FF9800" }}>${r.revenue.toLocaleString()}</Text>
-                          <Text style={{ fontSize: 11, color: colors.muted }}>{r.count} appts · {pct}%</Text>
+                          <Text style={{ fontSize: fs.sm, fontWeight: "800", color: "#FF9800" }}>${r.revenue.toLocaleString()}</Text>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted }}>{r.count} appts · {pct}%</Text>
                         </View>
                       </View>
                       <View style={{ height: 8, backgroundColor: colors.border, borderRadius: 4, overflow: "hidden" }}>
@@ -1327,21 +1327,21 @@ export default function AnalyticsDetailScreen() {
               </View>
               {serviceRanking.length > 0 ? (
                 <>
-                  <Text style={{ fontSize: 11, fontWeight: "600", color: colors.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Top Service</Text>
-                  <Text style={{ fontSize: 26, fontWeight: "800", color: "#9C27B0", textAlign: "center" }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Top Service</Text>
+                  <Text style={{ fontSize: fs.xl, fontWeight: "800", color: "#9C27B0", textAlign: "center" }}>
                     {serviceRanking[0].name}
                   </Text>
-                  <Text style={{ fontSize: 14, color: colors.muted, marginTop: 4 }}>
+                  <Text style={{ fontSize: fs.sm, color: colors.muted, marginTop: 4 }}>
                     {serviceRanking[0].bookings} bookings
                   </Text>
                 </>
               ) : (
-                <Text style={{ fontSize: 14, color: colors.muted }}>No services yet</Text>
+                <Text style={{ fontSize: fs.sm, color: colors.muted }}>No services yet</Text>
               )}
             </View>
             {serviceRanking.length > 0 && (
               <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>Service Rankings</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, marginBottom: 12 }}>Service Rankings</Text>
                 {serviceRanking.map((s, idx) => {
                   const pct = maxBar > 0 ? Math.round((s.bookings / maxBar) * 100) : 0;
                   const medalColors = ["#FFD700", "#C0C0C0", "#CD7F32"];
@@ -1350,14 +1350,14 @@ export default function AnalyticsDetailScreen() {
                     <View key={s.id} style={{ marginBottom: 14 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
                         <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: rankColor + "22", alignItems: "center", justifyContent: "center", marginRight: 10 }}>
-                          <Text style={{ fontSize: 11, fontWeight: "800", color: rankColor }}>#{idx + 1}</Text>
+                          <Text style={{ fontSize: fs.xs, fontWeight: "800", color: rankColor }}>#{idx + 1}</Text>
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }} numberOfLines={1}>{s.name}</Text>
-                          <Text style={{ fontSize: 11, color: colors.muted }}>${s.price} · {s.duration} min</Text>
+                          <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }} numberOfLines={1}>{s.name}</Text>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted }}>${s.price} · {s.duration} min</Text>
                         </View>
                         <View style={{ alignItems: "flex-end" }}>
-                          <Text style={{ fontSize: 16, fontWeight: "800", color: "#9C27B0" }}>{s.bookings}</Text>
+                          <Text style={{ fontSize: fs.md, fontWeight: "800", color: "#9C27B0" }}>{s.bookings}</Text>
                           <Text style={{ fontSize: 10, color: colors.muted }}>bookings</Text>
                         </View>
                       </View>
@@ -1428,8 +1428,8 @@ export default function AnalyticsDetailScreen() {
                 <View style={{ marginBottom: 4 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 12 }}>
                     <IconSymbol name="crown.fill" size={16} color="#f59e0b" />
-                    <Text style={{ fontSize: 15, fontWeight: "800", color: colors.foreground }}>Top Staff</Text>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginLeft: 2 }}>by revenue</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "800", color: colors.foreground }}>Top Staff</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginLeft: 2 }}>by revenue</Text>
                   </View>
                   <View style={{ flexDirection: "row", gap: 8 }}>
                     {top3.map((sm, idx) => {
@@ -1451,7 +1451,7 @@ export default function AnalyticsDetailScreen() {
                             borderColor: podiumBorder[idx] ?? colors.border,
                           }]}
                         >
-                          <Text style={{ fontSize: 22 }}>{medals[idx]}</Text>
+                          <Text style={{ fontSize: fs.lg }}>{medals[idx]}</Text>
                           {/* Avatar circle */}
                           <View style={[{
                             width: 44,
@@ -1461,16 +1461,16 @@ export default function AnalyticsDetailScreen() {
                             justifyContent: "center",
                             borderWidth: 2,
                           }, { backgroundColor: sm.color + "22", borderColor: podiumColors[idx] ?? sm.color }]}>
-                            <Text style={{ fontSize: 16, fontWeight: "800", color: sm.color }}>
+                            <Text style={{ fontSize: fs.md, fontWeight: "800", color: sm.color }}>
                               {sm.name.charAt(0).toUpperCase()}
                             </Text>
                           </View>
                           {/* Name */}
-                          <Text style={{ fontSize: 11, fontWeight: "700", color: colors.foreground, textAlign: "center" }} numberOfLines={1}>
+                          <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground, textAlign: "center" }} numberOfLines={1}>
                             {sm.name.split(" ")[0]}
                           </Text>
                           {/* Revenue */}
-                          <Text style={{ fontSize: 13, fontWeight: "800", color: podiumColors[idx] ?? sm.color }}>
+                          <Text style={{ fontSize: fs.xs, fontWeight: "800", color: podiumColors[idx] ?? sm.color }}>
                             ${sm.revenue >= 1000 ? (sm.revenue / 1000).toFixed(1) + "k" : sm.revenue.toLocaleString()}
                           </Text>
                           {/* Appts */}
@@ -1496,22 +1496,22 @@ export default function AnalyticsDetailScreen() {
                   <IconSymbol name="person.2.fill" size={24} color="#9C27B0" />
                 </View>
                 <Text style={{ fontSize: 40, fontWeight: "800", color: "#9C27B0" }}>{staffData.length}</Text>
-                <Text style={{ fontSize: 14, color: colors.muted, marginTop: 4 }}>Active Staff Members</Text>
+                <Text style={{ fontSize: fs.sm, color: colors.muted, marginTop: 4 }}>Active Staff Members</Text>
                 <View style={[styles.quickStats, { marginTop: 16, alignSelf: "stretch" }]}>
                   <View style={[styles.quickStatCard, { backgroundColor: colors.surface, borderColor: "#FF980040" }]}>
-                    <Text style={{ fontSize: 18, fontWeight: "700", color: "#FF9800" }}>${totalStaffRevenue.toLocaleString()}</Text>
-                    <Text style={{ fontSize: 11, color: colors.muted }}>Total Revenue</Text>
+                    <Text style={{ fontSize: fs.md, fontWeight: "700", color: "#FF9800" }}>${totalStaffRevenue.toLocaleString()}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>Total Revenue</Text>
                   </View>
                   <View style={[styles.quickStatCard, { backgroundColor: colors.surface, borderColor: "#2196F340" }]}>
-                    <Text style={{ fontSize: 18, fontWeight: "700", color: "#2196F3" }}>{staffData.reduce((s, m) => s + m.apptCount, 0)}</Text>
-                    <Text style={{ fontSize: 11, color: colors.muted }}>Total Appts</Text>
+                    <Text style={{ fontSize: fs.md, fontWeight: "700", color: "#2196F3" }}>{staffData.reduce((s, m) => s + m.apptCount, 0)}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>Total Appts</Text>
                   </View>
                   {staffData.some((m) => m.commissionDue != null) && (
                     <View style={[styles.quickStatCard, { backgroundColor: colors.surface, borderColor: "#4CAF5040" }]}>
-                      <Text style={{ fontSize: 18, fontWeight: "700", color: "#4CAF50" }}>
+                      <Text style={{ fontSize: fs.md, fontWeight: "700", color: "#4CAF50" }}>
                         ${staffData.reduce((s, m) => s + (m.commissionDue ?? 0), 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </Text>
-                      <Text style={{ fontSize: 11, color: colors.muted }}>Commission Due</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted }}>Commission Due</Text>
                     </View>
                   )}
                 </View>
@@ -1529,15 +1529,15 @@ export default function AnalyticsDetailScreen() {
                   <View style={{ backgroundColor: "#FEF2F2", borderColor: "#EF444430", borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 12 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
                       <IconSymbol name="exclamationmark.triangle.fill" size={18} color="#EF4444" />
-                      <Text style={{ fontSize: 14, fontWeight: "700", color: "#EF4444" }}>Performance Alert</Text>
+                      <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#EF4444" }}>Performance Alert</Text>
                     </View>
-                    <Text style={{ fontSize: 13, color: "#EF4444CC", marginBottom: 8 }}>
+                    <Text style={{ fontSize: fs.xs, color: "#EF4444CC", marginBottom: 8 }}>
                       {underperforming.length} staff member{underperforming.length > 1 ? "s are" : " is"} below the {threshold}% completion threshold:
                     </Text>
                     {underperforming.map((sm) => (
                       <View key={sm.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 4 }}>
-                        <Text style={{ fontSize: 13, fontWeight: "600", color: "#EF4444" }}>{sm.name}</Text>
-                        <Text style={{ fontSize: 13, color: "#EF4444" }}>{sm.completionRate}% completion ({sm.completedCount}/{sm.apptCount} appts)</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#EF4444" }}>{sm.name}</Text>
+                        <Text style={{ fontSize: fs.xs, color: "#EF4444" }}>{sm.completionRate}% completion ({sm.completedCount}/{sm.apptCount} appts)</Text>
                       </View>
                     ))}
                   </View>
@@ -1546,7 +1546,7 @@ export default function AnalyticsDetailScreen() {
 
               {staffData.length === 0 ? (
                 <View style={{ alignItems: "center", paddingVertical: 40 }}>
-                  <Text style={{ fontSize: 15, color: colors.muted }}>No staff data for this period</Text>
+                  <Text style={{ fontSize: fs.sm, color: colors.muted }}>No staff data for this period</Text>
                 </View>
               ) : (
                 staffData.map((sm, idx) => (
@@ -1565,7 +1565,7 @@ export default function AnalyticsDetailScreen() {
                       }]}
                     >
                       {idx < 3 ? (
-                        <Text style={{ fontSize: 14 }}>
+                        <Text style={{ fontSize: fs.sm }}>
                           {idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"}
                         </Text>
                       ) : (
@@ -1575,16 +1575,16 @@ export default function AnalyticsDetailScreen() {
 
                     <View style={{ flex: 1, marginLeft: 12 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                        <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground }}>{sm.name}</Text>
+                        <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>{sm.name}</Text>
                         <View style={{ backgroundColor: sm.color + "20", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
                           <Text style={{ fontSize: 10, fontWeight: "600", color: sm.color }}>{sm.role}</Text>
                         </View>
                       </View>
                       <View style={{ flexDirection: "row", gap: 12, marginTop: 4 }}>
-                        <Text style={{ fontSize: 12, color: colors.muted }}>{sm.apptCount} appts</Text>
-                        <Text style={{ fontSize: 12, color: "#4CAF50" }}>{sm.completionRate}% done</Text>
+                        <Text style={{ fontSize: fs.xs, color: colors.muted }}>{sm.apptCount} appts</Text>
+                        <Text style={{ fontSize: fs.xs, color: "#4CAF50" }}>{sm.completionRate}% done</Text>
                         {sm.avgRating !== null && (
-                          <Text style={{ fontSize: 12, color: "#f59e0b" }}>★ {sm.avgRating.toFixed(1)}</Text>
+                          <Text style={{ fontSize: fs.xs, color: "#f59e0b" }}>★ {sm.avgRating.toFixed(1)}</Text>
                         )}
                       </View>
                       {/* Revenue bar */}
@@ -1592,9 +1592,9 @@ export default function AnalyticsDetailScreen() {
                         <View style={{ height: 4, width: `${(sm.revenue / maxRevenue) * 100}%`, backgroundColor: sm.color, borderRadius: 2 }} />
                       </View>
                       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 3 }}>
-                        <Text style={{ fontSize: 11, color: sm.color, fontWeight: "600" }}>${sm.revenue.toLocaleString()} revenue</Text>
+                        <Text style={{ fontSize: fs.xs, color: sm.color, fontWeight: "600" }}>${sm.revenue.toLocaleString()} revenue</Text>
                         {sm.commissionDue != null && (
-                          <Text style={{ fontSize: 11, color: "#4CAF50", fontWeight: "600" }}>
+                          <Text style={{ fontSize: fs.xs, color: "#4CAF50", fontWeight: "600" }}>
                             ${sm.commissionDue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} commission ({sm.commissionRate}%)
                           </Text>
                         )}
@@ -1633,26 +1633,26 @@ export default function AnalyticsDetailScreen() {
               <View style={{ flexDirection: "row", gap: 10, marginVertical: 16 }}>
                 <View style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "#0369a140", alignItems: "center" }}>
                   <IconSymbol name="tag.fill" size={18} color="#0369a1" />
-                  <Text style={{ fontSize: 22, fontWeight: "800", color: "#0369a1", marginTop: 4 }}>{totalUses}</Text>
-                  <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2, textAlign: "center" }}>Total Uses</Text>
+                  <Text style={{ fontSize: fs.lg, fontWeight: "800", color: "#0369a1", marginTop: 4 }}>{totalUses}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2, textAlign: "center" }}>Total Uses</Text>
                 </View>
                 <View style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "#ef444440", alignItems: "center" }}>
                   <IconSymbol name="minus.circle.fill" size={18} color="#ef4444" />
-                  <Text style={{ fontSize: 22, fontWeight: "800", color: "#ef4444", marginTop: 4 }}>${totalDiscountGiven.toFixed(0)}</Text>
-                  <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2, textAlign: "center" }}>Discount Given</Text>
+                  <Text style={{ fontSize: fs.lg, fontWeight: "800", color: "#ef4444", marginTop: 4 }}>${totalDiscountGiven.toFixed(0)}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2, textAlign: "center" }}>Discount Given</Text>
                 </View>
                 <View style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "#22c55e40", alignItems: "center" }}>
                   <IconSymbol name="checkmark.circle.fill" size={18} color="#22c55e" />
-                  <Text style={{ fontSize: 22, fontWeight: "800", color: "#22c55e", marginTop: 4 }}>${totalRevenueViaPromo.toFixed(0)}</Text>
-                  <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2, textAlign: "center" }}>Revenue via Promo</Text>
+                  <Text style={{ fontSize: fs.lg, fontWeight: "800", color: "#22c55e", marginTop: 4 }}>${totalRevenueViaPromo.toFixed(0)}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2, textAlign: "center" }}>Revenue via Promo</Text>
                 </View>
               </View>
 
               {promoCodes.length === 0 ? (
                 <View style={{ alignItems: "center", paddingVertical: 40 }}>
-                  <Text style={{ fontSize: 32 }}>🎫</Text>
-                  <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground, marginTop: 12 }}>No Promo Codes Yet</Text>
-                  <Text style={{ fontSize: 13, color: colors.muted, marginTop: 6, textAlign: "center" }}>Create promo codes in Settings → Tools → Promo Codes</Text>
+                  <Text style={{ fontSize: fs.xxl }}>🎫</Text>
+                  <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground, marginTop: 12 }}>No Promo Codes Yet</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6, textAlign: "center" }}>Create promo codes in Settings → Tools → Promo Codes</Text>
                 </View>
               ) : (
                 <View style={{ gap: 10 }}>
@@ -1667,30 +1667,30 @@ export default function AnalyticsDetailScreen() {
                         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                             <View style={{ backgroundColor: "#0369a118", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                              <Text style={{ fontSize: 13, fontWeight: "800", color: "#0369a1", letterSpacing: 1 }}>{pc.code}</Text>
+                              <Text style={{ fontSize: fs.xs, fontWeight: "800", color: "#0369a1", letterSpacing: 1 }}>{pc.code}</Text>
                             </View>
-                            <Text style={{ fontSize: 13, color: colors.muted }}>{pc.label}</Text>
+                            <Text style={{ fontSize: fs.xs, color: colors.muted }}>{pc.label}</Text>
                           </View>
                           <View style={{ backgroundColor: statusColor + "18", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                            <Text style={{ fontSize: 11, fontWeight: "600", color: statusColor }}>{statusLabel}</Text>
+                            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: statusColor }}>{statusLabel}</Text>
                           </View>
                         </View>
                         <View style={{ flexDirection: "row", gap: 16, marginBottom: 8 }}>
                           <View>
-                            <Text style={{ fontSize: 11, color: colors.muted }}>Discount</Text>
-                            <Text style={{ fontSize: 14, fontWeight: "700", color: "#0369a1" }}>{discountStr}</Text>
+                            <Text style={{ fontSize: fs.xs, color: colors.muted }}>Discount</Text>
+                            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#0369a1" }}>{discountStr}</Text>
                           </View>
                           <View>
-                            <Text style={{ fontSize: 11, color: colors.muted }}>Uses</Text>
-                            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{pc.usedCount}{pc.maxUses ? ` / ${pc.maxUses}` : ""}</Text>
+                            <Text style={{ fontSize: fs.xs, color: colors.muted }}>Uses</Text>
+                            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>{pc.usedCount}{pc.maxUses ? ` / ${pc.maxUses}` : ""}</Text>
                           </View>
                           <View>
-                            <Text style={{ fontSize: 11, color: colors.muted }}>Discount Given</Text>
-                            <Text style={{ fontSize: 14, fontWeight: "700", color: "#ef4444" }}>${pc.totalDiscount.toFixed(0)}</Text>
+                            <Text style={{ fontSize: fs.xs, color: colors.muted }}>Discount Given</Text>
+                            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#ef4444" }}>${pc.totalDiscount.toFixed(0)}</Text>
                           </View>
                           <View>
-                            <Text style={{ fontSize: 11, color: colors.muted }}>Revenue</Text>
-                            <Text style={{ fontSize: 14, fontWeight: "700", color: "#22c55e" }}>${pc.totalRevenue.toFixed(0)}</Text>
+                            <Text style={{ fontSize: fs.xs, color: colors.muted }}>Revenue</Text>
+                            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#22c55e" }}>${pc.totalRevenue.toFixed(0)}</Text>
                           </View>
                         </View>
                         {usageRatio !== null && (
@@ -1702,7 +1702,7 @@ export default function AnalyticsDetailScreen() {
                           </View>
                         )}
                         {pc.expiresAt && (
-                          <Text style={{ fontSize: 11, color: isExpired ? "#ef4444" : colors.muted, marginTop: 6 }}>
+                          <Text style={{ fontSize: fs.xs, color: isExpired ? "#ef4444" : colors.muted, marginTop: 6 }}>
                             {isExpired ? "⚠️ Expired" : "⏰ Expires"}: {pc.expiresAt}
                           </Text>
                         )}
@@ -1729,7 +1729,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: fs.md,
     fontWeight: "700",
   },
   reportButton: {
@@ -1743,7 +1743,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   reportButtonText: {
-    fontSize: 15,
+    fontSize: fs.sm,
     fontWeight: "700",
     color: "#FFF",
   },

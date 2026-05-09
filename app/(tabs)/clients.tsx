@@ -37,7 +37,7 @@ export default function ClientsScreen() {
   const { hasMultipleLocations } = useActiveLocation();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, isLargeTablet, hp, maxContentWidth, modalMaxWidth } = useResponsive();
+  const { isTablet, isLargeTablet, hp, maxContentWidth, modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const { checkLimit } = usePlanLimitCheck();
 
   // ── Tab state ─────────────────────────────────────────────────────────────
@@ -249,7 +249,7 @@ export default function ClientsScreen() {
           {/* Header */}
           <View style={styles.header}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={{ fontSize: 24, fontWeight: "700", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.xl, fontWeight: "700", color: colors.foreground }}>
                 {activeTab === "clients" ? "Clients" : "Messages"}
               </Text>
               {activeTab === "clients" && hasMultipleLocations && <LocationSwitcher compact />}
@@ -292,7 +292,7 @@ export default function ClientsScreen() {
                       style={({ pressed }) => [styles.iconButton, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "50", opacity: pressed ? 0.7 : 1, flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, minWidth: 0 }]}
                     >
                       <IconSymbol name="checkmark.circle.fill" size={14} color={colors.primary} />
-                      <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "600" }}>Mark all read</Text>
+                      <Text style={{ color: colors.primary, fontSize: fs.xs, fontWeight: "600" }}>Mark all read</Text>
                     </Pressable>
                   )}
                   <Pressable
@@ -319,7 +319,7 @@ export default function ClientsScreen() {
                 ]}
               >
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: activeTab === tab ? "#fff" : colors.muted }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: activeTab === tab ? "#fff" : colors.muted }}>
                     {tab === "clients" ? "Clients" : "Messages"}
                   </Text>
                   {tab === "messages" && totalUnread > 0 && (
@@ -360,7 +360,7 @@ export default function ClientsScreen() {
                       { backgroundColor: sortOrder === opt ? colors.primary : colors.surface, borderColor: sortOrder === opt ? colors.primary : colors.border, opacity: pressed ? 0.7 : 1 },
                     ])}
                   >
-                    <Text style={{ fontSize: 12, fontWeight: "600", color: sortOrder === opt ? "#fff" : colors.muted }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: sortOrder === opt ? "#fff" : colors.muted }}>
                       {opt === "name" ? "A–Z" : opt === "recent" ? "Recent" : "Most Appts"}
                     </Text>
                   </Pressable>
@@ -369,17 +369,17 @@ export default function ClientsScreen() {
               {/* Add Client Form */}
               {showAdd && (
                 <View style={[styles.addForm, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>New Client</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>New Client</Text>
                   <TextInput style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]} placeholder="Full Name *" placeholderTextColor={colors.muted} value={newName} onChangeText={setNewName} returnKeyType="next" />
                   <TextInput style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]} placeholder="(000) 000-0000" placeholderTextColor={colors.muted} value={newPhone} onChangeText={handlePhoneChange} keyboardType="phone-pad" returnKeyType="next" maxLength={19} />
                   <TextInput style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]} placeholder="Email" placeholderTextColor={colors.muted} value={newEmail} onChangeText={setNewEmail} keyboardType="email-address" autoCapitalize="none" returnKeyType="next" />
                   <BirthdayPicker value={newBirthday} onChange={setNewBirthday} placeholder="Expire Date (optional)" style={{ marginBottom: 14 }} />
                   <View style={styles.formActions}>
                     <Pressable onPress={() => setShowAdd(false)} style={({ pressed }) => [styles.formButton, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, opacity: pressed ? 0.7 : 1 }]}>
-                      <Text style={{ fontSize: 14, fontWeight: "500", color: colors.foreground }}>Cancel</Text>
+                      <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.foreground }}>Cancel</Text>
                     </Pressable>
                     <Pressable onPress={handleAddClient} style={({ pressed }) => [styles.formButton, { backgroundColor: colors.primary, flex: 1, opacity: pressed ? 0.8 : 1 }]}>
-                      <Text style={{ fontSize: 14, fontWeight: "600", color: "#FFF" }}>Save Client</Text>
+                      <Text style={{ fontSize: fs.sm, fontWeight: "600", color: "#FFF" }}>Save Client</Text>
                     </Pressable>
                   </View>
                 </View>
@@ -404,12 +404,12 @@ export default function ClientsScreen() {
                       <Text style={[styles.avatarText, { color: colors.primary }]}>{getInitials(item.name)}</Text>
                     </View>
                     <View style={{ flex: 1, paddingVertical: 14, paddingLeft: 12, paddingRight: 4 }}>
-                      <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }} numberOfLines={1}>{item.name}</Text>
+                      <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }} numberOfLines={1}>{item.name}</Text>
                       <View style={{ flexDirection: "row", alignItems: "center", marginTop: 2 }}>
-                        <Text style={{ fontSize: 12, color: colors.muted }} numberOfLines={1}>
+                        <Text style={{ fontSize: fs.xs, color: colors.muted }} numberOfLines={1}>
                           {item.phone ? formatPhoneNumber(item.phone) : (item.email || "No contact info")}
                         </Text>
-                        {apptCount > 0 && <Text style={{ fontSize: 11, color: colors.muted, marginLeft: 8 }}>{apptCount} appt{apptCount > 1 ? "s" : ""}</Text>}
+                        {apptCount > 0 && <Text style={{ fontSize: fs.xs, color: colors.muted, marginLeft: 8 }}>{apptCount} appt{apptCount > 1 ? "s" : ""}</Text>}
                       </View>
                       {locationBadges.length > 0 && (
                         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 5 }}>
@@ -432,7 +432,7 @@ export default function ClientsScreen() {
                       {rating !== null && (
                         <View style={{ flexDirection: "row", alignItems: "center", marginTop: 3 }}>
                           <IconSymbol name="star.fill" size={12} color="#FFB300" />
-                          <Text style={{ fontSize: 11, color: "#FFB300", fontWeight: "600", marginLeft: 3 }}>{rating}</Text>
+                          <Text style={{ fontSize: fs.xs, color: "#FFB300", fontWeight: "600", marginLeft: 3 }}>{rating}</Text>
                         </View>
                       )}
                     </View>
@@ -443,8 +443,8 @@ export default function ClientsScreen() {
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                   <IconSymbol name="person.2.fill" size={48} color={colors.muted + "60"} />
-                  <Text style={{ fontSize: 15, color: colors.muted, marginTop: 12 }}>No clients yet</Text>
-                  <Text style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>Tap + to add or import from contacts</Text>
+                  <Text style={{ fontSize: fs.sm, color: colors.muted, marginTop: 12 }}>No clients yet</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>Tap + to add or import from contacts</Text>
                 </View>
               }
             />
@@ -457,15 +457,15 @@ export default function ClientsScreen() {
             {threadsLoading ? (
               <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 60 }}>
                 <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={{ color: colors.muted, marginTop: 12, fontSize: 14 }}>Loading conversations...</Text>
+                <Text style={{ color: colors.muted, marginTop: 12, fontSize: fs.sm }}>Loading conversations...</Text>
               </View>
             ) : threadsError ? (
               <View style={styles.emptyContainer}>
                 <IconSymbol name="exclamationmark.circle" size={40} color={colors.error} />
                 {threadsError === "session_expired" ? (
                   <>
-                    <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground, marginTop: 12 }}>Session Expired</Text>
-                    <Text style={{ fontSize: 13, color: colors.muted, marginTop: 6, textAlign: "center", paddingHorizontal: 32 }}>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground, marginTop: 12 }}>Session Expired</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6, textAlign: "center", paddingHorizontal: 32 }}>
                       Your session has expired. Please sign out and sign back in to load messages.
                     </Text>
                     <Pressable onPress={loadThreads} style={({ pressed }) => [{ marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}>
@@ -474,7 +474,7 @@ export default function ClientsScreen() {
                   </>
                 ) : (
                   <>
-                    <Text style={{ fontSize: 14, color: colors.error, marginTop: 12 }}>{threadsError}</Text>
+                    <Text style={{ fontSize: fs.sm, color: colors.error, marginTop: 12 }}>{threadsError}</Text>
                     <Pressable onPress={loadThreads} style={({ pressed }) => [{ marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}>
                       <Text style={{ color: "#fff", fontWeight: "600" }}>Retry</Text>
                     </Pressable>
@@ -484,8 +484,8 @@ export default function ClientsScreen() {
             ) : threads.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <IconSymbol name="message.fill" size={48} color={colors.muted + "60"} />
-                <Text style={{ fontSize: 15, color: colors.muted, marginTop: 12 }}>No messages yet</Text>
-                <Text style={{ fontSize: 13, color: colors.muted, marginTop: 4, textAlign: "center", paddingHorizontal: 32 }}>
+                <Text style={{ fontSize: fs.sm, color: colors.muted, marginTop: 12 }}>No messages yet</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4, textAlign: "center", paddingHorizontal: 32 }}>
                   When clients send you messages from the client app, they'll appear here.
                 </Text>
               </View>
@@ -513,22 +513,22 @@ export default function ClientsScreen() {
                     </View>
                     <View style={{ flex: 1, paddingVertical: 14, paddingLeft: 12, paddingRight: 4 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                        <Text style={{ fontSize: 15, fontWeight: item.unreadCount > 0 ? "700" : "600", color: colors.foreground }} numberOfLines={1}>{item.clientName}</Text>
-                        <Text style={{ fontSize: 11, color: colors.muted }}>{formatRelativeTime(item.lastMessageAt)}</Text>
+                        <Text style={{ fontSize: fs.sm, fontWeight: item.unreadCount > 0 ? "700" : "600", color: colors.foreground }} numberOfLines={1}>{item.clientName}</Text>
+                        <Text style={{ fontSize: fs.xs, color: colors.muted }}>{formatRelativeTime(item.lastMessageAt)}</Text>
                       </View>
                       <View style={{ flexDirection: "row", alignItems: "center", marginTop: 3, gap: 4 }}>
                         {item.senderType === "business" && (
-                          <Text style={{ fontSize: 12, color: colors.muted }}>You: </Text>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted }}>You: </Text>
                         )}
-                        <Text style={{ fontSize: 13, color: item.unreadCount > 0 ? colors.foreground : colors.muted, flex: 1 }} numberOfLines={1}>{item.lastMessage}</Text>
+                        <Text style={{ fontSize: fs.xs, color: item.unreadCount > 0 ? colors.foreground : colors.muted, flex: 1 }} numberOfLines={1}>{item.lastMessage}</Text>
                         {item.unreadCount > 0 && (
                           <View style={{ backgroundColor: colors.primary, borderRadius: 10, minWidth: 20, height: 20, alignItems: "center", justifyContent: "center", paddingHorizontal: 5 }}>
-                            <Text style={{ fontSize: 11, fontWeight: "700", color: "#fff" }}>{item.unreadCount > 99 ? "99+" : item.unreadCount}</Text>
+                            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#fff" }}>{item.unreadCount > 99 ? "99+" : item.unreadCount}</Text>
                           </View>
                         )}
                       </View>
                       {item.clientPhone && (
-                        <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{formatPhoneNumber(item.clientPhone)}</Text>
+                        <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{formatPhoneNumber(item.clientPhone)}</Text>
                       )}
                     </View>
                     <IconSymbol name="chevron.right" size={16} color={colors.muted} style={{ marginRight: 14 }} />
@@ -564,15 +564,15 @@ const styles = StyleSheet.create({
   tabSwitcher: { flexDirection: "row", borderRadius: 12, borderWidth: 1, padding: 3, marginBottom: 14, gap: 3 },
   tabBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   searchBar: { flexDirection: "row", alignItems: "center", borderRadius: 12, paddingHorizontal: 12, marginBottom: 16, borderWidth: 1 },
-  searchInput: { flex: 1, paddingVertical: 12, paddingHorizontal: 8, fontSize: 14, lineHeight: 20 },
+  searchInput: { flex: 1, paddingVertical: 12, paddingHorizontal: 8, fontSize: fs.sm, lineHeight: 20 },
   addForm: { borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, width: "100%" },
-  input: { width: "100%", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, fontSize: 14, lineHeight: 20, marginBottom: 8, borderWidth: 1 },
+  input: { width: "100%", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, fontSize: fs.sm, lineHeight: 20, marginBottom: 8, borderWidth: 1 },
   formActions: { flexDirection: "row", gap: 8, width: "100%" },
   formButton: { paddingVertical: 12, borderRadius: 12, alignItems: "center", justifyContent: "center", paddingHorizontal: 16, minHeight: 44 },
   sortChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1, alignSelf: "flex-start", height: 34, justifyContent: "center", alignItems: "center" },
   clientRow: { flexDirection: "row", alignItems: "center", borderRadius: 16, marginBottom: 10, borderWidth: 1, paddingLeft: 12, paddingRight: 4 },
   threadRow: { flexDirection: "row", alignItems: "center", borderRadius: 16, marginBottom: 10, borderWidth: 1, paddingLeft: 12, paddingRight: 4 },
   avatar: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  avatarText: { fontSize: 14, fontWeight: "700" },
+  avatarText: { fontSize: fs.sm, fontWeight: "700" },
   emptyContainer: { alignItems: "center", paddingVertical: 48 },
 });

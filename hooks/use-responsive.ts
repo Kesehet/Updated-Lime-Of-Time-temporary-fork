@@ -49,6 +49,11 @@ export interface ResponsiveLayout {
   sheetMaxHeight: number;
   /** Minimum touch target size (44 on phone, 48 on tablet) */
   touchTarget: number;
+  /** Primary button height (52 on tablet, 44 on phone) */
+  buttonHeight: number;
+  /** Icon button size (48 on tablet, 40 on phone) */
+  iconButtonSize: number;
+
   /** Standard border radius for cards */
   cardRadius: number;
   /** Standard border radius for modals/sheets */
@@ -139,6 +144,8 @@ export function useResponsive(): ResponsiveLayout {
       modalMaxWidth,
       sheetMaxHeight: isPhysicalTablet ? 0.8 : 0.92,
       touchTarget: isPhysicalTablet ? 48 : 44,
+      buttonHeight: isPhysicalTablet ? 52 : 44,
+      iconButtonSize: isLargeTablet ? 52 : isPhysicalTablet ? 48 : 40,
       cardRadius: isPhysicalTablet ? 18 : 14,
       sheetRadius: isPhysicalTablet ? 28 : 24,
       centeredContainer: {

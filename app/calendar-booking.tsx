@@ -102,7 +102,7 @@ export default function CalendarBookingScreen() {
   const { activeLocations } = useActiveLocation();
   const colors = useColors();
   const router = useRouter();
-  const { hp } = useResponsive();
+  const { hp, fs, buttonHeight, iconButtonSize } = useResponsive();
   const { width: screenWidth } = useWindowDimensions();
   // Fixed pill width: (screen - 2*horizontal_padding - 2*gaps) / 3 columns
   const slotPillWidth = Math.floor((screenWidth - hp * 2 - 16) / 3);
@@ -876,7 +876,7 @@ export default function CalendarBookingScreen() {
           }}
         >
           <IconSymbol name="calendar" size={16} color={colors.primary} />
-          <Text style={{ fontSize: 14, fontWeight: "600", color: colors.primary }}>
+          <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.primary }}>
             {formatDateDisplay(preselectedDate)}
             {preselectedTime ? ` · ${formatTimeDisplay(preselectedTime)}` : ""}
           </Text>
@@ -1121,7 +1121,7 @@ export default function CalendarBookingScreen() {
             {/* ── Location selector (multi-location only) ── */}
             {activeLocations.length > 1 && (
               <View style={{ marginBottom: 14 }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.foreground, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.foreground, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   Select Location
                 </Text>
                 <ScrollView
@@ -1150,11 +1150,11 @@ export default function CalendarBookingScreen() {
                           maxWidth: 200,
                         })}
                       >
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: isChosen ? colors.primary : colors.foreground }} numberOfLines={1}>
+                        <Text style={{ fontSize: fs.xs, fontWeight: '700', color: isChosen ? colors.primary : colors.foreground }} numberOfLines={1}>
                           {loc.name}
                         </Text>
                         {!!fullAddr && (
-                          <Text style={{ fontSize: 11, color: isChosen ? colors.primary + 'cc' : colors.muted, marginTop: 2 }} numberOfLines={1}>
+                          <Text style={{ fontSize: fs.xs, color: isChosen ? colors.primary + 'cc' : colors.muted, marginTop: 2 }} numberOfLines={1}>
                             {fullAddr}
                           </Text>
                         )}
@@ -1163,7 +1163,7 @@ export default function CalendarBookingScreen() {
                   })}
                 </ScrollView>
                 {!selectedLocationId && (
-                  <Text style={{ fontSize: 12, color: colors.warning, marginTop: 6 }}>
+                  <Text style={{ fontSize: fs.xs, color: colors.warning, marginTop: 6 }}>
                     ⚠ Please select a location to see available times
                   </Text>
                 )}
@@ -1179,7 +1179,7 @@ export default function CalendarBookingScreen() {
                 <IconSymbol name="chevron.left" size={20} color={colors.foreground} />
               </Pressable>
               <Pressable onPress={() => { setStep0CalMonthOffset(0); setStep0Date(todayStr); setStep0Time(null); }}>
-                <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground }}>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>
                   {MONTH_NAMES[displayMonth]} {displayYear}
                 </Text>
               </Pressable>
@@ -1189,7 +1189,7 @@ export default function CalendarBookingScreen() {
                     onPress={() => { setStep0CalMonthOffset(0); setStep0Date(todayStr); setStep0Time(null); }}
                     style={({ pressed }) => ({ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: colors.primary + "18", opacity: pressed ? 0.65 : 1, marginRight: 4 })}
                   >
-                    <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary }}>Today</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>Today</Text>
                   </Pressable>
                 )}
                 <Pressable
@@ -1205,11 +1205,11 @@ export default function CalendarBookingScreen() {
             {step0Location && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10, paddingHorizontal: 4 }}>
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
-                <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary }} numberOfLines={1}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }} numberOfLines={1}>
                   Booking at {step0Location.name}
                 </Text>
                 {!!formatFullAddress(step0Location.address, step0Location.city, step0Location.state, step0Location.zipCode) && (
-                  <Text style={{ fontSize: 11, color: colors.muted, flex: 1 }} numberOfLines={1}>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, flex: 1 }} numberOfLines={1}>
                     {formatFullAddress(step0Location.address, step0Location.city, step0Location.state, step0Location.zipCode)}
                   </Text>
                 )}
@@ -1218,7 +1218,7 @@ export default function CalendarBookingScreen() {
             {/* Day headers */}
             <View style={{ flexDirection: "row", width: "100%", marginBottom: 4 }}>
               {DAY_HEADERS.map((d) => (
-                <Text key={d} style={{ flex: 1, textAlign: "center", fontSize: 11, fontWeight: "600", color: colors.muted }}>{d}</Text>
+                <Text key={d} style={{ flex: 1, textAlign: "center", fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>{d}</Text>
               ))}
             </View>
 
@@ -1263,7 +1263,7 @@ export default function CalendarBookingScreen() {
                       <View style={{ position: "absolute", width: 36, height: 36, borderRadius: 10, borderWidth: 2, borderColor: colors.primary, backgroundColor: "transparent" }} />
                     )}
                     <Text style={{
-                      fontSize: 14,
+                      fontSize: fs.sm,
                       fontWeight: isToday || isSelected ? "700" : "400",
                       color: isToday ? colors.primary : isSelected ? colors.primary : isClosed && !isPast && !isOutOfRange ? colors.muted : colors.foreground,
                       lineHeight: 18,
@@ -1307,13 +1307,13 @@ export default function CalendarBookingScreen() {
             {step0ClosedDayMsg ? (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.error + "18", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, marginBottom: 8 }}>
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.error }} />
-                <Text style={{ fontSize: 12, color: colors.error, fontWeight: "500", flex: 1 }}>{step0ClosedDayMsg}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.error, fontWeight: "500", flex: 1 }}>{step0ClosedDayMsg}</Text>
               </View>
             ) : null}
 
             {/* Selected date label */}
             <View style={{ marginBottom: 8, marginHorizontal: 2 }}>
-              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>
                 {new Date(step0Date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
               </Text>
             </View>
@@ -1335,7 +1335,7 @@ export default function CalendarBookingScreen() {
                         opacity: pressed ? 0.7 : 1,
                       })}
                     >
-                      <Text style={{ fontSize: 12, fontWeight: "700", color: isActive ? "#FFFFFF" : colors.muted }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isActive ? "#FFFFFF" : colors.muted }}>
                         {iv.value === 0 ? `Auto (${step0EffectiveInterval}m)` : iv.label}
                       </Text>
                     </Pressable>
@@ -1347,8 +1347,8 @@ export default function CalendarBookingScreen() {
             {/* Time slots */}
             {step0TimeSlots.length === 0 ? (
               <View style={{ alignItems: "center", paddingVertical: 28, backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.border, marginBottom: 16 }}>
-                <Text style={{ fontSize: 14, fontWeight: "600", color: colors.muted }}>No available times</Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Try a different date or adjust working hours</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.muted }}>No available times</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>Try a different date or adjust working hours</Text>
               </View>
             ) : (
               <View style={{ marginBottom: 16 }}>
@@ -1400,7 +1400,7 @@ export default function CalendarBookingScreen() {
                             })}
                           >
                             <Text style={{
-                              fontSize: 13,
+                              fontSize: fs.xs,
                               fontWeight: "700",
                               color: isSlotSelected ? "#FFFFFF" : colors.foreground,
                               textAlign: "center",
@@ -1453,7 +1453,7 @@ export default function CalendarBookingScreen() {
                     { backgroundColor: canContinue ? colors.primary : colors.muted, opacity: pressed ? 0.8 : 1 },
                   ])}
                 >
-                  <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '700' }}>
+                  <Text style={{ color: '#FFF', fontSize: fs.md, fontWeight: '700' }}>
                     {needsLocation ? 'Select a Location First' : !step0Time ? 'Select a Time to Continue' : 'Continue →'}
                   </Text>
                 </Pressable>
@@ -1470,16 +1470,16 @@ export default function CalendarBookingScreen() {
           {selectedServices.length > 0 && (
             <View style={{ marginHorizontal: hp, marginBottom: 10, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.primary + "50", padding: 12 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                <Text style={{ fontSize: 12, fontWeight: "700", color: colors.primary, textTransform: "uppercase", letterSpacing: 0.6 }}>Selected Services</Text>
-                <Text style={{ fontSize: 12, color: colors.muted }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary, textTransform: "uppercase", letterSpacing: 0.6 }}>Selected Services</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>
                   {selectedServices.reduce((s, i) => s + i.duration, 0)} min · ${selectedServices.reduce((s, i) => s + i.price, 0).toFixed(2)}
                 </Text>
               </View>
               {selectedServices.map((svc, idx) => (
                 <View key={svc.id + idx} style={{ flexDirection: "row", alignItems: "center", marginBottom: 4, gap: 8 }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}>{svc.name}</Text>
-                    <Text style={{ fontSize: 11, color: colors.muted }}>{svc.duration} min · ${svc.price.toFixed(2)}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground }}>{svc.name}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>{svc.duration} min · ${svc.price.toFixed(2)}</Text>
                   </View>
                   <Pressable
                     onPress={() => setSelectedServices((prev) => prev.filter((_, i) => i !== idx))}
@@ -1527,11 +1527,11 @@ export default function CalendarBookingScreen() {
                   }}
                 >
                   <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: selectedPkg ? colors.success + "20" : colors.primary + "20", alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ fontSize: 18 }}>📦</Text>
+                    <Text style={{ fontSize: fs.md }}>📦</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <Text style={{ fontSize: 14, fontWeight: "700", color: selectedPkg ? colors.success : colors.primary }}>
+                      <Text style={{ fontSize: fs.sm, fontWeight: "700", color: selectedPkg ? colors.success : colors.primary }}>
                         {selectedPkg ? `${selectedPkg.name} ✓` : "Book a Package"}
                       </Text>
                       {selectedPkg && (() => {
@@ -1546,7 +1546,7 @@ export default function CalendarBookingScreen() {
                         );
                       })()}
                     </View>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>
                       {selectedPkg
                         ? (() => {
                             const validityStr = selectedPkg.expiryDays
@@ -1578,14 +1578,14 @@ export default function CalendarBookingScreen() {
                         })}
                         style={{ alignItems: "center", gap: 1, paddingHorizontal: 4 }}
                       >
-                        <Text style={{ fontSize: 11, fontWeight: "700", color: colors.success, letterSpacing: 0.2 }}>Change</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.success, letterSpacing: 0.2 }}>Change</Text>
                         <IconSymbol name="chevron.right" size={13} color={colors.success} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => setSelectedServices([])}
                         style={{ padding: 6, borderRadius: 8, backgroundColor: colors.error + "15" }}
                       >
-                        <Text style={{ fontSize: 13, fontWeight: "700", color: colors.error, lineHeight: 14 }}>✕</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.error, lineHeight: 14 }}>✕</Text>
                       </TouchableOpacity>
                     </View>
                   ) : (
@@ -1601,7 +1601,7 @@ export default function CalendarBookingScreen() {
               if (activePackages.length === 0) return null;
               return (
                 <View style={{ marginBottom: 20 }}>
-                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Packages &amp; Bundles</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Packages &amp; Bundles</Text>
                   {activePackages.map((pkg) => {
                     const isSelected = selectedServices.some((s) => s.packageId === pkg.id);
                     const includedSvcs = pkg.serviceIds
@@ -1644,27 +1644,27 @@ export default function CalendarBookingScreen() {
                         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
                           <View style={{ flex: 1 }}>
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                              <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground }}>{pkg.name}</Text>
+                              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>{pkg.name}</Text>
                               {savings > 0 && (
                                 <View style={{ backgroundColor: "#22C55E20", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 }}>
-                                  <Text style={{ fontSize: 11, color: "#22C55E", fontWeight: "700" }}>Save ${savings.toFixed(2)}</Text>
+                                  <Text style={{ fontSize: fs.xs, color: "#22C55E", fontWeight: "700" }}>Save ${savings.toFixed(2)}</Text>
                                 </View>
                               )}
                             </View>
                             {pkg.description ? (
-                              <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 6 }} numberOfLines={2}>{pkg.description}</Text>
+                              <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 6 }} numberOfLines={2}>{pkg.description}</Text>
                             ) : null}
                             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
                               {includedSvcs.map((sv) => (
                                 <View key={sv.id} style={{ backgroundColor: colors.border, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
-                                  <Text style={{ fontSize: 11, color: colors.muted }}>{sv.name}</Text>
+                                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>{sv.name}</Text>
                                 </View>
                               ))}
                             </View>
-                            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 6 }}>{totalDuration} min total</Text>
+                            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>{totalDuration} min total</Text>
                           </View>
                           <View style={{ alignItems: "flex-end", gap: 6 }}>
-                            <Text style={{ fontSize: 17, fontWeight: "700", color: colors.primary }}>${pkg.price.toFixed(2)}</Text>
+                            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>${pkg.price.toFixed(2)}</Text>
                             {isSelected ? (
                               <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
                                 <IconSymbol name="checkmark" size={14} color="#FFF" />
@@ -1678,7 +1678,7 @@ export default function CalendarBookingScreen() {
                     );
                   })}
                   <View style={{ height: 1, backgroundColor: colors.border, marginBottom: 16 }} />
-                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Individual Services</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Individual Services</Text>
                 </View>
               );
             })()}
@@ -1737,9 +1737,9 @@ export default function CalendarBookingScreen() {
                               opacity: pressed ? 0.7 : 1,
                             })}
                           >
-                            <Text style={{ fontSize: 32 }}>{getCatEmoji(cat)}</Text>
-                            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>{cat}</Text>
-                            <Text style={{ fontSize: 11, color: colors.muted }}>{svcs.length} service{svcs.length !== 1 ? "s" : ""}</Text>
+                            <Text style={{ fontSize: fs.xxl }}>{getCatEmoji(cat)}</Text>
+                            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>{cat}</Text>
+                            <Text style={{ fontSize: fs.xs, color: colors.muted }}>{svcs.length} service{svcs.length !== 1 ? "s" : ""}</Text>
                           </Pressable>
                         ))}
                       </View>
@@ -1760,7 +1760,7 @@ export default function CalendarBookingScreen() {
                           onPress={() => setStep1CategoryFilter(null)}
                           style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
                         >
-                          <Text style={{ fontSize: 14, color: colors.primary }}>← Categories</Text>
+                          <Text style={{ fontSize: fs.sm, color: colors.primary }}>← Categories</Text>
                         </Pressable>
                         <Text className="text-base font-semibold text-foreground">{step1CategoryFilter}</Text>
                       </View>
@@ -1811,14 +1811,14 @@ export default function CalendarBookingScreen() {
                             <Image source={{ uri: item.photoUri }} style={{ width: 40, height: 40, borderRadius: 8, marginRight: 12 }} />
                           ) : (
                             <View style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: (item.color ?? colors.primary) + "22", alignItems: "center", justifyContent: "center", marginRight: 12 }}>
-                              <Text style={{ fontSize: 20 }}>{svcEmoji}</Text>
+                              <Text style={{ fontSize: fs.lg }}>{svcEmoji}</Text>
                             </View>
                           )}
                           <View style={styles.optionContent}>
-                            <Text style={{ fontSize: 15, fontWeight: "600", color: svcDisabled ? colors.muted : colors.foreground }}>{item.name}</Text>
+                            <Text style={{ fontSize: fs.sm, fontWeight: "600", color: svcDisabled ? colors.muted : colors.foreground }}>{item.name}</Text>
                             <Text className="text-xs text-muted mt-0.5">{item.duration} min · ${parseFloat(String(item.price)).toFixed(2)}</Text>
                             {svcDisabled && svcReason && (
-                              <Text style={{ fontSize: 11, color: colors.error, marginTop: 2 }}>⚠️ {svcReason}</Text>
+                              <Text style={{ fontSize: fs.xs, color: colors.error, marginTop: 2 }}>⚠️ {svcReason}</Text>
                             )}
                           </View>
                           {svcDisabled ? (
@@ -1845,7 +1845,7 @@ export default function CalendarBookingScreen() {
                         })}
                       >
                         <IconSymbol name="plus" size={16} color={colors.primary} />
-                        <Text style={{ fontSize: 14, fontWeight: "600", color: colors.primary }}>Add from another category</Text>
+                        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.primary }}>Add from another category</Text>
                       </Pressable>
                     )}
                   </View>
@@ -1882,7 +1882,7 @@ export default function CalendarBookingScreen() {
                 },
               ]}
             >
-              <Text style={{ color: selectedServices.length > 0 ? "#FFF" : colors.muted, fontSize: 16, fontWeight: "700" }}>
+              <Text style={{ color: selectedServices.length > 0 ? "#FFF" : colors.muted, fontSize: fs.md, fontWeight: "700" }}>
                 {selectedServices.length === 0 ? "Select at least one service" : `Continue with ${selectedServices.length} service${selectedServices.length > 1 ? "s" : ""} →`}
               </Text>
             </Pressable>
@@ -2014,17 +2014,17 @@ export default function CalendarBookingScreen() {
                   setStep(1);
                 }
               }} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
-                <Text style={{ fontSize: 14, color: colors.primary }}>← Back</Text>
+                <Text style={{ fontSize: fs.sm, color: colors.primary }}>← Back</Text>
               </Pressable>
-              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}>Schedule Sessions</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>Schedule Sessions</Text>
               <View style={{ width: 50 }} />
             </View>
 
             {/* Package info banner */}
             {pkg && (
               <View style={{ backgroundColor: colors.primary + "15", borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: colors.primary + "40" }}>
-                <Text style={{ fontSize: 15, fontWeight: "700", color: colors.primary, marginBottom: 2 }}>{pkg.name}</Text>
-                <Text style={{ fontSize: 13, color: colors.muted }}>{totalSessions} session{totalSessions !== 1 ? "s" : ""} · {sessionDuration} min each{bufferDays > 0 ? ` · ${bufferDays}+ day gap required` : ""}</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.primary, marginBottom: 2 }}>{pkg.name}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>{totalSessions} session{totalSessions !== 1 ? "s" : ""} · {sessionDuration} min each{bufferDays > 0 ? ` · ${bufferDays}+ day gap required` : ""}</Text>
               </View>
             )}
 
@@ -2043,7 +2043,7 @@ export default function CalendarBookingScreen() {
                 );
               })}
             </View>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground, textAlign: "center", marginBottom: 16 }}>
+            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, textAlign: "center", marginBottom: 16 }}>
               Session {pkgSessionIdx + 1} of {totalSessions}
             </Text>
 
@@ -2051,7 +2051,7 @@ export default function CalendarBookingScreen() {
             {bufferDays > 0 && pkgSessionIdx > 0 && (
               <View style={{ backgroundColor: colors.warning + "20", borderRadius: 10, padding: 10, marginBottom: 14, flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <IconSymbol name="exclamationmark.circle.fill" size={16} color={colors.warning} />
-                <Text style={{ fontSize: 12, color: colors.warning, flex: 1, fontWeight: "600" }}>
+                <Text style={{ fontSize: fs.xs, color: colors.warning, flex: 1, fontWeight: "600" }}>
                   Must be at least {bufferDays} day{bufferDays !== 1 ? "s" : ""} after Session {pkgSessionIdx} ({prevSession ? formatDateDisplay(prevSession.date) : ""})
                 </Text>
               </View>
@@ -2064,7 +2064,7 @@ export default function CalendarBookingScreen() {
                 <Pressable onPress={() => pkgCalMonthOffset > 0 && setPkgCalMonthOffset(pkgCalMonthOffset - 1)} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}>
                   <IconSymbol name="chevron.left" size={18} color={pkgCalMonthOffset > 0 ? colors.foreground : colors.border} />
                 </Pressable>
-                <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}>{MONTH_NAMES[displayMonth]} {displayYear}</Text>
+                <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>{MONTH_NAMES[displayMonth]} {displayYear}</Text>
                 <Pressable onPress={() => pkgCalMonthOffset < 5 && setPkgCalMonthOffset(pkgCalMonthOffset + 1)} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}>
                   <IconSymbol name="chevron.right" size={18} color={pkgCalMonthOffset < 5 ? colors.foreground : colors.border} />
                 </Pressable>
@@ -2072,7 +2072,7 @@ export default function CalendarBookingScreen() {
               {/* Day headers */}
               <View style={{ flexDirection: "row", marginBottom: 4 }}>
                 {DAY_HEADERS.map((d) => (
-                  <Text key={d} style={{ flex: 1, textAlign: "center", fontSize: 11, fontWeight: "600", color: colors.muted }}>{d}</Text>
+                  <Text key={d} style={{ flex: 1, textAlign: "center", fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>{d}</Text>
                 ))}
               </View>
               {/* Calendar grid */}
@@ -2124,7 +2124,7 @@ export default function CalendarBookingScreen() {
                         borderColor: colors.primary,
                       }}>
                         <Text style={{
-                          fontSize: 14,
+                          fontSize: fs.sm,
                           fontWeight: isSelected || isToday ? "700" : "400",
                           color: isSelected ? "#FFF" : isScheduled ? colors.success : isDisabled ? colors.muted : colors.foreground,
                         }}>{day}</Text>
@@ -2178,7 +2178,7 @@ export default function CalendarBookingScreen() {
                               ...(isSlotSelected ? { shadowColor: colors.primary, shadowOpacity: 0.3, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 } : {}),
                             })}
                           >
-                            <Text style={{ fontSize: 13, fontWeight: "700", color: isSlotSelected ? "#FFF" : colors.foreground }}>
+                            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isSlotSelected ? "#FFF" : colors.foreground }}>
                               {formatTimeDisplay(t)}
                             </Text>
                           </Pressable>
@@ -2191,7 +2191,7 @@ export default function CalendarBookingScreen() {
             ) : (
               <View style={{ alignItems: "center", paddingVertical: 24 }}>
                 <IconSymbol name="calendar" size={32} color={colors.muted} />
-                <Text style={{ fontSize: 14, color: colors.muted, marginTop: 8, textAlign: "center" }}>
+                <Text style={{ fontSize: fs.sm, color: colors.muted, marginTop: 8, textAlign: "center" }}>
                   {isPkgDateClosed(pkgSessionDate) ? (bufferDays > 0 && pkgSessionDate < minAllowedDate ? `Buffer period — select a date after ${formatDateDisplay(minAllowedDate)}` : "Closed on this day") : "No available slots on this day"}
                 </Text>
               </View>
@@ -2200,13 +2200,13 @@ export default function CalendarBookingScreen() {
             {/* Already scheduled sessions summary */}
             {packageSessions.filter(Boolean).length > 0 && (
               <View style={{ backgroundColor: colors.surface, borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: colors.border }}>
-                <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Scheduled So Far</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Scheduled So Far</Text>
                 {packageSessions.filter(Boolean).map((s, i) => (
                   <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: i < packageSessions.filter(Boolean).length - 1 ? 8 : 0 }}>
                     <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.success + "20", alignItems: "center", justifyContent: "center" }}>
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: colors.success }}>{i + 1}</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.success }}>{i + 1}</Text>
                     </View>
-                    <Text style={{ fontSize: 13, color: colors.foreground }}>{formatDateDisplay(s.date)} · {formatTimeDisplay(s.time)}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.foreground }}>{formatDateDisplay(s.date)} · {formatTimeDisplay(s.time)}</Text>
                   </View>
                 ))}
               </View>
@@ -2220,7 +2220,7 @@ export default function CalendarBookingScreen() {
                 { backgroundColor: pkgSessionTime ? colors.primary : colors.border, opacity: pressed ? 0.8 : 1 },
               ])}
             >
-              <Text style={{ color: pkgSessionTime ? "#FFF" : colors.muted, fontSize: 16, fontWeight: "700" }}>
+              <Text style={{ color: pkgSessionTime ? "#FFF" : colors.muted, fontSize: fs.md, fontWeight: "700" }}>
                 {pkgSessionIdx + 1 < totalSessions
                   ? `Confirm Session ${pkgSessionIdx + 1} → Schedule Session ${pkgSessionIdx + 2}`
                   : `Confirm Session ${pkgSessionIdx + 1} → Continue`}
@@ -2337,7 +2337,7 @@ export default function CalendarBookingScreen() {
                 >
                   <Text
                     style={{
-                      fontSize: 13,
+                      fontSize: fs.xs,
                       fontWeight: "700",
                       color: colors.primary,
                     }}
@@ -2403,7 +2403,7 @@ export default function CalendarBookingScreen() {
               }}
             >
               <IconSymbol name="location.fill" size={14} color={colors.success} />
-              <Text style={{ flex: 1, fontSize: 13, color: colors.success, fontWeight: "600" }}>
+              <Text style={{ flex: 1, fontSize: fs.xs, color: colors.success, fontWeight: "600" }}>
                 Booking for {state.locations.find((l) => l.id === homePagePreselectedLocationId)?.name ?? "selected location"} — tap to change location
               </Text>
             </View>
@@ -2532,7 +2532,7 @@ export default function CalendarBookingScreen() {
                       )}
                       <Text
                         style={{
-                          fontSize: 11,
+                          fontSize: fs.xs,
                           color: colors.error,
                           fontWeight: "600",
                         }}
@@ -2544,7 +2544,7 @@ export default function CalendarBookingScreen() {
                   {isOpen && !timeAvailable && preselectedTime && (
                     <Text
                       style={{
-                        fontSize: 11,
+                        fontSize: fs.xs,
                         color: colors.warning,
                         marginTop: 2,
                         fontWeight: "600",
@@ -2616,7 +2616,7 @@ export default function CalendarBookingScreen() {
               ]}
             >
               <Text
-                style={{ fontSize: 13, fontWeight: "700", color: colors.muted }}
+                style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted }}
               >
                 Any
               </Text>
@@ -2693,7 +2693,7 @@ export default function CalendarBookingScreen() {
                       ) : (
                         <Text
                           style={{
-                            fontSize: 15,
+                            fontSize: fs.sm,
                             fontWeight: "700",
                             color: member.color || colors.primary,
                           }}
@@ -2736,7 +2736,7 @@ export default function CalendarBookingScreen() {
                     {unavailableReason && (
                       <Text
                         style={{
-                          fontSize: 11,
+                          fontSize: fs.xs,
                           color: colors.warning,
                           marginTop: 2,
                           fontWeight: "600",
@@ -2795,38 +2795,38 @@ export default function CalendarBookingScreen() {
 
           {/* Booking Summary Card */}
           <View style={{ backgroundColor: colors.primary + "10", borderRadius: 14, borderWidth: 1, borderColor: colors.primary + "30", padding: 14, marginBottom: 14 }}>
-            <Text style={{ fontSize: 12, fontWeight: "700", color: colors.primary, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Booking Summary</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Booking Summary</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
               <IconSymbol name="calendar" size={14} color={colors.primary} />
-              <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground }}>
                 {formatDateDisplay(preselectedDate)}{preselectedTime ? ` · ${formatTimeDisplay(preselectedTime)}` : ""}
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 }}>
               <IconSymbol name="clock" size={14} color={colors.muted} />
-              <Text style={{ fontSize: 12, color: colors.muted }}>Total duration: {totalDuration} min</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted }}>Total duration: {totalDuration} min</Text>
             </View>
             <View style={{ borderTopWidth: 1, borderTopColor: colors.primary + "20", paddingTop: 8, gap: 4 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={{ fontSize: 13, color: colors.muted }}>Subtotal</Text>
-                <Text style={{ fontSize: 13, color: colors.muted }}>${subtotal.toFixed(2)}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>Subtotal</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>${subtotal.toFixed(2)}</Text>
               </View>
               {(appliedDiscount && discountAmount > 0) && (
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontSize: 13, color: colors.warning }}>{appliedDiscount.name} ({appliedDiscount.percentage}% off)</Text>
-                  <Text style={{ fontSize: 13, color: colors.warning }}>-${discountAmount.toFixed(2)}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.warning }}>{appliedDiscount.name} ({appliedDiscount.percentage}% off)</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.warning }}>-${discountAmount.toFixed(2)}</Text>
                 </View>
               )}
               {(appliedManualDiscount && manualDiscountAmount > 0) && (
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontSize: 13, color: colors.warning }}>{appliedManualDiscount.name} ({appliedManualDiscount.percentage}% off)</Text>
-                  <Text style={{ fontSize: 13, color: colors.warning }}>-${manualDiscountAmount.toFixed(2)}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.warning }}>{appliedManualDiscount.name} ({appliedManualDiscount.percentage}% off)</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.warning }}>-${manualDiscountAmount.toFixed(2)}</Text>
                 </View>
               )}
               {appliedPromoCode && promoDiscountAmount > 0 && (
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontSize: 13, color: colors.success }}>Promo: {appliedPromoCode.code}</Text>
-                  <Text style={{ fontSize: 13, color: colors.success }}>-${promoDiscountAmount.toFixed(2)}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.success }}>Promo: {appliedPromoCode.code}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.success }}>-${promoDiscountAmount.toFixed(2)}</Text>
                 </View>
               )}
               {/* Total savings line — only shown when 2+ discount types are stacked */}
@@ -2836,21 +2836,21 @@ export default function CalendarBookingScreen() {
                 if (activeDiscountCount < 2 || totalSavings <= 0) return null;
                 return (
                   <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 2, paddingTop: 4, borderTopWidth: 1, borderTopColor: colors.success + "30" }}>
-                    <Text style={{ fontSize: 12, fontWeight: "700", color: colors.success }}>Total savings</Text>
-                    <Text style={{ fontSize: 12, fontWeight: "700", color: colors.success }}>-${totalSavings.toFixed(2)}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.success }}>Total savings</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.success }}>-${totalSavings.toFixed(2)}</Text>
                   </View>
                 );
               })()}
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4, borderTopWidth: 1, borderTopColor: colors.primary + "20", paddingTop: 6 }}>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>Amount Due</Text>
-                <Text style={{ fontSize: 16, fontWeight: "800", color: colors.primary }}>${totalPrice.toFixed(2)}</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>Amount Due</Text>
+                <Text style={{ fontSize: fs.md, fontWeight: "800", color: colors.primary }}>${totalPrice.toFixed(2)}</Text>
               </View>
             </View>
           </View>
 
           {/* Cart Summary */}
           <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 16 }]}>
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted, marginBottom: 12 }}>Booking Items</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 12 }}>Booking Items</Text>
 
             {/* All selected services — editable list with remove buttons */}
             {selectedServices.map((svc, idx) => {
@@ -2860,12 +2860,12 @@ export default function CalendarBookingScreen() {
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
                       <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: svcData?.color ?? colors.primary, marginRight: 8 }} />
-                      <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{svc.name}</Text>
+                      <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{svc.name}</Text>
                     </View>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginLeft: 18 }}>{svc.duration} min</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginLeft: 18 }}>{svc.duration} min</Text>
                   </View>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                    <Text style={{ fontSize: 14, fontWeight: "700", color: colors.primary }}>${svc.price.toFixed(2)}</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.primary }}>${svc.price.toFixed(2)}</Text>
                     {selectedServices.length > 1 && (
                       <Pressable
                         onPress={() => setSelectedServices((prev) => prev.filter((_, i) => i !== idx))}
@@ -2883,13 +2883,13 @@ export default function CalendarBookingScreen() {
             {cart.map((item, index) => (
               <View key={`${item.type}-${item.id}-${index}`} style={styles.cartItem}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{item.name}</Text>
-                  <Text style={{ fontSize: 12, color: colors.muted }}>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{item.name}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>
                     {item.type === "product" ? "Product" : `${item.duration} min`}
                   </Text>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: colors.primary }}>${item.price.toFixed(2)}</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.primary }}>${item.price.toFixed(2)}</Text>
                   <Pressable
                     onPress={() => removeFromCart(index)}
                     style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
@@ -2904,19 +2904,19 @@ export default function CalendarBookingScreen() {
             {((appliedDiscount && discountAmount > 0) || manualDiscountAmount > 0) && (
               <>
                 <View style={[styles.cartItem, { borderTopWidth: 1, borderTopColor: colors.border, marginTop: 4, paddingTop: 8 }]}>
-                  <Text style={{ fontSize: 13, color: colors.muted }}>Subtotal</Text>
-                  <Text style={{ fontSize: 13, color: colors.muted }}>${subtotal.toFixed(2)}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>Subtotal</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>${subtotal.toFixed(2)}</Text>
                 </View>
                 {appliedDiscount && discountAmount > 0 && (
                   <View style={styles.cartItem}>
-                    <Text style={{ fontSize: 13, fontWeight: "500", color: colors.warning }}>{appliedDiscount.name} ({appliedDiscount.percentage}% off)</Text>
-                    <Text style={{ fontSize: 13, fontWeight: "500", color: colors.warning }}>-${discountAmount.toFixed(2)}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.warning }}>{appliedDiscount.name} ({appliedDiscount.percentage}% off)</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.warning }}>-${discountAmount.toFixed(2)}</Text>
                   </View>
                 )}
                 {manualDiscountAmount > 0 && appliedManualDiscount && (
                   <View style={styles.cartItem}>
-                    <Text style={{ fontSize: 13, fontWeight: "500", color: colors.warning }}>{appliedManualDiscount.name} ({appliedManualDiscount.percentage}% off)</Text>
-                    <Text style={{ fontSize: 13, fontWeight: "500", color: colors.warning }}>-${manualDiscountAmount.toFixed(2)}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.warning }}>{appliedManualDiscount.name} ({appliedManualDiscount.percentage}% off)</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.warning }}>-${manualDiscountAmount.toFixed(2)}</Text>
                   </View>
                 )}
               </>
@@ -2925,8 +2925,8 @@ export default function CalendarBookingScreen() {
             {/* Promo code row */}
             {appliedPromoCode && promoDiscountAmount > 0 && (
               <View style={styles.cartItem}>
-                <Text style={{ fontSize: 13, fontWeight: "500", color: colors.success }}>Promo — {appliedPromoCode.code}</Text>
-                <Text style={{ fontSize: 13, fontWeight: "500", color: colors.success }}>-${promoDiscountAmount.toFixed(2)}</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.success }}>Promo — {appliedPromoCode.code}</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.success }}>-${promoDiscountAmount.toFixed(2)}</Text>
               </View>
             )}
             {/* Total savings line — only shown when 2+ discount types are stacked */}
@@ -2936,8 +2936,8 @@ export default function CalendarBookingScreen() {
               if (activeDiscountCount < 2 || totalSavings <= 0) return null;
               return (
                 <View style={[styles.cartItem, { borderTopWidth: 1, borderTopColor: colors.success + "30", marginTop: 2, paddingTop: 6 }]}>
-                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.success }}>Total savings</Text>
-                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.success }}>-${totalSavings.toFixed(2)}</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.success }}>Total savings</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.success }}>-${totalSavings.toFixed(2)}</Text>
                 </View>
               );
             })()}
@@ -2948,7 +2948,7 @@ export default function CalendarBookingScreen() {
                 style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 5, paddingHorizontal: 8, borderRadius: 8, backgroundColor: colors.success + "15", borderWidth: 1, borderColor: colors.success + "40" })}
               >
                 <IconSymbol name="tag.fill" size={12} color={colors.success} />
-                <Text style={{ fontSize: 12, color: colors.success, fontWeight: "600" }}>
+                <Text style={{ fontSize: fs.xs, color: colors.success, fontWeight: "600" }}>
                   {appliedPromoCode ? `Promo: ${appliedPromoCode.code}` : "Add Promo Code"}
                 </Text>
               </Pressable>
@@ -2957,7 +2957,7 @@ export default function CalendarBookingScreen() {
                 style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 5, paddingHorizontal: 8, borderRadius: 8, backgroundColor: colors.warning + "15", borderWidth: 1, borderColor: colors.warning + "40" })}
               >
                 <IconSymbol name="percent" size={12} color={colors.warning} />
-                <Text style={{ fontSize: 12, color: colors.warning, fontWeight: "600" }}>
+                <Text style={{ fontSize: fs.xs, color: colors.warning, fontWeight: "600" }}>
                   {appliedManualDiscount ? appliedManualDiscount.name : "Add Discount"}
                 </Text>
               </Pressable>
@@ -2965,13 +2965,13 @@ export default function CalendarBookingScreen() {
 
             {/* Total */}
             <View style={[styles.cartItem, { borderTopWidth: 2, borderTopColor: colors.border, marginTop: 4, paddingTop: 10 }]}>
-              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>Total ({totalDuration} min)</Text>
-              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.primary }}>${totalPrice.toFixed(2)}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>Total ({totalDuration} min)</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>${totalPrice.toFixed(2)}</Text>
             </View>
           </View>
 
           {/* Add More Section */}
-          <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted, marginBottom: 8, marginLeft: 2 }}>Add More (Optional)</Text>
+          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 8, marginLeft: 2 }}>Add More (Optional)</Text>
 
           {/* Segmented Control */}
           <View style={[styles.segControl, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -2979,13 +2979,13 @@ export default function CalendarBookingScreen() {
               onPress={() => setAddMoreTab("services")}
               style={[styles.segBtn, addMoreTab === "services" && { backgroundColor: colors.primary }]}
             >
-              <Text style={{ fontSize: 12, fontWeight: "600", color: addMoreTab === "services" ? "#FFF" : colors.muted }}>Services</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: addMoreTab === "services" ? "#FFF" : colors.muted }}>Services</Text>
             </Pressable>
             <Pressable
               onPress={() => setAddMoreTab("products")}
               style={[styles.segBtn, addMoreTab === "products" && { backgroundColor: colors.primary }]}
             >
-              <Text style={{ fontSize: 12, fontWeight: "600", color: addMoreTab === "products" ? "#FFF" : colors.muted }}>Products</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: addMoreTab === "products" ? "#FFF" : colors.muted }}>Products</Text>
             </Pressable>
           </View>
 
@@ -2994,7 +2994,7 @@ export default function CalendarBookingScreen() {
             <View style={{ marginBottom: 16 }}>
               {availableExtraServices.length === 0 ? (
                 <View style={{ alignItems: "center", paddingVertical: 24, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border }}>
-                  <Text style={{ fontSize: 12, color: colors.muted }}>No additional services available</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>No additional services available</Text>
                 </View>
               ) : (() => {
                 const catGroups = new Map<string, typeof availableExtraServices>();
@@ -3033,9 +3033,9 @@ export default function CalendarBookingScreen() {
                               })}
                             >
                               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                                <Text style={{ fontSize: 14, fontWeight: "700", color: isExpanded ? colors.primary : colors.foreground }}>{cat}</Text>
+                                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: isExpanded ? colors.primary : colors.foreground }}>{cat}</Text>
                                 <View style={{ backgroundColor: colors.primary + "20", borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
-                                  <Text style={{ fontSize: 11, fontWeight: "700", color: colors.primary }}>{svcs.length}</Text>
+                                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary }}>{svcs.length}</Text>
                                 </View>
                               </View>
                               <IconSymbol name={isExpanded ? "chevron.down" : "chevron.right"} size={14} color={isExpanded ? colors.primary : colors.muted} />
@@ -3062,16 +3062,16 @@ export default function CalendarBookingScreen() {
                                   <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: s.color, marginRight: 12 }} />
                                 )}
                                 <View style={styles.optionContent}>
-                                  <Text style={{ fontSize: 14, fontWeight: "600", color: addOnDisabled ? colors.muted : colors.foreground }}>{s.name}</Text>
-                                  <Text style={{ fontSize: 12, color: colors.muted }}>{s.duration} min</Text>
+                                  <Text style={{ fontSize: fs.sm, fontWeight: "600", color: addOnDisabled ? colors.muted : colors.foreground }}>{s.name}</Text>
+                                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>{s.duration} min</Text>
                                   {addOnDisabled && (
-                                    <Text style={{ fontSize: 11, color: colors.error, marginTop: 2 }}>⚠️ Exceeds closing time</Text>
+                                    <Text style={{ fontSize: fs.xs, color: colors.error, marginTop: 2 }}>⚠️ Exceeds closing time</Text>
                                   )}
                                 </View>
                                 {addOnDisabled ? (
                                   <IconSymbol name="lock.fill" size={14} color={colors.muted} />
                                 ) : (
-                                  <Text style={{ fontSize: 14, fontWeight: "700", color: colors.primary }}>+ ${parseFloat(String(s.price)).toFixed(2)}</Text>
+                                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.primary }}>+ ${parseFloat(String(s.price)).toFixed(2)}</Text>
                                 )}
                               </Pressable>
                             );
@@ -3090,7 +3090,7 @@ export default function CalendarBookingScreen() {
             <View style={{ marginBottom: 16 }}>
               {availableProducts.length === 0 ? (
                 <View style={{ alignItems: "center", paddingVertical: 24, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border }}>
-                  <Text style={{ fontSize: 12, color: colors.muted }}>No products available</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>No products available</Text>
                 </View>
               ) : (() => {
                 const brandGroups = new Map<string, typeof availableProducts>();
@@ -3129,9 +3129,9 @@ export default function CalendarBookingScreen() {
                               })}
                             >
                               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                                <Text style={{ fontSize: 14, fontWeight: "700", color: isExpanded ? colors.primary : colors.foreground }}>{brand}</Text>
+                                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: isExpanded ? colors.primary : colors.foreground }}>{brand}</Text>
                                 <View style={{ backgroundColor: colors.primary + "20", borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
-                                  <Text style={{ fontSize: 11, fontWeight: "700", color: colors.primary }}>{prods.length}</Text>
+                                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary }}>{prods.length}</Text>
                                 </View>
                               </View>
                               <IconSymbol name={isExpanded ? "chevron.down" : "chevron.right"} size={14} color={isExpanded ? colors.primary : colors.muted} />
@@ -3151,10 +3151,10 @@ export default function CalendarBookingScreen() {
                                 </View>
                               )}
                               <View style={styles.optionContent}>
-                                <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{p.name}</Text>
-                                {(p as any).description ? <Text style={{ fontSize: 12, color: colors.muted }}>{(p as any).description}</Text> : null}
+                                <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{p.name}</Text>
+                                {(p as any).description ? <Text style={{ fontSize: fs.xs, color: colors.muted }}>{(p as any).description}</Text> : null}
                               </View>
-                              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.primary }}>+ ${parseFloat(String(p.price)).toFixed(2)}</Text>
+                              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.primary }}>+ ${parseFloat(String(p.price)).toFixed(2)}</Text>
                             </Pressable>
                           ))}
                         </View>
@@ -3174,7 +3174,7 @@ export default function CalendarBookingScreen() {
               { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
             ]}
           >
-            <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "700" }}>Continue to Payment →</Text>
+            <Text style={{ color: "#FFF", fontSize: fs.md, fontWeight: "700" }}>Continue to Payment →</Text>
           </Pressable>
         </ScrollView>
         </KeyboardAvoidingView>
@@ -3195,10 +3195,10 @@ export default function CalendarBookingScreen() {
 
           {/* Amount Due */}
           <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 16 }]}>
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted, marginBottom: 4 }}>Amount Due</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 4 }}>Amount Due</Text>
             <Text style={{ fontSize: 28, fontWeight: "700", color: colors.primary }}>${totalPrice.toFixed(2)}</Text>
             {selectedService && (
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>
                 {selectedService.name}{cart.length > 0 ? ` + ${cart.length} extra item${cart.length > 1 ? "s" : ""}` : ""}
               </Text>
             )}
@@ -3206,7 +3206,7 @@ export default function CalendarBookingScreen() {
 
           {/* Payment Options */}
           <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 16 }]}>
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted, marginBottom: 12 }}>How will the client pay?</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 12 }}>How will the client pay?</Text>
             {(() => {
               const pm = state.settings;
               const opts: { id: string; label: string; sub: string; color: string }[] = [];
@@ -3230,14 +3230,14 @@ export default function CalendarBookingScreen() {
                     backgroundColor: selectedPaymentMethod === opt.id ? opt.color + "18" : colors.background,
                   }]}
                 >
-                  <Text style={{ fontSize: 22 }}>{opt.label.split(" ")[0]}</Text>
+                  <Text style={{ fontSize: fs.lg }}>{opt.label.split(" ")[0]}</Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontWeight: "600", fontSize: 14, color: colors.foreground }}>{opt.label.slice(opt.label.indexOf(" ") + 1)}</Text>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{opt.sub}</Text>
+                    <Text style={{ fontWeight: "600", fontSize: fs.sm, color: colors.foreground }}>{opt.label.slice(opt.label.indexOf(" ") + 1)}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{opt.sub}</Text>
                   </View>
                   {selectedPaymentMethod === opt.id && (
                     <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: opt.color, alignItems: "center", justifyContent: "center" }}>
-                      <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>✓</Text>
+                      <Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "700" }}>✓</Text>
                     </View>
                   )}
                 </Pressable>
@@ -3259,7 +3259,7 @@ export default function CalendarBookingScreen() {
               { backgroundColor: selectedPaymentMethod ? colors.primary : colors.muted, opacity: pressed ? 0.8 : 1 },
             ]}
           >
-            <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "700" }}>Continue →</Text>
+            <Text style={{ color: "#FFF", fontSize: fs.md, fontWeight: "700" }}>Continue →</Text>
           </Pressable>
         </ScrollView>
       )}
@@ -3301,14 +3301,14 @@ export default function CalendarBookingScreen() {
                     <IconSymbol name="calendar" size={17} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: "700", color: colors.primary }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary }}>
                       {scheduledCount} of {totalSessions} session{totalSessions !== 1 ? "s" : ""} will be scheduled
                     </Text>
-                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{pkgCartItem.name}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{pkgCartItem.name}</Text>
                   </View>
                   {isComplete && (
                     <View style={{ backgroundColor: colors.success + "22", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: colors.success }}>Complete ✓</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.success }}>Complete ✓</Text>
                     </View>
                   )}
                 </View>
@@ -3322,21 +3322,21 @@ export default function CalendarBookingScreen() {
                   return (
                     <View key={svc.id + idx} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: idx < selectedServices.length - 1 ? 6 : 0 }}>
                       <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: svcData?.color ?? colors.primary }} />
-                      <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground, flex: 1 }}>{svc.name}</Text>
-                      <Text style={{ fontSize: 12, color: colors.muted }}>{svc.duration} min</Text>
+                      <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground, flex: 1 }}>{svc.name}</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted }}>{svc.duration} min</Text>
                     </View>
                   );
                 })}
                 <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 6 }}>
                   <View style={{ backgroundColor: colors.primary + "18", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                    <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary }}>{totalDuration} min total</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>{totalDuration} min total</Text>
                   </View>
                 </View>
               </View>
             )}
 
             {/* Section label */}
-            <Text style={{ fontSize: 11, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>Details</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>Details</Text>
 
             {/* Package sessions list (multi-session packages) */}
             {packageSessions.length > 0 ? (
@@ -3345,15 +3345,15 @@ export default function CalendarBookingScreen() {
                   <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: colors.primary + "18", alignItems: "center", justifyContent: "center" }}>
                     <IconSymbol name="calendar" size={15} color={colors.primary} />
                   </View>
-                  <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground }}>{packageSessions.length} Session{packageSessions.length !== 1 ? "s" : ""} Scheduled</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground }}>{packageSessions.length} Session{packageSessions.length !== 1 ? "s" : ""} Scheduled</Text>
                 </View>
                 {packageSessions.map((s, i) => (
                   <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingLeft: 38, marginBottom: 4 }}>
                     <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: colors.success + "20", alignItems: "center", justifyContent: "center" }}>
                       <Text style={{ fontSize: 10, fontWeight: "700", color: colors.success }}>{i + 1}</Text>
                     </View>
-                    <Text style={{ fontSize: 13, color: colors.foreground }}>{formatDateDisplay(s.date)}</Text>
-                    <Text style={{ fontSize: 12, color: colors.muted }}>· {formatTimeDisplay(s.time)}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.foreground }}>{formatDateDisplay(s.date)}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>· {formatTimeDisplay(s.time)}</Text>
                   </View>
                 ))}
               </View>
@@ -3364,9 +3364,9 @@ export default function CalendarBookingScreen() {
                   <IconSymbol name="calendar" size={15} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}>{formatDateDisplay(preselectedDate)}</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground }}>{formatDateDisplay(preselectedDate)}</Text>
                   {preselectedTime && (
-                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>
                       {formatTimeDisplay(preselectedTime)}{" – "}{getEndTime(preselectedTime)}
                     </Text>
                   )}
@@ -3381,8 +3381,8 @@ export default function CalendarBookingScreen() {
                   <IconSymbol name="person.fill" size={15} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}>{selectedClient.name}</Text>
-                  {selectedClient.phone ? <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>{formatPhoneNumber(selectedClient.phone)}</Text> : null}
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground }}>{selectedClient.name}</Text>
+                  {selectedClient.phone ? <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>{formatPhoneNumber(selectedClient.phone)}</Text> : null}
                 </View>
               </View>
             )}
@@ -3397,18 +3397,18 @@ export default function CalendarBookingScreen() {
                     <IconSymbol name="location.fill" size={15} color={colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}>{selectedLocation.name}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground }}>{selectedLocation.name}</Text>
                     {fullAddr ? (
                       <Pressable
                         onPress={() => mapUrl && Linking.openURL(mapUrl)}
                         style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
                       >
-                        <Text style={{ fontSize: 12, color: colors.primary, marginTop: 1, textDecorationLine: "underline" }} numberOfLines={2}>
+                        <Text style={{ fontSize: fs.xs, color: colors.primary, marginTop: 1, textDecorationLine: "underline" }} numberOfLines={2}>
                           {fullAddr}
                         </Text>
                       </Pressable>
                     ) : null}
-                    {selectedLocation.phone ? <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>{selectedLocation.phone}</Text> : null}
+                    {selectedLocation.phone ? <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>{selectedLocation.phone}</Text> : null}
                   </View>
                 </View>
               );
@@ -3423,12 +3423,12 @@ export default function CalendarBookingScreen() {
                     {staff.photoUri ? (
                       <Image source={{ uri: staff.photoUri }} style={{ width: 28, height: 28, borderRadius: 14 }} />
                     ) : (
-                      <Text style={{ color: staff.color ?? colors.primary, fontSize: 12, fontWeight: "700" }}>{staff.name.charAt(0).toUpperCase()}</Text>
+                      <Text style={{ color: staff.color ?? colors.primary, fontSize: fs.xs, fontWeight: "700" }}>{staff.name.charAt(0).toUpperCase()}</Text>
                     )}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}>{staff.name}</Text>
-                    {staff.role ? <Text style={{ fontSize: 11, color: colors.muted }}>{staff.role}</Text> : null}
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground }}>{staff.name}</Text>
+                    {staff.role ? <Text style={{ fontSize: fs.xs, color: colors.muted }}>{staff.role}</Text> : null}
                   </View>
                 </View>
               ) : null;
@@ -3440,7 +3440,7 @@ export default function CalendarBookingScreen() {
                 <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: colors.primary + "18", alignItems: "center", justifyContent: "center" }}>
                   <IconSymbol name="creditcard.fill" size={15} color={colors.primary} />
                 </View>
-                <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground }}>
                   {selectedPaymentMethod === "zelle" ? "Zelle" : selectedPaymentMethod === "cashapp" ? "Cash App" : selectedPaymentMethod === "venmo" ? "Venmo" : "Cash"}
                 </Text>
               </View>
@@ -3450,7 +3450,7 @@ export default function CalendarBookingScreen() {
             <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 12 }} />
 
             {/* Pricing section */}
-            <Text style={{ fontSize: 11, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>Pricing</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>Pricing</Text>
             {/* Always show line items — use subtotal > 0 instead of servicePrice > 0 so packages show correctly */}
             {selectedServices.map((svc, idx) => (
               <SummaryRow key={svc.id + idx} label={svc.name} value={`$${svc.price.toFixed(2)}`} colors={colors} />
@@ -3474,8 +3474,8 @@ export default function CalendarBookingScreen() {
             )}
             <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 8 }} />
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground }}>Total</Text>
-              <Text style={{ fontSize: 18, fontWeight: "800", color: colors.primary }}>${totalPrice.toFixed(2)}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>Total</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "800", color: colors.primary }}>${totalPrice.toFixed(2)}</Text>
             </View>
           </View>
 
@@ -3483,7 +3483,7 @@ export default function CalendarBookingScreen() {
           <View style={{ marginTop: 12 }}>
             <Text
               style={{
-                fontSize: 13,
+                fontSize: fs.xs,
                 fontWeight: "600",
                 color: colors.foreground,
                 marginBottom: 6,
@@ -3517,7 +3517,7 @@ export default function CalendarBookingScreen() {
                 style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 4 })}
               >
                 <IconSymbol name="tag.fill" size={14} color={colors.primary} />
-                <Text style={{ fontSize: 13, color: colors.primary, fontWeight: "600" }}>
+                <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }}>
                   {showPromoField ? "Hide promo code" : "Have a promo code?"}
                 </Text>
               </Pressable>
@@ -3525,8 +3525,8 @@ export default function CalendarBookingScreen() {
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: colors.success + "18", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                   <IconSymbol name="tag.fill" size={14} color={colors.success} />
-                  <Text style={{ fontSize: 13, fontWeight: "700", color: colors.success }}>{appliedPromoCode.code}</Text>
-                  <Text style={{ fontSize: 12, color: colors.success }}>applied</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.success }}>{appliedPromoCode.code}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.success }}>applied</Text>
                 </View>
                 <Pressable
                   onPress={() => { setAppliedPromoCode(null); setPromoInput(""); setPromoError(null); }}
@@ -3546,7 +3546,7 @@ export default function CalendarBookingScreen() {
                     placeholderTextColor={colors.muted}
                     autoCapitalize="characters"
                     returnKeyType="done"
-                    style={{ flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: promoError ? colors.error : colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: colors.foreground, fontWeight: "600", letterSpacing: 1 }}
+                    style={{ flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: promoError ? colors.error : colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: fs.sm, color: colors.foreground, fontWeight: "600", letterSpacing: 1 }}
                   />
                   <Pressable
                     onPress={() => {
@@ -3563,10 +3563,10 @@ export default function CalendarBookingScreen() {
                     }}
                     style={({ pressed }) => ({ backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, justifyContent: "center", opacity: pressed ? 0.7 : 1 })}
                   >
-                    <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFF" }}>Apply</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#FFF" }}>Apply</Text>
                   </Pressable>
                 </View>
-                {promoError && <Text style={{ fontSize: 12, color: colors.error, marginTop: 4 }}>{promoError}</Text>}
+                {promoError && <Text style={{ fontSize: fs.xs, color: colors.error, marginTop: 4 }}>{promoError}</Text>}
               </View>
             )}
           </View>
@@ -3584,7 +3584,7 @@ export default function CalendarBookingScreen() {
             <Text
               style={{
                 color: "#FFF",
-                fontSize: 16,
+                fontSize: fs.md,
                 fontWeight: "700",
                 marginLeft: 8,
               }}
@@ -3649,7 +3649,7 @@ export default function CalendarBookingScreen() {
                 })}
               >
                 <IconSymbol name="calendar" size={16} color={colors.primary} />
-                <Text style={{ fontSize: 14, fontWeight: "600", color: colors.primary }}>Add to Calendar</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.primary }}>Add to Calendar</Text>
               </Pressable>
             );
           })()}
@@ -3657,7 +3657,7 @@ export default function CalendarBookingScreen() {
           {selectedClient?.phone && (
             <Text
               style={{
-                fontSize: 12,
+                fontSize: fs.xs,
                 color: colors.muted,
                 textAlign: "center",
                 marginTop: 8,
@@ -3677,7 +3677,7 @@ export default function CalendarBookingScreen() {
       >
         <Pressable style={styles.modalOverlay} onPress={() => setShowDiscountSheet(false)}>
           <Pressable style={[styles.modalSheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground, marginBottom: 16 }}>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground, marginBottom: 16 }}>
               Promo / Discount
             </Text>
 
@@ -3685,14 +3685,14 @@ export default function CalendarBookingScreen() {
             {appliedPromoCode && (
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: colors.success + "18", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  <Text style={{ fontSize: 15, fontWeight: "700", color: colors.success, letterSpacing: 1 }}>{appliedPromoCode.code}</Text>
-                  <Text style={{ fontSize: 13, color: colors.success }}>applied</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.success, letterSpacing: 1 }}>{appliedPromoCode.code}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.success }}>applied</Text>
                 </View>
                 <Pressable
                   onPress={() => { setAppliedPromoCode(null); setPromoInput(""); setPromoError(null); }}
                   style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: colors.error }}>Remove</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.error }}>Remove</Text>
                 </Pressable>
               </View>
             )}
@@ -3705,10 +3705,10 @@ export default function CalendarBookingScreen() {
               placeholderTextColor={colors.muted}
               autoCapitalize="characters"
               returnKeyType="done"
-              style={{ backgroundColor: colors.background, borderWidth: 1, borderColor: promoError ? colors.error : colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: colors.foreground, fontWeight: "600", letterSpacing: 1, marginBottom: 8 }}
+              style={{ backgroundColor: colors.background, borderWidth: 1, borderColor: promoError ? colors.error : colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: fs.sm, color: colors.foreground, fontWeight: "600", letterSpacing: 1, marginBottom: 8 }}
             />
             {promoError && (
-              <Text style={{ fontSize: 12, color: colors.error, marginBottom: 8 }}>{promoError}</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.error, marginBottom: 8 }}>{promoError}</Text>
             )}
 
             {/* Apply button */}
@@ -3728,7 +3728,7 @@ export default function CalendarBookingScreen() {
               }}
               style={({ pressed }) => ({ backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 13, alignItems: "center", marginBottom: 10, opacity: pressed ? 0.8 : 1 })}
             >
-              <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 15 }}>Apply</Text>
+              <Text style={{ color: "#FFF", fontWeight: "700", fontSize: fs.sm }}>Apply</Text>
             </Pressable>
 
             {/* Cancel */}
@@ -3736,7 +3736,7 @@ export default function CalendarBookingScreen() {
               onPress={() => { setPromoError(null); setShowDiscountSheet(false); }}
               style={({ pressed }) => ({ alignItems: "center", paddingVertical: 10, opacity: pressed ? 0.5 : 1 })}
             >
-              <Text style={{ color: colors.muted, fontSize: 14 }}>Cancel</Text>
+              <Text style={{ color: colors.muted, fontSize: fs.sm }}>Cancel</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -3751,7 +3751,7 @@ export default function CalendarBookingScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setShowPromoSheet(false)}>
           <Pressable style={[styles.modalSheet, { backgroundColor: colors.surface, borderColor: colors.border, maxHeight: "70%" }]}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}>Select Promo Code</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>Select Promo Code</Text>
               <Pressable onPress={() => setShowPromoSheet(false)} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
                 <IconSymbol name="xmark" size={18} color={colors.muted} />
               </Pressable>
@@ -3762,14 +3762,14 @@ export default function CalendarBookingScreen() {
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: colors.success + "18", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <IconSymbol name="tag.fill" size={14} color={colors.success} />
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: colors.success, letterSpacing: 1 }}>{appliedPromoCode.code}</Text>
-                  <Text style={{ fontSize: 12, color: colors.success }}>applied</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.success, letterSpacing: 1 }}>{appliedPromoCode.code}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.success }}>applied</Text>
                 </View>
                 <Pressable
                   onPress={() => { setAppliedPromoCode(null); setPromoInput(""); setPromoError(null); }}
                   style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: colors.error }}>Remove</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.error }}>Remove</Text>
                 </Pressable>
               </View>
             )}
@@ -3778,7 +3778,7 @@ export default function CalendarBookingScreen() {
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 320 }}>
               {(state.promoCodes ?? []).filter((p) => p.active).length === 0 ? (
                 <View style={{ alignItems: "center", paddingVertical: 32 }}>
-                  <Text style={{ fontSize: 14, color: colors.muted, textAlign: "center" }}>No active promo codes available.{"\n"}Create promo codes in Settings.</Text>
+                  <Text style={{ fontSize: fs.sm, color: colors.muted, textAlign: "center" }}>No active promo codes available.{"\n"}Create promo codes in Settings.</Text>
                 </View>
               ) : (
                 (state.promoCodes ?? []).filter((p) => {
@@ -3807,12 +3807,12 @@ export default function CalendarBookingScreen() {
                       })}
                     >
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: "700", color: isSelected ? colors.success : colors.foreground, letterSpacing: 0.5 }}>{promo.code}</Text>
-                        {promo.label ? <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{promo.label}</Text> : null}
-                        {promo.expiresAt ? <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>Expires {new Date(promo.expiresAt).toLocaleDateString()}</Text> : null}
+                        <Text style={{ fontSize: fs.sm, fontWeight: "700", color: isSelected ? colors.success : colors.foreground, letterSpacing: 0.5 }}>{promo.code}</Text>
+                        {promo.label ? <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{promo.label}</Text> : null}
+                        {promo.expiresAt ? <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>Expires {new Date(promo.expiresAt).toLocaleDateString()}</Text> : null}
                       </View>
                       <View style={{ alignItems: "flex-end", gap: 4 }}>
-                        {discountLabel ? <Text style={{ fontSize: 13, fontWeight: "700", color: isSelected ? colors.success : colors.primary }}>{discountLabel}</Text> : null}
+                        {discountLabel ? <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isSelected ? colors.success : colors.primary }}>{discountLabel}</Text> : null}
                         {promo.maxUses != null && (
                           <Text style={{ fontSize: 10, color: colors.muted }}>{promo.usedCount ?? 0}/{promo.maxUses} uses</Text>
                         )}
@@ -3828,7 +3828,7 @@ export default function CalendarBookingScreen() {
               onPress={() => setShowPromoSheet(false)}
               style={({ pressed }) => ({ alignItems: "center", paddingVertical: 12, marginTop: 8, opacity: pressed ? 0.5 : 1 })}
             >
-              <Text style={{ color: colors.muted, fontSize: 14 }}>Cancel</Text>
+              <Text style={{ color: colors.muted, fontSize: fs.sm }}>Cancel</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -3844,7 +3844,7 @@ export default function CalendarBookingScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setShowDiscountPickerSheet(false)}>
           <Pressable style={[styles.modalSheet, { backgroundColor: colors.surface, borderColor: colors.border, maxHeight: "70%" }]}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}>Select Discount</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>Select Discount</Text>
               <Pressable onPress={() => setShowDiscountPickerSheet(false)} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
                 <IconSymbol name="xmark" size={18} color={colors.muted} />
               </Pressable>
@@ -3855,14 +3855,14 @@ export default function CalendarBookingScreen() {
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: colors.warning + "18", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <IconSymbol name="percent" size={14} color={colors.warning} />
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: colors.warning }}>{appliedManualDiscount.name}</Text>
-                  <Text style={{ fontSize: 12, color: colors.warning }}>applied</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.warning }}>{appliedManualDiscount.name}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.warning }}>applied</Text>
                 </View>
                 <Pressable
                   onPress={() => setAppliedManualDiscount(null)}
                   style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: colors.error }}>Remove</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.error }}>Remove</Text>
                 </Pressable>
               </View>
             )}
@@ -3871,7 +3871,7 @@ export default function CalendarBookingScreen() {
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 320 }}>
               {(state.discounts ?? []).filter((d) => d.active !== false).length === 0 ? (
                 <View style={{ alignItems: "center", paddingVertical: 32 }}>
-                  <Text style={{ fontSize: 14, color: colors.muted, textAlign: "center" }}>No discounts available.{"\n"}Create discounts in Settings.</Text>
+                  <Text style={{ fontSize: fs.sm, color: colors.muted, textAlign: "center" }}>No discounts available.{"\n"}Create discounts in Settings.</Text>
                 </View>
               ) : (
                 (state.discounts ?? []).filter((d) => d.active !== false).map((disc) => {
@@ -3892,11 +3892,11 @@ export default function CalendarBookingScreen() {
                       })}
                     >
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: "700", color: isSelected ? colors.warning : colors.foreground }}>{disc.name}</Text>
-                        {(disc as any).description ? <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }} numberOfLines={2}>{(disc as any).description}</Text> : null}
+                        <Text style={{ fontSize: fs.sm, fontWeight: "700", color: isSelected ? colors.warning : colors.foreground }}>{disc.name}</Text>
+                        {(disc as any).description ? <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }} numberOfLines={2}>{(disc as any).description}</Text> : null}
                       </View>
                       <View style={{ alignItems: "flex-end", gap: 4 }}>
-                        <Text style={{ fontSize: 14, fontWeight: "700", color: isSelected ? colors.warning : colors.primary }}>{disc.percentage}% off</Text>
+                        <Text style={{ fontSize: fs.sm, fontWeight: "700", color: isSelected ? colors.warning : colors.primary }}>{disc.percentage}% off</Text>
                         {isSelected && <IconSymbol name="checkmark.circle.fill" size={18} color={colors.warning} />}
                       </View>
                     </Pressable>
@@ -3909,7 +3909,7 @@ export default function CalendarBookingScreen() {
               onPress={() => setShowDiscountPickerSheet(false)}
               style={({ pressed }) => ({ alignItems: "center", paddingVertical: 12, marginTop: 8, opacity: pressed ? 0.5 : 1 })}
             >
-              <Text style={{ color: colors.muted, fontSize: 14 }}>Cancel</Text>
+              <Text style={{ color: colors.muted, fontSize: fs.sm }}>Cancel</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -3943,7 +3943,7 @@ function SummaryRow({
     >
       <Text
         style={{
-          fontSize: 13,
+          fontSize: fs.xs,
           color: colors.muted,
           fontWeight: bold ? "700" : "400",
         }}
@@ -3952,7 +3952,7 @@ function SummaryRow({
       </Text>
       <Text
         style={{
-          fontSize: 13,
+          fontSize: fs.xs,
           color: valueColor ?? colors.foreground,
           fontWeight: bold ? "700" : "500",
         }}
@@ -4003,7 +4003,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,
-    fontSize: 14,
+    fontSize: fs.sm,
     minHeight: 80,
     textAlignVertical: "top",
   },

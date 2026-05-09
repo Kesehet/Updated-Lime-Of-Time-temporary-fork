@@ -61,49 +61,49 @@ function PublicGiftCard({
     }}>
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>
+          <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>
             {(card as any).purchaserName ?? "Unknown"} → {card.recipientName ?? "Recipient"}
           </Text>
-          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{card.code}</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{card.code}</Text>
         </View>
         <View style={{
           paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
           backgroundColor: isRedeemed ? colors.muted + "30" : isPaid ? colors.success + "20" : colors.warning + "20",
         }}>
-          <Text style={{ fontSize: 11, fontWeight: "700", color: isRedeemed ? colors.muted : isPaid ? colors.success : colors.warning }}>
+          <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isRedeemed ? colors.muted : isPaid ? colors.success : colors.warning }}>
             {isRedeemed ? "Redeemed" : isPaid ? "Paid" : "Awaiting Payment"}
           </Text>
         </View>
       </View>
       {items.map((it, idx) => (
-        <Text key={idx} style={{ fontSize: 12, color: colors.muted, marginBottom: 2 }}>
+        <Text key={idx} style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 2 }}>
           {it.type === "product" ? "📦" : "✂️"} {it.name} — {it.price}
         </Text>
       ))}
       {total > 0 && (
-        <Text style={{ fontSize: 13, fontWeight: "700", color: colors.primary, marginTop: 4 }}>
+        <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary, marginTop: 4 }}>
           Total: ${total.toFixed(2)}
         </Text>
       )}
       <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
         {(card as any).purchaserEmail ? (
-          <Text style={{ fontSize: 11, color: colors.muted, flex: 1 }} numberOfLines={1}>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, flex: 1 }} numberOfLines={1}>
             From: {(card as any).purchaserEmail}
           </Text>
         ) : null}
         {(card as any).recipientEmail ? (
-          <Text style={{ fontSize: 11, color: colors.muted, flex: 1 }} numberOfLines={1}>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, flex: 1 }} numberOfLines={1}>
             To: {(card as any).recipientEmail}
           </Text>
         ) : null}
       </View>
       {card.message ? (
-        <Text style={{ fontSize: 12, color: colors.muted, fontStyle: "italic", marginTop: 6 }} numberOfLines={2}>
+        <Text style={{ fontSize: fs.xs, color: colors.muted, fontStyle: "italic", marginTop: 6 }} numberOfLines={2}>
           "{card.message}"
         </Text>
       ) : null}
       <View style={{ flexDirection: "row", alignItems: "center", marginTop: 10, gap: 8 }}>
-        <Text style={{ fontSize: 11, color: colors.muted, flex: 1 }}>
+        <Text style={{ fontSize: fs.xs, color: colors.muted, flex: 1 }}>
           {paymentMethodLabel[paymentMethod] ?? paymentMethod}
           {card.expiresAt ? ` · Expires ${new Date(card.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
         </Text>
@@ -115,7 +115,7 @@ function PublicGiftCard({
               backgroundColor: isPaid ? colors.warning + "20" : colors.success + "20",
             }, pressed && { opacity: 0.7 }]}
           >
-            <Text style={{ fontSize: 12, fontWeight: "700", color: isPaid ? colors.warning : colors.success }}>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isPaid ? colors.warning : colors.success }}>
               {isPaid ? "Mark Unpaid" : "Mark as Paid"}
             </Text>
           </Pressable>
@@ -136,7 +136,7 @@ export default function GiftCardsScreen() {
   const publicRedeemed = publicGiftCards.filter(c => c.redeemed);
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, modalMaxWidth } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   const [showForm, setShowForm] = useState(false);
   const [giftCreateMode, setGiftCreateMode] = useState<"items" | "balance">("items");
@@ -428,10 +428,10 @@ export default function GiftCardsScreen() {
               {/* Balance card badge */}
               {(item as any).isBalanceCard ? (
                 <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4, gap: 6 }}>
-                  <Text style={{ fontSize: 22, fontWeight: "800", color: colors.primary }}>
+                  <Text style={{ fontSize: fs.lg, fontWeight: "800", color: colors.primary }}>
                     ${(item.remainingBalance ?? item.originalValue ?? 0).toFixed(2)}
                   </Text>
-                  <Text style={{ fontSize: 12, color: colors.muted }}>balance card</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>balance card</Text>
                 </View>
               ) : (
                 <>
@@ -442,12 +442,12 @@ export default function GiftCardsScreen() {
                     </Text>
                   ))}
                   {total > 0 && (
-                    <Text style={{ fontSize: 13, fontWeight: "700", color: colors.primary, marginTop: 4 }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary, marginTop: 4 }}>
                       Value: ${total.toFixed(2)}
                     </Text>
                   )}
                   {!item.redeemed && item.remainingBalance != null && item.remainingBalance < total && (
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.success, marginTop: 2 }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.success, marginTop: 2 }}>
                       Balance: ${item.remainingBalance.toFixed(2)}
                     </Text>
                   )}
@@ -545,7 +545,7 @@ export default function GiftCardsScreen() {
               backgroundColor: giftCreateMode === mode ? colors.primary : "transparent",
             }, pressed && { opacity: 0.8 }]}
           >
-            <Text style={{ fontSize: 13, fontWeight: "700", color: giftCreateMode === mode ? "#fff" : colors.muted }}>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: giftCreateMode === mode ? "#fff" : colors.muted }}>
               {mode === "items" ? "Services & Products" : "Balance Card"}
             </Text>
           </Pressable>
@@ -561,7 +561,7 @@ export default function GiftCardsScreen() {
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, justifyContent: "center" }]}
           >
             <Text
-              style={{ color: selectedItemsSummary.length > 0 ? colors.foreground : colors.muted + "80", fontSize: 15, lineHeight: 20 }}
+              style={{ color: selectedItemsSummary.length > 0 ? colors.foreground : colors.muted + "80", fontSize: fs.sm, lineHeight: 20 }}
               numberOfLines={1}
             >
               {selectedItemsSummary.length > 0
@@ -579,8 +579,8 @@ export default function GiftCardsScreen() {
                 return (
                   <View key={sid} style={styles.selectedItemRow}>
                     <View style={[styles.serviceColorDot, { backgroundColor: s.color }]} />
-                    <Text style={{ flex: 1, fontSize: 13, color: colors.foreground }}>{s.name}</Text>
-                    <Text style={{ fontSize: 13, color: colors.primary, fontWeight: "600" }}>${parseFloat(String(s.price)).toFixed(2)}</Text>
+                    <Text style={{ flex: 1, fontSize: fs.xs, color: colors.foreground }}>{s.name}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }}>${parseFloat(String(s.price)).toFixed(2)}</Text>
                   </View>
                 );
               })}
@@ -590,13 +590,13 @@ export default function GiftCardsScreen() {
                 return (
                   <View key={pid} style={styles.selectedItemRow}>
                     <IconSymbol name="bag.fill" size={12} color={colors.primary} />
-                    <Text style={{ flex: 1, fontSize: 13, color: colors.foreground, marginLeft: 4 }}>{p.name}</Text>
-                    <Text style={{ fontSize: 13, color: colors.primary, fontWeight: "600" }}>${parseFloat(String(p.price)).toFixed(2)}</Text>
+                    <Text style={{ flex: 1, fontSize: fs.xs, color: colors.foreground, marginLeft: 4 }}>{p.name}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }}>${parseFloat(String(p.price)).toFixed(2)}</Text>
                   </View>
                 );
               })}
               <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 4 }}>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.primary }}>Total: ${totalValue.toFixed(2)}</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.primary }}>Total: ${totalValue.toFixed(2)}</Text>
               </View>
             </View>
           )}
@@ -618,7 +618,7 @@ export default function GiftCardsScreen() {
                     backgroundColor: isSelected ? colors.primary + "20" : colors.background,
                   }, pressed && { opacity: 0.7 }]}
                 >
-                  <Text style={{ fontSize: 15, fontWeight: "700", color: isSelected ? colors.primary : colors.foreground }}>${amt}</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: isSelected ? colors.primary : colors.foreground }}>${amt}</Text>
                 </Pressable>
               );
             })}
@@ -635,7 +635,7 @@ export default function GiftCardsScreen() {
           />
           {balanceAmount && !isNaN(parseFloat(balanceAmount)) && parseFloat(balanceAmount) > 0 && (
             <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: 8 }}>
-              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.primary }}>Card Value: ${parseFloat(balanceAmount).toFixed(2)}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.primary }}>Card Value: ${parseFloat(balanceAmount).toFixed(2)}</Text>
             </View>
           )}
         </>
@@ -691,13 +691,13 @@ export default function GiftCardsScreen() {
           onPress={resetForm}
           style={({ pressed }) => [styles.formBtnCancel, { borderColor: colors.border }, pressed && { opacity: 0.7 }]}
         >
-          <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14, lineHeight: 20 }}>Cancel</Text>
+          <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: fs.sm, lineHeight: 20 }}>Cancel</Text>
         </Pressable>
         <Pressable
           onPress={handleCreate}
           style={({ pressed }) => [styles.formBtnSave, { backgroundColor: colors.primary }, pressed && { opacity: 0.8 }]}
         >
-          <Text style={{ color: "#fff", fontWeight: "600", fontSize: 14, lineHeight: 20 }}>Create Gift Card</Text>
+          <Text style={{ color: "#fff", fontWeight: "600", fontSize: fs.sm, lineHeight: 20 }}>Create Gift Card</Text>
         </Pressable>
       </View>
     </View>
@@ -744,13 +744,13 @@ export default function GiftCardsScreen() {
           onPress={() => setMainTab("my")}
           style={({ pressed }) => [{ flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: "center", backgroundColor: mainTab === "my" ? colors.primary : "transparent" }, pressed && { opacity: 0.8 }]}
         >
-          <Text style={{ fontSize: 13, fontWeight: "700", color: mainTab === "my" ? "#fff" : colors.muted }}>🎁 My Gift Cards</Text>
+          <Text style={{ fontSize: fs.xs, fontWeight: "700", color: mainTab === "my" ? "#fff" : colors.muted }}>🎁 My Gift Cards</Text>
         </Pressable>
         <Pressable
           onPress={() => setMainTab("public")}
           style={({ pressed }) => [{ flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: "center", backgroundColor: mainTab === "public" ? colors.primary : "transparent" }, pressed && { opacity: 0.8 }]}
         >
-          <Text style={{ fontSize: 13, fontWeight: "700", color: mainTab === "public" ? "#fff" : colors.muted }}>
+          <Text style={{ fontSize: fs.xs, fontWeight: "700", color: mainTab === "public" ? "#fff" : colors.muted }}>
             🛍️ Client Purchases{publicGiftCards.length > 0 ? ` (${publicGiftCards.length})` : ""}
           </Text>
         </Pressable>
@@ -759,10 +759,10 @@ export default function GiftCardsScreen() {
       {buyGiftLink && (
         <View style={{ marginHorizontal: hp, marginTop: 14, marginBottom: 4, backgroundColor: colors.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: colors.border }}>
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-            <Text style={{ fontSize: 18, marginRight: 8 }}>🎁</Text>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground, flex: 1 }}>Client Gift Portal</Text>
+            <Text style={{ fontSize: fs.md, marginRight: 8 }}>🎁</Text>
+            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, flex: 1 }}>Client Gift Portal</Text>
           </View>
-          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 10, lineHeight: 17 }}>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 10, lineHeight: 17 }}>
             Share this link so clients can buy gifts for friends & family. They pick services, pay, and the recipient gets a redemption link.
           </Text>
           <View style={{ flexDirection: "row", gap: 8 }}>
@@ -770,13 +770,13 @@ export default function GiftCardsScreen() {
               onPress={handleCopyBuyGiftLink}
               style={({ pressed }) => [{ flex: 1, backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 9, alignItems: "center" }, pressed && { opacity: 0.75 }]}
             >
-              <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>📋 Copy Link</Text>
+              <Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "700" }}>📋 Copy Link</Text>
             </Pressable>
             <Pressable
               onPress={handleShareBuyGiftLink}
               style={({ pressed }) => [{ flex: 1, borderRadius: 10, paddingVertical: 9, alignItems: "center", borderWidth: 1.5, borderColor: colors.primary }, pressed && { opacity: 0.75 }]}
             >
-              <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "700" }}>📤 Share</Text>
+              <Text style={{ color: colors.primary, fontSize: fs.xs, fontWeight: "700" }}>📤 Share</Text>
             </Pressable>
           </View>
         </View>
@@ -829,7 +829,7 @@ export default function GiftCardsScreen() {
               <View style={{ marginBottom: 16 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.warning, marginRight: 8 }} />
-                  <Text style={{ fontSize: 13, fontWeight: "700", color: colors.warning }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.warning }}>
                     Awaiting Payment ({publicPendingPayment.length})
                   </Text>
                 </View>
@@ -843,7 +843,7 @@ export default function GiftCardsScreen() {
               <View style={{ marginBottom: 16 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success, marginRight: 8 }} />
-                  <Text style={{ fontSize: 13, fontWeight: "700", color: colors.success }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.success }}>
                     Paid — Awaiting Redemption ({publicPaid.length})
                   </Text>
                 </View>
@@ -857,7 +857,7 @@ export default function GiftCardsScreen() {
               <View style={{ marginBottom: 16 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.muted, marginRight: 8 }} />
-                  <Text style={{ fontSize: 13, fontWeight: "700", color: colors.muted }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted }}>
                     Redeemed ({publicRedeemed.length})
                   </Text>
                 </View>
@@ -888,7 +888,7 @@ export default function GiftCardsScreen() {
                 onPress={() => setPickerTab("services")}
                 style={[styles.segBtn, pickerTab === "services" && { backgroundColor: colors.primary }]}
               >
-                <Text style={{ fontSize: 13, fontWeight: "600", color: pickerTab === "services" ? "#fff" : colors.muted }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: pickerTab === "services" ? "#fff" : colors.muted }}>
                   Services ({state.services.length})
                 </Text>
               </Pressable>
@@ -896,7 +896,7 @@ export default function GiftCardsScreen() {
                 onPress={() => setPickerTab("products")}
                 style={[styles.segBtn, pickerTab === "products" && { backgroundColor: colors.primary }]}
               >
-                <Text style={{ fontSize: 13, fontWeight: "600", color: pickerTab === "products" ? "#fff" : colors.muted }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: pickerTab === "products" ? "#fff" : colors.muted }}>
                   Products ({availableProducts.length})
                 </Text>
               </Pressable>
@@ -922,7 +922,7 @@ export default function GiftCardsScreen() {
                     {hasMultiCat && (
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 4, paddingTop: 8, paddingBottom: 4 }}>
                         <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: colors.primary }} />
-                        <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted }}>{cat}</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted }}>{cat}</Text>
                       </View>
                     )}
                     {svcs.map((item) => {
@@ -935,8 +935,8 @@ export default function GiftCardsScreen() {
                         >
                           <View style={[styles.serviceColorDot, { backgroundColor: item.color }]} />
                           <View style={{ flex: 1 }}>
-                            <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 15, lineHeight: 20 }}>{item.name}</Text>
-                            <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>${parseFloat(String(item.price)).toFixed(2)} · {item.duration} min</Text>
+                            <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: fs.sm, lineHeight: 20 }}>{item.name}</Text>
+                            <Text style={{ color: colors.muted, fontSize: fs.xs, lineHeight: 18 }}>${parseFloat(String(item.price)).toFixed(2)} · {item.duration} min</Text>
                           </View>
                           {isActive && <IconSymbol name="checkmark" size={18} color={colors.primary} />}
                         </Pressable>
@@ -964,7 +964,7 @@ export default function GiftCardsScreen() {
                     {hasMultiBrand && (
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 4, paddingTop: 8, paddingBottom: 4 }}>
                         <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: colors.warning }} />
-                        <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted }}>{brand}</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted }}>{brand}</Text>
                       </View>
                     )}
                     {prods.map((item) => {
@@ -977,8 +977,8 @@ export default function GiftCardsScreen() {
                         >
                           <IconSymbol name="bag.fill" size={16} color={colors.primary} />
                           <View style={{ flex: 1, marginLeft: 4 }}>
-                            <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 15, lineHeight: 20 }}>{item.name}</Text>
-                            <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>${parseFloat(String(item.price)).toFixed(2)}{item.brand ? ` · ${item.brand}` : ""}</Text>
+                            <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: fs.sm, lineHeight: 20 }}>{item.name}</Text>
+                            <Text style={{ color: colors.muted, fontSize: fs.xs, lineHeight: 18 }}>${parseFloat(String(item.price)).toFixed(2)}{item.brand ? ` · ${item.brand}` : ""}</Text>
                           </View>
                           {isActive && <IconSymbol name="checkmark" size={18} color={colors.primary} />}
                         </Pressable>
@@ -988,10 +988,10 @@ export default function GiftCardsScreen() {
                 ));
               })()}
               {pickerTab === "services" && state.services.length === 0 && (
-                <Text style={{ color: colors.muted, textAlign: "center", padding: 20, fontSize: 14 }}>No services available.</Text>
+                <Text style={{ color: colors.muted, textAlign: "center", padding: 20, fontSize: fs.sm }}>No services available.</Text>
               )}
               {pickerTab === "products" && availableProducts.length === 0 && (
-                <Text style={{ color: colors.muted, textAlign: "center", padding: 20, fontSize: 14 }}>No products available.</Text>
+                <Text style={{ color: colors.muted, textAlign: "center", padding: 20, fontSize: fs.sm }}>No products available.</Text>
               )}
             </ScrollView>
 
@@ -999,7 +999,7 @@ export default function GiftCardsScreen() {
               onPress={() => setShowItemPicker(false)}
               style={({ pressed }) => [styles.formBtnSave, { backgroundColor: colors.primary, marginTop: 12 }, pressed && { opacity: 0.8 }]}
             >
-              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 14, lineHeight: 20 }}>
+              <Text style={{ color: "#fff", fontWeight: "600", fontSize: fs.sm, lineHeight: 20 }}>
                 Done ({selectedServiceIds.length + selectedProductIds.length} selected)
               </Text>
             </Pressable>
@@ -1022,7 +1022,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   headerBackBtn: { padding: 4 },
-  headerTitle: { fontSize: 20, fontWeight: "700", flex: 1, lineHeight: 26 },
+  headerTitle: { fontSize: fs.lg, fontWeight: "700", flex: 1, lineHeight: 26 },
   addBtn: {
     width: 36,
     height: 36,
@@ -1038,8 +1038,8 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   statItem: { flex: 1, alignItems: "center" },
-  statValue: { fontSize: 22, fontWeight: "800", lineHeight: 28 },
-  statLabel: { fontSize: 12, marginTop: 2, lineHeight: 16 },
+  statValue: { fontSize: fs.lg, fontWeight: "800", lineHeight: 28 },
+  statLabel: { fontSize: fs.xs, marginTop: 2, lineHeight: 16 },
   statDivider: { width: 1, marginVertical: 4 },
   empty: {
     flex: 1,
@@ -1048,8 +1048,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     gap: 12,
   },
-  emptyTitle: { fontSize: 20, fontWeight: "700", lineHeight: 26 },
-  emptySubtitle: { fontSize: 14, textAlign: "center", lineHeight: 20 },
+  emptyTitle: { fontSize: fs.lg, fontWeight: "700", lineHeight: 26 },
+  emptySubtitle: { fontSize: fs.sm, textAlign: "center", lineHeight: 20 },
   emptyBtn: {
     paddingHorizontal: 24,
     paddingVertical: 12,
@@ -1059,7 +1059,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  emptyBtnText: { color: "#fff", fontWeight: "700", fontSize: 15, lineHeight: 20 },
+  emptyBtnText: { color: "#fff", fontWeight: "700", fontSize: fs.sm, lineHeight: 20 },
   card: {
     borderRadius: 16,
     padding: 16,
@@ -1075,13 +1075,13 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   codeRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  codeText: { fontSize: 17, fontWeight: "800", letterSpacing: 1, lineHeight: 22 },
-  serviceName: { fontSize: 14, marginTop: 2, lineHeight: 18 },
+  codeText: { fontSize: fs.md, fontWeight: "800", letterSpacing: 1, lineHeight: 22 },
+  serviceName: { fontSize: fs.sm, marginTop: 2, lineHeight: 18 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  badgeText: { fontSize: 12, fontWeight: "700", lineHeight: 16 },
+  badgeText: { fontSize: fs.xs, fontWeight: "700", lineHeight: 16 },
   detailRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4, width: "100%" },
-  detailText: { fontSize: 13, lineHeight: 18, flex: 1 },
-  messageText: { fontSize: 13, fontStyle: "italic", marginBottom: 8, lineHeight: 18 },
+  detailText: { fontSize: fs.xs, lineHeight: 18, flex: 1 },
+  messageText: { fontSize: fs.xs, fontStyle: "italic", marginBottom: 8, lineHeight: 18 },
   cardFooter: {
     flexDirection: "row",
     alignItems: "center",
@@ -1092,7 +1092,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#E5E7EB",
     width: "100%",
   },
-  dateText: { fontSize: 12, lineHeight: 16, flex: 1 },
+  dateText: { fontSize: fs.xs, lineHeight: 16, flex: 1 },
   cardActions: { flexDirection: "row", gap: 8 },
   actionBtn: {
     flexDirection: "row",
@@ -1103,16 +1103,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     minHeight: 36,
   },
-  actionText: { fontSize: 12, fontWeight: "600", lineHeight: 16 },
-  formTitle: { fontSize: 18, fontWeight: "700", marginBottom: 16, lineHeight: 24 },
-  fieldLabel: { fontSize: 12, fontWeight: "500", marginBottom: 6, marginTop: 8 },
+  actionText: { fontSize: fs.xs, fontWeight: "600", lineHeight: 16 },
+  formTitle: { fontSize: fs.md, fontWeight: "700", marginBottom: 16, lineHeight: 24 },
+  fieldLabel: { fontSize: fs.xs, fontWeight: "500", marginBottom: 6, marginTop: 8 },
   input: {
     width: "100%",
     height: 44,
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 12,
-    fontSize: 15,
+    fontSize: fs.sm,
     lineHeight: 20,
     marginBottom: 4,
   },
@@ -1180,7 +1180,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     width: "100%",
   },
-  modalTitle: { fontSize: 18, fontWeight: "700", lineHeight: 24 },
+  modalTitle: { fontSize: fs.md, fontWeight: "700", lineHeight: 24 },
   serviceOption: {
     flexDirection: "row",
     alignItems: "center",

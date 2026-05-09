@@ -52,7 +52,7 @@ export default function NewBookingScreen() {
   const { activeLocations: _allActiveLocations } = useActiveLocation();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, width: screenWidth, modalMaxWidth, maxContentWidth } = useResponsive();
+  const { isTablet, hp, width: screenWidth, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const params = useLocalSearchParams<{ date?: string }>();
 
   const sendSmsMutation = trpc.twilio.sendSms.useMutation();
@@ -802,7 +802,7 @@ export default function NewBookingScreen() {
             if (activePackages.length === 0) return null;
             return (
               <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Packages &amp; Bundles</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Packages &amp; Bundles</Text>
                 {activePackages.map((pkg) => {
                   const isSelected = selectedServiceId === `pkg:${pkg.id}`;
                   const includedSvcs = pkg.serviceIds
@@ -831,27 +831,27 @@ export default function NewBookingScreen() {
                       <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
                         <View style={{ flex: 1 }}>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                            <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground }}>{pkg.name}</Text>
+                            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>{pkg.name}</Text>
                             {savings > 0 && (
                               <View style={{ backgroundColor: "#22C55E20", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 }}>
-                                <Text style={{ fontSize: 11, color: "#22C55E", fontWeight: "700" }}>Save ${savings.toFixed(2)}</Text>
+                                <Text style={{ fontSize: fs.xs, color: "#22C55E", fontWeight: "700" }}>Save ${savings.toFixed(2)}</Text>
                               </View>
                             )}
                           </View>
                           {pkg.description ? (
-                            <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 6 }} numberOfLines={2}>{pkg.description}</Text>
+                            <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 6 }} numberOfLines={2}>{pkg.description}</Text>
                           ) : null}
                           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
                             {includedSvcs.map((sv) => (
                               <View key={sv.id} style={{ backgroundColor: colors.border, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
-                                <Text style={{ fontSize: 11, color: colors.muted }}>{sv.name}</Text>
+                                <Text style={{ fontSize: fs.xs, color: colors.muted }}>{sv.name}</Text>
                               </View>
                             ))}
                           </View>
-                          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 6 }}>{totalDuration} min total</Text>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>{totalDuration} min total</Text>
                         </View>
                         <View style={{ alignItems: "flex-end", gap: 6 }}>
-                          <Text style={{ fontSize: 17, fontWeight: "700", color: colors.primary }}>${pkg.price.toFixed(2)}</Text>
+                          <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>${pkg.price.toFixed(2)}</Text>
                           <IconSymbol name="chevron.right" size={16} color={colors.muted} />
                         </View>
                       </View>
@@ -859,7 +859,7 @@ export default function NewBookingScreen() {
                   );
                 })}
                 <View style={{ height: 1, backgroundColor: colors.border, marginBottom: 16 }} />
-                <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Individual Services</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Individual Services</Text>
               </View>
             );
           })()}
@@ -914,9 +914,9 @@ export default function NewBookingScreen() {
                           opacity: pressed ? 0.7 : 1,
                         })}
                       >
-                        <Text style={{ fontSize: 32 }}>{getCatEmoji(cat)}</Text>
-                        <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>{cat}</Text>
-                        <Text style={{ fontSize: 11, color: colors.muted }}>{svcs.length} service{svcs.length !== 1 ? "s" : ""}</Text>
+                        <Text style={{ fontSize: fs.xxl }}>{getCatEmoji(cat)}</Text>
+                        <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>{cat}</Text>
+                        <Text style={{ fontSize: fs.xs, color: colors.muted }}>{svcs.length} service{svcs.length !== 1 ? "s" : ""}</Text>
                       </Pressable>
                     ))}
                   </View>
@@ -936,7 +936,7 @@ export default function NewBookingScreen() {
                       onPress={() => setStep1CategoryFilter(null)}
                       style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
                     >
-                      <Text style={{ fontSize: 14, color: colors.primary }}>← Categories</Text>
+                      <Text style={{ fontSize: fs.sm, color: colors.primary }}>← Categories</Text>
                     </Pressable>
                     <Text className="text-base font-semibold text-foreground">{step1CategoryFilter}</Text>
                   </View>
@@ -972,7 +972,7 @@ export default function NewBookingScreen() {
                       <Image source={{ uri: item.photoUri }} style={{ width: 40, height: 40, borderRadius: 8, marginRight: 12 }} />
                     ) : (
                       <View style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: item.color + "22", alignItems: "center", justifyContent: "center", marginRight: 12 }}>
-                        <Text style={{ fontSize: 20 }}>{nbSvcEmoji}</Text>
+                        <Text style={{ fontSize: fs.lg }}>{nbSvcEmoji}</Text>
                       </View>
                     )}
                     <View style={styles.optionContent}>
@@ -1077,7 +1077,7 @@ export default function NewBookingScreen() {
                     ]}
                   >
                     <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
-                      <Text style={{ fontSize: 13, fontWeight: "700", color: colors.primary }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary }}>
                         {getInitials(item.name)}
                       </Text>
                     </View>
@@ -1148,7 +1148,7 @@ export default function NewBookingScreen() {
                     }]}
                   >
                     <IconSymbol name="location.fill" size={14} color={!selectedLocationId ? colors.primary : colors.muted} />
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: !selectedLocationId ? colors.primary : colors.foreground }}>All Locations</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: !selectedLocationId ? colors.primary : colors.foreground }}>All Locations</Text>
                   </Pressable>
                   {/* Individual locations */}
                   {activeLocations.map((loc) => {
@@ -1175,9 +1175,9 @@ export default function NewBookingScreen() {
                       >
                         <IconSymbol name="location.fill" size={14} color={isSelected ? colors.primary : colors.muted} />
                         <View>
-                          <Text style={{ fontSize: 13, fontWeight: "600", color: isSelected ? colors.primary : colors.foreground }}>{loc.name}</Text>
+                          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: isSelected ? colors.primary : colors.foreground }}>{loc.name}</Text>
                           {!!loc.address && (
-                            <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }} numberOfLines={2}>{formatFullAddress(loc.address, loc.city, loc.state, loc.zipCode)}</Text>
+                            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }} numberOfLines={2}>{formatFullAddress(loc.address, loc.city, loc.state, loc.zipCode)}</Text>
                           )}
                         </View>
                       </Pressable>
@@ -1209,7 +1209,7 @@ export default function NewBookingScreen() {
                       gap: 6,
                     }]}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: !selectedStaffId ? colors.primary : colors.foreground }}>Any Available</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: !selectedStaffId ? colors.primary : colors.foreground }}>Any Available</Text>
                   </Pressable>
                   {activeStaff.map((member) => {
                     const hasTimeSelected = !!(selectedDate && selectedTime);
@@ -1237,7 +1237,7 @@ export default function NewBookingScreen() {
                             {member.photoUri ? (
                               <Image source={{ uri: member.photoUri }} style={{ width: 28, height: 28, borderRadius: 14 }} />
                             ) : (
-                              <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>{member.name.charAt(0).toUpperCase()}</Text>
+                              <Text style={{ color: "#FFF", fontSize: fs.xs, fontWeight: "700" }}>{member.name.charAt(0).toUpperCase()}</Text>
                             )}
                           </View>
                           <View style={{
@@ -1252,7 +1252,7 @@ export default function NewBookingScreen() {
                             borderColor: colors.background,
                           }} />
                         </View>
-                        <Text style={{ fontSize: 13, fontWeight: "600", color: selectedStaffId === member.id ? (member.color || colors.primary) : colors.foreground }}>{member.name}</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: selectedStaffId === member.id ? (member.color || colors.primary) : colors.foreground }}>{member.name}</Text>
                       </Pressable>
                     );
                   })}
@@ -1304,7 +1304,7 @@ export default function NewBookingScreen() {
                       setSelectedTime(null);
                     }}
                   >
-                    <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground }}>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>
                       {MONTH_NAMES_CAL[displayMonth]} {displayYear}
                     </Text>
                   </Pressable>
@@ -1325,7 +1325,7 @@ export default function NewBookingScreen() {
                           marginRight: 4,
                         })}
                       >
-                        <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary }}>Today</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>Today</Text>
                       </Pressable>
                     )}
                     <Pressable
@@ -1340,7 +1340,7 @@ export default function NewBookingScreen() {
                 <View style={{ flexDirection: "row", marginBottom: 4 }}>
                   {DAY_HEADERS_CAL.map((d) => (
                     <View key={d} style={{ width: calCellSize, alignItems: "center" }}>
-                      <Text style={{ fontSize: 11, fontWeight: "600", color: colors.muted }}>{d}</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>{d}</Text>
                     </View>
                   ))}
                 </View>
@@ -1384,7 +1384,7 @@ export default function NewBookingScreen() {
                       >
                         <Text
                           style={{
-                            fontSize: 14,
+                            fontSize: fs.sm,
                             fontWeight: isToday || isSelected ? "700" : "400",
                             color: isSelected || isToday
                               ? colors.primary
@@ -1445,7 +1445,7 @@ export default function NewBookingScreen() {
           {/* Selected date full label */}
           {selectedDate && (
             <View style={{ marginBottom: 8, marginHorizontal: 2 }}>
-              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>
                 {new Date(selectedDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
               </Text>
             </View>
@@ -1487,7 +1487,7 @@ export default function NewBookingScreen() {
                           opacity: pressed ? 0.7 : 1,
                         })}
                       >
-                        <Text style={{ fontSize: 11, fontWeight: "700", color: isActive ? "#FFFFFF" : colors.muted }}>{iv.label}</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isActive ? "#FFFFFF" : colors.muted }}>{iv.label}</Text>
                       </Pressable>
                     );
                   })}
@@ -1553,7 +1553,7 @@ export default function NewBookingScreen() {
                       },
                     ]}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: "700", color: isSelected ? "#FFFFFF" : colors.foreground, textAlign: "center", lineHeight: 17 }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isSelected ? "#FFFFFF" : colors.foreground, textAlign: "center", lineHeight: 17 }}>
                       {formatTime(t)}
                     </Text>
                     <Text style={{ fontSize: 9, color: isSelected ? "#FFFFFF99" : colors.muted, marginTop: 1, textAlign: "center", lineHeight: 12 }}>
@@ -1587,7 +1587,7 @@ export default function NewBookingScreen() {
                 <View style={{ marginBottom: 12 }}>
                   {groups.map((group) => (
                     <View key={group.label} style={{ marginBottom: 10 }}>
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: colors.muted, marginBottom: 6, marginLeft: 2 }}>{group.label}</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, marginBottom: 6, marginLeft: 2 }}>{group.label}</Text>
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                         {group.slots.map(renderSlotChip)}
                       </View>
@@ -1607,7 +1607,7 @@ export default function NewBookingScreen() {
                 style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, flexDirection: "row", alignItems: "center", gap: 4 })}
               >
                 <IconSymbol name="doc.text.fill" size={13} color={colors.primary} />
-                <Text style={{ fontSize: 12, color: colors.primary, fontWeight: "600" }}>Templates</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }}>Templates</Text>
               </Pressable>
             )}
           </View>
@@ -1643,7 +1643,7 @@ export default function NewBookingScreen() {
                       gap: 6,
                     }]}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: !selectedStaffId ? colors.primary : colors.foreground }}>Any Available</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: !selectedStaffId ? colors.primary : colors.foreground }}>Any Available</Text>
                   </Pressable>
                   {activeStaff.map((member) => {
                     // Availability dot: green = available, grey = busy (only shown when date+time selected)
@@ -1672,7 +1672,7 @@ export default function NewBookingScreen() {
                             {member.photoUri ? (
                               <Image source={{ uri: member.photoUri }} style={{ width: 28, height: 28, borderRadius: 14 }} />
                             ) : (
-                              <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>{member.name.charAt(0).toUpperCase()}</Text>
+                              <Text style={{ color: "#FFF", fontSize: fs.xs, fontWeight: "700" }}>{member.name.charAt(0).toUpperCase()}</Text>
                             )}
                           </View>
                           {/* Availability dot — bottom-right of avatar */}
@@ -1688,7 +1688,7 @@ export default function NewBookingScreen() {
                             borderColor: colors.background,
                           }} />
                         </View>
-                        <Text style={{ fontSize: 13, fontWeight: "600", color: selectedStaffId === member.id ? (member.color || colors.primary) : colors.foreground }}>{member.name}</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: selectedStaffId === member.id ? (member.color || colors.primary) : colors.foreground }}>{member.name}</Text>
                       </Pressable>
                     );
                   })}
@@ -1789,7 +1789,7 @@ export default function NewBookingScreen() {
                     </View>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                       {group.qty > 1 && (
-                        <Text style={{ fontSize: 12, color: colors.muted, fontWeight: "600" }}>×{group.qty}</Text>
+                        <Text style={{ fontSize: fs.xs, color: colors.muted, fontWeight: "600" }}>×{group.qty}</Text>
                       )}
                       <Text className="text-sm font-bold" style={{ color: colors.primary }}>${(group.price * group.qty).toFixed(2)}</Text>
                       <Pressable
@@ -1881,9 +1881,9 @@ export default function NewBookingScreen() {
                       >
                         <IconSymbol name="location.fill" size={14} color={isSelected ? colors.primary : isAvailable ? colors.muted : colors.error} />
                         <View>
-                          <Text style={{ fontSize: 13, fontWeight: "600", color: isSelected ? colors.primary : isAvailable ? colors.foreground : colors.muted }}>{loc.name}</Text>
+                          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: isSelected ? colors.primary : isAvailable ? colors.foreground : colors.muted }}>{loc.name}</Text>
                           {!!loc.address && (
-                            <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }} numberOfLines={2}>{formatFullAddress(loc.address, loc.city, loc.state, loc.zipCode)}</Text>
+                            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }} numberOfLines={2}>{formatFullAddress(loc.address, loc.city, loc.state, loc.zipCode)}</Text>
                           )}
                           {isClosed && (
                             <Text style={{ fontSize: 10, color: colors.error, marginTop: 1, fontWeight: "600" }}>Closed this day</Text>
@@ -1980,9 +1980,9 @@ export default function NewBookingScreen() {
                               })}
                             >
                               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                                <Text style={{ fontSize: 14, fontWeight: "700", color: isExpanded ? colors.primary : colors.foreground }}>{cat}</Text>
+                                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: isExpanded ? colors.primary : colors.foreground }}>{cat}</Text>
                                 <View style={{ backgroundColor: colors.primary + "20", borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
-                                  <Text style={{ fontSize: 11, fontWeight: "700", color: colors.primary }}>{svcs.length}</Text>
+                                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary }}>{svcs.length}</Text>
                                 </View>
                               </View>
                               <IconSymbol name={isExpanded ? "chevron.down" : "chevron.right"} size={14} color={isExpanded ? colors.primary : colors.muted} />
@@ -2064,9 +2064,9 @@ export default function NewBookingScreen() {
                               })}
                             >
                               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                                <Text style={{ fontSize: 14, fontWeight: "700", color: isExpanded ? colors.primary : colors.foreground }}>{brand}</Text>
+                                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: isExpanded ? colors.primary : colors.foreground }}>{brand}</Text>
                                 <View style={{ backgroundColor: colors.primary + "20", borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
-                                  <Text style={{ fontSize: 11, fontWeight: "700", color: colors.primary }}>{prods.length}</Text>
+                                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary }}>{prods.length}</Text>
                                 </View>
                               </View>
                               <IconSymbol name={isExpanded ? "chevron.down" : "chevron.right"} size={14} color={isExpanded ? colors.primary : colors.muted} />
@@ -2092,7 +2092,7 @@ export default function NewBookingScreen() {
                                 <View style={styles.optionContent}>
                                   <Text className="text-sm font-semibold text-foreground">{p.name}</Text>
                                   {p.description ? <Text className="text-xs text-muted" numberOfLines={1}>{p.description}</Text> : null}
-                                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.primary, marginTop: 2 }}>${parseFloat(String(p.price)).toFixed(2)}</Text>
+                                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary, marginTop: 2 }}>${parseFloat(String(p.price)).toFixed(2)}</Text>
                                 </View>
                                 {/* Quantity stepper */}
                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 0 }}>
@@ -2107,9 +2107,9 @@ export default function NewBookingScreen() {
                                     })}
                                     disabled={qty === 0}
                                   >
-                                    <Text style={{ fontSize: 18, fontWeight: "700", color: qty > 0 ? colors.error : colors.muted, lineHeight: 22 }}>−</Text>
+                                    <Text style={{ fontSize: fs.md, fontWeight: "700", color: qty > 0 ? colors.error : colors.muted, lineHeight: 22 }}>−</Text>
                                   </Pressable>
-                                  <Text style={{ minWidth: 28, textAlign: "center", fontSize: 15, fontWeight: "700", color: qty > 0 ? colors.primary : colors.muted }}>{qty}</Text>
+                                  <Text style={{ minWidth: 28, textAlign: "center", fontSize: fs.sm, fontWeight: "700", color: qty > 0 ? colors.primary : colors.muted }}>{qty}</Text>
                                   <Pressable
                                     onPress={() => setProductQtyAndSync(p.id, qty + 1)}
                                     style={({ pressed }) => ({
@@ -2120,7 +2120,7 @@ export default function NewBookingScreen() {
                                       opacity: pressed ? 0.6 : 1,
                                     })}
                                   >
-                                    <Text style={{ fontSize: 18, fontWeight: "700", color: colors.primary, lineHeight: 22 }}>+</Text>
+                                    <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary, lineHeight: 22 }}>+</Text>
                                   </Pressable>
                                 </View>
                               </View>
@@ -2167,9 +2167,9 @@ export default function NewBookingScreen() {
               </Text>
               {appliedDiscount && discountAmount > 0 ? (
                 <View style={{ marginTop: 2 }}>
-                  <Text style={{ fontSize: 12, color: colors.warning }}>{appliedDiscount.name} ({appliedDiscount.percentage}% off)</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.warning }}>{appliedDiscount.name} ({appliedDiscount.percentage}% off)</Text>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                    <Text style={{ fontSize: 12, color: colors.muted, textDecorationLine: "line-through" }}>${subtotal.toFixed(2)}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, textDecorationLine: "line-through" }}>${subtotal.toFixed(2)}</Text>
                     <Text className="text-sm font-semibold" style={{ color: colors.primary }}>Total: ${totalPrice.toFixed(2)}</Text>
                   </View>
                 </View>
@@ -2199,14 +2199,14 @@ export default function NewBookingScreen() {
                     opacity: pressed ? 0.7 : 1,
                   }]}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: "500", color: recurring === opt ? "#FFFFFF" : colors.foreground }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "500", color: recurring === opt ? "#FFFFFF" : colors.foreground }}>
                     {opt === "none" ? "One-time" : opt === "weekly" ? "Weekly" : opt === "biweekly" ? "Bi-weekly" : "Monthly"}
                   </Text>
                 </Pressable>
               ))}
             </View>
             {recurring !== "none" && (
-              <Text style={{ fontSize: 11, color: colors.muted, marginTop: 6 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
                 {recurring === "weekly" ? "8 appointments" : recurring === "biweekly" ? "6 appointments" : "4 appointments"} will be created
               </Text>
             )}
@@ -2223,7 +2223,7 @@ export default function NewBookingScreen() {
             return (
               <>
                 {needsLocationSelection && (
-                  <Text style={{ fontSize: 12, color: colors.warning, textAlign: "center", marginBottom: 8 }}>
+                  <Text style={{ fontSize: fs.xs, color: colors.warning, textAlign: "center", marginBottom: 8 }}>
                     Please select a location above to continue
                   </Text>
                 )}
@@ -2291,14 +2291,14 @@ export default function NewBookingScreen() {
                     backgroundColor: selectedPaymentMethod === opt.id ? opt.color + '18' : colors.background,
                   }]}
                 >
-                  <Text style={{ fontSize: 22 }}>{opt.label.split(' ')[0]}</Text>
+                  <Text style={{ fontSize: fs.lg }}>{opt.label.split(' ')[0]}</Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontWeight: '600', fontSize: 14, color: colors.foreground }}>{opt.label.slice(opt.label.indexOf(' ') + 1)}</Text>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{opt.sub}</Text>
+                    <Text style={{ fontWeight: '600', fontSize: fs.sm, color: colors.foreground }}>{opt.label.slice(opt.label.indexOf(' ') + 1)}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{opt.sub}</Text>
                   </View>
                   {selectedPaymentMethod === opt.id && (
                     <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: opt.color, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>✓</Text>
+                      <Text style={{ color: '#fff', fontSize: fs.xs, fontWeight: '700' }}>✓</Text>
                     </View>
                   )}
                 </Pressable>
@@ -2335,9 +2335,9 @@ export default function NewBookingScreen() {
         <View style={{ flex: 1, backgroundColor: colors.background }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: colors.border }}>
             <Pressable onPress={() => setShowTemplatesPicker(false)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
-              <Text style={{ fontSize: 16, color: colors.muted }}>Cancel</Text>
+              <Text style={{ fontSize: fs.md, color: colors.muted }}>Cancel</Text>
             </Pressable>
-            <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>Note Templates</Text>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>Note Templates</Text>
             <View style={{ width: 60 }} />
           </View>
           <FlatList
@@ -2360,8 +2360,8 @@ export default function NewBookingScreen() {
                   opacity: pressed ? 0.9 : 1,
                 })}
               >
-                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground, marginBottom: 4 }}>{item.title}</Text>
-                <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }} numberOfLines={3}>{item.body}</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, marginBottom: 4 }}>{item.title}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, lineHeight: 18 }} numberOfLines={3}>{item.body}</Text>
               </Pressable>
             )}
           />

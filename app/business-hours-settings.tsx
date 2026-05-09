@@ -61,7 +61,7 @@ interface WeeklyHours {
 export default function BusinessHoursSettings() {
   const router = useRouter();
   const { state } = useStore();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   const [weeklyHours, setWeeklyHours] = useState<WeeklyHours>({
     Monday: { isEnabled: true, startTime: '09:00', endTime: '17:00' },

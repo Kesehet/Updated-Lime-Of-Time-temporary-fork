@@ -26,7 +26,7 @@ export default function GiftCodeScreen() {
   const { state, getServiceById } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   const giftCard = useMemo(() => {
     return state.giftCards.find((g) => g.code === code);
@@ -104,8 +104,8 @@ export default function GiftCodeScreen() {
 
           {giftCard.message ? (
             <View style={[styles.messageBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
-              <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 4 }}>Personal Message:</Text>
-              <Text style={{ color: colors.foreground, fontSize: 14, fontStyle: "italic", lineHeight: 20 }}>
+              <Text style={{ color: colors.muted, fontSize: fs.xs, marginBottom: 4 }}>Personal Message:</Text>
+              <Text style={{ color: colors.foreground, fontSize: fs.sm, fontStyle: "italic", lineHeight: 20 }}>
                 "{giftCard.message}"
               </Text>
             </View>
@@ -120,7 +120,7 @@ export default function GiftCodeScreen() {
               : colors.success + "20",
           }]}>
             <Text style={{
-              fontSize: 14,
+              fontSize: fs.sm,
               fontWeight: "600",
               color: isRedeemed ? colors.muted : isExpired ? colors.error : colors.success,
             }}>
@@ -142,7 +142,7 @@ export default function GiftCodeScreen() {
           </Pressable>
         ) : null}
 
-        <Text style={{ textAlign: "center", color: colors.muted, fontSize: 11, marginTop: 24 }}>
+        <Text style={{ textAlign: "center", color: colors.muted, fontSize: fs.xs, marginTop: 24 }}>
           Powered by Lime Of Time
         </Text>
       </ScrollView>
@@ -152,8 +152,8 @@ export default function GiftCodeScreen() {
 
 const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  title: { fontSize: 24, fontWeight: "700", textAlign: "center" },
-  subtitle: { fontSize: 14, textAlign: "center" },
+  title: { fontSize: fs.xl, fontWeight: "700", textAlign: "center" },
+  subtitle: { fontSize: fs.sm, textAlign: "center" },
   card: {
     width: "100%",
     borderWidth: 1,
@@ -161,10 +161,10 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 12,
   },
-  cardTitle: { fontSize: 18, fontWeight: "700", textAlign: "center", marginBottom: 4 },
+  cardTitle: { fontSize: fs.md, fontWeight: "700", textAlign: "center", marginBottom: 4 },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  rowLabel: { fontSize: 14 },
-  rowValue: { fontSize: 14, fontWeight: "500" },
+  rowLabel: { fontSize: fs.sm },
+  rowValue: { fontSize: fs.sm, fontWeight: "500" },
   messageBox: {
     borderWidth: 1,
     borderRadius: 12,
@@ -187,5 +187,5 @@ const styles = StyleSheet.create({
     marginTop: 20,
     minHeight: 52,
   },
-  bookBtnText: { fontSize: 16, fontWeight: "700" },
+  bookBtnText: { fontSize: fs.md, fontWeight: "700" },
 });

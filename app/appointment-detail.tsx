@@ -49,7 +49,7 @@ export default function AppointmentDetailScreen() {
   const { state, dispatch, getServiceById, getClientById, getStaffById, getLocationById, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, modalMaxWidth, maxContentWidth } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const sendSmsMutation = trpc.twilio.sendSms.useMutation();
   const { planInfo } = usePlanLimitCheck();
   const isGrowthPlan = planInfo && planInfo.planKey !== "solo";
@@ -917,7 +917,7 @@ Would you also like to charge a no-show fee via Stripe?`,
         <Pressable onPress={() => router.back()} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
           <IconSymbol name="arrow.left" size={24} color={colors.foreground} />
         </Pressable>
-        <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground, marginLeft: 16, flex: 1 }}>Appointment</Text>
+        <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.foreground, marginLeft: 16, flex: 1 }}>Appointment</Text>
         {/* Edit button — only show for non-cancelled/completed appointments */}
         {appointment && appointment.status !== 'cancelled' && appointment.status !== 'completed' && (
           <Pressable
@@ -935,7 +935,7 @@ Would you also like to charge a no-show fee via Stripe?`,
             })}
           >
             <IconSymbol name="pencil" size={14} color={colors.primary} />
-            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>Edit</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.primary }}>Edit</Text>
           </Pressable>
         )}
       </View>
@@ -971,9 +971,9 @@ Would you also like to charge a no-show fee via Stripe?`,
                 return (
                   <View key={sv.id + idx} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5, borderTopWidth: idx === 0 ? 0 : StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
                     <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: sv.color, marginRight: 8 }} />
-                    <Text style={{ flex: 1, fontSize: 13, color: colors.foreground, fontWeight: '500' }} numberOfLines={2}>{sv.name}</Text>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginLeft: 8 }}>{formatTime(minutesToTime(svcStart))} – {formatTime(minutesToTime(svcEnd))}</Text>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginLeft: 6 }}>({sv.duration}m)</Text>
+                    <Text style={{ flex: 1, fontSize: fs.xs, color: colors.foreground, fontWeight: '500' }} numberOfLines={2}>{sv.name}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginLeft: 8 }}>{formatTime(minutesToTime(svcStart))} – {formatTime(minutesToTime(svcEnd))}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginLeft: 6 }}>({sv.duration}m)</Text>
                   </View>
                 );
               })}
@@ -985,22 +985,22 @@ Would you also like to charge a no-show fee via Stripe?`,
         {appointment.packageGroupId && (
           <View style={{ borderRadius: 14, borderWidth: 1.5, borderColor: '#0891b2', backgroundColor: '#0891b215', paddingVertical: 12, paddingHorizontal: 14, marginBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#0891b2', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 16 }}>📦</Text>
+              <Text style={{ fontSize: fs.md }}>📦</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#0891b2' }}>Part of a Package</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: '700', color: '#0891b2' }}>Part of a Package</Text>
               {appointment.packageName ? (
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>{appointment.packageName}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>{appointment.packageName}</Text>
               ) : null}
               {appointment.sessionIndex != null && appointment.sessionTotal != null ? (
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Session {appointment.sessionIndex} of {appointment.sessionTotal}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>Session {appointment.sessionIndex} of {appointment.sessionTotal}</Text>
               ) : null}
             </View>
             <Pressable
               onPress={() => router.push({ pathname: '/(tabs)/bookings' as any, params: { packageGroupId: appointment.packageGroupId } })}
               style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#0891b220' })}
             >
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#0891b2' }}>View all</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: '700', color: '#0891b2' }}>View all</Text>
             </Pressable>
           </View>
         )}
@@ -1053,20 +1053,20 @@ Would you also like to charge a no-show fee via Stripe?`,
                   const productCount = (appointment.extraItems ?? []).filter(e => e.type === 'product').length;
                   return productCount > 0 ? (
                     <View style={{ backgroundColor: colors.primary + '18', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: colors.primary + '40', marginRight: 8 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.primary }}>
                         {productCount} product{productCount !== 1 ? 's' : ''}
                       </Text>
                     </View>
                   ) : null;
                 })()}
-                <Text style={{ fontSize: 16, color: colors.muted }}>{chargesExpanded ? '▲' : '▼'}</Text>
+                <Text style={{ fontSize: fs.md, color: colors.muted }}>{chargesExpanded ? '▲' : '▼'}</Text>
               </Pressable>
               {/* Line items — only when expanded */}
               {chargesExpanded && (
                 <>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 4 }}>
-                    <Text style={{ fontSize: 13, color: colors.foreground, flex: 1, flexShrink: 1, paddingRight: 8 }} numberOfLines={2}>{service ? getServiceDisplayName(service) : "Service"}</Text>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.foreground, flexShrink: 0 }}>${svcPrice.toFixed(2)}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.foreground, flex: 1, flexShrink: 1, paddingRight: 8 }} numberOfLines={2}>{service ? getServiceDisplayName(service) : "Service"}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.foreground, flexShrink: 0 }}>${svcPrice.toFixed(2)}</Text>
                   </View>
                   {/* Extra services shown individually; products grouped by id with ×qty */}
                   {(() => {
@@ -1081,16 +1081,16 @@ Would you also like to charge a no-show fee via Stripe?`,
                       <>
                         {serviceExtras.map((item, idx) => (
                           <View key={`svc-${idx}`} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 4 }}>
-                            <Text style={{ fontSize: 13, color: colors.foreground, flex: 1, flexShrink: 1, paddingRight: 8 }} numberOfLines={2}>{item.name}</Text>
-                            <Text style={{ fontSize: 13, fontWeight: '600', color: colors.foreground, flexShrink: 0 }}>${(item.price || 0).toFixed(2)}</Text>
+                            <Text style={{ fontSize: fs.xs, color: colors.foreground, flex: 1, flexShrink: 1, paddingRight: 8 }} numberOfLines={2}>{item.name}</Text>
+                            <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.foreground, flexShrink: 0 }}>${(item.price || 0).toFixed(2)}</Text>
                           </View>
                         ))}
                         {Array.from(productGroups.entries()).map(([pid, g]) => (
                           <View key={`prod-${pid}`} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 4 }}>
-                            <Text style={{ fontSize: 13, color: colors.foreground, flex: 1, flexShrink: 1, paddingRight: 8 }} numberOfLines={2}>
+                            <Text style={{ fontSize: fs.xs, color: colors.foreground, flex: 1, flexShrink: 1, paddingRight: 8 }} numberOfLines={2}>
                               {g.name}{g.qty > 1 ? ` ×${g.qty}` : ''}
                             </Text>
-                            <Text style={{ fontSize: 13, fontWeight: '600', color: colors.foreground, flexShrink: 0 }}>${(g.price * g.qty).toFixed(2)}</Text>
+                            <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.foreground, flexShrink: 0 }}>${(g.price * g.qty).toFixed(2)}</Text>
                           </View>
                         ))}
                       </>
@@ -1131,7 +1131,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                         }}
                         style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: colors.error + '18' })}
                       >
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.error }}>Remove</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.error }}>Remove</Text>
                       </Pressable>
                     )}
                   </View>
@@ -1174,7 +1174,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                   paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
                   backgroundColor: appointment.paymentStatus === 'paid' ? colors.success + '20' : appointment.paymentStatus === 'pending_cash' ? '#FF980020' : colors.warning + '20',
                 }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: appointment.paymentStatus === 'paid' ? colors.success : appointment.paymentStatus === 'pending_cash' ? '#FF9800' : colors.warning }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: '700', color: appointment.paymentStatus === 'paid' ? colors.success : appointment.paymentStatus === 'pending_cash' ? '#FF9800' : colors.warning }}>
                     {appointment.paymentStatus === 'paid' ? '✓ Paid' : appointment.paymentStatus === 'pending_cash' ? 'Cash — Pending' : 'Unpaid'}
                   </Text>
                 </View>
@@ -1196,34 +1196,34 @@ Would you also like to charge a no-show fee via Stripe?`,
                   })}
                 >
                   <IconSymbol name="pencil" size={12} color={colors.primary} />
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>Edit</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.primary }}>Edit</Text>
                 </Pressable>
               </View>
             </View>
             {(appointment.totalPrice ?? 0) <= 0 ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                 <View style={{ backgroundColor: colors.primary + '18', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <Text style={{ fontSize: 13 }}>🎁</Text>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>Complimentary</Text>
+                  <Text style={{ fontSize: fs.xs }}>🎁</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.primary }}>Complimentary</Text>
                 </View>
-                <Text style={{ fontSize: 12, color: colors.muted }}>No charge</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>No charge</Text>
               </View>
             ) : appointment.paymentMethod && appointment.paymentMethod !== 'free' ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: appointment.paymentStatus !== 'paid' ? 10 : 0 }}>
-                <Text style={{ fontSize: 14, color: colors.foreground }}>
+                <Text style={{ fontSize: fs.sm, color: colors.foreground }}>
                   {appointment.paymentMethod === 'card' ? '💳 Card' : appointment.paymentMethod === 'zelle' ? '💜 Zelle' : appointment.paymentMethod === 'cashapp' ? '💚 Cash App' : appointment.paymentMethod === 'venmo' ? '💙 Venmo' : '💵 Cash'}
                 </Text>
                 {appointment.paymentConfirmationNumber && (
-                  <Text style={{ fontSize: 12, color: colors.muted }}>Conf# {appointment.paymentConfirmationNumber}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>Conf# {appointment.paymentConfirmationNumber}</Text>
                 )}
               </View>
             ) : null}
             {appointment.clientPaidNotifiedAt && appointment.paymentStatus !== 'paid' && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8, backgroundColor: '#FFF7ED', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#FED7AA' }}>
-                <Text style={{ fontSize: 13 }}>💰</Text>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: '#C2410C', flex: 1 }}>Client says payment was sent</Text>
+                <Text style={{ fontSize: fs.xs }}>💰</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: '600', color: '#C2410C', flex: 1 }}>Client says payment was sent</Text>
                 <Pressable onPress={() => setShowPaymentModal(true)} style={({ pressed }) => [{ backgroundColor: '#EA580C', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, opacity: pressed ? 0.7 : 1 }]}>
-                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Confirm</Text>
+                  <Text style={{ color: '#fff', fontSize: fs.xs, fontWeight: '700' }}>Confirm</Text>
                 </Pressable>
               </View>
             )}
@@ -1233,7 +1233,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                   onPress={() => setShowPaymentModal(true)}
                   style={({ pressed }) => [{ backgroundColor: colors.success, borderRadius: 12, paddingVertical: 10, alignItems: 'center', opacity: pressed ? 0.8 : 1 }]}
                 >
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: fs.sm }}>
                     {appointment.paymentMethod === 'cash' ? 'Confirm Cash Received' : 'Mark as Paid'}
                   </Text>
                 </Pressable>
@@ -1276,8 +1276,8 @@ Would you also like to charge a no-show fee via Stripe?`,
                       opacity: (pressed || requestingPayment) ? 0.7 : 1,
                     }]}
                   >
-                    <Text style={{ fontSize: 16 }}>{paymentLinkSent ? '✅' : '💳'}</Text>
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>
+                    <Text style={{ fontSize: fs.md }}>{paymentLinkSent ? '✅' : '💳'}</Text>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: fs.sm }}>
                       {requestingPayment ? 'Creating Link…' : paymentLinkSent ? 'Resend Card Payment Link' : 'Request Card Payment'}
                     </Text>
                   </Pressable>
@@ -1289,18 +1289,18 @@ Would you also like to charge a no-show fee via Stripe?`,
                 onPress={() => setShowRefundModal(true)}
                 style={({ pressed }) => [{ backgroundColor: '#635BFF15', borderRadius: 12, paddingVertical: 10, alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: '#635BFF40', opacity: pressed ? 0.7 : 1 }]}
               >
-                <Text style={{ color: '#635BFF', fontWeight: '700', fontSize: 14 }}>
+                <Text style={{ color: '#635BFF', fontWeight: '700', fontSize: fs.sm }}>
                   {refunding ? 'Processing Refund…' : '💳 Issue Refund'}
                 </Text>
               </Pressable>
             )}
             {appointment.refundedAt && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, backgroundColor: '#EF444415', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#EF444430' }}>
-                <Text style={{ fontSize: 13, color: '#EF4444' }}>↩ Refunded</Text>
+                <Text style={{ fontSize: fs.xs, color: '#EF4444' }}>↩ Refunded</Text>
                 {appointment.refundedAmount != null && (
-                  <Text style={{ fontSize: 13, color: '#EF4444', fontWeight: '700' }}>${appointment.refundedAmount.toFixed(2)}</Text>
+                  <Text style={{ fontSize: fs.xs, color: '#EF4444', fontWeight: '700' }}>${appointment.refundedAmount.toFixed(2)}</Text>
                 )}
-                <Text style={{ fontSize: 12, color: colors.muted, marginLeft: 'auto' }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginLeft: 'auto' }}>
                   {new Date(appointment.refundedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </Text>
               </View>
@@ -1350,11 +1350,11 @@ Would you also like to charge a no-show fee via Stripe?`,
           >
             <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
               <IconSymbol name="exclamationmark.triangle.fill" size={16} color={colors.warning} />
-              <Text style={{ fontSize: 13, fontWeight: "700", color: colors.warning, marginLeft: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.warning, marginLeft: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
                 Special Requests
               </Text>
             </View>
-            <Text style={{ fontSize: 15, color: colors.foreground, lineHeight: 22 }}>
+            <Text style={{ fontSize: fs.sm, color: colors.foreground, lineHeight: 22 }}>
               {appointment.notes}
             </Text>
           </View>
@@ -1391,12 +1391,12 @@ Would you also like to charge a no-show fee via Stripe?`,
                 <Image source={{ uri: assignedStaff.photoUri }} style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }} />
               ) : (
                 <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: assignedStaff.color || colors.primary, alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{assignedStaff.name.charAt(0).toUpperCase()}</Text>
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: fs.sm }}>{assignedStaff.name.charAt(0).toUpperCase()}</Text>
                 </View>
               )}
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 1 }}>Staff</Text>
-                <Text style={{ fontSize: 15, color: colors.foreground, fontWeight: '600' }}>{assignedStaff.name}{assignedStaff.role ? ` · ${assignedStaff.role}` : ''}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 1 }}>Staff</Text>
+                <Text style={{ fontSize: fs.sm, color: colors.foreground, fontWeight: '600' }}>{assignedStaff.name}{assignedStaff.role ? ` · ${assignedStaff.role}` : ''}</Text>
               </View>
             </View>
           ) : null}
@@ -1451,16 +1451,16 @@ Would you also like to charge a no-show fee via Stripe?`,
         {/* Cancellation Reason */}
         {appointment.status === "cancelled" && appointment.cancellationReason ? (
           <View style={{ backgroundColor: colors.error + "12", borderColor: colors.error + "40", borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 16 }}>
-            <Text style={{ fontSize: 11, fontWeight: "700", color: colors.error, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Cancellation Reason</Text>
-            <Text style={{ fontSize: 14, color: colors.foreground }}>{appointment.cancellationReason}</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.error, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Cancellation Reason</Text>
+            <Text style={{ fontSize: fs.sm, color: colors.foreground }}>{appointment.cancellationReason}</Text>
           </View>
         ) : null}
 
         {/* Reschedule Reason */}
         {appointment.rescheduleReason ? (
           <View style={{ backgroundColor: colors.primary + "12", borderColor: colors.primary + "40", borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 16 }}>
-            <Text style={{ fontSize: 11, fontWeight: "700", color: colors.primary, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Reschedule Reason</Text>
-            <Text style={{ fontSize: 14, color: colors.foreground }}>{appointment.rescheduleReason}</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Reschedule Reason</Text>
+            <Text style={{ fontSize: fs.sm, color: colors.foreground }}>{appointment.rescheduleReason}</Text>
           </View>
         ) : null}
         {/* Notes */}
@@ -1557,11 +1557,11 @@ Would you also like to charge a no-show fee via Stripe?`,
           <View style={{ backgroundColor: '#FEF3C7', borderColor: '#FCD34D', borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 16 }}>
             {appointment.cancelRequest?.status === 'pending' && (
               <>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: '#92400E', marginBottom: 4 }}>⏳ Client Requested Cancellation</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: '700', color: '#92400E', marginBottom: 4 }}>⏳ Client Requested Cancellation</Text>
                 {appointment.cancelRequest.reason ? (
-                  <Text style={{ fontSize: 13, color: '#78350F', marginBottom: 12 }}>Reason: "{appointment.cancelRequest.reason}"</Text>
+                  <Text style={{ fontSize: fs.xs, color: '#78350F', marginBottom: 12 }}>Reason: "{appointment.cancelRequest.reason}"</Text>
                 ) : (
-                  <Text style={{ fontSize: 13, color: '#78350F', marginBottom: 12 }}>No reason provided.</Text>
+                  <Text style={{ fontSize: fs.xs, color: '#78350F', marginBottom: 12 }}>No reason provided.</Text>
                 )}
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <Pressable
@@ -1611,7 +1611,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                     }}
                     style={({ pressed }) => [{ flex: 1, backgroundColor: '#22C55E', borderRadius: 10, paddingVertical: 10, alignItems: 'center', opacity: pressed ? 0.7 : 1 }]}
                   >
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>✓ Approve</Text>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: fs.sm }}>✓ Approve</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => {
@@ -1627,19 +1627,19 @@ Would you also like to charge a no-show fee via Stripe?`,
                     }}
                     style={({ pressed }) => [{ flex: 1, backgroundColor: '#EF4444', borderRadius: 10, paddingVertical: 10, alignItems: 'center', opacity: pressed ? 0.7 : 1 }]}
                   >
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>✗ Decline</Text>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: fs.sm }}>✗ Decline</Text>
                   </Pressable>
                 </View>
               </>
             )}
             {appointment.rescheduleRequest?.status === 'pending' && (
               <>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: '#92400E', marginBottom: 4 }}>⏳ Client Requested Reschedule</Text>
-                <Text style={{ fontSize: 13, color: '#78350F', marginBottom: 4 }}>Requested: {appointment.rescheduleRequest.requestedDate} at {formatTime(appointment.rescheduleRequest.requestedTime)}</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: '700', color: '#92400E', marginBottom: 4 }}>⏳ Client Requested Reschedule</Text>
+                <Text style={{ fontSize: fs.xs, color: '#78350F', marginBottom: 4 }}>Requested: {appointment.rescheduleRequest.requestedDate} at {formatTime(appointment.rescheduleRequest.requestedTime)}</Text>
                 {appointment.rescheduleRequest.reason ? (
-                  <Text style={{ fontSize: 13, color: '#78350F', marginBottom: 12 }}>Reason: "{appointment.rescheduleRequest.reason}"</Text>
+                  <Text style={{ fontSize: fs.xs, color: '#78350F', marginBottom: 12 }}>Reason: "{appointment.rescheduleRequest.reason}"</Text>
                 ) : (
-                  <Text style={{ fontSize: 13, color: '#78350F', marginBottom: 12 }}></Text>
+                  <Text style={{ fontSize: fs.xs, color: '#78350F', marginBottom: 12 }}></Text>
                 )}
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <Pressable
@@ -1657,7 +1657,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                     }}
                     style={({ pressed }) => [{ flex: 1, backgroundColor: '#22C55E', borderRadius: 10, paddingVertical: 10, alignItems: 'center', opacity: pressed ? 0.7 : 1 }]}
                   >
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>✓ Approve</Text>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: fs.sm }}>✓ Approve</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => {
@@ -1673,7 +1673,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                     }}
                     style={({ pressed }) => [{ flex: 1, backgroundColor: '#EF4444', borderRadius: 10, paddingVertical: 10, alignItems: 'center', opacity: pressed ? 0.7 : 1 }]}
                   >
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>✗ Decline</Text>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: fs.sm }}>✗ Decline</Text>
                   </Pressable>
                 </View>
               </>
@@ -1703,17 +1703,17 @@ Would you also like to charge a no-show fee via Stripe?`,
           }
           return (
             <View style={{ backgroundColor: approved ? '#F0FDF4' : '#FFF7ED', borderColor: approved ? '#86EFAC' : '#FCD34D', borderWidth: 1, borderRadius: 16, padding: 14, marginBottom: 16 }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: approved ? '#166534' : '#92400E', marginBottom: 6 }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: '700', color: approved ? '#166534' : '#92400E', marginBottom: 6 }}>
                 {approved ? '✅' : '❌'} Request {approved ? 'Approved' : 'Declined'} — Notify Client?
               </Text>
-              <Text style={{ fontSize: 12, color: approved ? '#166534' : '#78350F', marginBottom: 10, lineHeight: 18 }}>{smsText}</Text>
+              <Text style={{ fontSize: fs.xs, color: approved ? '#166534' : '#78350F', marginBottom: 10, lineHeight: 18 }}>{smsText}</Text>
               <Pressable
                 onPress={() => {
                   sendSmsMutation.mutate({ businessOwnerId: state.businessOwnerId!, toNumber: client.phone!.replace(/\D/g, '').startsWith('1') ? `+${client.phone!.replace(/\D/g, '')}` : `+1${client.phone!.replace(/\D/g, '')}`, body: smsText, smsAction: 'confirmation' });
                 }}
                 style={({ pressed }) => [{ backgroundColor: approved ? '#22C55E' : '#F59E0B', borderRadius: 10, paddingVertical: 9, alignItems: 'center', opacity: pressed ? 0.7 : 1 }]}
               >
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>📱 Send SMS to {client.name?.split(' ')[0] ?? 'Client'}</Text>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: fs.xs }}>📱 Send SMS to {client.name?.split(' ')[0] ?? 'Client'}</Text>
               </Pressable>
             </View>
           );
@@ -1760,7 +1760,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 onPress={handleConfirmGiftRedemption}
                 style={({ pressed }) => [styles.actionButton, { backgroundColor: "#22C55E", opacity: pressed ? 0.8 : 1 }]}
               >
-                <Text style={{ fontSize: 16 }}>🎁</Text>
+                <Text style={{ fontSize: fs.md }}>🎁</Text>
                 <Text className="text-white font-semibold ml-2">Confirm Gift Redemption</Text>
               </Pressable>
             )}
@@ -1821,17 +1821,17 @@ Would you also like to charge a no-show fee via Stripe?`,
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>
+            <Text style={{ fontSize: fs.md, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>
               Mark as Paid
             </Text>
-            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 16 }}>
               {client?.name ?? 'Client'}{appointment.totalPrice != null ? ` · $${appointment.totalPrice.toFixed(2)}` : ''}
             </Text>
 
             {/* Method picker — only shown when no method is pre-set */}
             {(!appointment.paymentMethod || appointment.paymentMethod === 'unpaid') && (
               <>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Payment Method</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Payment Method</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                   {DETAIL_PAYMENT_METHODS.map((pm) => (
                     <Pressable
@@ -1845,7 +1845,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                         opacity: pressed ? 0.7 : 1,
                       }]}
                     >
-                      <Text style={{ fontSize: 14, fontWeight: '700', color: selectedPayMethod === pm.key ? '#FFF' : colors.foreground }}>{pm.label}</Text>
+                      <Text style={{ fontSize: fs.sm, fontWeight: '700', color: selectedPayMethod === pm.key ? '#FFF' : colors.foreground }}>{pm.label}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -1859,7 +1859,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 onChangeText={setPaymentConfirmInput}
                 placeholder="Confirmation number (optional)"
                 placeholderTextColor={colors.muted}
-                style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, fontSize: 14, color: colors.foreground, backgroundColor: colors.background, marginBottom: 16 }}
+                style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, fontSize: fs.sm, color: colors.foreground, backgroundColor: colors.background, marginBottom: 16 }}
                 returnKeyType="done"
               />
             )}
@@ -1868,13 +1868,13 @@ Would you also like to charge a no-show fee via Stripe?`,
                 onPress={() => { setShowPaymentModal(false); setPaymentConfirmInput(''); }}
                 style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.muted }}>Cancel</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.muted }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => handleMarkPaid(paymentConfirmInput.trim() || undefined)}
                 style={{ flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.success, alignItems: 'center' }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>Confirm Paid</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: '700', color: '#FFF' }}>Confirm Paid</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1889,13 +1889,13 @@ Would you also like to charge a no-show fee via Stripe?`,
             <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
             {/* Handle bar */}
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 16 }} />
-            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>Edit Payment</Text>
-            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 20 }}>
+            <Text style={{ fontSize: fs.md, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>Edit Payment</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 20 }}>
               {client?.name ?? 'Client'}{appointment?.totalPrice != null ? ` · $${appointment.totalPrice.toFixed(2)}` : ''}
             </Text>
 
             {/* Payment Status Toggle */}
-            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Status</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Status</Text>
             <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
               {(['paid', 'unpaid'] as const).map((s) => (
                 <Pressable
@@ -1909,7 +1909,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                     opacity: pressed ? 0.7 : 1,
                   })}
                 >
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: editPayStatus === s ? '#FFF' : colors.foreground }}>
+                  <Text style={{ fontSize: fs.sm, fontWeight: '700', color: editPayStatus === s ? '#FFF' : colors.foreground }}>
                     {s === 'paid' ? '✓ Paid' : 'Unpaid'}
                   </Text>
                 </Pressable>
@@ -1917,7 +1917,7 @@ Would you also like to charge a no-show fee via Stripe?`,
             </View>
 
             {/* Payment Method */}
-            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Method</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Method</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
               {[
                 { key: 'cash' as const, label: '💵 Cash' },
@@ -1937,7 +1937,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                     opacity: pressed ? 0.7 : 1,
                   })}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: editPayMethod === pm.key ? '#FFF' : colors.foreground }}>{pm.label}</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: '700', color: editPayMethod === pm.key ? '#FFF' : colors.foreground }}>{pm.label}</Text>
                 </Pressable>
               ))}
             </View>
@@ -1945,7 +1945,7 @@ Would you also like to charge a no-show fee via Stripe?`,
             {/* Confirmation Number */}
             {editPayMethod !== 'cash' && editPayMethod !== 'card' && (
               <>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Confirmation Number</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Confirmation Number</Text>
                 <TextInput
                   value={editConfirmNumber}
                   onChangeText={setEditConfirmNumber}
@@ -1955,21 +1955,21 @@ Would you also like to charge a no-show fee via Stripe?`,
                     editPayMethod === 'cashapp' ? 'e.g. C-ABCDE123' : 'Confirmation number'
                   }
                   placeholderTextColor={colors.muted}
-                  style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, fontSize: 14, color: colors.foreground, backgroundColor: colors.background, marginBottom: 16 }}
+                  style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, fontSize: fs.sm, color: colors.foreground, backgroundColor: colors.background, marginBottom: 16 }}
                   returnKeyType="done"
                 />
               </>
             )}
 
             {/* Amount */}
-            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Amount ($)</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Amount ($)</Text>
             <TextInput
               value={editAmount}
               onChangeText={setEditAmount}
               placeholder={appointment?.totalPrice != null ? String(appointment.totalPrice) : '0.00'}
               placeholderTextColor={colors.muted}
               keyboardType="decimal-pad"
-              style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, fontSize: 14, color: colors.foreground, backgroundColor: colors.background, marginBottom: 24 }}
+              style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, fontSize: fs.sm, color: colors.foreground, backgroundColor: colors.background, marginBottom: 24 }}
               returnKeyType="done"
             />
 
@@ -1979,14 +1979,14 @@ Would you also like to charge a no-show fee via Stripe?`,
                 onPress={() => setShowEditPaymentSheet(false)}
                 style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.muted }}>Cancel</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.muted }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleSaveEditPayment}
                 disabled={savingPayment}
                 style={{ flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', opacity: savingPayment ? 0.7 : 1 }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>{savingPayment ? 'Saving…' : 'Save Changes'}</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: '700', color: '#FFF' }}>{savingPayment ? 'Saving…' : 'Save Changes'}</Text>
               </TouchableOpacity>
             </View>
             </ScrollView>
@@ -1998,7 +1998,7 @@ Would you also like to charge a no-show fee via Stripe?`,
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
           <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground }}>💳 Issue Refund</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: '700', color: colors.foreground }}>💳 Issue Refund</Text>
               <Pressable onPress={() => { setShowRefundModal(false); setRefundAmount(''); }} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
                 <IconSymbol name="xmark" size={22} color={colors.muted} />
               </Pressable>
@@ -2015,21 +2015,21 @@ Would you also like to charge a no-show fee via Stripe?`,
               const clientReceives = Math.round((total - stripeFee) * 100) / 100;
               return (
                 <View style={{ backgroundColor: colors.surface, borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: colors.border }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Refund Breakdown</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Refund Breakdown</Text>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <Text style={{ fontSize: 14, color: colors.foreground }}>Amount charged</Text>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }}>${total.toFixed(2)}</Text>
+                    <Text style={{ fontSize: fs.sm, color: colors.foreground }}>Amount charged</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.foreground }}>${total.toFixed(2)}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <Text style={{ fontSize: 13, color: colors.muted }}>Stripe processing fee (est.)</Text>
-                    <Text style={{ fontSize: 13, color: colors.muted }}>−${stripeFee.toFixed(2)}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>Stripe processing fee (est.)</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>−${stripeFee.toFixed(2)}</Text>
                   </View>
                   <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 8 }} />
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: colors.foreground }}>Client receives back</Text>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: colors.success }}>${clientReceives.toFixed(2)}</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: '700', color: colors.foreground }}>Client receives back</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: '700', color: colors.success }}>${clientReceives.toFixed(2)}</Text>
                   </View>
-                  <Text style={{ fontSize: 11, color: colors.muted, marginTop: 6, lineHeight: 16 }}>Note: Stripe's processing fee (2.9% + $0.30) is non-refundable. The platform fee (1.5%) is also retained.</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6, lineHeight: 16 }}>Note: Stripe's processing fee (2.9% + $0.30) is non-refundable. The platform fee (1.5%) is also retained.</Text>
                 </View>
               );
             })()}
@@ -2059,16 +2059,16 @@ Would you also like to charge a no-show fee via Stripe?`,
                 opacity: pressed || refunding ? 0.7 : 1,
               }]}
             >
-              <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>
+              <Text style={{ fontSize: fs.sm, fontWeight: '700', color: '#FFF' }}>
                 {refunding ? 'Processing…' : `Full Refund · $${(appointment?.totalPrice ?? 0).toFixed(2)}`}
               </Text>
             </Pressable>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-              <Text style={{ fontSize: 12, color: colors.muted }}>or enter partial amount</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted }}>or enter partial amount</Text>
               <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             </View>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Partial Refund Amount</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Partial Refund Amount</Text>
             <TextInput
               value={refundAmount}
               onChangeText={setRefundAmount}
@@ -2076,14 +2076,14 @@ Would you also like to charge a no-show fee via Stripe?`,
               placeholderTextColor={colors.muted}
               keyboardType="decimal-pad"
               returnKeyType="done"
-              style={{ backgroundColor: colors.surface, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: colors.foreground, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}
+              style={{ backgroundColor: colors.surface, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: fs.sm, color: colors.foreground, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}
             />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <TouchableOpacity
                 onPress={() => { setShowRefundModal(false); setRefundAmount(''); }}
                 style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.muted }}>Cancel</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.muted }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
@@ -2111,7 +2111,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 disabled={refunding}
                 style={{ flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: '#635BFF', alignItems: 'center', opacity: refunding ? 0.6 : 1 }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>{refunding ? 'Processing…' : 'Issue Refund'}</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: '700', color: '#FFF' }}>{refunding ? 'Processing…' : 'Issue Refund'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -2123,17 +2123,17 @@ Would you also like to charge a no-show fee via Stripe?`,
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
           <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground }}>💳 Charge No-Show Fee</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: '700', color: colors.foreground }}>💳 Charge No-Show Fee</Text>
               <Pressable onPress={() => setShowNoShowFeeModal(false)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
                 <IconSymbol name="xmark" size={22} color={colors.muted} />
               </Pressable>
             </View>
-            <Text style={{ fontSize: 14, color: colors.muted, marginBottom: 16, lineHeight: 20 }}>
+            <Text style={{ fontSize: fs.sm, color: colors.muted, marginBottom: 16, lineHeight: 20 }}>
               Charge {client?.name ?? 'the client'} a no-show fee via Stripe. They will receive a secure payment link.
               {service ? ` Suggested: $${Math.round((service.price ?? 0) * 0.5 * 100) / 100} (50% of service price)` : ''}
             </Text>
             <TextInput
-              style={{ borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.foreground, borderColor: colors.border, backgroundColor: colors.surface }}
+              style={{ borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: fs.md, color: colors.foreground, borderColor: colors.border, backgroundColor: colors.surface }}
               value={noShowFeeAmount}
               onChangeText={setNoShowFeeAmount}
               placeholder="Fee amount (e.g. 25.00)"
@@ -2146,7 +2146,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 onPress={() => setShowNoShowFeeModal(false)}
                 style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.muted }}>Cancel</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.muted }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
@@ -2167,7 +2167,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 disabled={noShowFeeLoading}
                 style={{ flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: '#F59E0B', alignItems: 'center', opacity: noShowFeeLoading ? 0.6 : 1 }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>{noShowFeeLoading ? 'Processing…' : 'Send Payment Link'}</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: '700', color: '#FFF' }}>{noShowFeeLoading ? 'Processing…' : 'Send Payment Link'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -2179,7 +2179,7 @@ Would you also like to charge a no-show fee via Stripe?`,
         <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.45)" }}>
           <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, maxHeight: "85%", width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>Reschedule Appointment</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>Reschedule Appointment</Text>
               <Pressable onPress={() => { setShowRescheduleModal(false); setRescheduleReason(""); }} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
                 <IconSymbol name="xmark" size={22} color={colors.muted} />
               </Pressable>
@@ -2199,7 +2199,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                   >
                     <IconSymbol name="chevron.left" size={18} color={colors.primary} />
                   </Pressable>
-                  <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}>
+                  <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>
                     {new Date(reschedCalMonth.year, reschedCalMonth.month, 1).toLocaleString("default", { month: "long", year: "numeric" })}
                   </Text>
                   <Pressable
@@ -2216,7 +2216,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 {/* Day headers */}
                 <View style={{ flexDirection: "row", marginBottom: 6 }}>
                   {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => (
-                    <Text key={d} style={{ flex: 1, textAlign: "center", fontSize: 11, fontWeight: "700", color: colors.foreground, opacity: 0.55, letterSpacing: 0.3 }}>{d}</Text>
+                    <Text key={d} style={{ flex: 1, textAlign: "center", fontSize: fs.xs, fontWeight: "700", color: colors.foreground, opacity: 0.55, letterSpacing: 0.3 }}>{d}</Text>
                   ))}
                 </View>
 
@@ -2261,7 +2261,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                           }} />
                         )}
                         <Text style={{
-                          fontSize: 15,
+                          fontSize: fs.sm,
                           fontWeight: isToday || isSelected ? "700" : "500",
                           color: isToday ? colors.primary : isSelected ? colors.primary : colors.foreground,
                           lineHeight: 20,
@@ -2304,7 +2304,7 @@ Would you also like to charge a no-show fee via Stripe?`,
               {reschedClosedDayMsg ? (
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.error + "18", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, marginTop: 6, marginBottom: 2 }}>
                   <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.error }} />
-                  <Text style={{ fontSize: 12, color: colors.error, fontWeight: "500", flex: 1 }}>{reschedClosedDayMsg}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.error, fontWeight: "500", flex: 1 }}>{reschedClosedDayMsg}</Text>
                 </View>
               ) : null}
 
@@ -2340,7 +2340,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                         opacity: pressed ? 0.7 : 1,
                       })}
                     >
-                      <Text style={{ fontSize: 13, fontWeight: "600", color: isActive ? "#FFF" : colors.foreground }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "600", color: isActive ? "#FFF" : colors.foreground }}>
                         {iv.label}
                       </Text>
                     </Pressable>
@@ -2349,13 +2349,13 @@ Would you also like to charge a no-show fee via Stripe?`,
               </ScrollView>
 
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12, marginBottom: 10 }}>
-                <Text style={{ fontSize: 13, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>Available Times</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>Available Times</Text>
                 {reschedSlots.length > 0 && (
-                  <Text style={{ fontSize: 11, color: colors.primary, fontWeight: "600" }}>{reschedSlots.length} slot{reschedSlots.length !== 1 ? "s" : ""}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }}>{reschedSlots.length} slot{reschedSlots.length !== 1 ? "s" : ""}</Text>
                 )}
               </View>
               {reschedSlots.length === 0 ? (
-                <Text style={{ fontSize: 14, color: colors.muted, textAlign: "center", paddingVertical: 16 }}>No available slots on this date</Text>
+                <Text style={{ fontSize: fs.sm, color: colors.muted, textAlign: "center", paddingVertical: 16 }}>No available slots on this date</Text>
               ) : (
                 <View style={{ marginBottom: 16 }}>
                   {([
@@ -2364,7 +2364,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                     { label: "Evening", slots: reschedSlots.filter(s => timeToMinutes(s) >= 17 * 60) },
                   ] as { label: string; slots: string[] }[]).filter(g => g.slots.length > 0).map(group => (
                     <View key={group.label} style={{ marginBottom: 12 }}>
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{group.label}</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{group.label}</Text>
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                         {group.slots.map(slot => (
                           <Pressable
@@ -2381,7 +2381,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                               opacity: pressed ? 0.7 : 1,
                             })}
                           >
-                            <Text style={{ fontSize: 13, fontWeight: "600", color: reschedTime === slot ? "#FFF" : colors.foreground }}>
+                            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: reschedTime === slot ? "#FFF" : colors.foreground }}>
                               {formatTime(slot)}
                             </Text>
                           </Pressable>
@@ -2394,7 +2394,7 @@ Would you also like to charge a no-show fee via Stripe?`,
 
               {/* Reschedule Reason */}
               <View style={{ marginTop: 16, marginBottom: 4 }}>
-                <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Reason (optional)</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Reason (optional)</Text>
                 <TextInput
                   value={rescheduleReason}
                   onChangeText={setRescheduleReason}
@@ -2409,7 +2409,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                     borderColor: rescheduleReason.trim() ? colors.primary : colors.border,
                     borderRadius: 10,
                     padding: 10,
-                    fontSize: 14,
+                    fontSize: fs.sm,
                     color: colors.foreground,
                     minHeight: 60,
                     textAlignVertical: "top",
@@ -2423,14 +2423,14 @@ Would you also like to charge a no-show fee via Stripe?`,
                   onPress={() => { setShowRescheduleModal(false); setRescheduleReason(""); }}
                   style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: "center" }}
                 >
-                  <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted }}>Cancel</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.muted }}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleReschedule}
                   disabled={!reschedTime}
                   style={{ flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: reschedTime ? colors.primary : colors.border, alignItems: "center" }}
                 >
-                  <Text style={{ fontSize: 15, fontWeight: "700", color: reschedTime ? "#FFF" : colors.muted }}>Confirm Reschedule</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: reschedTime ? "#FFF" : colors.muted }}>Confirm Reschedule</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -2442,8 +2442,8 @@ Would you also like to charge a no-show fee via Stripe?`,
       <Modal visible={cancelReasonModal} transparent animationType="slide">
         <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.45)" }}>
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, marginBottom: 4 }}>Cancel Appointment</Text>
-            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 20 }}>Select a reason for cancellation</Text>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground, marginBottom: 4 }}>Cancel Appointment</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 20 }}>Select a reason for cancellation</Text>
             {CANCEL_REASONS.map((r) => (
               <TouchableOpacity
                 key={r}
@@ -2453,7 +2453,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 <View style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: selectedReason === r ? colors.primary : colors.border, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
                   {selectedReason === r && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary }} />}
                 </View>
-                <Text style={{ fontSize: 15, color: colors.foreground }}>{r}</Text>
+                <Text style={{ fontSize: fs.sm, color: colors.foreground }}>{r}</Text>
               </TouchableOpacity>
             ))}
             {selectedReason === "Other" && (
@@ -2462,7 +2462,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 onChangeText={setCustomReason}
                 placeholder="Describe the reason..."
                 placeholderTextColor={colors.muted}
-                style={{ marginTop: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, fontSize: 14, color: colors.foreground, backgroundColor: colors.background }}
+                style={{ marginTop: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, fontSize: fs.sm, color: colors.foreground, backgroundColor: colors.background }}
                 multiline
                 numberOfLines={2}
               />
@@ -2472,7 +2472,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 onPress={() => setCancelReasonModal(false)}
                 style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: "center" }}
               >
-                <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted }}>Go Back</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.muted }}>Go Back</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
@@ -2602,7 +2602,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 }}
                 style={{ flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.error, alignItems: "center" }}
               >
-                <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFF" }}>Cancel Appointment</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#FFF" }}>Cancel Appointment</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -2615,7 +2615,7 @@ Would you also like to charge a no-show fee via Stripe?`,
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             {/* Header */}
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>Apply Discount</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>Apply Discount</Text>
               <Pressable onPress={() => setShowDiscountModal(false)} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
                 <IconSymbol name="xmark" size={20} color={colors.muted} />
               </Pressable>
@@ -2624,7 +2624,7 @@ Would you also like to charge a no-show fee via Stripe?`,
             {/* Saved discounts list */}
             {state.discounts.filter((d) => d.active).length > 0 && (
               <>
-                <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Saved Discounts</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Saved Discounts</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
                   <View style={{ flexDirection: "row", gap: 8 }}>
                     {state.discounts.filter((d) => d.active).map((d) => (
@@ -2648,7 +2648,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                           opacity: pressed ? 0.7 : 1,
                         })}
                       >
-                        <Text style={{ fontSize: 13, fontWeight: "600", color: colors.warning }}>{d.name} — {d.percentage}% Off</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.warning }}>{d.name} — {d.percentage}% Off</Text>
                       </Pressable>
                     ))}
                   </View>
@@ -2657,7 +2657,7 @@ Would you also like to charge a no-show fee via Stripe?`,
             )}
 
             {/* Custom discount */}
-            <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Custom Discount</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>Custom Discount</Text>
             {/* Type toggle */}
             <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
               {(["percent", "flat"] as const).map((t) => (
@@ -2675,7 +2675,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                     opacity: pressed ? 0.7 : 1,
                   })}
                 >
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: discountType === t ? "#FFF" : colors.muted }}>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "600", color: discountType === t ? "#FFF" : colors.muted }}>
                     {t === "percent" ? "Percentage (%)" : "Flat Amount ($)"}
                   </Text>
                 </Pressable>
@@ -2688,7 +2688,7 @@ Would you also like to charge a no-show fee via Stripe?`,
               placeholderTextColor={colors.muted}
               keyboardType="decimal-pad"
               returnKeyType="done"
-              style={{ backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, fontSize: 16, color: colors.foreground, marginBottom: 16 }}
+              style={{ backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, fontSize: fs.md, color: colors.foreground, marginBottom: 16 }}
             />
 
             {/* Apply / Remove buttons */}
@@ -2704,7 +2704,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                   }}
                   style={({ pressed }) => ({ flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: "center", backgroundColor: colors.error + "18", borderWidth: 1, borderColor: colors.error, opacity: pressed ? 0.7 : 1 })}
                 >
-                  <Text style={{ fontSize: 15, fontWeight: "700", color: colors.error }}>Remove</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.error }}>Remove</Text>
                 </Pressable>
               )}
               <Pressable
@@ -2730,7 +2730,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 }}
                 style={({ pressed }) => ({ flex: 2, paddingVertical: 14, borderRadius: 14, alignItems: "center", backgroundColor: colors.warning, opacity: pressed ? 0.7 : 1 })}
               >
-                <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFF" }}>Apply Discount</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#FFF" }}>Apply Discount</Text>
               </Pressable>
             </View>
           </View>
@@ -2744,12 +2744,12 @@ Would you also like to charge a no-show fee via Stripe?`,
             {/* Handle bar */}
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 16 }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.foreground }}>🎁 Redeem Gift Card</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: '700', color: colors.foreground }}>🎁 Redeem Gift Card</Text>
               <Pressable onPress={() => setShowGiftRedeemSheet(false)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
                 <IconSymbol name="xmark" size={22} color={colors.muted} />
               </Pressable>
             </View>
-            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 20 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 20 }}>
               Enter the amount to deduct from the gift card balance. You can redeem a partial amount and use the rest later.
             </Text>
 
@@ -2763,12 +2763,12 @@ Would you also like to charge a no-show fee via Stripe?`,
               return (
                 <View style={{ backgroundColor: colors.background, borderRadius: 14, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View>
-                    <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>Gift Card Balance</Text>
-                    <Text style={{ fontSize: 22, fontWeight: '700', color: colors.success, marginTop: 2 }}>${(giftCard.remainingBalance ?? giftCard.originalValue ?? 0).toFixed(2)}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>Gift Card Balance</Text>
+                    <Text style={{ fontSize: fs.lg, fontWeight: '700', color: colors.success, marginTop: 2 }}>${(giftCard.remainingBalance ?? giftCard.originalValue ?? 0).toFixed(2)}</Text>
                   </View>
                   {giftCard.code && (
                     <View style={{ backgroundColor: colors.success + '18', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 }}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.success }}>{giftCard.code}</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.success }}>{giftCard.code}</Text>
                     </View>
                   )}
                 </View>
@@ -2776,9 +2776,9 @@ Would you also like to charge a no-show fee via Stripe?`,
             })()}
 
             {/* Amount input */}
-            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Amount to Redeem</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Amount to Redeem</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, borderRadius: 12, borderWidth: 1.5, borderColor: giftRedeemAmount.trim() ? colors.success : colors.border, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 24 }}>
-              <Text style={{ color: colors.success, fontWeight: '700', fontSize: 20, marginRight: 4 }}>$</Text>
+              <Text style={{ color: colors.success, fontWeight: '700', fontSize: fs.lg, marginRight: 4 }}>$</Text>
               <TextInput
                 value={giftRedeemAmount}
                 onChangeText={(v) => setGiftRedeemAmount(v.replace(/[^0-9.]/g, ''))}
@@ -2786,7 +2786,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 placeholderTextColor={colors.muted}
                 keyboardType="decimal-pad"
                 returnKeyType="done"
-                style={{ flex: 1, color: colors.foreground, fontSize: 20, fontWeight: '700' }}
+                style={{ flex: 1, color: colors.foreground, fontSize: fs.lg, fontWeight: '700' }}
                 autoFocus
               />
             </View>
@@ -2816,7 +2816,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                         opacity: pressed ? 0.7 : 1,
                       })}
                     >
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.success }}>{s.label}</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.success }}>{s.label}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -2828,14 +2828,14 @@ Would you also like to charge a no-show fee via Stripe?`,
                 onPress={() => setShowGiftRedeemSheet(false)}
                 style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.muted }}>Cancel</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.muted }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleSaveGiftRedeem}
                 disabled={savingGiftRedeem || !giftRedeemAmount.trim()}
                 style={{ flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.success, alignItems: 'center', opacity: (savingGiftRedeem || !giftRedeemAmount.trim()) ? 0.5 : 1 }}
               >
-                <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>{savingGiftRedeem ? 'Saving…' : 'Confirm Redemption'}</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: '700', color: '#FFF' }}>{savingGiftRedeem ? 'Saving…' : 'Confirm Redemption'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -2869,5 +2869,5 @@ const styles = StyleSheet.create({
   actionButton: { width: "100%", flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 14, minHeight: 52 },
   deleteButton: { width: "100%", alignItems: "center", justifyContent: "center", paddingVertical: 12, borderRadius: 14, borderWidth: 1, minHeight: 48 },
   messageBtn: { width: "100%", flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 14, borderWidth: 1.5, marginBottom: 12, minHeight: 52 },
-  messageBtnText: { fontSize: 15, fontWeight: "600", marginLeft: 8 },
+  messageBtnText: { fontSize: fs.sm, fontWeight: "600", marginLeft: 8 },
 });

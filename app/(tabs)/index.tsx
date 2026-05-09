@@ -189,10 +189,10 @@ function GradientKpiCard({
         </View>
 
         {/* Value */}
-        <Text style={{ fontSize: 26, fontWeight: "800", color: "#FFFFFF", lineHeight: 32, letterSpacing: -0.8 }} numberOfLines={1}>
+        <Text style={{ fontSize: fs.xl, fontWeight: "800", color: "#FFFFFF", lineHeight: 32, letterSpacing: -0.8 }} numberOfLines={1}>
           {displayValue}
         </Text>
-        <Text style={{ fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.82)", marginTop: 1 }}>{label}</Text>
+        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "rgba(255,255,255,0.82)", marginTop: 1 }}>{label}</Text>
         {sublabel ? <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>{sublabel}</Text> : null}
         {miniStats}
 
@@ -303,7 +303,7 @@ export default function HomeScreen() {
     useStore();
   const colors = useColors();
   const router = useRouter();
-  const { width, height, isTablet, isLargeTablet, hp, maxContentWidth, cardGap, kpiCols, fontScale: fs, modalMaxWidth } = useResponsive();
+  const { width, height, isTablet, isLargeTablet, hp, maxContentWidth, cardGap, kpiCols, fontScale: fs, modalMaxWidth, buttonHeight, iconButtonSize } = useResponsive();
   const contentWidth = maxContentWidth - hp * 2;
   const cardW = Math.floor((contentWidth - cardGap * (kpiCols - 1)) / kpiCols);
 
@@ -1614,10 +1614,10 @@ export default function HomeScreen() {
                   );
                 })()}
               </Pressable>
-              <Text style={{ fontSize: 22, fontWeight: "800", color: colors.primary, letterSpacing: 0.5, fontVariant: ["tabular-nums"] }}>
+              <Text style={{ fontSize: fs.lg, fontWeight: "800", color: colors.primary, letterSpacing: 0.5, fontVariant: ["tabular-nums"] }}>
                 {liveTimeStr.replace(/ (AM|PM)$/, "")}
               </Text>
-              <Text style={{ fontSize: 11, fontWeight: "600", color: colors.muted }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>
                 {liveTimeStr.match(/(AM|PM)$/)?.[0] ?? ""}
               </Text>
               {state.settings.temporaryClosed && (
@@ -1649,7 +1649,7 @@ export default function HomeScreen() {
                     {analytics.todayCompletedCount} appt{analytics.todayCompletedCount !== 1 ? "s" : ""}
                   </Text>
                   <Text style={{ fontSize: 10, color: colors.success + "80" }}>·</Text>
-                  <Text style={{ fontSize: 11, fontWeight: "700", color: colors.success }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.success }}>
                     ${analytics.todayRevenue.toFixed(0)} today
                   </Text>
                 </Pressable>
@@ -1710,12 +1710,12 @@ export default function HomeScreen() {
                     ? `in ${hoursUntil}h ${minsRemainder}m`
                     : `in ${minsUntil}m`;
                   return (
-                    <Text style={{ fontSize: 12, color: colors.primary, fontWeight: "600", flex: 1 }} numberOfLines={1}>
+                    <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600", flex: 1 }} numberOfLines={1}>
                       Next: {formatTime(nextAppt.time)} · {nextSvc?.name ?? "Appointment"} · {nextClient?.name ?? "Client"} · <Text style={{ fontWeight: "800" }}>{countdownStr}</Text>
                     </Text>
                   );
                 })() : (
-                  <Text style={{ fontSize: 12, color: colors.success, fontWeight: "600" }}>
+                  <Text style={{ fontSize: fs.xs, color: colors.success, fontWeight: "600" }}>
                     All done for today — {todayAppts.length} appt{todayAppts.length !== 1 ? "s" : ""} completed
                   </Text>
                 )}
@@ -1741,7 +1741,7 @@ export default function HomeScreen() {
               })}
             >
               <IconSymbol name="plus.circle.fill" size={16} color="#fff" />
-              <Text style={{ fontSize: 13, fontWeight: "700", color: "#fff" }}>New Booking</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#fff" }}>New Booking</Text>
             </Pressable>
             <Pressable
               onPress={() => router.push({ pathname: "/(tabs)/calendar", params: { filter: "today", date: todayStr, view: "day" } } as any)}
@@ -1760,7 +1760,7 @@ export default function HomeScreen() {
               })}
             >
               <IconSymbol name="calendar" size={16} color={colors.foreground} />
-              <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground }}>View Today</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground }}>View Today</Text>
             </Pressable>
           </View>
         </LinearGradient>
@@ -1781,8 +1781,8 @@ export default function HomeScreen() {
               <IconSymbol name="location.fill" size={20} color={colors.warning} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.warning, marginBottom: 2 }}>No Location Added</Text>
-              <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 17 }}>Add your business address to start accepting bookings. Tap here to set up your first location.</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.warning, marginBottom: 2 }}>No Location Added</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, lineHeight: 17 }}>Add your business address to start accepting bookings. Tap here to set up your first location.</Text>
             </View>
             <IconSymbol name="chevron.right" size={16} color={colors.muted} />
           </Pressable>
@@ -1804,10 +1804,10 @@ export default function HomeScreen() {
               <Ionicons name="notifications-off-outline" size={20} color={colors.warning} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.warning, marginBottom: 2 }}>Notifications Disabled</Text>
-              <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 17 }}>You won’t receive booking alerts. Tap here to enable notifications in Settings.</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.warning, marginBottom: 2 }}>Notifications Disabled</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, lineHeight: 17 }}>You won’t receive booking alerts. Tap here to enable notifications in Settings.</Text>
             </View>
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.warning }}>Fix →</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.warning }}>Fix →</Text>
           </Pressable>
         )}
 
@@ -1827,7 +1827,7 @@ export default function HomeScreen() {
                   opacity: pressed ? 0.7 : 1,
                 }]}
               >
-                <Text style={{ fontSize: 12, fontWeight: "600", color: !selectedLocationFilter ? colors.primary : colors.muted }}>All Locations</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: !selectedLocationFilter ? colors.primary : colors.muted }}>All Locations</Text>
               </Pressable>
               {activeLocations.map((loc) => (
                 <Pressable
@@ -1843,7 +1843,7 @@ export default function HomeScreen() {
                     opacity: pressed ? 0.7 : 1,
                   }]}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: "600", color: selectedLocationFilter === loc.id ? colors.primary : colors.muted }}>{loc.name}</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: selectedLocationFilter === loc.id ? colors.primary : colors.muted }}>{loc.name}</Text>
                 </Pressable>
               ))}
             </View>
@@ -1894,10 +1894,10 @@ export default function HomeScreen() {
           >
             <IconSymbol name="exclamationmark.triangle.fill" size={18} color={colors.error} style={{ marginTop: 1 }} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, color: colors.error, fontWeight: "700", marginBottom: 2 }}>
+              <Text style={{ fontSize: fs.sm, color: colors.error, fontWeight: "700", marginBottom: 2 }}>
                 {activeLocation.name} — Temporarily Closed
               </Text>
-              <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 17 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, lineHeight: 17 }}>
                 {activeLocation.reopenOn
                   ? `This location is temporarily closed and will reopen on ${new Date(activeLocation.reopenOn + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}. No new bookings are being accepted until then.`
                   : `This location is temporarily closed for an indefinite period. No new bookings are being accepted at this time. Please check back later.`}
@@ -1918,10 +1918,10 @@ export default function HomeScreen() {
           }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: "700", color: "#92400E", marginBottom: 4 }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#92400E", marginBottom: 4 }}>
                   Action Required Before {overLimitData.periodEndDate}
                 </Text>
-                <Text style={{ fontSize: 12, color: "#78350F", marginBottom: 8, lineHeight: 18 }}>
+                <Text style={{ fontSize: fs.xs, color: "#78350F", marginBottom: 8, lineHeight: 18 }}>
                   Your plan downgrades to {overLimitData.scheduledPlanKey?.charAt(0).toUpperCase()}{overLimitData.scheduledPlanKey?.slice(1)} on {overLimitData.periodEndDate}. Reduce the following to avoid automatic removal:
                 </Text>
                 {overLimitData.warnings.map((w: { resource: string; current: number; limit: number; route: string }) => (
@@ -1931,10 +1931,10 @@ export default function HomeScreen() {
                     style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flexDirection: "row", alignItems: "center", marginBottom: 4 }]}
                   >
                     <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#F59E0B", marginRight: 8 }} />
-                    <Text style={{ fontSize: 12, color: "#92400E", fontWeight: "600" }}>
+                    <Text style={{ fontSize: fs.xs, color: "#92400E", fontWeight: "600" }}>
                       {w.resource}: {w.current} / {w.limit} allowed
                     </Text>
-                    <Text style={{ fontSize: 11, color: "#B45309", marginLeft: 6 }}>Tap to manage ›</Text>
+                    <Text style={{ fontSize: fs.xs, color: "#B45309", marginLeft: 6 }}>Tap to manage ›</Text>
                   </Pressable>
                 ))}
               </View>
@@ -1942,7 +1942,7 @@ export default function HomeScreen() {
                 onPress={() => setOverLimitDismissed(true)}
                 style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4, marginLeft: 8 }]}
               >
-                <Text style={{ fontSize: 18, color: "#92400E", fontWeight: "300" }}>×</Text>
+                <Text style={{ fontSize: fs.md, color: "#92400E", fontWeight: "300" }}>×</Text>
               </Pressable>
             </View>
             <Pressable
@@ -1957,7 +1957,7 @@ export default function HomeScreen() {
                 opacity: pressed ? 0.8 : 1,
               }]}
             >
-              <Text style={{ fontSize: 12, fontWeight: "700", color: "#FFFFFF" }}>Keep Current Plan</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FFFFFF" }}>Keep Current Plan</Text>
             </Pressable>
           </View>
         )}
@@ -2057,7 +2057,7 @@ export default function HomeScreen() {
                 badge: revenueChange !== 0 ? (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 10, backgroundColor: revenueChange > 0 ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.18)" }}>
                     <IconSymbol name={revenueChange > 0 ? "arrow.up.right" : "arrow.down.right"} size={10} color="#FFF" />
-                    <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFF" }}>{Math.abs(revenueChange)}%</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "800", color: "#FFF" }}>{Math.abs(revenueChange)}%</Text>
                   </View>
                 ) : undefined,
                 sparkData: analytics.weeklyDailyData.map((d) => d.value),
@@ -2180,7 +2180,7 @@ export default function HomeScreen() {
                 sublabel: `${analytics.statusCounts.completed} completed`,
                 badge: analytics.statusCounts.pending > 0 ? (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 10, backgroundColor: "rgba(255,152,0,0.55)" }}>
-                    <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFF" }}>{analytics.statusCounts.pending} pending</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "800", color: "#FFF" }}>{analytics.statusCounts.pending} pending</Text>
                   </View>
                 ) : undefined,
                 sparkData: analytics.weeklyDailyData.map((d) => d.apptCount),
@@ -2322,9 +2322,9 @@ export default function HomeScreen() {
                 <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: colors.primary + "20", alignItems: "center", justifyContent: "center" }}>
                   <IconSymbol name="target" size={16} color={colors.primary} />
                 </View>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>Monthly Goal</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>Monthly Goal</Text>
               </View>
-              <Text style={{ fontSize: 13, fontWeight: "700", color: revenueForecast.progressPct >= 100 ? colors.success : colors.primary }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: revenueForecast.progressPct >= 100 ? colors.success : colors.primary }}>
                 {revenueForecast.progressPct}%
               </Text>
             </View>
@@ -2353,20 +2353,20 @@ export default function HomeScreen() {
               </View>
             )}
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={{ fontSize: 12, color: colors.muted }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted }}>
                 ${revenueForecast.earnedSoFar.toLocaleString()} earned · {revenueForecast.remainingDays}d left
               </Text>
-              <Text style={{ fontSize: 12, color: colors.muted }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted }}>
                 Goal: ${state.settings.monthlyRevenueGoal.toLocaleString()}
               </Text>
             </View>
             {revenueForecast.projectedPct > revenueForecast.progressPct && revenueForecast.progressPct < 100 && (
-              <Text style={{ fontSize: 11, color: colors.primary, marginTop: 4 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.primary, marginTop: 4 }}>
                 On track to reach ${revenueForecast.projected.toLocaleString()} by month-end
               </Text>
             )}
             {revenueForecast.progressPct >= 100 && (
-              <Text style={{ fontSize: 12, color: colors.success, fontWeight: "700", marginTop: 2 }}>🎉 Goal reached this month!</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.success, fontWeight: "700", marginTop: 2 }}>🎉 Goal reached this month!</Text>
             )}
           </Pressable>
         )}
@@ -2422,7 +2422,7 @@ export default function HomeScreen() {
                   <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
                     <IconSymbol name="creditcard.fill" size={16} color="#FFF" />
                   </View>
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFF" }}>Stripe Balance</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#FFF" }}>Stripe Balance</Text>
                 </View>
                 {stripeBalanceLoading ? (
                   <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: "rgba(255,255,255,0.3)" }} />
@@ -2433,20 +2433,20 @@ export default function HomeScreen() {
               {stripeBalance ? (
                 <View style={{ flexDirection: "row", gap: 12 }}>
                   <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, padding: 10 }}>
-                    <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>Available</Text>
-                    <Text style={{ fontSize: 18, fontWeight: "800", color: "#FFF" }}>
+                    <Text style={{ fontSize: fs.xs, color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>Available</Text>
+                    <Text style={{ fontSize: fs.md, fontWeight: "800", color: "#FFF" }}>
                       ${stripeBalance.available.toFixed(2)}
                     </Text>
                   </View>
                   <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, padding: 10 }}>
-                    <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>Pending</Text>
-                    <Text style={{ fontSize: 18, fontWeight: "800", color: "rgba(255,255,255,0.85)" }}>
+                    <Text style={{ fontSize: fs.xs, color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>Pending</Text>
+                    <Text style={{ fontSize: fs.md, fontWeight: "800", color: "rgba(255,255,255,0.85)" }}>
                       ${stripeBalance.pending.toFixed(2)}
                     </Text>
                   </View>
                 </View>
               ) : (
-                <Text style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
+                <Text style={{ fontSize: fs.xs, color: "rgba(255,255,255,0.7)" }}>
                   {stripeBalanceLoading ? "Loading balance..." : "Tap to view payment history"}
                 </Text>
               )}
@@ -2486,8 +2486,8 @@ export default function HomeScreen() {
               style={{ padding: 14, borderRadius: 16 }}
             >
               <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-                <Text style={{ fontSize: 22, marginRight: 8 }}>🎂</Text>
-                <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFF" }}>
+                <Text style={{ fontSize: fs.lg, marginRight: 8 }}>🎂</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#FFF" }}>
                   {birthdayClients.length === 1
                     ? `Today is ${birthdayClients[0].name}'s Birthday!`
                     : `${birthdayClients.length} Clients Have Birthdays Today!`}
@@ -2506,7 +2506,7 @@ export default function HomeScreen() {
                       opacity: pressed ? 0.7 : 1,
                     }]}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: "#FFF" }}>{c.name}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#FFF" }}>{c.name}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -2556,10 +2556,10 @@ export default function HomeScreen() {
             </View>
             {/* Text */}
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 16, fontWeight: "800", color: "#fff", marginBottom: 2 }}>
+              <Text style={{ fontSize: fs.md, fontWeight: "800", color: "#fff", marginBottom: 2 }}>
                 Share Booking Link
               </Text>
-              <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", lineHeight: 17 }}>
+              <Text style={{ fontSize: fs.xs, color: "rgba(255,255,255,0.75)", lineHeight: 17 }}>
                 Tap to view full QR code, copy link, or share with clients
               </Text>
               <View style={{
@@ -2671,7 +2671,7 @@ export default function HomeScreen() {
               <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 0 }]}>Messages</Text>
               {recentMessages.some(t => t.unreadCount > 0) && (
                 <View style={{ backgroundColor: colors.error, borderRadius: 8, minWidth: 18, height: 18, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}>
-                  <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>
+                  <Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "700" }}>
                     {recentMessages.reduce((s, t) => s + t.unreadCount, 0)}
                   </Text>
                 </View>
@@ -2681,7 +2681,7 @@ export default function HomeScreen() {
               onPress={() => router.push("/(tabs)/clients?tab=messages" as any)}
               style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
             >
-              <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "600" }}>View All</Text>
+              <Text style={{ color: colors.primary, fontSize: fs.xs, fontWeight: "600" }}>View All</Text>
             </Pressable>
           </View>
 
@@ -2690,8 +2690,8 @@ export default function HomeScreen() {
           ) : recentMessages.length === 0 ? (
             <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border, padding: 20, alignItems: "center", gap: 6 }]}>
               <IconSymbol name="message.fill" size={28} color={colors.muted} />
-              <Text style={{ color: colors.muted, fontSize: 14, textAlign: "center" }}>No messages yet</Text>
-              <Text style={{ color: colors.muted, fontSize: 12, textAlign: "center" }}>Client messages will appear here</Text>
+              <Text style={{ color: colors.muted, fontSize: fs.sm, textAlign: "center" }}>No messages yet</Text>
+              <Text style={{ color: colors.muted, fontSize: fs.xs, textAlign: "center" }}>Client messages will appear here</Text>
             </View>
           ) : (
             <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border, padding: 0, overflow: "hidden" }]}>
@@ -2725,26 +2725,26 @@ export default function HomeScreen() {
                   >
                     {/* Avatar */}
                     <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary + "20", alignItems: "center", justifyContent: "center" }}>
-                      <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 16 }}>
+                      <Text style={{ color: colors.primary, fontWeight: "700", fontSize: fs.md }}>
                         {thread.clientName.charAt(0).toUpperCase()}
                       </Text>
                     </View>
                     {/* Content */}
                     <View style={{ flex: 1, gap: 2 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                        <Text style={{ color: colors.foreground, fontWeight: isUnread ? "700" : "600", fontSize: 14 }} numberOfLines={1}>
+                        <Text style={{ color: colors.foreground, fontWeight: isUnread ? "700" : "600", fontSize: fs.sm }} numberOfLines={1}>
                           {thread.clientName}
                         </Text>
-                        <Text style={{ color: colors.muted, fontSize: 11 }}>{timeAgo}</Text>
+                        <Text style={{ color: colors.muted, fontSize: fs.xs }}>{timeAgo}</Text>
                       </View>
-                      <Text style={{ color: isUnread ? colors.foreground : colors.muted, fontSize: 13, lineHeight: 18 }} numberOfLines={1}>
+                      <Text style={{ color: isUnread ? colors.foreground : colors.muted, fontSize: fs.xs, lineHeight: 18 }} numberOfLines={1}>
                         {thread.senderType === "business" ? "You: " : ""}{thread.lastMessage}
                       </Text>
                     </View>
                     {/* Unread badge */}
                     {isUnread && (
                       <View style={{ backgroundColor: colors.primary, borderRadius: 10, minWidth: 20, height: 20, alignItems: "center", justifyContent: "center", paddingHorizontal: 5 }}>
-                        <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>{thread.unreadCount}</Text>
+                        <Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "700" }}>{thread.unreadCount}</Text>
                       </View>
                     )}
                     <IconSymbol name="chevron.right" size={14} color={colors.muted} />
@@ -2846,10 +2846,10 @@ export default function HomeScreen() {
             onPress={() => {}} // prevent dismiss on inner tap
           >
             <View style={styles.shareSheetHandle} />
-            <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground, marginBottom: 4 }}>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground, marginBottom: 4 }}>
               Share Booking Link
             </Text>
-            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 16 }}>
               Clients will choose their location when booking
             </Text>
             <Pressable
@@ -2864,8 +2864,8 @@ export default function HomeScreen() {
             >
               <View style={[styles.shareLocDot, { backgroundColor: colors.primary }]} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Share Booking Link</Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Clients select location as first step</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Share Booking Link</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>Clients select location as first step</Text>
               </View>
               <IconSymbol name="paperplane.fill" size={16} color={colors.primary} />
             </Pressable>
@@ -2876,7 +2876,7 @@ export default function HomeScreen() {
                 { backgroundColor: colors.border, opacity: pressed ? 0.7 : 1 },
               ]}
             >
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Cancel</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Cancel</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -2903,8 +2903,8 @@ export default function HomeScreen() {
             {/* Header */}
             <View style={{ flexDirection: "row", alignItems: "center", width: "100%", marginBottom: 4 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 18, fontWeight: "800", color: colors.foreground }}>Booking QR Code</Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{state.settings.businessName}</Text>
+                <Text style={{ fontSize: fs.md, fontWeight: "800", color: colors.foreground }}>Booking QR Code</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{state.settings.businessName}</Text>
               </View>
               <Pressable
                 onPress={() => setShowQrModal(false)}
@@ -2926,7 +2926,7 @@ export default function HomeScreen() {
 
             {/* URL pill */}
             <View style={[{ borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, width: "100%" }, { backgroundColor: colors.background }]}>
-              <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center" }} numberOfLines={2}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "center" }} numberOfLines={2}>
                 {qrBookingUrl}
               </Text>
             </View>
@@ -2945,7 +2945,7 @@ export default function HomeScreen() {
                 }, { backgroundColor: colors.border }]}
               >
                 <IconSymbol name="doc.on.doc.fill" size={16} color={colors.foreground} />
-                <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground }}>Copy Link</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground }}>Copy Link</Text>
               </Pressable>
               <Pressable
                 onPress={async () => {
@@ -2959,11 +2959,11 @@ export default function HomeScreen() {
                 }, { backgroundColor: colors.primary }]}
               >
                 <IconSymbol name="paperplane.fill" size={16} color="#fff" />
-                <Text style={{ fontSize: 13, fontWeight: "700", color: "#fff" }}>Share</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#fff" }}>Share</Text>
               </Pressable>
             </View>
 
-            <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center" }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "center" }}>
               Display at your counter or print for clients to scan
             </Text>
           </View>
@@ -3035,11 +3035,11 @@ const styles = StyleSheet.create({
     marginLeft: 14,
   },
   businessName: {
-    fontSize: 20,
+    fontSize: fs.lg,
     fontWeight: "700",
   },
   greetingText: {
-    fontSize: 13,
+    fontSize: fs.xs,
     marginTop: 2,
   },
   closedBadge: {
@@ -3048,7 +3048,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   dateLabel: {
-    fontSize: 14,
+    fontSize: fs.sm,
     marginTop: 2,
     marginBottom: 4,
   },
@@ -3062,7 +3062,7 @@ const styles = StyleSheet.create({
   },
   pendingText: {
     color: "#E65100",
-    fontSize: 14,
+    fontSize: fs.sm,
     fontWeight: "600",
     marginLeft: 8,
     flex: 1,
@@ -3078,7 +3078,7 @@ const styles = StyleSheet.create({
 
   // ─── Section ─────────────────────────────────────────────
   sectionTitle: {
-    fontSize: 18,
+    fontSize: fs.md,
     fontWeight: "700",
     marginBottom: 12,
   },
@@ -3117,17 +3117,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   kpiValue: {
-    fontSize: 22,
+    fontSize: fs.lg,
     fontWeight: "800",
     lineHeight: 28,
   },
   kpiLabel: {
-    fontSize: 12,
+    fontSize: fs.xs,
     fontWeight: "500",
     marginTop: 2,
   },
   kpiTotal: {
-    fontSize: 11,
+    fontSize: fs.xs,
     marginTop: 4,
   },
   miniStatRow: {
@@ -3155,11 +3155,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   chartTitle: {
-    fontSize: 15,
+    fontSize: fs.sm,
     fontWeight: "700",
   },
   chartSubtitle: {
-    fontSize: 12,
+    fontSize: fs.xs,
   },
   sideBySideRow: {
     flexDirection: "row",
@@ -3177,10 +3177,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statusLabel: {
-    fontSize: 11,
+    fontSize: fs.xs,
   },
   statusValue: {
-    fontSize: 11,
+    fontSize: fs.xs,
     fontWeight: "700",
   },
 
@@ -3200,13 +3200,13 @@ const styles = StyleSheet.create({
     minHeight: 90,
   },
   quickActionLabel: {
-    fontSize: 12,
+    fontSize: fs.xs,
     fontWeight: "600",
     marginTop: 6,
     textAlign: "center",
   },
   quickActionCount: {
-    fontSize: 18,
+    fontSize: fs.md,
     fontWeight: "800",
     marginTop: 2,
   },
@@ -3226,7 +3226,7 @@ const styles = StyleSheet.create({
   },
   bookBtnText: {
     color: "#FFF",
-    fontSize: 14,
+    fontSize: fs.sm,
     fontWeight: "600",
   },
   apptCard: {
@@ -3253,12 +3253,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   apptTime: {
-    fontSize: 15,
+    fontSize: fs.sm,
     fontWeight: "700",
     lineHeight: 20,
   },
   apptService: {
-    fontSize: 14,
+    fontSize: fs.sm,
     fontWeight: "600",
     lineHeight: 19,
   },
@@ -3309,7 +3309,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   tutorialTitle: {
-    fontSize: 20,
+    fontSize: fs.lg,
     fontWeight: "800",
     textAlign: "center",
     marginBottom: 8,
@@ -3317,7 +3317,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   tutorialDesc: {
-    fontSize: 14,
+    fontSize: fs.sm,
     lineHeight: 22,
     textAlign: "center",
     marginBottom: 20,

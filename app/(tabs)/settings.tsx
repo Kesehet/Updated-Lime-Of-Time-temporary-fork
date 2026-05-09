@@ -74,9 +74,9 @@ function SectionHeader({
 const sectionStyles = StyleSheet.create({
   row:       { flexDirection: "row", alignItems: "center", marginBottom: 10, gap: 8 },
   accent:    { width: 3, height: 14, borderRadius: 2 },
-  label:     { fontSize: 12, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.9, flex: 1 },
+  label:     { fontSize: fs.xs, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.9, flex: 1 },
   badge:     { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2 },
-  badgeText: { fontSize: 11, fontWeight: "700" },
+  badgeText: { fontSize: fs.xs, fontWeight: "700" },
 });
 
 /** Status dot for nav cards */
@@ -93,7 +93,7 @@ export default function SettingsScreen() {
   const updateBusinessMut = trpc.business.update.useMutation();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, maxContentWidth, modalMaxWidth } = useResponsive();
+  const { isTablet, hp, maxContentWidth, modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const { setThemeMode: setThemeOverrideMode } = useThemeContext();
   const { biometricAvailable, biometricEnabled, biometricType, toggleBiometric } = useAppLockContext();
   const settings = state.settings;
@@ -285,8 +285,8 @@ export default function SettingsScreen() {
             <IconSymbol name={item.icon} size={22} color={item.color} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>{item.title}</Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 17 }}>{item.subtitle}</Text>
+            <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{item.title}</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2, lineHeight: 17 }}>{item.subtitle}</Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             {item.status && <StatusDot status={item.status} colors={colors} />}
@@ -305,7 +305,7 @@ export default function SettingsScreen() {
       {settings.temporaryClosed && (
         <View style={[styles.closedBanner, { backgroundColor: colors.error + "15", borderColor: colors.error + "40" }]}>
           <IconSymbol name="xmark.circle.fill" size={18} color={colors.error} />
-          <Text style={{ fontSize: 13, fontWeight: "600", color: colors.error, marginLeft: 8, flex: 1 }}>Business is temporarily closed</Text>
+          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.error, marginLeft: 8, flex: 1 }}>Business is temporarily closed</Text>
         </View>
       )}
 
@@ -313,7 +313,7 @@ export default function SettingsScreen() {
       {hasMultipleLocations && (
         <View style={[{ backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: 14, padding: 12, marginBottom: 14, flexDirection: "row", alignItems: "center", gap: 10 }]}>
           <IconSymbol name="mappin.and.ellipse" size={18} color={colors.primary} />
-          <Text style={{ fontSize: 13, color: colors.muted, flex: 1 }}>Active Location</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, flex: 1 }}>Active Location</Text>
           <LocationSwitcher />
         </View>
       )}
@@ -346,7 +346,7 @@ export default function SettingsScreen() {
             </Pressable>
           </View>
         ) : (
-          <Text style={{ fontSize: 16, color: colors.foreground, fontWeight: "500" }}>{settings.businessName}</Text>
+          <Text style={{ fontSize: fs.md, color: colors.foreground, fontWeight: "500" }}>{settings.businessName}</Text>
         )}
       </View>
 
@@ -363,7 +363,7 @@ export default function SettingsScreen() {
           ].map((s) => (
             <View key={s.label} style={styles.statItem}>
               <Text style={[styles.statNumber, { color: colors.primary }]}>{s.value}</Text>
-              <Text style={{ fontSize: 12, color: colors.muted }}>{s.label}</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted }}>{s.label}</Text>
             </View>
           ))}
         </View>
@@ -386,7 +386,7 @@ export default function SettingsScreen() {
           <IconSymbol name="chart.bar.fill" size={22} color="#FF9800" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Monthly Revenue Goal</Text>
+          <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Monthly Revenue Goal</Text>
           {editingGoal ? (
             <View style={{ marginTop: 6 }}>
               <TextInput
@@ -397,20 +397,20 @@ export default function SettingsScreen() {
                 placeholderTextColor={colors.muted}
                 returnKeyType="done"
                 onSubmitEditing={saveGoal}
-                style={{ fontSize: 15, color: colors.foreground, borderBottomWidth: 1, borderBottomColor: colors.primary, paddingVertical: 4 }}
+                style={{ fontSize: fs.sm, color: colors.foreground, borderBottomWidth: 1, borderBottomColor: colors.primary, paddingVertical: 4 }}
                 autoFocus
               />
               <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
                 <Pressable onPress={saveGoal} style={{ flex: 1, backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 8, alignItems: "center" }}>
-                  <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>Save</Text>
+                  <Text style={{ color: "#fff", fontWeight: "700", fontSize: fs.xs }}>Save</Text>
                 </Pressable>
                 <Pressable onPress={() => setEditingGoal(false)} style={{ flex: 1, borderRadius: 8, paddingVertical: 8, alignItems: "center", borderWidth: 1, borderColor: colors.border }}>
-                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Cancel</Text>
+                  <Text style={{ color: colors.muted, fontSize: fs.xs, fontWeight: "600" }}>Cancel</Text>
                 </Pressable>
               </View>
             </View>
           ) : (
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
               {settings.monthlyRevenueGoal > 0 ? `$${settings.monthlyRevenueGoal.toLocaleString()} / month` : "Tap to set a monthly goal"}
             </Text>
           )}
@@ -428,7 +428,7 @@ export default function SettingsScreen() {
           <IconSymbol name="person.2.fill" size={22} color="#EF4444" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Staff Alert Threshold</Text>
+          <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Staff Alert Threshold</Text>
           {editingThreshold ? (
             <View style={{ marginTop: 6 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -440,22 +440,22 @@ export default function SettingsScreen() {
                   placeholderTextColor={colors.muted}
                   returnKeyType="done"
                   onSubmitEditing={saveThreshold}
-                  style={{ flex: 1, fontSize: 15, color: colors.foreground, borderBottomWidth: 1, borderBottomColor: colors.primary, paddingVertical: 4 }}
+                  style={{ flex: 1, fontSize: fs.sm, color: colors.foreground, borderBottomWidth: 1, borderBottomColor: colors.primary, paddingVertical: 4 }}
                   autoFocus
                 />
-                <Text style={{ fontSize: 13, color: colors.muted }}>%</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>%</Text>
               </View>
               <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
                 <Pressable onPress={saveThreshold} style={{ flex: 1, backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 8, alignItems: "center" }}>
-                  <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>Save</Text>
+                  <Text style={{ color: "#fff", fontWeight: "700", fontSize: fs.xs }}>Save</Text>
                 </Pressable>
                 <Pressable onPress={() => setEditingThreshold(false)} style={{ flex: 1, borderRadius: 8, paddingVertical: 8, alignItems: "center", borderWidth: 1, borderColor: colors.border }}>
-                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Cancel</Text>
+                  <Text style={{ color: colors.muted, fontSize: fs.xs, fontWeight: "600" }}>Cancel</Text>
                 </Pressable>
               </View>
             </View>
           ) : (
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
               Alert when staff completion rate is below {settings.staffAlertThreshold ?? 80}%
             </Text>
           )}
@@ -547,8 +547,8 @@ export default function SettingsScreen() {
               <IconSymbol name="eye.fill" size={20} color="#8B5CF6" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Visible in Client Portal</Text>
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Visible in Client Portal</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
                 {settings.clientPortalVisible ? "Clients can discover and book your business" : "Hidden from client discovery"}
               </Text>
             </View>
@@ -570,8 +570,8 @@ export default function SettingsScreen() {
                   <IconSymbol name="tag.fill" size={18} color="#8B5CF6" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>Business Category</Text>
-                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Business Category</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
                     {settings.businessCategory ?? "Tap to select a category"}
                   </Text>
                 </View>
@@ -591,7 +591,7 @@ export default function SettingsScreen() {
                         opacity: pressed ? 0.75 : 1,
                       })}
                     >
-                      <Text style={{ fontSize: 13, fontWeight: "600", color: settings.businessCategory === cat ? "#fff" : colors.foreground }}>{cat}</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "600", color: settings.businessCategory === cat ? "#fff" : colors.foreground }}>{cat}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -635,8 +635,8 @@ export default function SettingsScreen() {
           <IconSymbol name="bell.fill" size={22} color={colors.primary} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Notification Preferences</Text>
-          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 17 }}>
+          <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Notification Preferences</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2, lineHeight: 17 }}>
             {settings.notificationsEnabled ? "Active — push, email & reminder settings" : "Paused — tap to manage"}
           </Text>
         </View>
@@ -740,7 +740,7 @@ export default function SettingsScreen() {
                 ]}
               >
                 <IconSymbol name={opt.icon as any} size={22} color={isActive ? colors.primary : colors.muted} />
-                <Text style={{ fontSize: 12, fontWeight: "600", color: isActive ? colors.primary : colors.muted, marginTop: 6 }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: isActive ? colors.primary : colors.muted, marginTop: 6 }}>
                   {opt.label}
                 </Text>
               </Pressable>
@@ -757,7 +757,7 @@ export default function SettingsScreen() {
             <View style={styles.switchRow}>
               <View style={styles.switchLabel}>
                 <IconSymbol name="lock.fill" size={20} color={colors.primary} />
-                <Text style={{ fontSize: 15, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>
+                <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>
                   {biometricType === "face" ? "Face ID" : "Fingerprint"} Lock
                 </Text>
               </View>
@@ -768,7 +768,7 @@ export default function SettingsScreen() {
                 thumbColor={biometricEnabled ? colors.primary : colors.muted}
               />
             </View>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 6, marginLeft: 32, lineHeight: 17 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6, marginLeft: 32, lineHeight: 17 }}>
               {biometricEnabled ? "App will require authentication on launch" : "Enable to secure your app on launch"}
             </Text>
           </View>
@@ -798,8 +798,8 @@ export default function SettingsScreen() {
           <IconSymbol name="play.fill" size={22} color="#6366F1" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Restart Onboarding Tour</Text>
-          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Re-watch the app walkthrough</Text>
+          <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Restart Onboarding Tour</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>Re-watch the app walkthrough</Text>
         </View>
         <IconSymbol name="chevron.right" size={16} color={colors.muted} />
       </Pressable>
@@ -826,8 +826,8 @@ export default function SettingsScreen() {
           <IconSymbol name="person.2.fill" size={22} color="#8B5CF6" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Switch to Client Portal</Text>
-          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Discover and book services as a client</Text>
+          <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Switch to Client Portal</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>Discover and book services as a client</Text>
         </View>
         <IconSymbol name="chevron.right" size={16} color={colors.muted} />
       </Pressable>
@@ -841,7 +841,7 @@ export default function SettingsScreen() {
         <View style={[styles.navIcon, { backgroundColor: colors.primary + "15" }]}>
           <IconSymbol name="arrow.right.square.fill" size={22} color={colors.primary} />
         </View>
-        <Text style={{ fontSize: 15, fontWeight: "600", color: colors.primary, flex: 1 }}>Log Out</Text>
+        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.primary, flex: 1 }}>Log Out</Text>
         <IconSymbol name="chevron.right" size={16} color={colors.muted} />
       </Pressable>
       <Pressable
@@ -851,7 +851,7 @@ export default function SettingsScreen() {
         <View style={[styles.navIcon, { backgroundColor: colors.error + "15" }]}>
           <IconSymbol name="trash.fill" size={22} color={colors.error} />
         </View>
-        <Text style={{ fontSize: 15, fontWeight: "600", color: colors.error, flex: 1 }}>Delete Business</Text>
+        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.error, flex: 1 }}>Delete Business</Text>
         <IconSymbol name="chevron.right" size={16} color={colors.error + "60"} />
       </Pressable>
 
@@ -865,8 +865,8 @@ export default function SettingsScreen() {
             <IconSymbol name="wrench.fill" size={22} color="#F59E0B" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 15, fontWeight: "600", color: "#F59E0B" }}>Dev Testing Panel</Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Seed & cleanup test data</Text>
+            <Text style={{ fontSize: fs.sm, fontWeight: "600", color: "#F59E0B" }}>Dev Testing Panel</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>Seed & cleanup test data</Text>
           </View>
           <IconSymbol name="chevron.right" size={16} color="#F59E0B60" />
         </Pressable>
@@ -886,9 +886,9 @@ export default function SettingsScreen() {
           marginBottom: 8,
         }]}>
           <Image source={require("@/assets/images/icon.png")} style={{ width: 60, height: 60, borderRadius: 16, marginBottom: 10 }} resizeMode="contain" />
-          <Text style={{ fontSize: 17, fontWeight: "700", color: colors.primary }}>Lime Of Time</Text>
-          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 3 }}>Version 1.0.0</Text>
-          <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>Smart Scheduling for Small Business</Text>
+          <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>Lime Of Time</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 3 }}>Version 1.0.0</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>Smart Scheduling for Small Business</Text>
         </View>
       </Pressable>
     </>
@@ -933,8 +933,8 @@ export default function SettingsScreen() {
       return (
         <View style={{ alignItems: "center", paddingVertical: 48 }}>
           <IconSymbol name="magnifyingglass" size={36} color={colors.muted} />
-          <Text style={{ fontSize: 16, fontWeight: "600", color: colors.foreground, marginTop: 12 }}>No results</Text>
-          <Text style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>Try a different keyword</Text>
+          <Text style={{ fontSize: fs.md, fontWeight: "600", color: colors.foreground, marginTop: 12 }}>No results</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>Try a different keyword</Text>
         </View>
       );
     }
@@ -953,8 +953,8 @@ export default function SettingsScreen() {
               <IconSymbol name={item.icon} size={22} color={item.color} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>{item.title}</Text>
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{item.subtitle}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{item.title}</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{item.subtitle}</Text>
             </View>
             <IconSymbol name="chevron.right" size={16} color={colors.muted} />
           </Pressable>
@@ -979,7 +979,7 @@ export default function SettingsScreen() {
 
       {/* Header */}
       <View style={[styles.headerRow, { paddingHorizontal: hp, paddingTop: 8 }]}>
-        <Text style={{ fontSize: 24, fontWeight: "700", color: colors.foreground }}>Settings</Text>
+        <Text style={{ fontSize: fs.xl, fontWeight: "700", color: colors.foreground }}>Settings</Text>
         <Image source={require("@/assets/images/icon.png")} style={styles.headerLogo} resizeMode="contain" />
       </View>
 
@@ -997,7 +997,7 @@ export default function SettingsScreen() {
               ]}
             >
               <IconSymbol name={tab.icon as any} size={20} color={isActive ? colors.primary : colors.muted} />
-              <Text style={{ fontSize: 13, fontWeight: isActive ? "700" : "500", color: isActive ? colors.primary : colors.muted, marginTop: 3 }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: isActive ? "700" : "500", color: isActive ? colors.primary : colors.muted, marginTop: 3 }}>
                 {tab.label}
               </Text>
             </Pressable>
@@ -1014,7 +1014,7 @@ export default function SettingsScreen() {
             onChangeText={setSearchQuery}
             placeholder="Search settings..."
             placeholderTextColor={colors.muted}
-            style={{ flex: 1, fontSize: 14, color: colors.foreground, marginLeft: 8, paddingVertical: 0 }}
+            style={{ flex: 1, fontSize: fs.sm, color: colors.foreground, marginLeft: 8, paddingVertical: 0 }}
             returnKeyType="search"
             clearButtonMode="while-editing"
           />
@@ -1051,24 +1051,24 @@ const styles = StyleSheet.create({
   tabItem:        { flex: 1, alignItems: "center", paddingVertical: 10, borderBottomWidth: 2.5 },
   closedBanner:   { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 14, borderWidth: 1, marginBottom: 14 },
   card:           { borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: StyleSheet.hairlineWidth },
-  cardLabel:      { fontSize: 12, fontWeight: "500", marginBottom: 10 },
+  cardLabel:      { fontSize: fs.xs, fontWeight: "500", marginBottom: 10 },
   cardHeader:     { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
   cardHeaderLeft: { flexDirection: "row", alignItems: "center" },
-  cardTitle:      { fontSize: 15, fontWeight: "600", marginLeft: 10 },
+  cardTitle:      { fontSize: fs.sm, fontWeight: "600", marginLeft: 10 },
   editRow:        { flexDirection: "row", alignItems: "center", gap: 8, width: "100%" },
-  editInput:      { flex: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, lineHeight: 20, borderWidth: 1 },
+  editInput:      { flex: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: fs.sm, lineHeight: 20, borderWidth: 1 },
   smallButton:    { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, alignItems: "center", justifyContent: "center", minHeight: 36 },
-  smallButtonText:{ color: "#FFFFFF", fontSize: 12, fontWeight: "600", lineHeight: 18 },
+  smallButtonText:{ color: "#FFFFFF", fontSize: fs.xs, fontWeight: "600", lineHeight: 18 },
   themeRow:       { flexDirection: "row", gap: 10, width: "100%" },
   themeOption:    { alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 14, borderWidth: 1.5 },
   switchRow:      { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   switchLabel:    { flexDirection: "row", alignItems: "center", flex: 1 },
   statsRow:       { flexDirection: "row", justifyContent: "space-between", width: "100%" },
   statItem:       { flex: 1, alignItems: "center" },
-  statNumber:     { fontSize: 24, fontWeight: "700", lineHeight: 30 },
+  statNumber:     { fontSize: fs.xl, fontWeight: "700", lineHeight: 30 },
   navCard:        { flexDirection: "row", alignItems: "center", borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: StyleSheet.hairlineWidth, gap: 14 },
   navIcon:        { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   dangerButton:   { flexDirection: "row", alignItems: "center", borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: StyleSheet.hairlineWidth, width: "100%", gap: 14 },
-  sectionLabel:   { fontSize: 11, fontWeight: "700", color: "#687076", marginBottom: 8, marginTop: 4, textTransform: "uppercase", letterSpacing: 0.8 },
+  sectionLabel:   { fontSize: fs.xs, fontWeight: "700", color: "#687076", marginBottom: 8, marginTop: 4, textTransform: "uppercase", letterSpacing: 0.8 },
   searchBar:      { flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, gap: 4 },
 });

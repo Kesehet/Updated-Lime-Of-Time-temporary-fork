@@ -44,7 +44,7 @@ function Field({ label, required, error, errorColor, foregroundColor, children }
     <View style={styles.fieldWrapper}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 6 }}>
         <Text style={[styles.fieldLabel, { color: foregroundColor }]}>{label}</Text>
-        {required && <Text style={{ fontSize: 12, color: errorColor }}>*</Text>}
+        {required && <Text style={{ fontSize: fs.xs, color: errorColor }}>*</Text>}
       </View>
       {children}
       {!!error && (
@@ -62,7 +62,7 @@ export default function BusinessProfileScreen() {
   const { state, dispatch, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, fs, buttonHeight, iconButtonSize } = useResponsive();
   const contentMaxWidth = isTablet ? 640 : undefined;
 
   const profile = state.settings.profile;
@@ -203,7 +203,7 @@ export default function BusinessProfileScreen() {
         >
           <IconSymbol name="arrow.left" size={22} color={colors.foreground} />
         </Pressable>
-        <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground, flex: 1 }}>
+        <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.foreground, flex: 1 }}>
           Business Profile
         </Text>
         <Pressable
@@ -213,7 +213,7 @@ export default function BusinessProfileScreen() {
             { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
           ]}
         >
-          <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 14 }}>Save</Text>
+          <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: fs.sm }}>Save</Text>
         </Pressable>
       </View>
 
@@ -392,7 +392,7 @@ export default function BusinessProfileScreen() {
               errorColor={colors.error}
               foregroundColor={colors.foreground}
             >
-              <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 8, lineHeight: 15 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8, lineHeight: 15 }}>
                 Shown on your public booking page and client-facing screens.
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
@@ -436,7 +436,7 @@ export default function BusinessProfileScreen() {
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.primary }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>
                       {logoUri ? "Change Logo" : "Upload Logo"}
                     </Text>
                   </Pressable>
@@ -445,7 +445,7 @@ export default function BusinessProfileScreen() {
                       onPress={() => setLogoUri("")}
                       style={({ pressed }) => ({ alignItems: "center", opacity: pressed ? 0.6 : 1 })}
                     >
-                      <Text style={{ fontSize: 12, color: colors.error }}>Remove</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.error }}>Remove</Text>
                     </Pressable>
                   ) : null}
                 </View>
@@ -456,8 +456,8 @@ export default function BusinessProfileScreen() {
                   onPress={pickLogo}
                   style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, backgroundColor: colors.warning + "18", borderRadius: 10, padding: 10, borderWidth: 1, borderColor: colors.warning + "40" }}
                 >
-                  <Text style={{ fontSize: 18 }}>⚠️</Text>
-                  <Text style={{ flex: 1, fontSize: 12, color: colors.warning, lineHeight: 17 }}>
+                  <Text style={{ fontSize: fs.md }}>⚠️</Text>
+                  <Text style={{ flex: 1, fontSize: fs.xs, color: colors.warning, lineHeight: 17 }}>
                     Logo may not display after reinstall — tap to re-upload to cloud storage.
                   </Text>
                 </Pressable>
@@ -470,7 +470,7 @@ export default function BusinessProfileScreen() {
               errorColor={colors.error}
               foregroundColor={colors.foreground}
             >
-              <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 10 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 10 }}>
                 Shown as the banner image on your client portal page (16:9 ratio recommended)
               </Text>
               {coverPhotoUri ? (
@@ -496,7 +496,7 @@ export default function BusinessProfileScreen() {
                   {uploadingCover ? (
                     <ActivityIndicator size="small" color={colors.primary} />
                   ) : (
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.primary }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>
                       {coverPhotoUri ? "Change Cover" : "Upload Cover Photo"}
                     </Text>
                   )}
@@ -514,7 +514,7 @@ export default function BusinessProfileScreen() {
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.error }}>Remove</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.error }}>Remove</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   requiredNote: {
-    fontSize: 12,
+    fontSize: fs.xs,
     marginBottom: 16,
     marginTop: 4,
   },
@@ -584,11 +584,11 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: fs.sm,
     fontWeight: "700",
   },
   sectionNote: {
-    fontSize: 12,
+    fontSize: fs.xs,
     lineHeight: 17,
     marginBottom: 12,
   },
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   fieldLabel: {
-    fontSize: 13,
+    fontSize: fs.xs,
     fontWeight: "600",
   },
   input: {
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: fs.sm,
   },
   errorRow: {
     flexDirection: "row",
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: fs.xs,
   },
   websiteRow: {
     flexDirection: "row",

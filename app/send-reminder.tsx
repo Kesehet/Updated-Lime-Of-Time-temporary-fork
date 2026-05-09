@@ -65,7 +65,7 @@ export default function SendReminderScreen() {
   const { state, dispatch, getServiceById, getClientById, getLocationById, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { hp } = useResponsive();
+  const { hp, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   const appointment = useMemo(
     () => state.appointments.find((a) => a.id === appointmentId),
@@ -343,7 +343,7 @@ export default function SendReminderScreen() {
         <Pressable onPress={() => router.back()} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
           <IconSymbol name="arrow.left" size={24} color={colors.foreground} />
         </Pressable>
-        <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground, marginLeft: 16, flex: 1 }}>
+        <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.foreground, marginLeft: 16, flex: 1 }}>
           Send Reminder
         </Text>
       </View>
@@ -360,25 +360,25 @@ export default function SendReminderScreen() {
         <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 }}>
             <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: colors.primary + "20", alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontSize: 18, fontWeight: "700", color: colors.primary }}>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>
                 {client.name.charAt(0).toUpperCase()}
               </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground }}>{client.name}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>{client.name}</Text>
               {client.phone ? (
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>
                   {formatPhoneNumber(stripPhoneFormat(client.phone))}
                 </Text>
               ) : (
-                <Text style={{ fontSize: 12, color: colors.error, marginTop: 1 }}>No phone number</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.error, marginTop: 1 }}>No phone number</Text>
               )}
             </View>
           </View>
           <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10, gap: 4 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <IconSymbol name="calendar" size={13} color={colors.muted} />
-              <Text style={{ fontSize: 13, color: colors.foreground, fontWeight: "600" }}>
+              <Text style={{ fontSize: fs.xs, color: colors.foreground, fontWeight: "600" }}>
                 {new Date(appointment.date + "T12:00:00").toLocaleDateString("en-US", {
                   weekday: "short", month: "short", day: "numeric",
                 })}
@@ -386,14 +386,14 @@ export default function SendReminderScreen() {
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <IconSymbol name="clock" size={13} color={colors.muted} />
-              <Text style={{ fontSize: 13, color: colors.foreground }}>
+              <Text style={{ fontSize: fs.xs, color: colors.foreground }}>
                 {formatTime(appointment.time)} – {endTime}
               </Text>
             </View>
             {service && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: service.color ?? colors.primary }} />
-                <Text style={{ fontSize: 13, color: colors.foreground }}>{service.name}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.foreground }}>{service.name}</Text>
               </View>
             )}
           </View>
@@ -401,7 +401,7 @@ export default function SendReminderScreen() {
 
         {/* Template Selector */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8, marginHorizontal: 2 }}>
-          <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted }}>
+          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>
             Choose Template
           </Text>
           <Pressable
@@ -409,7 +409,7 @@ export default function SendReminderScreen() {
             style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, flexDirection: "row", alignItems: "center", gap: 4 })}
           >
             <IconSymbol name="plus" size={13} color={colors.primary} />
-            <Text style={{ fontSize: 12, color: colors.primary, fontWeight: "600" }}>Browse Library</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }}>Browse Library</Text>
           </Pressable>
         </View>
         {/* Category pill filter — only shown when there are multiple categories */}
@@ -470,7 +470,7 @@ export default function SendReminderScreen() {
         {/* Empty state when category filter yields no templates */}
         {visibleTemplates.length === 0 && selectedCategory !== null && (
           <View style={{ alignItems: "center", paddingVertical: 16, marginBottom: 8 }}>
-            <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center" }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "center" }}>
               No {TEMPLATE_CATEGORY_LABELS[selectedCategory]} templates saved.{"\n"}
               Browse the library to add some.
             </Text>
@@ -495,10 +495,10 @@ export default function SendReminderScreen() {
                 <IconSymbol name="bell.fill" size={16} color={selectedTemplateId === null ? colors.primary : colors.muted} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: selectedTemplateId === null ? colors.primary : colors.foreground }}>
+                <Text style={{ fontSize: fs.sm, fontWeight: "700", color: selectedTemplateId === null ? colors.primary : colors.foreground }}>
                   Default Reminder
                 </Text>
-                <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>
                   Standard appointment reminder message
                 </Text>
               </View>
@@ -535,10 +535,10 @@ export default function SendReminderScreen() {
                       <IconSymbol name="clock" size={16} color={isSelected ? colors.primary : colors.muted} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14, fontWeight: "700", color: isSelected ? colors.primary : colors.foreground }}>
+                      <Text style={{ fontSize: fs.sm, fontWeight: "700", color: isSelected ? colors.primary : colors.foreground }}>
                         {tpl.label}
                       </Text>
-                      <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }} numberOfLines={1}>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }} numberOfLines={1}>
                         {previewLine}
                       </Text>
                     </View>
@@ -582,23 +582,23 @@ export default function SendReminderScreen() {
 
         {/* Message Preview */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8, marginHorizontal: 2 }}>
-          <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted }}>Message Preview</Text>
+          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>Message Preview</Text>
           <Pressable
             onPress={openEditor}
             style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, flexDirection: "row", alignItems: "center", gap: 4 })}
           >
             <IconSymbol name="pencil" size={13} color={colors.primary} />
-            <Text style={{ fontSize: 12, color: colors.primary, fontWeight: "600" }}>Edit</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }}>Edit</Text>
           </Pressable>
         </View>
         <View style={[styles.previewBox, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-          <Text style={{ fontSize: 13, color: colors.foreground, lineHeight: 20 }}>
+          <Text style={{ fontSize: fs.xs, color: colors.foreground, lineHeight: 20 }}>
             {currentMessage}
           </Text>
         </View>
 
         {/* Character count */}
-        <Text style={{ fontSize: 11, color: colors.muted, textAlign: "right", marginTop: 4, marginBottom: 16 }}>
+        <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "right", marginTop: 4, marginBottom: 16 }}>
           {currentMessage.length} characters
         </Text>
 
@@ -612,14 +612,14 @@ export default function SendReminderScreen() {
             ]}
           >
             <IconSymbol name="message.fill" size={18} color="#FFFFFF" />
-            <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF", marginLeft: 8 }}>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: "#FFFFFF", marginLeft: 8 }}>
               Send via SMS
             </Text>
           </Pressable>
         ) : (
           <View style={[styles.sendButton, { backgroundColor: colors.border }]}>
             <IconSymbol name="message.fill" size={18} color={colors.muted} />
-            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.muted, marginLeft: 8 }}>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.muted, marginLeft: 8 }}>
               No phone number on file
             </Text>
           </View>
@@ -652,9 +652,9 @@ export default function SendReminderScreen() {
               onPress={() => setShowEditor(false)}
               style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
             >
-              <Text style={{ fontSize: 16, color: colors.primary }}>Cancel</Text>
+              <Text style={{ fontSize: fs.md, color: colors.primary }}>Cancel</Text>
             </Pressable>
-            <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>Edit Message</Text>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>Edit Message</Text>
             <Pressable
               onPress={() => {
                 // Enforce footer on save
@@ -665,13 +665,13 @@ export default function SendReminderScreen() {
               }}
               style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
             >
-              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.primary }}>Done</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>Done</Text>
             </Pressable>
           </View>
 
           <ScrollView contentContainerStyle={{ padding: 20 }}>
             {/* Variable chips */}
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted, marginBottom: 8 }}>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 8 }}>
               Insert Variable
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
@@ -690,7 +690,7 @@ export default function SendReminderScreen() {
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary }}>{v.label}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>{v.label}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -707,7 +707,7 @@ export default function SendReminderScreen() {
                 borderColor: colors.border,
                 borderRadius: 12,
                 padding: 14,
-                fontSize: 13,
+                fontSize: fs.xs,
                 color: colors.foreground,
                 minHeight: 200,
                 textAlignVertical: "top",
@@ -731,17 +731,17 @@ export default function SendReminderScreen() {
             }}>
               <IconSymbol name="lock.fill" size={13} color={colors.muted} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 3 }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 3 }}>
                   Always appended — cannot be removed:
                 </Text>
-                <Text style={{ fontSize: 13, color: colors.foreground, fontStyle: "italic" }}>
+                <Text style={{ fontSize: fs.xs, color: colors.foreground, fontStyle: "italic" }}>
                   {LIME_OF_TIME_FOOTER.trim()}
                 </Text>
               </View>
             </View>
 
             {/* Character count */}
-            <Text style={{ fontSize: 11, color: colors.muted, textAlign: "right", marginTop: 6 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "right", marginTop: 6 }}>
               {(editingBody ?? "").length} characters
             </Text>
 
@@ -758,7 +758,7 @@ export default function SendReminderScreen() {
               })}
             >
               <IconSymbol name="arrow.clockwise" size={13} color={colors.muted} />
-              <Text style={{ fontSize: 12, color: colors.muted }}>Reset to default</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted }}>Reset to default</Text>
             </Pressable>
           </ScrollView>
         </View>
@@ -809,7 +809,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   categoryPillText: {
-    fontSize: 13,
+    fontSize: fs.xs,
     fontWeight: "600",
   },
 });

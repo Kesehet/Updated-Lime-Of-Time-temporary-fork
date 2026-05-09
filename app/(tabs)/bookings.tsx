@@ -91,7 +91,7 @@ export default function BookingsScreen() {
   const colors = useColors();
   const router = useRouter();
   const params = useLocalSearchParams<{ filter?: string; packageGroupId?: string }>();
-  const { hp, width, maxContentWidth, isTablet, fs, modalMaxWidth } = useResponsive();
+  const { hp, width, maxContentWidth, isTablet, fs, modalMaxWidth, useSideBySide, touchTarget, buttonHeight, iconButtonSize } = useResponsive();
   const { state, dispatch, getServiceById, getClientById, getStaffById, getLocationById, syncToDb, filterAppointmentsByLocation, bulkMarkPaid, bulkMarkUnpaid } = useStore();
   const { activeLocation, activeLocations, hasMultipleLocations: hasMultiLoc } = useActiveLocation();
   const scrollRef = useScrollToTopOnFocus<ScrollView>();
@@ -120,6 +120,9 @@ export default function BookingsScreen() {
 
   // Package group filter — when navigating from 'View all sessions' in appointment-detail
   const [packageGroupFilter, setPackageGroupFilter] = useState<string | null>(params.packageGroupId ?? null);
+
+  // Split-view: selected appointment for the right panel on tablet landscape
+  const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);
 
   // Package completion modal
   const [showPkgCompleteModal, setShowPkgCompleteModal] = useState(false);
@@ -464,34 +467,34 @@ export default function BookingsScreen() {
           delayLongPress={500}
           style={{ alignSelf: "stretch" }}
         >
-          <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>
+          <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>
             {formatTime(appt.time)} – {getEndTime(appt.time, appt.duration)}
           </Text>
-          <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, marginTop: 2 }}>
+          <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.foreground, marginTop: 2 }}>
             {svc ? getServiceDisplayName(svc) : "Service"}
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1 }}>
-            <Text style={{ fontSize: 12, color: colors.muted }}>{client?.name}</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted }}>{client?.name}</Text>
             {staff && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginLeft: 4 }}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: staff.color || colors.primary }} />
-                <Text style={{ fontSize: 11, color: staff.color || colors.primary, fontWeight: "500" }}>{staff.name}</Text>
+                <Text style={{ fontSize: fs.xs, color: staff.color || colors.primary, fontWeight: "500" }}>{staff.name}</Text>
               </View>
             )}
           </View>
         </Pressable>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <View style={[styles.statusBadge, { backgroundColor: statusColor + "18" }]}>
-            <Text style={{ fontSize: 11, fontWeight: "600", color: statusColor, textTransform: "capitalize" }}>{appt.status}</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: statusColor, textTransform: "capitalize" }}>{appt.status}</Text>
           </View>
           {appt.paymentMethod === "card" && appt.paymentStatus === "paid" && (
             <View style={{ backgroundColor: "#635BFF18", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
-              <Text style={{ fontSize: 11, fontWeight: "600", color: "#635BFF" }}>💳 Card</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#635BFF" }}>💳 Card</Text>
             </View>
           )}
           {appt.clientPaidNotifiedAt && appt.paymentStatus !== "paid" && (
             <View style={{ backgroundColor: "#FFF7ED", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, borderWidth: 1, borderColor: "#FED7AA" }}>
-              <Text style={{ fontSize: 11, fontWeight: "600", color: "#C2410C" }}>💰 Payment Sent</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#C2410C" }}>💰 Payment Sent</Text>
             </View>
           )}
           {hasMultiLoc && appt.locationId && (() => {
@@ -501,7 +504,7 @@ export default function BookingsScreen() {
             return (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: locColor + "18", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
                 <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: locColor }} />
-                <Text style={{ fontSize: 11, fontWeight: "600", color: locColor }} numberOfLines={1}>{loc.name}</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: locColor }} numberOfLines={1}>{loc.name}</Text>
               </View>
             );
           })()}
@@ -516,7 +519,7 @@ export default function BookingsScreen() {
                 marginLeft: "auto" as any,
               }]}
             >
-              <Text style={{ fontSize: 11, fontWeight: "700", color: "#FFF" }}>Mark Paid</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FFF" }}>Mark Paid</Text>
             </Pressable>
           )}
         </View>
@@ -524,11 +527,11 @@ export default function BookingsScreen() {
           <View style={[styles.actionRow, { borderTopColor: colors.border }]}>
             <Pressable onPress={() => handleAccept(appt)} style={({ pressed }) => [styles.acceptBtn, { backgroundColor: "#1B5E20", opacity: pressed ? 0.8 : 1 }]}>
               <IconSymbol name="checkmark" size={16} color="#FFF" />
-              <Text style={{ color: "#FFF", fontSize: 13, fontWeight: "600", marginLeft: 4 }}>Accept</Text>
+              <Text style={{ color: "#FFF", fontSize: fs.xs, fontWeight: "600", marginLeft: 4 }}>Accept</Text>
             </Pressable>
             <Pressable onPress={() => handleReject(appt)} style={({ pressed }) => [styles.rejectBtn, { borderColor: "#F44336", opacity: pressed ? 0.8 : 1 }]}>
               <IconSymbol name="xmark" size={16} color="#F44336" />
-              <Text style={{ color: "#F44336", fontSize: 13, fontWeight: "600", marginLeft: 4 }}>Reject</Text>
+              <Text style={{ color: "#F44336", fontSize: fs.xs, fontWeight: "600", marginLeft: 4 }}>Reject</Text>
             </Pressable>
           </View>
         )}
@@ -567,7 +570,7 @@ export default function BookingsScreen() {
           >
             <IconSymbol name="chevron.left" size={18} color={colors.foreground} />
           </Pressable>
-          <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground }}>
+          <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>
             {MONTH_NAMES[calMonth]} {calYear}
           </Text>
           <Pressable
@@ -585,7 +588,7 @@ export default function BookingsScreen() {
         <View style={{ flexDirection: "row", marginBottom: 2 }}>
           {DAY_HEADERS.map((d) => (
             <View key={d} style={{ width: cellW, alignItems: "center", paddingVertical: 4 }}>
-              <Text style={{ fontSize: 11, fontWeight: "600", color: colors.muted }}>{d}</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>{d}</Text>
             </View>
           ))}
         </View>
@@ -602,6 +605,476 @@ export default function BookingsScreen() {
             const statuses = dayStatuses[dateStr];
             const hasAppts = statuses && statuses.size > 0;
             const radius = Math.floor(cellW / 2);
+
+  const listContent = (
+    <>
+      {/* Header */}
+      <View style={{ paddingHorizontal: hp, paddingTop: 16, paddingBottom: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text style={{ fontSize: fs.xl, fontWeight: "800", color: colors.foreground }}>Bookings</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {/* Show All button — visible when a date filter is active */}
+            {selectedDateFilter && (
+              <Pressable
+                onPress={() => setSelectedDateFilter(null)}
+                style={({ pressed }) => [{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                  backgroundColor: colors.primary + "18",
+                  borderRadius: 16,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  opacity: pressed ? 0.7 : 1,
+                }]}
+              >
+                <IconSymbol name="xmark" size={12} color={colors.primary} />
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary }}>Show All</Text>
+              </Pressable>
+            )}
+            {/* Calendar toggle button */}
+            <Pressable
+              onPress={toggleCalendar}
+              style={({ pressed }) => [{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                backgroundColor: calendarExpanded ? colors.primary : colors.surface,
+                borderRadius: 16,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderWidth: 1,
+                borderColor: calendarExpanded ? colors.primary : colors.border,
+                opacity: pressed ? 0.7 : 1,
+              }]}
+            >
+              <IconSymbol name="calendar" size={14} color={calendarExpanded ? "#FFF" : colors.foreground} />
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: calendarExpanded ? "#FFF" : colors.foreground }}>
+                {selectedDateFilter
+                  ? (() => {
+                      const [, m, d] = selectedDateFilter.split("-").map(Number);
+                      return `${MONTH_NAMES[m - 1].slice(0, 3)} ${d}`;
+                    })()
+                  : "Calendar"}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+        {/* Active date filter pill */}
+        {selectedDateFilter && (
+          <View style={{ marginTop: 6 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted }}>
+              Showing appointments for{" "}
+              <Text style={{ fontWeight: "700", color: colors.primary }}>
+                {formatSectionDate(selectedDateFilter)}
+              </Text>
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Collapsible calendar */}
+      <Animated.View style={{ height: calendarHeight, overflow: "hidden" }}>
+        <View style={{
+          marginHorizontal: hp,
+          marginBottom: 4,
+          backgroundColor: colors.surface,
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: colors.border,
+          overflow: "hidden",
+        }}>
+          {renderMiniCalendar()}
+        </View>
+        {/* Dot color legend */}
+        <View style={{
+          marginHorizontal: hp,
+          marginBottom: 8,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 14,
+          paddingVertical: 6,
+        }}>
+          {([
+            { color: "#60A5FA", label: "Confirmed" },
+            { color: "#9CA3AF", label: "Pending" },
+            { color: "#22C55E", label: "Completed" },
+            { color: "#EF4444", label: "Cancelled" },
+          ] as { color: string; label: string }[]).map((item) => (
+            <View key={item.label} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: item.color }} />
+              <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "500" }}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+      </Animated.View>
+
+      {/* Filter tabs */}
+      <View style={{ paddingHorizontal: hp, marginBottom: activeFilter === "paid" ? 6 : 12 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {/* Today pill — filters to today's appointments */}
+          {(() => {
+            const isTodayActive = selectedDateFilter === todayStr;
+            const todayCount = locationAppointments.filter((a) => a.date === todayStr).length;
+            return (
+              <Pressable
+                onPress={() => setSelectedDateFilter(isTodayActive ? null : todayStr)}
+                style={({ pressed }) => [
+                  styles.filterChip,
+                  {
+                    backgroundColor: isTodayActive ? "#F59E0B18" : colors.surface,
+                    borderColor: isTodayActive ? "#F59E0B" : colors.border,
+                    opacity: pressed ? 0.7 : 1,
+                  },
+                ]}
+              >
+                <Text style={{ fontSize: fs.xs, fontWeight: isTodayActive ? "700" : "500", color: isTodayActive ? "#F59E0B" : colors.muted }}>
+                  Today
+                </Text>
+                {todayCount > 0 && (
+                  <View style={{ backgroundColor: isTodayActive ? "#F59E0B" : colors.border, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 4 }}>
+                    <Text style={{ fontSize: 10, fontWeight: "700", color: isTodayActive ? "#FFF" : colors.muted }}>{todayCount}</Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })()}
+          {FILTERS.map((f) => {
+            const isActive = activeFilter === f.key;
+            const count =
+              f.key === "upcoming" ? locationAppointments.filter((a) => a.status === "confirmed" && a.date > todayStr).length
+              : f.key === "confirmed" ? locationAppointments.filter((a) => a.status === "confirmed").length
+              : f.key === "unpaid" ? locationAppointments.filter((a) => a.status !== "cancelled" && a.paymentStatus !== "paid").length
+              : f.key === "paid" ? locationAppointments.filter((a) => a.paymentStatus === "paid").length
+              : f.key === "requests" ? locationAppointments.filter((a) => a.status === "pending" || (a.rescheduleRequest as any)?.status === "pending").length
+              : f.key === "cancelled" ? locationAppointments.filter((a) => a.status === "cancelled").length
+              : locationAppointments.filter((a) => a.status === "completed").length;
+            return (
+              <Pressable
+                key={f.key}
+                onPress={() => { setActiveFilterPersisted(f.key); setMethodFilter(null); }}
+                style={({ pressed }) => [
+                  styles.filterChip,
+                  {
+                    backgroundColor: isActive ? filterColors[f.key] + "18" : colors.surface,
+                    borderColor: isActive ? filterColors[f.key] : colors.border,
+                    opacity: pressed ? 0.7 : 1,
+                  },
+                ]}
+              >
+                <Text style={{ fontSize: fs.xs, fontWeight: isActive ? "700" : "500", color: isActive ? filterColors[f.key] : colors.muted }}>
+                  {f.label}
+                </Text>
+                {count > 0 && (
+                  <View style={{ backgroundColor: isActive ? filterColors[f.key] : colors.border, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 4 }}>
+                    <Text style={{ fontSize: 10, fontWeight: "700", color: isActive ? "#FFF" : colors.muted }}>{count}</Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* Method sub-filter (only for Paid) */}
+      {activeFilter === "paid" && (
+        <View style={{ paddingHorizontal: hp, marginBottom: 12 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <Pressable
+              onPress={() => setMethodFilter(null)}
+              style={({ pressed }) => [
+                styles.filterChip,
+                {
+                  backgroundColor: !methodFilter ? colors.primary + "18" : colors.surface,
+                  borderColor: !methodFilter ? colors.primary : colors.border,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}
+            >
+              <Text style={{ fontSize: fs.xs, fontWeight: !methodFilter ? "700" : "500", color: !methodFilter ? colors.primary : colors.muted }}>All</Text>
+            </Pressable>
+            {METHOD_FILTER_OPTIONS.map((m) => {
+              const isActive = methodFilter === m.key;
+              return (
+                <Pressable
+                  key={m.key}
+                  onPress={() => setMethodFilter(isActive ? null : m.key)}
+                  style={({ pressed }) => [
+                    styles.filterChip,
+                    {
+                      backgroundColor: isActive ? m.color + "18" : colors.surface,
+                      borderColor: isActive ? m.color : colors.border,
+                      opacity: pressed ? 0.7 : 1,
+                    },
+                  ]}
+                >
+                  <Text style={{ fontSize: fs.xs, fontWeight: isActive ? "700" : "500", color: isActive ? m.color : colors.muted }}>{m.label}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Reschedule request alert banner */}
+      {(() => {
+        const pendingRescheduled = locationAppointments.filter((a) => (a.rescheduleRequest as any)?.status === "pending");
+        if (pendingRescheduled.length === 0) return null;
+        return (
+          <Pressable
+            style={({ pressed }) => ({ paddingHorizontal: hp, marginBottom: 10, opacity: pressed ? 0.85 : 1 })}
+            onPress={() => setActiveFilterPersisted("requests")}
+          >
+            <View style={{ backgroundColor: "#F59E0B18", borderRadius: 12, borderWidth: 1.5, borderColor: "#F59E0B", padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Text style={{ fontSize: fs.md }}>🔄</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#92400E" }}>
+                  {pendingRescheduled.length} reschedule request{pendingRescheduled.length !== 1 ? "s" : ""} pending
+                </Text>
+                <Text style={{ fontSize: fs.xs, color: "#B45309", marginTop: 2 }}>
+                  Tap to review — clients are waiting for your response
+                </Text>
+              </View>
+              <Text style={{ fontSize: fs.xs, color: "#92400E", fontWeight: "700" }}>→</Text>
+            </View>
+          </Pressable>
+        );
+      })()}
+      {/* Bulk Mark All Paid banner (Unpaid filter only) */}
+      {activeFilter === "unpaid" && filteredAppointments.length > 1 && (
+        <View style={{ paddingHorizontal: hp, marginBottom: 10 }}>
+          <View style={{ backgroundColor: "#22C55E18", borderRadius: 12, borderWidth: 1, borderColor: "#22C55E40", padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#15803D" }}>
+                {filteredAppointments.length} unpaid appointment{filteredAppointments.length !== 1 ? "s" : ""}
+              </Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
+                Total: ${filteredAppointments.reduce((s, a) => s + (a.totalPrice ?? 0), 0).toFixed(2)}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => { setPayModalIsBulk(true); setPayModalMethod("cash"); }}
+              style={({ pressed }) => [{ backgroundColor: "#22C55E", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, opacity: pressed ? 0.8 : 1 }]}
+            >
+              <Text style={{ color: "#FFF", fontSize: fs.xs, fontWeight: "700" }}>Mark All Paid</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Package group filter banner */}
+      {packageGroupFilter && (
+        <View style={{ paddingHorizontal: hp, marginBottom: 10 }}>
+          <View style={{ backgroundColor: '#0891b215', borderRadius: 12, borderWidth: 1.5, borderColor: '#0891b2', padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Text style={{ fontSize: fs.sm }}>📦</Text>
+            <View style={{ flex: 1 }}>
+              {(() => {
+                const pkgAppts = locationAppointments.filter((a) => a.packageGroupId === packageGroupFilter && a.status !== 'cancelled');
+                const booked = pkgAppts.length;
+                const total = pkgAppts[0]?.sessionTotal ?? booked;
+                const pct = total > 0 ? Math.min(booked / total, 1) : 0;
+                return (
+                  <>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: '700', color: '#0891b2' }}>Package Sessions</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: '600', color: '#0891b2' }}>{booked}/{total}</Text>
+                    </View>
+                    <View style={{ height: 5, borderRadius: 3, backgroundColor: '#0891b230', marginTop: 5, overflow: 'hidden' }}>
+                      <View style={{ height: '100%', width: `${Math.round(pct * 100)}%`, borderRadius: 3, backgroundColor: '#0891b2' }} />
+                    </View>
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 3 }}>{booked === total ? 'All sessions booked ✓' : `${total - booked} session${total - booked !== 1 ? 's' : ''} remaining`}</Text>
+                  </>
+                );
+              })()}
+            </View>
+            <Pressable
+              onPress={() => setPackageGroupFilter(null)}
+              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#0891b220' })}
+            >
+              <Text style={{ fontSize: fs.xs, fontWeight: '700', color: '#0891b2' }}>Clear</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Appointment list */}
+      <View style={{ paddingHorizontal: hp }}>
+        {filteredSections.length === 0 ? (
+          <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <IconSymbol name="calendar.badge.clock" size={32} color={colors.muted} />
+            <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.muted, marginTop: 10 }}>
+              {selectedDateFilter
+                ? `No ${activeFilter} appointments on ${formatSectionDate(selectedDateFilter)}`
+                : `No ${activeFilter} appointments`}
+            </Text>
+          </View>
+        ) : (
+          filteredSections.map(({ date, items }) => (
+            <View key={date}>
+              {/* Date section header */}
+              <View style={[styles.sectionHeader, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                  {formatSectionDate(date)}
+                </Text>
+                <View style={{ backgroundColor: colors.border, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>{items.length}</Text>
+                </View>
+              </View>
+              {items.map((appt) => renderApptCard(appt))}
+            </View>
+          ))
+        )}
+      </View>
+    </>
+  );
+
+  // ─── Inline detail panel for split-view (tablet landscape) ─────────────
+  const renderDetailPanel = () => {
+    if (!selectedAppt) {
+      return (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+          <IconSymbol name="calendar.badge.clock" size={48} color={colors.border} />
+          <Text style={{ fontSize: fs.md, color: colors.muted, marginTop: 16, textAlign: 'center', fontWeight: '500' }}>
+            Select an appointment{'\n'}to view details
+          </Text>
+        </View>
+      );
+    }
+    const svc = getServiceById(selectedAppt.serviceId);
+    const client = getClientById(selectedAppt.clientId);
+    const staff = selectedAppt.staffId ? getStaffById(selectedAppt.staffId) : null;
+    const statusColor =
+      selectedAppt.status === 'confirmed' ? '#1B5E20'
+      : selectedAppt.status === 'pending' ? '#FF9800'
+      : selectedAppt.status === 'completed' ? colors.primary
+      : selectedAppt.status === 'no_show' ? '#F59E0B'
+      : '#F44336';
+    const isRequest = selectedAppt.status === 'pending';
+    const isPaid = selectedAppt.paymentStatus === 'paid';
+    return (
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+        {/* Header row */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <Text style={{ fontSize: fs.xl, fontWeight: '800', color: colors.foreground, flex: 1 }} numberOfLines={2}>
+            {client?.name ?? 'Client'}
+          </Text>
+          <Pressable
+            onPress={() => router.push({ pathname: '/appointment-detail', params: { id: selectedAppt.id } })}
+            style={({ pressed }) => ({
+              backgroundColor: colors.primary,
+              borderRadius: 12,
+              paddingHorizontal: 14,
+              paddingVertical: 8,
+              opacity: pressed ? 0.8 : 1,
+              marginLeft: 12,
+            })}
+          >
+            <Text style={{ color: '#FFF', fontSize: fs.sm, fontWeight: '700' }}>Full Details</Text>
+          </Pressable>
+        </View>
+
+        {/* Service card */}
+        <View style={{ backgroundColor: (svc?.color ?? colors.primary) + '12', borderRadius: 16, padding: 16, marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+            <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: svc?.color ?? colors.primary, marginRight: 8 }} />
+            <Text style={{ fontSize: fs.md, fontWeight: '700', color: colors.foreground, flex: 1 }} numberOfLines={2}>
+              {svc ? getServiceDisplayName(svc) : 'Service'}
+            </Text>
+          </View>
+          <Text style={{ fontSize: fs.sm, color: colors.muted }}>
+            {formatTime(selectedAppt.time)} · {selectedAppt.duration} min
+          </Text>
+          {selectedAppt.totalPrice != null && (
+            <Text style={{ fontSize: fs.lg, fontWeight: '800', color: colors.foreground, marginTop: 8 }}>
+              ${selectedAppt.totalPrice.toFixed(2)}
+            </Text>
+          )}
+        </View>
+
+        {/* Status + staff row */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+          <View style={{ backgroundColor: statusColor + '18', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
+            <Text style={{ fontSize: fs.sm, fontWeight: '700', color: statusColor, textTransform: 'capitalize' }}>{selectedAppt.status.replace('_', ' ')}</Text>
+          </View>
+          {isPaid && (
+            <View style={{ backgroundColor: '#22C55E18', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
+              <Text style={{ fontSize: fs.sm, fontWeight: '700', color: '#22C55E' }}>Paid</Text>
+            </View>
+          )}
+          {staff && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: (staff.color || colors.primary) + '18', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: staff.color || colors.primary }} />
+              <Text style={{ fontSize: fs.sm, fontWeight: '600', color: staff.color || colors.primary }}>{staff.name}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Date */}
+        <View style={{ backgroundColor: colors.surface, borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border }}>
+          <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>Date & Time</Text>
+          <Text style={{ fontSize: fs.md, fontWeight: '600', color: colors.foreground }}>
+            {formatSectionDate(selectedAppt.date)}
+          </Text>
+          <Text style={{ fontSize: fs.sm, color: colors.muted, marginTop: 2 }}>
+            {formatTime(selectedAppt.time)} · {selectedAppt.duration} min
+          </Text>
+        </View>
+
+        {/* Notes */}
+        {selectedAppt.notes ? (
+          <View style={{ backgroundColor: colors.surface, borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border }}>
+            <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>Notes</Text>
+            <Text style={{ fontSize: fs.sm, color: colors.foreground }}>{selectedAppt.notes}</Text>
+          </View>
+        ) : null}
+
+        {/* Quick actions */}
+        <View style={{ gap: 10 }}>
+          {!isPaid && selectedAppt.status !== 'cancelled' && (
+            <Pressable
+              onPress={() => { setPayModalAppt(selectedAppt); setPayModalMethod('cash'); }}
+              style={({ pressed }) => ({
+                backgroundColor: '#22C55E',
+                borderRadius: 14,
+                paddingVertical: 14,
+                alignItems: 'center',
+                opacity: pressed ? 0.8 : 1,
+              })}
+            >
+              <Text style={{ color: '#FFF', fontSize: fs.md, fontWeight: '700' }}>Mark as Paid</Text>
+            </Pressable>
+          )}
+          {isRequest && (
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Pressable
+                onPress={() => handleAccept(selectedAppt)}
+                style={({ pressed }) => ({
+                  flex: 1, backgroundColor: '#1B5E20', borderRadius: 14,
+                  paddingVertical: 14, alignItems: 'center',
+                  opacity: pressed ? 0.8 : 1, flexDirection: 'row', justifyContent: 'center', gap: 6,
+                })}
+              >
+                <IconSymbol name="checkmark" size={16} color="#FFF" />
+                <Text style={{ color: '#FFF', fontSize: fs.md, fontWeight: '700' }}>Accept</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => handleReject(selectedAppt)}
+                style={({ pressed }) => ({
+                  flex: 1, borderRadius: 14, borderWidth: 1.5, borderColor: '#F44336',
+                  paddingVertical: 14, alignItems: 'center',
+                  opacity: pressed ? 0.8 : 1, flexDirection: 'row', justifyContent: 'center', gap: 6,
+                })}
+              >
+                <IconSymbol name="xmark" size={16} color="#F44336" />
+                <Text style={{ color: '#F44336', fontSize: fs.md, fontWeight: '700' }}>Reject</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    );
+  };
 
             return (
               <Pressable
@@ -622,7 +1095,7 @@ export default function BookingsScreen() {
                 }]}
               >
                 <Text style={{
-                  fontSize: 13,
+                  fontSize: fs.xs,
                   fontWeight: isToday || isSelected ? "700" : "400",
                   color: isSelected || isToday ? colors.primary : colors.foreground,
                 }}>
@@ -658,337 +1131,39 @@ export default function BookingsScreen() {
   return (
     <ScreenContainer>
       <FuturisticBackground />
-      <ScrollView
-        ref={scrollRef}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120, maxWidth: maxContentWidth, alignSelf: "center", width: "100%" }}
-      >
-        {/* Header */}
-        <View style={{ paddingHorizontal: hp, paddingTop: 16, paddingBottom: 8 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <Text style={{ fontSize: 24, fontWeight: "800", color: colors.foreground }}>Bookings</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              {/* Show All button — visible when a date filter is active */}
-              {selectedDateFilter && (
-                <Pressable
-                  onPress={() => setSelectedDateFilter(null)}
-                  style={({ pressed }) => [{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 4,
-                    backgroundColor: colors.primary + "18",
-                    borderRadius: 16,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    opacity: pressed ? 0.7 : 1,
-                  }]}
-                >
-                  <IconSymbol name="xmark" size={12} color={colors.primary} />
-                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.primary }}>Show All</Text>
-                </Pressable>
-              )}
-              {/* Calendar toggle button */}
-              <Pressable
-                onPress={toggleCalendar}
-                style={({ pressed }) => [{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                  backgroundColor: calendarExpanded ? colors.primary : colors.surface,
-                  borderRadius: 16,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderWidth: 1,
-                  borderColor: calendarExpanded ? colors.primary : colors.border,
-                  opacity: pressed ? 0.7 : 1,
-                }]}
-              >
-                <IconSymbol name="calendar" size={14} color={calendarExpanded ? "#FFF" : colors.foreground} />
-                <Text style={{ fontSize: 12, fontWeight: "600", color: calendarExpanded ? "#FFF" : colors.foreground }}>
-                  {selectedDateFilter
-                    ? (() => {
-                        const [, m, d] = selectedDateFilter.split("-").map(Number);
-                        return `${MONTH_NAMES[m - 1].slice(0, 3)} ${d}`;
-                      })()
-                    : "Calendar"}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-          {/* Active date filter pill */}
-          {selectedDateFilter && (
-            <View style={{ marginTop: 6 }}>
-              <Text style={{ fontSize: 13, color: colors.muted }}>
-                Showing appointments for{" "}
-                <Text style={{ fontWeight: "700", color: colors.primary }}>
-                  {formatSectionDate(selectedDateFilter)}
-                </Text>
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Collapsible calendar */}
-        <Animated.View style={{ height: calendarHeight, overflow: "hidden" }}>
-          <View style={{
-            marginHorizontal: hp,
-            marginBottom: 4,
-            backgroundColor: colors.surface,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: colors.border,
-            overflow: "hidden",
-          }}>
-            {renderMiniCalendar()}
-          </View>
-          {/* Dot color legend */}
-          <View style={{
-            marginHorizontal: hp,
-            marginBottom: 8,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 14,
-            paddingVertical: 6,
-          }}>
-            {([
-              { color: "#60A5FA", label: "Confirmed" },
-              { color: "#9CA3AF", label: "Pending" },
-              { color: "#22C55E", label: "Completed" },
-              { color: "#EF4444", label: "Cancelled" },
-            ] as { color: string; label: string }[]).map((item) => (
-              <View key={item.label} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: item.color }} />
-                <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "500" }}>{item.label}</Text>
-              </View>
-            ))}
-          </View>
-        </Animated.View>
-
-        {/* Filter tabs */}
-        <View style={{ paddingHorizontal: hp, marginBottom: activeFilter === "paid" ? 6 : 12 }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {/* Today pill — filters to today's appointments */}
-            {(() => {
-              const isTodayActive = selectedDateFilter === todayStr;
-              const todayCount = locationAppointments.filter((a) => a.date === todayStr).length;
-              return (
-                <Pressable
-                  onPress={() => setSelectedDateFilter(isTodayActive ? null : todayStr)}
-                  style={({ pressed }) => [
-                    styles.filterChip,
-                    {
-                      backgroundColor: isTodayActive ? "#F59E0B18" : colors.surface,
-                      borderColor: isTodayActive ? "#F59E0B" : colors.border,
-                      opacity: pressed ? 0.7 : 1,
-                    },
-                  ]}
-                >
-                  <Text style={{ fontSize: 13, fontWeight: isTodayActive ? "700" : "500", color: isTodayActive ? "#F59E0B" : colors.muted }}>
-                    Today
-                  </Text>
-                  {todayCount > 0 && (
-                    <View style={{ backgroundColor: isTodayActive ? "#F59E0B" : colors.border, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 4 }}>
-                      <Text style={{ fontSize: 10, fontWeight: "700", color: isTodayActive ? "#FFF" : colors.muted }}>{todayCount}</Text>
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })()}
-            {FILTERS.map((f) => {
-              const isActive = activeFilter === f.key;
-              const count =
-                f.key === "upcoming" ? locationAppointments.filter((a) => a.status === "confirmed" && a.date > todayStr).length
-                : f.key === "confirmed" ? locationAppointments.filter((a) => a.status === "confirmed").length
-                : f.key === "unpaid" ? locationAppointments.filter((a) => a.status !== "cancelled" && a.paymentStatus !== "paid").length
-                : f.key === "paid" ? locationAppointments.filter((a) => a.paymentStatus === "paid").length
-                : f.key === "requests" ? locationAppointments.filter((a) => a.status === "pending" || (a.rescheduleRequest as any)?.status === "pending").length
-                : f.key === "cancelled" ? locationAppointments.filter((a) => a.status === "cancelled").length
-                : locationAppointments.filter((a) => a.status === "completed").length;
-              return (
-                <Pressable
-                  key={f.key}
-                  onPress={() => { setActiveFilterPersisted(f.key); setMethodFilter(null); }}
-                  style={({ pressed }) => [
-                    styles.filterChip,
-                    {
-                      backgroundColor: isActive ? filterColors[f.key] + "18" : colors.surface,
-                      borderColor: isActive ? filterColors[f.key] : colors.border,
-                      opacity: pressed ? 0.7 : 1,
-                    },
-                  ]}
-                >
-                  <Text style={{ fontSize: 13, fontWeight: isActive ? "700" : "500", color: isActive ? filterColors[f.key] : colors.muted }}>
-                    {f.label}
-                  </Text>
-                  {count > 0 && (
-                    <View style={{ backgroundColor: isActive ? filterColors[f.key] : colors.border, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 4 }}>
-                      <Text style={{ fontSize: 10, fontWeight: "700", color: isActive ? "#FFF" : colors.muted }}>{count}</Text>
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })}
+      {useSideBySide ? (
+        // ── Tablet landscape: two-column split view ──────────────────────────
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+          {/* Left column: filter + list (42%) */}
+          <ScrollView
+            ref={scrollRef}
+            showsVerticalScrollIndicator={false}
+            style={{ width: '42%', borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: colors.border }}
+            contentContainerStyle={{ paddingBottom: 120 }}
+          >
+            {listContent}
           </ScrollView>
+          {/* Right column: detail panel (58%) */}
+          <View style={{ flex: 1, backgroundColor: colors.background }}>
+            {renderDetailPanel()}
+          </View>
         </View>
-
-        {/* Method sub-filter (only for Paid) */}
-        {activeFilter === "paid" && (
-          <View style={{ paddingHorizontal: hp, marginBottom: 12 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <Pressable
-                onPress={() => setMethodFilter(null)}
-                style={({ pressed }) => [
-                  styles.filterChip,
-                  {
-                    backgroundColor: !methodFilter ? colors.primary + "18" : colors.surface,
-                    borderColor: !methodFilter ? colors.primary : colors.border,
-                    opacity: pressed ? 0.7 : 1,
-                  },
-                ]}
-              >
-                <Text style={{ fontSize: 12, fontWeight: !methodFilter ? "700" : "500", color: !methodFilter ? colors.primary : colors.muted }}>All</Text>
-              </Pressable>
-              {METHOD_FILTER_OPTIONS.map((m) => {
-                const isActive = methodFilter === m.key;
-                return (
-                  <Pressable
-                    key={m.key}
-                    onPress={() => setMethodFilter(isActive ? null : m.key)}
-                    style={({ pressed }) => [
-                      styles.filterChip,
-                      {
-                        backgroundColor: isActive ? m.color + "18" : colors.surface,
-                        borderColor: isActive ? m.color : colors.border,
-                        opacity: pressed ? 0.7 : 1,
-                      },
-                    ]}
-                  >
-                    <Text style={{ fontSize: 12, fontWeight: isActive ? "700" : "500", color: isActive ? m.color : colors.muted }}>{m.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Reschedule request alert banner */}
-        {(() => {
-          const pendingRescheduled = locationAppointments.filter((a) => (a.rescheduleRequest as any)?.status === "pending");
-          if (pendingRescheduled.length === 0) return null;
-          return (
-            <Pressable
-              style={({ pressed }) => ({ paddingHorizontal: hp, marginBottom: 10, opacity: pressed ? 0.85 : 1 })}
-              onPress={() => setActiveFilterPersisted("requests")}
-            >
-              <View style={{ backgroundColor: "#F59E0B18", borderRadius: 12, borderWidth: 1.5, borderColor: "#F59E0B", padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Text style={{ fontSize: 18 }}>🔄</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: "700", color: "#92400E" }}>
-                    {pendingRescheduled.length} reschedule request{pendingRescheduled.length !== 1 ? "s" : ""} pending
-                  </Text>
-                  <Text style={{ fontSize: 12, color: "#B45309", marginTop: 2 }}>
-                    Tap to review — clients are waiting for your response
-                  </Text>
-                </View>
-                <Text style={{ fontSize: 13, color: "#92400E", fontWeight: "700" }}>→</Text>
-              </View>
-            </Pressable>
-          );
-        })()}
-        {/* Bulk Mark All Paid banner (Unpaid filter only) */}
-        {activeFilter === "unpaid" && filteredAppointments.length > 1 && (
-          <View style={{ paddingHorizontal: hp, marginBottom: 10 }}>
-            <View style={{ backgroundColor: "#22C55E18", borderRadius: 12, borderWidth: 1, borderColor: "#22C55E40", padding: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: "700", color: "#15803D" }}>
-                  {filteredAppointments.length} unpaid appointment{filteredAppointments.length !== 1 ? "s" : ""}
-                </Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
-                  Total: ${filteredAppointments.reduce((s, a) => s + (a.totalPrice ?? 0), 0).toFixed(2)}
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => { setPayModalIsBulk(true); setPayModalMethod("cash"); }}
-                style={({ pressed }) => [{ backgroundColor: "#22C55E", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, opacity: pressed ? 0.8 : 1 }]}
-              >
-                <Text style={{ color: "#FFF", fontSize: 13, fontWeight: "700" }}>Mark All Paid</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-
-        {/* Package group filter banner */}
-        {packageGroupFilter && (
-          <View style={{ paddingHorizontal: hp, marginBottom: 10 }}>
-            <View style={{ backgroundColor: '#0891b215', borderRadius: 12, borderWidth: 1.5, borderColor: '#0891b2', padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Text style={{ fontSize: 14 }}>📦</Text>
-              <View style={{ flex: 1 }}>
-                {(() => {
-                  const pkgAppts = locationAppointments.filter((a) => a.packageGroupId === packageGroupFilter && a.status !== 'cancelled');
-                  const booked = pkgAppts.length;
-                  const total = pkgAppts[0]?.sessionTotal ?? booked;
-                  const pct = total > 0 ? Math.min(booked / total, 1) : 0;
-                  return (
-                    <>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#0891b2' }}>Package Sessions</Text>
-                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#0891b2' }}>{booked}/{total}</Text>
-                      </View>
-                      <View style={{ height: 5, borderRadius: 3, backgroundColor: '#0891b230', marginTop: 5, overflow: 'hidden' }}>
-                        <View style={{ height: '100%', width: `${Math.round(pct * 100)}%`, borderRadius: 3, backgroundColor: '#0891b2' }} />
-                      </View>
-                      <Text style={{ fontSize: 11, color: colors.muted, marginTop: 3 }}>{booked === total ? 'All sessions booked ✓' : `${total - booked} session${total - booked !== 1 ? 's' : ''} remaining`}</Text>
-                    </>
-                  );
-                })()}
-              </View>
-              <Pressable
-                onPress={() => setPackageGroupFilter(null)}
-                style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#0891b220' })}
-              >
-                <Text style={{ fontSize: 12, fontWeight: '700', color: '#0891b2' }}>Clear</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-
-        {/* Appointment list */}
-        <View style={{ paddingHorizontal: hp }}>
-          {filteredSections.length === 0 ? (
-            <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <IconSymbol name="calendar.badge.clock" size={32} color={colors.muted} />
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted, marginTop: 10 }}>
-                {selectedDateFilter
-                  ? `No ${activeFilter} appointments on ${formatSectionDate(selectedDateFilter)}`
-                  : `No ${activeFilter} appointments`}
-              </Text>
-            </View>
-          ) : (
-            filteredSections.map(({ date, items }) => (
-              <View key={date}>
-                {/* Date section header */}
-                <View style={[styles.sectionHeader, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8 }}>
-                    {formatSectionDate(date)}
-                  </Text>
-                  <View style={{ backgroundColor: colors.border, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 }}>
-                    <Text style={{ fontSize: 11, fontWeight: "600", color: colors.muted }}>{items.length}</Text>
-                  </View>
-                </View>
-                {items.map((appt) => renderApptCard(appt))}
-              </View>
-            ))
-          )}
-        </View>
-      </ScrollView>
+      ) : (
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 120, maxWidth: maxContentWidth, alignSelf: "center", width: "100%" }}
+        >
+          {listContent}
+        </ScrollView>
+      )}
 
       {/* Payment Method Modal */}
       <Modal visible={!!payModalAppt || payModalIsBulk} transparent animationType="slide">
         <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }} onPress={() => { setPayModalAppt(null); setPayModalIsBulk(false); }}>
           <Pressable style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 20, paddingBottom: 40, paddingHorizontal: 20, backgroundColor: colors.background, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }} onPress={() => {}}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>
                 {payModalIsBulk ? `Mark All ${filteredAppointments.length} as Paid` : "Mark as Paid"}
               </Text>
               <Pressable onPress={() => { setPayModalAppt(null); setPayModalIsBulk(false); }} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
@@ -996,19 +1171,19 @@ export default function BookingsScreen() {
               </Pressable>
             </View>
             {payModalAppt && (
-              <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 16 }}>
                 {getClientById(payModalAppt.clientId)?.name ?? "Client"}{payModalAppt.totalPrice != null ? ` · $${payModalAppt.totalPrice.toFixed(2)}` : ""}
               </Text>
             )}
             {payModalIsBulk && (() => {
               const total = filteredAppointments.reduce((s, a) => s + (a.totalPrice ?? 0), 0);
               return (
-                <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16 }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 16 }}>
                   {filteredAppointments.length} appointment{filteredAppointments.length !== 1 ? "s" : ""} · ${total.toFixed(2)} total
                 </Text>
               );
             })()}
-            <Text style={{ fontSize: 13, fontWeight: "600", color: colors.muted, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Payment Method</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Payment Method</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
               {PAYMENT_METHODS.map((pm) => (
                 <Pressable
@@ -1022,7 +1197,7 @@ export default function BookingsScreen() {
                     opacity: pressed ? 0.7 : 1,
                   }]}
                 >
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: payModalMethod === pm.key ? "#FFF" : colors.foreground }}>{pm.label}</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: payModalMethod === pm.key ? "#FFF" : colors.foreground }}>{pm.label}</Text>
                 </Pressable>
               ))}
             </View>
@@ -1044,7 +1219,7 @@ export default function BookingsScreen() {
               }}
               style={({ pressed }) => [{ backgroundColor: "#22C55E", paddingVertical: 16, borderRadius: 14, alignItems: "center", opacity: pressed ? 0.8 : 1 }]}
             >
-              <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 16 }}>
+              <Text style={{ color: "#FFF", fontWeight: "700", fontSize: fs.md }}>
                 {payModalIsBulk ? `Mark All Paid · ${payModalMethod.charAt(0).toUpperCase() + payModalMethod.slice(1)}` : `Confirm Payment · ${PAYMENT_METHODS.find((p) => p.key === payModalMethod)?.label ?? payModalMethod}`}
               </Text>
             </Pressable>
@@ -1064,7 +1239,7 @@ export default function BookingsScreen() {
           <View style={[styles.payModal, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
             <Text style={[styles.payModalTitle, { color: colors.foreground }]}>Issue Refund</Text>
             {refundAppt && (
-              <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 12, textAlign: "center" }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 12, textAlign: "center" }}>
                 {getClientById(refundAppt.clientId)?.name ?? "Client"} · {refundAppt.date} · ${(refundAppt.totalPrice ?? 0).toFixed(2)} total
               </Text>
             )}
@@ -1078,13 +1253,13 @@ export default function BookingsScreen() {
                 marginBottom: 10,
               }]}
             >
-              <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 15 }}>
+              <Text style={{ color: "#FFF", fontWeight: "700", fontSize: fs.sm }}>
                 Full Refund · ${(refundAppt?.totalPrice ?? 0).toFixed(2)}
               </Text>
             </Pressable>
             <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
               <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-              <Text style={{ color: colors.muted, fontSize: 12, marginHorizontal: 10 }}>or partial amount</Text>
+              <Text style={{ color: colors.muted, fontSize: fs.xs, marginHorizontal: 10 }}>or partial amount</Text>
               <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             </View>
             <TextInput
@@ -1108,11 +1283,11 @@ export default function BookingsScreen() {
             >
               {refundLoading
                 ? <ActivityIndicator color="#FFF" />
-                : <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 15 }}>Confirm Refund</Text>
+                : <Text style={{ color: "#FFF", fontWeight: "700", fontSize: fs.sm }}>Confirm Refund</Text>
               }
             </Pressable>
             <Pressable onPress={() => setRefundAppt(null)} style={{ alignItems: "center", paddingVertical: 10 }}>
-              <Text style={{ color: colors.muted, fontSize: 14 }}>Cancel</Text>
+              <Text style={{ color: colors.muted, fontSize: fs.sm }}>Cancel</Text>
             </Pressable>
           </View>
         </KeyboardAvoidingView>
@@ -1129,17 +1304,17 @@ export default function BookingsScreen() {
             onPress={() => {}}
           >
             <Text style={{ fontSize: 52 }}>🎉</Text>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: colors.foreground, textAlign: 'center' }}>Package Complete!</Text>
+            <Text style={{ fontSize: fs.lg, fontWeight: '800', color: colors.foreground, textAlign: 'center' }}>Package Complete!</Text>
             {pkgCompleteInfo && (
               <>
-                <Text style={{ fontSize: 15, color: colors.muted, textAlign: 'center', lineHeight: 22 }}>
+                <Text style={{ fontSize: fs.sm, color: colors.muted, textAlign: 'center', lineHeight: 22 }}>
                   All {pkgCompleteInfo.sessions} sessions of{' '}
                   <Text style={{ fontWeight: '700', color: colors.foreground }}>{pkgCompleteInfo.name}</Text>{' '}
                   have been booked.
                 </Text>
                 {pkgCompleteInfo.totalValue > 0 && (
                   <View style={{ backgroundColor: colors.success + '18', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 18, marginTop: 4 }}>
-                    <Text style={{ fontSize: 13, color: colors.success, fontWeight: '700', textAlign: 'center' }}>
+                    <Text style={{ fontSize: fs.xs, color: colors.success, fontWeight: '700', textAlign: 'center' }}>
                       Total package value: ${pkgCompleteInfo.totalValue.toFixed(2)}
                     </Text>
                   </View>
@@ -1154,14 +1329,14 @@ export default function BookingsScreen() {
                 }}
                 style={({ pressed }) => ({ marginTop: 4, width: '100%', paddingVertical: 12, borderRadius: 14, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', opacity: pressed ? 0.7 : 1 })}
               >
-                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>View Package Sessions</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.primary }}>View Package Sessions</Text>
               </Pressable>
             )}
             <Pressable
               onPress={() => setShowPkgCompleteModal(false)}
               style={({ pressed }) => ({ marginTop: 4, width: '100%', paddingVertical: 14, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', opacity: pressed ? 0.8 : 1 })}
             >
-              <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>Awesome!</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: '700', color: '#FFF' }}>Awesome!</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -1280,9 +1455,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  undoToastText: { flex: 1, color: "#FFF", fontSize: 14, fontWeight: "500" },
+  undoToastText: { flex: 1, color: "#FFF", fontSize: fs.sm, fontWeight: "500" },
   undoBtn: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: "#00C896", borderRadius: 10 },
-  undoBtnText: { color: "#FFF", fontWeight: "700", fontSize: 13 },
+  undoBtnText: { color: "#FFF", fontWeight: "700", fontSize: fs.xs },
   payModal: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -1290,7 +1465,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   payModalTitle: {
-    fontSize: 18,
+    fontSize: fs.md,
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 8,
@@ -1299,7 +1474,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
-    fontSize: 16,
+    fontSize: fs.md,
     marginBottom: 16,
   },
 });

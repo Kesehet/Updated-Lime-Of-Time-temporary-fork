@@ -28,7 +28,7 @@ export default function ReviewSlugScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { state, dispatch, syncToDb } = useStore();
   const colors = useColors();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   const [clientName, setClientName] = useState("");
   const [rating, setRating] = useState(5);
@@ -149,7 +149,7 @@ export default function ReviewSlugScreen() {
           <Text style={[styles.submitText, { color: "#fff" }]}>Submit Review</Text>
         </Pressable>
 
-        <Text style={{ textAlign: "center", color: colors.muted, fontSize: 11, marginTop: 24 }}>
+        <Text style={{ textAlign: "center", color: colors.muted, fontSize: fs.xs, marginTop: 24 }}>
           Powered by Lime Of Time
         </Text>
       </ScrollView>
@@ -159,17 +159,17 @@ export default function ReviewSlugScreen() {
 
 const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  title: { fontSize: 24, fontWeight: "700", textAlign: "center" },
-  subtitle: { fontSize: 14, textAlign: "center" },
-  sectionTitle: { fontSize: 18, fontWeight: "600" },
-  label: { fontSize: 14, fontWeight: "600", marginBottom: 6 },
+  title: { fontSize: fs.xl, fontWeight: "700", textAlign: "center" },
+  subtitle: { fontSize: fs.sm, textAlign: "center" },
+  sectionTitle: { fontSize: fs.md, fontWeight: "600" },
+  label: { fontSize: fs.sm, fontWeight: "600", marginBottom: 6 },
   input: {
     width: "100%",
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: fs.md,
     lineHeight: 22,
   },
   textArea: {
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   submitText: {
-    fontSize: 16,
+    fontSize: fs.md,
     fontWeight: "700",
   },
 });

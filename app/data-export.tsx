@@ -20,7 +20,7 @@ export default function DataExportScreen() {
   const { state, filterAppointmentsByLocation, clientsForActiveLocation } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, fs, buttonHeight, iconButtonSize } = useResponsive();
   const { planInfo } = usePlanLimitCheck();
   const isFreeplan = !planInfo || planInfo.planKey === "solo";
 
@@ -93,13 +93,13 @@ export default function DataExportScreen() {
           >
             <IconSymbol name="lock.fill" size={18} color="#FF9800" />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: "700", color: "#FF9800" }}>PDF Export is a Pro Feature</Text>
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Upgrade to Growth or Pro to download professional PDF reports.</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FF9800" }}>PDF Export is a Pro Feature</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>Upgrade to Growth or Pro to download professional PDF reports.</Text>
             </View>
             <IconSymbol name="chevron.right" size={14} color="#FF9800" />
           </Pressable>
         )}
-        <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 16, lineHeight: 20 }}>
+        <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 16, lineHeight: 20 }}>
           Generate professional PDF reports for your business data. Reports include your business branding and current data.
         </Text>
 
@@ -116,13 +116,13 @@ export default function DataExportScreen() {
               <IconSymbol name={item.icon} size={22} color={isFreeplan ? colors.muted : colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: "600", color: isFreeplan ? colors.muted : colors.foreground }}>{item.key} Report</Text>
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 3, lineHeight: 17 }}>{item.desc}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: isFreeplan ? colors.muted : colors.foreground }}>{item.key} Report</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 3, lineHeight: 17 }}>{item.desc}</Text>
             </View>
             {isFreeplan ? (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#FF980015", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
                 <IconSymbol name="lock.fill" size={12} color="#FF9800" />
-                <Text style={{ fontSize: 11, fontWeight: "700", color: "#FF9800" }}>Pro</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FF9800" }}>Pro</Text>
               </View>
             ) : (
               <IconSymbol name="square.and.arrow.up.fill" size={18} color={colors.primary} />
@@ -132,7 +132,7 @@ export default function DataExportScreen() {
 
         {/* Quick Stats */}
         <View style={[styles.statsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={{ fontSize: 12, fontWeight: "500", color: colors.muted, marginBottom: 12 }}>Data Summary</Text>
+          <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.muted, marginBottom: 12 }}>Data Summary</Text>
           <View style={styles.statsGrid}>
             {[
               { label: "Services", count: state.services.length },
@@ -142,7 +142,7 @@ export default function DataExportScreen() {
             ].map((s) => (
               <View key={s.label} style={styles.statItem}>
                 <Text style={[styles.statNum, { color: colors.primary }]}>{s.count}</Text>
-                <Text style={{ fontSize: 11, color: colors.muted }}>{s.label}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>{s.label}</Text>
               </View>
             ))}
           </View>
@@ -155,11 +155,11 @@ export default function DataExportScreen() {
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 0.5 },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "700" },
+  headerTitle: { fontSize: fs.md, fontWeight: "700" },
   exportCard: { flexDirection: "row", alignItems: "center", borderRadius: 16, padding: 16, borderWidth: 1, marginBottom: 12, gap: 14 },
   iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   statsCard: { borderRadius: 16, padding: 16, borderWidth: 1, marginTop: 8 },
   statsGrid: { flexDirection: "row", justifyContent: "space-between" },
   statItem: { flex: 1, alignItems: "center" },
-  statNum: { fontSize: 22, fontWeight: "700", lineHeight: 28 },
+  statNum: { fontSize: fs.lg, fontWeight: "700", lineHeight: 28 },
 });

@@ -41,7 +41,7 @@ function usePushPermissionDenied(): boolean {
 export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { isTablet, isLargeTablet, iconSize, tabBarBaseHeight } = useResponsive();
+  const { isTablet, isLargeTablet, iconSize, tabBarBaseHeight, fs, buttonHeight, iconButtonSize } = useResponsive();
   const pushDenied = usePushPermissionDenied();
   const { state } = useStore();
   const unreadMessageCount = useBusinessUnreadCount();

@@ -35,7 +35,7 @@ export default function NoteTemplatesScreen() {
   const { state, dispatch } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { hp } = useResponsive();
+  const { hp, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -106,8 +106,8 @@ export default function NoteTemplatesScreen() {
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View style={styles.cardHeader}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground }}>{item.title}</Text>
-          <Text style={{ fontSize: 13, color: colors.muted, marginTop: 4, lineHeight: 18 }} numberOfLines={3}>
+          <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>{item.title}</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4, lineHeight: 18 }} numberOfLines={3}>
             {item.body}
           </Text>
         </View>
@@ -118,14 +118,14 @@ export default function NoteTemplatesScreen() {
           style={({ pressed }) => [styles.actionBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
         >
           <IconSymbol name="pencil" size={14} color={colors.primary} />
-          <Text style={{ fontSize: 13, color: colors.primary, fontWeight: "600" }}>Edit</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }}>Edit</Text>
         </Pressable>
         <Pressable
           onPress={() => handleDelete(item)}
           style={({ pressed }) => [styles.actionBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
         >
           <IconSymbol name="trash.fill" size={14} color={colors.error} />
-          <Text style={{ fontSize: 13, color: colors.error, fontWeight: "600" }}>Delete</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.error, fontWeight: "600" }}>Delete</Text>
         </Pressable>
       </View>
     </View>
@@ -164,7 +164,7 @@ export default function NoteTemplatesScreen() {
         ListHeaderComponent={
           unusedStarters.length > 0 ? (
             <View style={{ marginBottom: 16 }}>
-              <Text style={{ fontSize: 13, fontWeight: "600", color: colors.muted, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>
                 Quick Add Starters
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -178,7 +178,7 @@ export default function NoteTemplatesScreen() {
                     ]}
                   >
                     <IconSymbol name="plus" size={14} color={colors.primary} />
-                    <Text style={{ fontSize: 13, color: colors.primary, fontWeight: "600" }}>{s.title}</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }}>{s.title}</Text>
                   </Pressable>
                 ))}
               </ScrollView>
@@ -188,10 +188,10 @@ export default function NoteTemplatesScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <IconSymbol name="note.text" size={48} color={colors.muted} />
-            <Text style={{ fontSize: 17, fontWeight: "600", color: colors.foreground, marginTop: 12 }}>
+            <Text style={{ fontSize: fs.md, fontWeight: "600", color: colors.foreground, marginTop: 12 }}>
               No Note Templates
             </Text>
-            <Text style={{ fontSize: 14, color: colors.muted, textAlign: "center", marginTop: 6 }}>
+            <Text style={{ fontSize: fs.sm, color: colors.muted, textAlign: "center", marginTop: 6 }}>
               Save reusable notes for appointments — like client preferences, allergies, or reminders.
             </Text>
             <Pressable
@@ -201,7 +201,7 @@ export default function NoteTemplatesScreen() {
                 { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
               ]}
             >
-              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Create Template</Text>
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: fs.sm }}>Create Template</Text>
             </Pressable>
           </View>
         }
@@ -213,13 +213,13 @@ export default function NoteTemplatesScreen() {
           <View style={[styles.modal, { backgroundColor: colors.background }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Pressable onPress={() => setShowForm(false)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
-                <Text style={{ fontSize: 16, color: colors.muted }}>Cancel</Text>
+                <Text style={{ fontSize: fs.md, color: colors.muted }}>Cancel</Text>
               </Pressable>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>
                 {editingId ? "Edit Template" : "New Template"}
               </Text>
               <Pressable onPress={handleSave} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
-                <Text style={{ fontSize: 16, fontWeight: "700", color: colors.primary }}>Save</Text>
+                <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>Save</Text>
               </Pressable>
             </View>
 
@@ -233,7 +233,7 @@ export default function NoteTemplatesScreen() {
                 placeholderTextColor={colors.muted}
                 returnKeyType="next"
               />
-              {titleError ? <Text style={{ color: colors.error, fontSize: 12, marginBottom: 8 }}>{titleError}</Text> : null}
+              {titleError ? <Text style={{ color: colors.error, fontSize: fs.xs, marginBottom: 8 }}>{titleError}</Text> : null}
 
               <Text style={[styles.label, { color: colors.muted }]}>Note Body *</Text>
               <TextInput
@@ -245,9 +245,9 @@ export default function NoteTemplatesScreen() {
                 multiline
                 numberOfLines={5}
               />
-              {bodyError ? <Text style={{ color: colors.error, fontSize: 12, marginBottom: 8 }}>{bodyError}</Text> : null}
+              {bodyError ? <Text style={{ color: colors.error, fontSize: fs.xs, marginBottom: 8 }}>{bodyError}</Text> : null}
 
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 8, lineHeight: 18 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 8, lineHeight: 18 }}>
                 This template will appear as a quick-insert option when creating or editing appointments.
               </Text>
             </ScrollView>
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backBtn: { padding: 4 },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700" },
+  headerTitle: { flex: 1, fontSize: fs.md, fontWeight: "700" },
   addBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   card: {
     borderRadius: 14,
@@ -307,13 +307,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 0.5,
   },
-  label: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginTop: 14 },
+  label: { fontSize: fs.xs, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginTop: 14 },
   input: {
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: fs.sm,
     marginBottom: 4,
   },
 });

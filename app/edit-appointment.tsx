@@ -54,7 +54,7 @@ export default function EditAppointmentScreen() {
   const { state, dispatch, getServiceById, getLocationById, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { hp, width: screenWidth, modalMaxWidth, maxContentWidth } = useResponsive();
+  const { hp, width: screenWidth, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   const appointment = useMemo(
     () => state.appointments.find((a) => a.id === id),
@@ -397,7 +397,7 @@ export default function EditAppointmentScreen() {
           opacity: pressed ? 0.7 : 1,
         })}
       >
-        <Text style={{ fontSize: 13, fontWeight: "700", color: isSelected ? "#FFFFFF" : colors.foreground, textAlign: "center", lineHeight: 17 }}>
+        <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isSelected ? "#FFFFFF" : colors.foreground, textAlign: "center", lineHeight: 17 }}>
           {formatTime(t)}
         </Text>
         <Text style={{ fontSize: 9, color: isSelected ? "#FFFFFF99" : colors.muted, marginTop: 1, textAlign: "center", lineHeight: 12 }}>
@@ -420,7 +420,7 @@ export default function EditAppointmentScreen() {
         <Pressable onPress={() => router.back()} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
           <IconSymbol name="arrow.left" size={24} color={colors.foreground} />
         </Pressable>
-        <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground, marginLeft: 16, flex: 1 }}>
+        <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.foreground, marginLeft: 16, flex: 1 }}>
           Edit Appointment
         </Text>
         <Pressable
@@ -433,7 +433,7 @@ export default function EditAppointmentScreen() {
             opacity: pressed ? 0.8 : 1,
           })}
         >
-          <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 14 }}>Save</Text>
+          <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: fs.sm }}>Save</Text>
         </Pressable>
       </View>
       {/* Live New Total preview */}
@@ -451,18 +451,18 @@ export default function EditAppointmentScreen() {
         return (
           <View style={{ paddingHorizontal: hp, paddingBottom: 8, alignItems: 'flex-end', gap: 2 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={{ fontSize: 12, color: colors.muted }}>New Total:</Text>
-              <Text style={{ fontSize: 16, fontWeight: '800', color: changed ? colors.primary : colors.muted }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted }}>New Total:</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: '800', color: changed ? colors.primary : colors.muted }}>
                 ${liveTotal.toFixed(2)}
               </Text>
               {changed && (
-                <Text style={{ fontSize: 11, color: colors.muted, textDecorationLine: 'line-through' }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, textDecorationLine: 'line-through' }}>
                   ${origTotal.toFixed(2)}
                 </Text>
               )}
             </View>
             {discountAmt > 0 && (
-              <Text style={{ fontSize: 11, color: colors.warning }}>
+              <Text style={{ fontSize: fs.xs, color: colors.warning }}>
                 {discountName ? `${discountName}` : discountPct ? `${discountPct}% off` : 'Discount'} −${discountAmt.toFixed(2)} applied
               </Text>
             )}
@@ -481,8 +481,8 @@ export default function EditAppointmentScreen() {
         {/* Services Editor */}
         <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.muted, flex: 1 }}>SERVICES</Text>
-            <Text style={{ fontSize: 12, color: colors.muted }}>{totalEditDuration} min total</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.muted, flex: 1 }}>SERVICES</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted }}>{totalEditDuration} min total</Text>
           </View>
 
           {/* Primary service row */}
@@ -491,9 +491,9 @@ export default function EditAppointmentScreen() {
             return (
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: ps?.color ?? colors.primary, marginRight: 8 }} />
-                <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: colors.foreground }} numberOfLines={2}>{ps?.name ?? 'Service'}</Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginRight: 8 }}>{ps?.duration ?? 0}m</Text>
-                <Text style={{ fontSize: 12, color: colors.primary, marginRight: 4 }}>${(ps?.price ?? 0).toFixed(2)}</Text>
+                <Text style={{ flex: 1, fontSize: fs.sm, fontWeight: '600', color: colors.foreground }} numberOfLines={2}>{ps?.name ?? 'Service'}</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginRight: 8 }}>{ps?.duration ?? 0}m</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.primary, marginRight: 4 }}>${(ps?.price ?? 0).toFixed(2)}</Text>
                 <Pressable
                   onPress={() => { setEditingServiceIdx(-1); setSvcPickerSearch(''); setSvcPickerCategory(null); setShowServicePicker(true); }}
                   style={({ pressed }) => ({ padding: 6, opacity: pressed ? 0.6 : 1 })}
@@ -508,9 +508,9 @@ export default function EditAppointmentScreen() {
           {editExtraItems.filter(e => e.type === 'service').map((item, idx) => (
             <View key={item.id + idx} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, marginRight: 8 }} />
-              <Text style={{ flex: 1, fontSize: 14, color: colors.foreground }} numberOfLines={2}>{item.name}</Text>
-              <Text style={{ fontSize: 12, color: colors.muted, marginRight: 8 }}>{item.duration}m</Text>
-              <Text style={{ fontSize: 12, color: colors.primary, marginRight: 4 }}>${item.price.toFixed(2)}</Text>
+              <Text style={{ flex: 1, fontSize: fs.sm, color: colors.foreground }} numberOfLines={2}>{item.name}</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginRight: 8 }}>{item.duration}m</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.primary, marginRight: 4 }}>${item.price.toFixed(2)}</Text>
               <Pressable
                 onPress={() => {
                   const realIdx = editExtraItems.findIndex((e, i) => e.type === 'service' && editExtraItems.filter(x => x.type === 'service').indexOf(e) === idx);
@@ -556,7 +556,7 @@ export default function EditAppointmentScreen() {
             style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingTop: 10, opacity: pressed ? 0.6 : 1 })}
           >
             <IconSymbol name="plus.circle.fill" size={16} color={colors.primary} />
-            <Text style={{ fontSize: 13, color: colors.primary, fontWeight: '600', marginLeft: 6 }}>Add Service</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: '600', marginLeft: 6 }}>Add Service</Text>
           </Pressable>
         </View>
 
@@ -565,7 +565,7 @@ export default function EditAppointmentScreen() {
           <View style={{ flex: 1, backgroundColor: colors.background }}>
             {/* Header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }}>
-              <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: colors.foreground }}>
+              <Text style={{ flex: 1, fontSize: fs.md, fontWeight: '700', color: colors.foreground }}>
                 {editingServiceIdx === null ? 'Add Service' : editingServiceIdx === -1 ? 'Change Primary Service' : 'Change Service'}
               </Text>
               <Pressable onPress={() => setShowServicePicker(false)} style={({ pressed }) => ({ padding: 8, opacity: pressed ? 0.6 : 1 })}>
@@ -581,7 +581,7 @@ export default function EditAppointmentScreen() {
                 onChangeText={setSvcPickerSearch}
                 placeholder="Search services..."
                 placeholderTextColor={colors.muted}
-                style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 8, fontSize: 14, color: colors.foreground }}
+                style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 8, fontSize: fs.sm, color: colors.foreground }}
               />
             </View>
 
@@ -629,8 +629,8 @@ export default function EditAppointmentScreen() {
                     onPress={() => setSvcPickerCategory(null)}
                     style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: svcPickerCategory === null ? colors.primary : colors.surface, borderWidth: 1, borderColor: svcPickerCategory === null ? colors.primary : colors.border, opacity: pressed ? 0.7 : 1 })}
                   >
-                    <Text style={{ fontSize: 13, lineHeight: 16 }}>✦</Text>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: svcPickerCategory === null ? '#fff' : colors.foreground }}>All</Text>
+                    <Text style={{ fontSize: fs.xs, lineHeight: 16 }}>✦</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: '600', color: svcPickerCategory === null ? '#fff' : colors.foreground }}>All</Text>
                   </Pressable>
                   {cats.map(cat => {
                     const isActive = svcPickerCategory === cat;
@@ -641,7 +641,7 @@ export default function EditAppointmentScreen() {
                         style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: isActive ? colors.primary : colors.surface, borderWidth: 1, borderColor: isActive ? colors.primary : colors.border, opacity: pressed ? 0.7 : 1 })}
                       >
                         <IconSymbol name={getIcon(cat) as any} size={13} color={isActive ? '#fff' : colors.muted} />
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: isActive ? '#fff' : colors.foreground }}>{cat}</Text>
+                        <Text style={{ fontSize: fs.xs, fontWeight: '600', color: isActive ? '#fff' : colors.foreground }}>{cat}</Text>
                       </Pressable>
                     );
                   })}
@@ -679,7 +679,7 @@ export default function EditAppointmentScreen() {
                 });
 
                 if (filtered.length === 0) {
-                  return <Text style={{ color: colors.muted, textAlign: 'center', marginTop: 32, fontSize: 14 }}>No services found</Text>;
+                  return <Text style={{ color: colors.muted, textAlign: 'center', marginTop: 32, fontSize: fs.sm }}>No services found</Text>;
                 }
 
                 return filtered.map(s => (
@@ -716,12 +716,12 @@ export default function EditAppointmentScreen() {
                       </View>
                     )}
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }} numberOfLines={2}>{s.name}</Text>
-                      {!!s.category && <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{s.category}</Text>}
+                      <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.foreground }} numberOfLines={2}>{s.name}</Text>
+                      {!!s.category && <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{s.category}</Text>}
                     </View>
                     <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>${s.price.toFixed(2)}</Text>
-                      <Text style={{ fontSize: 11, color: colors.muted }}>{s.duration}m</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.primary }}>${s.price.toFixed(2)}</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted }}>{s.duration}m</Text>
                     </View>
                   </Pressable>
                 ));
@@ -738,16 +738,16 @@ export default function EditAppointmentScreen() {
               onPress={() => setProductsExpanded(e => !e)}
               style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', opacity: pressed ? 0.7 : 1, marginBottom: productsExpanded ? 10 : 0 })}
             >
-              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.muted, flex: 1 }}>PRODUCTS</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.muted, flex: 1 }}>PRODUCTS</Text>
               {(() => {
                 const totalSelected = Object.values(productQty).reduce((s, q) => s + q, 0);
                 return totalSelected > 0 ? (
                   <View style={{ backgroundColor: colors.primary + '18', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, marginRight: 8 }}>
-                    <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '700' }}>{totalSelected} selected</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: '700' }}>{totalSelected} selected</Text>
                   </View>
                 ) : null;
               })()}
-              <Text style={{ fontSize: 18, color: colors.muted, lineHeight: 22 }}>{productsExpanded ? '▲' : '▼'}</Text>
+              <Text style={{ fontSize: fs.md, color: colors.muted, lineHeight: 22 }}>{productsExpanded ? '▲' : '▼'}</Text>
             </Pressable>
             {productsExpanded && state.products.filter(p => p.available).map((p) => {
               const qty = productQty[p.id] ?? 0;
@@ -762,9 +762,9 @@ export default function EditAppointmentScreen() {
                   }}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: colors.foreground }} numberOfLines={1}>{p.name}</Text>
-                    {p.description ? <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }} numberOfLines={1}>{p.description}</Text> : null}
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary, marginTop: 2 }}>${parseFloat(String(p.price)).toFixed(2)}</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.foreground }} numberOfLines={1}>{p.name}</Text>
+                    {p.description ? <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }} numberOfLines={1}>{p.description}</Text> : null}
+                    <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.primary, marginTop: 2 }}>${parseFloat(String(p.price)).toFixed(2)}</Text>
                   </View>
                   {/* Quantity stepper */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
@@ -779,9 +779,9 @@ export default function EditAppointmentScreen() {
                       })}
                       disabled={qty === 0}
                     >
-                      <Text style={{ fontSize: 18, fontWeight: '700', color: qty > 0 ? colors.error : colors.muted, lineHeight: 22 }}>−</Text>
+                      <Text style={{ fontSize: fs.md, fontWeight: '700', color: qty > 0 ? colors.error : colors.muted, lineHeight: 22 }}>−</Text>
                     </Pressable>
-                    <Text style={{ minWidth: 26, textAlign: 'center', fontSize: 15, fontWeight: '700', color: qty > 0 ? colors.primary : colors.muted }}>{qty}</Text>
+                    <Text style={{ minWidth: 26, textAlign: 'center', fontSize: fs.sm, fontWeight: '700', color: qty > 0 ? colors.primary : colors.muted }}>{qty}</Text>
                     <Pressable
                       onPress={() => setProductQtyAndSync(p.id, qty + 1)}
                       style={({ pressed }) => ({
@@ -792,7 +792,7 @@ export default function EditAppointmentScreen() {
                         opacity: pressed ? 0.6 : 1,
                       })}
                     >
-                      <Text style={{ fontSize: 18, fontWeight: '700', color: colors.primary, lineHeight: 22 }}>+</Text>
+                      <Text style={{ fontSize: fs.md, fontWeight: '700', color: colors.primary, lineHeight: 22 }}>+</Text>
                     </Pressable>
                   </View>
                 </View>
@@ -807,10 +807,10 @@ export default function EditAppointmentScreen() {
                 .reduce((s, p) => s + (productQty[p.id] ?? 0) * parseFloat(String(p.price)), 0);
               return (
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, marginTop: 2 }}>
-                  <Text style={{ fontSize: 13, color: colors.muted }}>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>
                     {totalItems} item{totalItems !== 1 ? 's' : ''}
                   </Text>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: colors.primary }}>
+                  <Text style={{ fontSize: fs.sm, fontWeight: '700', color: colors.primary }}>
                     ${subtotal.toFixed(2)}
                   </Text>
                 </View>
@@ -822,7 +822,7 @@ export default function EditAppointmentScreen() {
         {/* Location Selector */}
         {activeLocations.length > 0 && (
           <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted, marginBottom: 10 }}>Location</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 10 }}>Location</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {activeLocations.map((loc) => {
@@ -849,11 +849,11 @@ export default function EditAppointmentScreen() {
                     >
                       <IconSymbol name="location.fill" size={14} color={isSelected ? colors.primary : colors.muted} />
                       <View>
-                        <Text style={{ fontSize: 13, fontWeight: "600", color: isSelected ? colors.primary : colors.foreground }}>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: isSelected ? colors.primary : colors.foreground }}>
                           {loc.name}
                         </Text>
                         {!!loc.address && (
-                          <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }} numberOfLines={1}>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }} numberOfLines={1}>
                             {loc.address}
                           </Text>
                         )}
@@ -883,7 +883,7 @@ export default function EditAppointmentScreen() {
                 setSelectedTime(null);
               }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>
                 {MONTH_NAMES[displayMonth]} {displayYear}
               </Text>
             </Pressable>
@@ -904,7 +904,7 @@ export default function EditAppointmentScreen() {
                     marginRight: 4,
                   })}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary }}>Today</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>Today</Text>
                 </Pressable>
               )}
               <Pressable
@@ -919,7 +919,7 @@ export default function EditAppointmentScreen() {
           {/* Day headers — flex:1 per column so they stay aligned with % cells */}
           <View style={{ flexDirection: "row", width: "100%", marginBottom: 4 }}>
             {DAY_HEADERS.map((d) => (
-              <Text key={d} style={{ flex: 1, textAlign: "center", fontSize: 11, fontWeight: "600", color: colors.muted }}>{d}</Text>
+              <Text key={d} style={{ flex: 1, textAlign: "center", fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>{d}</Text>
             ))}
           </View>
 
@@ -974,7 +974,7 @@ export default function EditAppointmentScreen() {
                   )}
                   <Text
                     style={{
-                      fontSize: 14,
+                      fontSize: fs.sm,
                       fontWeight: isToday || isSelected ? "700" : "400",
                       color: isToday
                         ? colors.primary
@@ -1030,14 +1030,14 @@ export default function EditAppointmentScreen() {
         {closedDayMsg ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.error + "18", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, marginTop: 6, marginBottom: 2 }}>
             <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.error }} />
-            <Text style={{ fontSize: 12, color: colors.error, fontWeight: "500", flex: 1 }}>{closedDayMsg}</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.error, fontWeight: "500", flex: 1 }}>{closedDayMsg}</Text>
           </View>
         ) : null}
 
         {/* Selected date label */}
         {selectedDate && (
           <View style={{ marginBottom: 8, marginHorizontal: 2 }}>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>
               {new Date(selectedDate + "T12:00:00").toLocaleDateString("en-US", {
                 weekday: "long", month: "long", day: "numeric",
               })}
@@ -1066,7 +1066,7 @@ export default function EditAppointmentScreen() {
                     opacity: pressed ? 0.7 : 1,
                   })}
                 >
-                  <Text style={{ fontSize: 11, fontWeight: "700", color: isActive ? "#FFFFFF" : colors.muted }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isActive ? "#FFFFFF" : colors.muted }}>
                     {iv.label}
                   </Text>
                 </Pressable>
@@ -1077,19 +1077,19 @@ export default function EditAppointmentScreen() {
 
         {/* Time Slots */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6, marginHorizontal: 4 }}>
-          <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted }}>Available Times</Text>
+          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted }}>Available Times</Text>
         </View>
 
         {timeSlots.length === 0 ? (
           <View style={[styles.emptySlots, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={{ fontSize: 13, color: colors.muted }}>No available times for this date</Text>
-            <Text style={{ fontSize: 11, color: colors.muted, marginTop: 4 }}>Try a different date or check working hours</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted }}>No available times for this date</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>Try a different date or check working hours</Text>
           </View>
         ) : (
           <View style={{ marginBottom: 12 }}>
             {slotGroups.map((group) => (
               <View key={group.label} style={{ marginBottom: 10 }}>
-                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.muted, marginBottom: 6, marginLeft: 2 }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, marginBottom: 6, marginLeft: 2 }}>
                   {group.label}
                 </Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
@@ -1113,7 +1113,7 @@ export default function EditAppointmentScreen() {
           ]}
         >
           <IconSymbol name="clock" size={16} color={selectedTime && !timeSlots.includes(selectedTime) ? colors.primary : colors.muted} />
-          <Text style={{ fontSize: 13, fontWeight: "600", color: selectedTime && !timeSlots.includes(selectedTime) ? colors.primary : colors.muted, marginLeft: 6 }}>
+          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: selectedTime && !timeSlots.includes(selectedTime) ? colors.primary : colors.muted, marginLeft: 6 }}>
             {selectedTime && !timeSlots.includes(selectedTime)
               ? `Custom: ${formatTime(selectedTime)}`
               : "Custom Time..."}
@@ -1124,11 +1124,11 @@ export default function EditAppointmentScreen() {
         {selectedTime && (
           <View style={[styles.selectedSummary, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "40" }]}>
             <IconSymbol name="checkmark.circle.fill" size={16} color={colors.primary} />
-            <Text style={{ fontSize: 13, fontWeight: "600", color: colors.primary, marginLeft: 6 }}>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary, marginLeft: 6 }}>
               {formatTime(selectedTime)} – {getEndTime(selectedTime)}
             </Text>
             {selectedDate !== appointment.date || selectedTime !== appointment.time ? (
-              <Text style={{ fontSize: 11, color: colors.muted, marginLeft: 8 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginLeft: 8 }}>
                 (changed)
               </Text>
             ) : null}
@@ -1139,11 +1139,11 @@ export default function EditAppointmentScreen() {
         {(appointment.status === "pending" || appointment.status === "confirmed") && (
           <View style={{ marginTop: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground }}>Discount</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground }}>Discount</Text>
               {appointment.discountAmount != null && appointment.discountAmount > 0 && (
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.success + "18", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
                   <IconSymbol name="tag.fill" size={12} color={colors.success} />
-                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.success }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.success }}>
                     {appointment.discountName ? appointment.discountName + " · " : ""}
                     {appointment.discountPercent != null ? `${appointment.discountPercent}%` : `$${appointment.discountAmount.toFixed(2)}`} off
                   </Text>
@@ -1183,7 +1183,7 @@ export default function EditAppointmentScreen() {
                           flexDirection: "row", alignItems: "center", gap: 5,
                         })}
                       >
-                        <Text style={{ fontSize: 13, fontWeight: "600", color: isApplied ? colors.success : colors.foreground }}>
+                        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: isApplied ? colors.success : colors.foreground }}>
                           {d.name} · {d.percentage}% off
                         </Text>
                         {isApplied && <IconSymbol name="checkmark" size={12} color={colors.success} />}
@@ -1209,7 +1209,7 @@ export default function EditAppointmentScreen() {
               })}
             >
               <IconSymbol name="tag.fill" size={14} color={colors.muted} />
-              <Text style={{ fontSize: 13, color: colors.muted, fontWeight: "600" }}>Custom Discount...</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, fontWeight: "600" }}>Custom Discount...</Text>
             </Pressable>
           </View>
         )}
@@ -1229,9 +1229,9 @@ export default function EditAppointmentScreen() {
           {/* Modal Header */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
             <Pressable onPress={() => setShowCustomTime(false)} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
-              <Text style={{ fontSize: 16, color: colors.primary }}>Cancel</Text>
+              <Text style={{ fontSize: fs.md, color: colors.primary }}>Cancel</Text>
             </Pressable>
-            <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>Custom Time</Text>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>Custom Time</Text>
             <Pressable
               onPress={() => {
                 // Check for conflict with confirmed/pending appointments
@@ -1248,12 +1248,12 @@ export default function EditAppointmentScreen() {
               }}
               style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
             >
-              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.primary }}>Set</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>Set</Text>
             </Pressable>
           </View>
 
           <ScrollView contentContainerStyle={{ padding: 24 }}>
-            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 20, textAlign: "center" }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 20, textAlign: "center" }}>
               Custom time overrides normal slot availability. It will not block confirmed or pending appointments.
             </Text>
 
@@ -1265,7 +1265,7 @@ export default function EditAppointmentScreen() {
             />
 
             <View style={{ marginTop: 24, padding: 14, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border }}>
-              <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center" }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "center" }}>
                 Selected: <Text style={{ fontWeight: "700", color: colors.foreground }}>{formatTimeDisplay(customTimeValue)}</Text>
                 {" → "}
                 <Text style={{ fontWeight: "700", color: colors.foreground }}>{getEndTime(customTimeValue)}</Text>
@@ -1285,9 +1285,9 @@ export default function EditAppointmentScreen() {
         <View style={{ flex: 1, backgroundColor: colors.background }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
             <Pressable onPress={() => setShowDiscountModal(false)} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
-              <Text style={{ fontSize: 16, color: colors.primary }}>Cancel</Text>
+              <Text style={{ fontSize: fs.md, color: colors.primary }}>Cancel</Text>
             </Pressable>
-            <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>Custom Discount</Text>
+            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>Custom Discount</Text>
             <Pressable
               onPress={() => {
                 const val = parseFloat(discountInput);
@@ -1305,7 +1305,7 @@ export default function EditAppointmentScreen() {
               }}
               style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
             >
-              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.primary }}>Apply</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>Apply</Text>
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={{ padding: 24 }}>
@@ -1321,14 +1321,14 @@ export default function EditAppointmentScreen() {
                     opacity: pressed ? 0.7 : 1,
                   })}
                 >
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: discountType === t ? "#FFF" : colors.muted }}>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: discountType === t ? "#FFF" : colors.muted }}>
                     {t === "percent" ? "Percentage (%)" : "Flat Amount ($)"}
                   </Text>
                 </Pressable>
               ))}
             </View>
 
-            <Text style={{ fontSize: 13, color: colors.muted, marginBottom: 8 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8 }}>
               {discountType === "percent" ? "Enter discount percentage (e.g. 20 for 20% off)" : "Enter dollar amount to deduct (e.g. 10 for $10 off)"}
             </Text>
             <TextInput
@@ -1338,7 +1338,7 @@ export default function EditAppointmentScreen() {
               placeholderTextColor={colors.muted}
               keyboardType="decimal-pad"
               returnKeyType="done"
-              style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 22, fontWeight: "700", color: colors.foreground, textAlign: "center" }}
+              style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: fs.lg, fontWeight: "700", color: colors.foreground, textAlign: "center" }}
             />
 
             {/* Preview */}
@@ -1349,10 +1349,10 @@ export default function EditAppointmentScreen() {
               const newTotal = Math.max(0, basePrice - amt);
               return (
                 <View style={{ marginTop: 20, padding: 16, backgroundColor: colors.success + "12", borderRadius: 12, borderWidth: 1, borderColor: colors.success + "40" }}>
-                  <Text style={{ fontSize: 13, color: colors.success, textAlign: "center" }}>
+                  <Text style={{ fontSize: fs.xs, color: colors.success, textAlign: "center" }}>
                     Discount: <Text style={{ fontWeight: "700" }}>-${amt.toFixed(2)}</Text>
                   </Text>
-                  <Text style={{ fontSize: 16, fontWeight: "800", color: colors.success, textAlign: "center", marginTop: 4 }}>
+                  <Text style={{ fontSize: fs.md, fontWeight: "800", color: colors.success, textAlign: "center", marginTop: 4 }}>
                     New Total: ${newTotal.toFixed(2)}
                   </Text>
                 </View>

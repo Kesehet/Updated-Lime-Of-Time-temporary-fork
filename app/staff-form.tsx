@@ -58,7 +58,7 @@ export default function StaffFormScreen() {
   const { state, dispatch, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, modalMaxWidth } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const { checkLimit } = usePlanLimitCheck();
   const [upgradeSheetVisible, setUpgradeSheetVisible] = useState(false);
   const [upgradeSheetInfo, setUpgradeSheetInfo] = useState<{ planKey: string; planName: string; limit: number } | null>(null);
@@ -287,7 +287,7 @@ export default function StaffFormScreen() {
             { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
           ]}
         >
-          <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 15 }}>Save</Text>
+          <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: fs.sm }}>Save</Text>
         </Pressable>
       </View>
 
@@ -318,11 +318,11 @@ export default function StaffFormScreen() {
               )}
               {!uploadingPhoto && (
                 <View style={{ position: "absolute", bottom: 0, right: 0, backgroundColor: colors.primary, borderRadius: 12, width: 24, height: 24, alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ color: "#fff", fontSize: 14, fontWeight: "700" }}>+</Text>
+                  <Text style={{ color: "#fff", fontSize: fs.sm, fontWeight: "700" }}>+</Text>
                 </View>
               )}
             </Pressable>
-            <Text style={{ color: colors.muted, fontSize: 12, marginTop: 6 }}>
+            <Text style={{ color: colors.muted, fontSize: fs.xs, marginTop: 6 }}>
               {uploadingPhoto ? "Uploading photo..." : "Tap to add photo"}
             </Text>
           </View>
@@ -336,7 +336,7 @@ export default function StaffFormScreen() {
             style={[styles.input, { backgroundColor: colors.background, borderColor: errors.name ? colors.error : colors.border, color: colors.foreground }]}
             returnKeyType="done"
           />
-          {errors.name ? <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.name}</Text> : null}
+          {errors.name ? <Text style={{ color: colors.error, fontSize: fs.xs, marginTop: 4 }}>{errors.name}</Text> : null}
 
           <Text className="text-xs font-medium text-muted mb-1 mt-3">Role / Title</Text>
           <TextInput
@@ -375,7 +375,7 @@ export default function StaffFormScreen() {
             style={[styles.input, { backgroundColor: colors.background, borderColor: errors.phone ? colors.error : colors.border, color: colors.foreground }]}
             returnKeyType="done"
           />
-          {errors.phone ? <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>{errors.phone}</Text> : null}
+          {errors.phone ? <Text style={{ color: colors.error, fontSize: fs.xs, marginTop: 4 }}>{errors.phone}</Text> : null}
 
           <Text className="text-xs font-medium text-muted mb-1 mt-3">Email</Text>
           <TextInput
@@ -466,7 +466,7 @@ export default function StaffFormScreen() {
                       <Text
                         style={{
                           flex: 1,
-                          fontSize: 14,
+                          fontSize: fs.sm,
                           color: colors.foreground,
                         }}
                         numberOfLines={1}
@@ -492,7 +492,7 @@ export default function StaffFormScreen() {
               Assign this staff member to one location.
             </Text>
 
-            {errors.location ? <Text style={{ color: colors.error, fontSize: 12, marginBottom: 8 }}>{errors.location}</Text> : null}
+            {errors.location ? <Text style={{ color: colors.error, fontSize: fs.xs, marginBottom: 8 }}>{errors.location}</Text> : null}
             <View style={{ gap: 6 }}>
               {state.locations.map((loc) => {
                 const selected = selectedLocationId === loc.id;
@@ -511,7 +511,7 @@ export default function StaffFormScreen() {
                   >
                     <IconSymbol name="location.fill" size={14} color={selected ? colors.primary : colors.muted} />
                     <Text
-                      style={{ flex: 1, fontSize: 14, color: colors.foreground }}
+                      style={{ flex: 1, fontSize: fs.sm, color: colors.foreground }}
                       numberOfLines={1}
                     >
                       {loc.name}
@@ -562,7 +562,7 @@ export default function StaffFormScreen() {
                     <View style={styles.dayHeader}>
                       <Text
                         style={{
-                          fontSize: 14,
+                          fontSize: fs.sm,
                           fontWeight: "600",
                           color: ds.enabled ? colors.foreground : colors.muted,
                           width: 80,
@@ -595,7 +595,7 @@ export default function StaffFormScreen() {
                         }]}
                       >
                         <IconSymbol name="clock.fill" size={14} color={colors.primary} />
-                        <Text style={{ fontSize: 13, color: colors.foreground, marginLeft: 6 }}>
+                        <Text style={{ fontSize: fs.xs, color: colors.foreground, marginLeft: 6 }}>
                           {formatTimeDisplay(ds.start)} – {formatTimeDisplay(ds.end)}
                         </Text>
                       </Pressable>
@@ -614,7 +614,7 @@ export default function StaffFormScreen() {
         <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" }} onPress={() => { setStaffTimePicker(null); setStaffSubPicker(null); }}>
           <Pressable style={[{ borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 16, paddingBottom: 40, paddingHorizontal: 20, backgroundColor: colors.background }]} onPress={() => {}}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.foreground }}>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>
                 {staffTimePicker ? (staffTimePicker.day.charAt(0).toUpperCase() + staffTimePicker.day.slice(1)) : ""} Hours
               </Text>
               <Pressable onPress={() => { setStaffTimePicker(null); setStaffSubPicker(null); }} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
@@ -627,8 +627,8 @@ export default function StaffFormScreen() {
               onPress={() => setStaffSubPicker(staffSubPicker === "start" ? null : "start")}
               style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14, paddingHorizontal: 4, borderRadius: 12, backgroundColor: staffSubPicker === "start" ? colors.primary + "18" : "transparent", marginBottom: 4 }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>Start Time</Text>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.primary }}>{(() => { const [h, m] = staffDraftStart.split(":").map(Number); const ap = h >= 12 ? "PM" : "AM"; const hr = h === 0 ? 12 : h > 12 ? h - 12 : h; return `${hr}:${String(m).padStart(2,"0")} ${ap}`; })()}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Start Time</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>{(() => { const [h, m] = staffDraftStart.split(":").map(Number); const ap = h >= 12 ? "PM" : "AM"; const hr = h === 0 ? 12 : h > 12 ? h - 12 : h; return `${hr}:${String(m).padStart(2,"0")} ${ap}`; })()}</Text>
             </Pressable>
             {staffSubPicker === "start" && (
               <TapTimePicker value={staffDraftStart} onChange={(v) => { setStaffDraftStart(v); setStaffTimeError(null); }} stepMinutes={15} />
@@ -639,21 +639,21 @@ export default function StaffFormScreen() {
               onPress={() => setStaffSubPicker(staffSubPicker === "end" ? null : "end")}
               style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14, paddingHorizontal: 4, borderRadius: 12, backgroundColor: staffSubPicker === "end" ? colors.primary + "18" : "transparent", marginBottom: 4 }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>End Time</Text>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: colors.primary }}>{(() => { const [h, m] = staffDraftEnd.split(":").map(Number); const ap = h >= 12 ? "PM" : "AM"; const hr = h === 0 ? 12 : h > 12 ? h - 12 : h; return `${hr}:${String(m).padStart(2,"0")} ${ap}`; })()}</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>End Time</Text>
+              <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>{(() => { const [h, m] = staffDraftEnd.split(":").map(Number); const ap = h >= 12 ? "PM" : "AM"; const hr = h === 0 ? 12 : h > 12 ? h - 12 : h; return `${hr}:${String(m).padStart(2,"0")} ${ap}`; })()}</Text>
             </Pressable>
             {staffSubPicker === "end" && (
               <TapTimePicker value={staffDraftEnd} onChange={(v) => { setStaffDraftEnd(v); setStaffTimeError(null); }} stepMinutes={15} />
             )}
 
             {staffTimeError ? (
-              <Text style={{ color: colors.error, fontSize: 13, textAlign: "center", marginVertical: 8 }}>{staffTimeError}</Text>
+              <Text style={{ color: colors.error, fontSize: fs.xs, textAlign: "center", marginVertical: 8 }}>{staffTimeError}</Text>
             ) : null}
             <Pressable
               onPress={saveStaffTimePicker}
               style={({ pressed }) => [{ backgroundColor: staffTimeError ? colors.border : colors.primary, paddingVertical: 16, borderRadius: 14, alignItems: "center", opacity: pressed ? 0.8 : 1, marginTop: 12 }]}
             >
-              <Text style={{ color: staffTimeError ? colors.muted : "#fff", fontWeight: "700", fontSize: 16 }}>Save Hours</Text>
+              <Text style={{ color: staffTimeError ? colors.muted : "#fff", fontWeight: "700", fontSize: fs.md }}>Save Hours</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
-    fontSize: 15,
+    fontSize: fs.sm,
   },
   switchRow: {
     flexDirection: "row",
@@ -758,7 +758,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
-    fontSize: 14,
+    fontSize: fs.sm,
     textAlign: "center",
   },
   radioSelected: {

@@ -56,7 +56,7 @@ export default function DiscountsScreen() {
   const { state, dispatch, syncToDb, getServiceById } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, modalMaxWidth } = useResponsive();
+  const { isTablet, hp, modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -340,22 +340,22 @@ export default function DiscountsScreen() {
                 <Text style={[styles.cardSubtitle, { color: colors.primary, marginTop: 0 }]}>{item.percentage}% off</Text>
                 {isExpired ? (
                   <View style={{ backgroundColor: colors.error + "20", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
-                    <Text style={{ fontSize: 11, fontWeight: "700", color: colors.error }}>Expired</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.error }}>Expired</Text>
                   </View>
                 ) : daysUntilExpiry !== null && daysUntilExpiry <= 7 ? (
                   <View style={{ backgroundColor: colors.warning + "20", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
-                    <Text style={{ fontSize: 11, fontWeight: "700", color: colors.warning }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.warning }}>
                       {daysUntilExpiry === 0 ? "Expires today" : `Expires in ${daysUntilExpiry}d`}
                     </Text>
                   </View>
                 ) : daysUntilExpiry !== null ? (
                   <View style={{ backgroundColor: colors.success + "15", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
-                    <Text style={{ fontSize: 11, fontWeight: "600", color: colors.success }}>Expires in {daysUntilExpiry}d</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.success }}>Expires in {daysUntilExpiry}d</Text>
                   </View>
                 ) : null}
                 {item.maxUses != null && (
                   <View style={{ backgroundColor: maxUsesReached ? colors.error + "20" : colors.muted + "20", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
-                    <Text style={{ fontSize: 11, fontWeight: "700", color: maxUsesReached ? colors.error : colors.muted }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "700", color: maxUsesReached ? colors.error : colors.muted }}>
                       {usageCount}/{item.maxUses} uses{maxUsesReached ? " (limit reached)" : ""}
                     </Text>
                   </View>
@@ -374,12 +374,12 @@ export default function DiscountsScreen() {
             <View style={{ flexDirection: "row", gap: 8, marginBottom: 10, marginTop: 2 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: colors.primary + "12", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 }}>
                 <IconSymbol name="checkmark.circle.fill" size={13} color={colors.primary} />
-                <Text style={{ fontSize: 12, fontWeight: "700", color: colors.primary }}>{usageCount} uses</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary }}>{usageCount} uses</Text>
               </View>
               {totalSaved > 0 && (
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: colors.success + "12", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 }}>
                   <IconSymbol name="tag.fill" size={13} color={colors.success} />
-                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.success }}>${totalSaved.toFixed(0)} saved</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.success }}>${totalSaved.toFixed(0)} saved</Text>
                 </View>
               )}
             </View>
@@ -388,8 +388,8 @@ export default function DiscountsScreen() {
           {item.maxUses != null && item.maxUses > 0 && (
             <View style={{ marginBottom: 10 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                <Text style={{ fontSize: 11, color: colors.muted, fontWeight: "600" }}>Usage</Text>
-                <Text style={{ fontSize: 11, fontWeight: "700", color: maxUsesReached ? colors.error : colors.primary }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, fontWeight: "600" }}>Usage</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: maxUsesReached ? colors.error : colors.primary }}>
                   {usageCount} / {item.maxUses} uses
                 </Text>
               </View>
@@ -489,7 +489,7 @@ export default function DiscountsScreen() {
           <IconSymbol name="clock.fill" size={14} color={colors.primary} />
           <Text style={[styles.timeBtnText, { color: colors.foreground }]}>{formatTimeDisplay(startTime)}</Text>
         </Pressable>
-        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>to</Text>
+        <Text style={{ color: colors.muted, fontSize: fs.sm, fontWeight: "600" }}>to</Text>
         <Pressable
           onPress={() => openTimePicker("end")}
           style={[styles.timeBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
@@ -537,7 +537,7 @@ export default function DiscountsScreen() {
                 backgroundColor: isAllSelected ? colors.primary : colors.background,
               }]}
             >
-              <Text style={{ fontSize: 13, fontWeight: "700", color: isAllSelected ? "#fff" : colors.foreground }}>{label}</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isAllSelected ? "#fff" : colors.foreground }}>{label}</Text>
             </Pressable>
           );
         })}
@@ -587,7 +587,7 @@ export default function DiscountsScreen() {
               >
                 <Text
                   style={{
-                    fontSize: 14,
+                    fontSize: fs.sm,
                     fontWeight: isSelected || isToday ? "700" : "400",
                     color: isPast ? colors.muted + "40" : isSelected ? "#fff" : colors.foreground,
                     lineHeight: 20,
@@ -608,7 +608,7 @@ export default function DiscountsScreen() {
               {repeatWeekly && selectedDates.length > 0 ? ` (+${Math.max(0, buildFinalDates(selectedDates).length - selectedDates.length)} weekly)` : ""}
             </Text>
             <Pressable onPress={() => setSelectedDates([])} style={({ pressed }) => [pressed && { opacity: 0.6 }]}>
-              <Text style={{ color: colors.error, fontSize: 12, fontWeight: "600" }}>Clear All</Text>
+              <Text style={{ color: colors.error, fontSize: fs.xs, fontWeight: "600" }}>Clear All</Text>
             </Pressable>
           </View>
         )}
@@ -617,8 +617,8 @@ export default function DiscountsScreen() {
       {/* Repeat Weekly Toggle */}
       <View style={[styles.repeatRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground, lineHeight: 20 }}>Repeat Weekly</Text>
-          <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 16, marginTop: 2 }}>
+          <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground, lineHeight: 20 }}>Repeat Weekly</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, lineHeight: 16, marginTop: 2 }}>
             Auto-apply to the same weekday(s) for 12 weeks
           </Text>
         </View>
@@ -638,10 +638,10 @@ export default function DiscountsScreen() {
         style={[styles.allToggleRow, { borderColor: selectedServiceIds === null ? colors.primary : colors.border, backgroundColor: selectedServiceIds === null ? colors.primary + "18" : colors.surface }]}
       >
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 14, fontWeight: "600", color: selectedServiceIds === null ? colors.primary : colors.foreground }}>All Services</Text>
-          <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Discount applies to every service</Text>
+          <Text style={{ fontSize: fs.sm, fontWeight: "600", color: selectedServiceIds === null ? colors.primary : colors.foreground }}>All Services</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>Discount applies to every service</Text>
         </View>
-        {selectedServiceIds === null && <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}><Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>✓</Text></View>}
+        {selectedServiceIds === null && <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}><Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "700" }}>✓</Text></View>}
       </Pressable>
       {/* Category accordions */}
       {(() => {
@@ -666,17 +666,17 @@ export default function DiscountsScreen() {
                 style={styles.accordionHeader}
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{cat}</Text>
-                  <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{cat}</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>
                     {selectedInCat > 0 ? `${selectedInCat} of ${svcs.length} selected` : `${svcs.length} service${svcs.length !== 1 ? "s" : ""}`}
                   </Text>
                 </View>
                 {selectedInCat > 0 && (
                   <View style={{ backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, marginRight: 8 }}>
-                    <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>{selectedInCat}</Text>
+                    <Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "700" }}>{selectedInCat}</Text>
                   </View>
                 )}
-                <Text style={{ fontSize: 18, color: colors.muted, fontWeight: "300" }}>{isOpen ? "−" : "+"}</Text>
+                <Text style={{ fontSize: fs.md, color: colors.muted, fontWeight: "300" }}>{isOpen ? "−" : "+"}</Text>
               </Pressable>
               {isOpen && (
                 <View style={styles.accordionBody}>
@@ -690,16 +690,16 @@ export default function DiscountsScreen() {
                       >
                         <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: svc.color, marginRight: 10, marginTop: 2 }} />
                         <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 14, fontWeight: sel ? "600" : "400", color: colors.foreground }}>{svc.name}</Text>
-                          {svc.price != null && <Text style={{ fontSize: 12, color: colors.muted }}>${svc.price}</Text>}
+                          <Text style={{ fontSize: fs.sm, fontWeight: sel ? "600" : "400", color: colors.foreground }}>{svc.name}</Text>
+                          {svc.price != null && <Text style={{ fontSize: fs.xs, color: colors.muted }}>${svc.price}</Text>}
                         </View>
                         {sel && (
                           <View style={{ backgroundColor: svc.color, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2, marginRight: 6 }}>
-                            <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>−{percentage}%</Text>
+                            <Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "700" }}>−{percentage}%</Text>
                           </View>
                         )}
                         <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: sel ? svc.color : colors.border, backgroundColor: sel ? svc.color : "transparent", alignItems: "center", justifyContent: "center" }}>
-                          {sel && <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>✓</Text>}
+                          {sel && <Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "700" }}>✓</Text>}
                         </View>
                       </Pressable>
                     );
@@ -721,10 +721,10 @@ export default function DiscountsScreen() {
             style={[styles.allToggleRow, { borderColor: selectedProductIds === null ? colors.primary : colors.border, backgroundColor: selectedProductIds === null ? colors.primary + "18" : colors.surface }]}
           >
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: "600", color: selectedProductIds === null ? colors.primary : colors.foreground }}>All Products</Text>
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>Discount applies to every product</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "600", color: selectedProductIds === null ? colors.primary : colors.foreground }}>All Products</Text>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>Discount applies to every product</Text>
             </View>
-            {selectedProductIds === null && <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}><Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>✓</Text></View>}
+            {selectedProductIds === null && <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}><Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "700" }}>✓</Text></View>}
           </Pressable>
           {/* Brand accordions */}
           {(() => {
@@ -749,17 +749,17 @@ export default function DiscountsScreen() {
                     style={styles.accordionHeader}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{brand}</Text>
-                      <Text style={{ fontSize: 12, color: colors.muted, marginTop: 1 }}>
+                      <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{brand}</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>
                         {selectedInBrand > 0 ? `${selectedInBrand} of ${prods.length} selected` : `${prods.length} product${prods.length !== 1 ? "s" : ""}`}
                       </Text>
                     </View>
                     {selectedInBrand > 0 && (
                       <View style={{ backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, marginRight: 8 }}>
-                        <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>{selectedInBrand}</Text>
+                        <Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "700" }}>{selectedInBrand}</Text>
                       </View>
                     )}
-                    <Text style={{ fontSize: 18, color: colors.muted, fontWeight: "300" }}>{isOpen ? "−" : "+"}</Text>
+                    <Text style={{ fontSize: fs.md, color: colors.muted, fontWeight: "300" }}>{isOpen ? "−" : "+"}</Text>
                   </Pressable>
                   {isOpen && (
                     <View style={styles.accordionBody}>
@@ -772,16 +772,16 @@ export default function DiscountsScreen() {
                             style={[styles.accordionItem, { backgroundColor: sel ? colors.primary + "12" : "transparent", borderColor: sel ? colors.primary : colors.border }]}
                           >
                             <View style={{ flex: 1 }}>
-                              <Text style={{ fontSize: 14, fontWeight: sel ? "600" : "400", color: colors.foreground }}>{prod.name}</Text>
-                              {prod.price != null && <Text style={{ fontSize: 12, color: colors.muted }}>${prod.price}</Text>}
+                              <Text style={{ fontSize: fs.sm, fontWeight: sel ? "600" : "400", color: colors.foreground }}>{prod.name}</Text>
+                              {prod.price != null && <Text style={{ fontSize: fs.xs, color: colors.muted }}>${prod.price}</Text>}
                             </View>
                             {sel && (
                               <View style={{ backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2, marginRight: 6 }}>
-                                <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>−{percentage}%</Text>
+                                <Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "700" }}>−{percentage}%</Text>
                               </View>
                             )}
                             <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: sel ? colors.primary : colors.border, backgroundColor: sel ? colors.primary : "transparent", alignItems: "center", justifyContent: "center" }}>
-                              {sel && <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>✓</Text>}
+                              {sel && <Text style={{ color: "#fff", fontSize: fs.xs, fontWeight: "700" }}>✓</Text>}
                             </View>
                           </Pressable>
                         );
@@ -811,7 +811,7 @@ export default function DiscountsScreen() {
       {maxUses.trim() !== "" && !isNaN(parseInt(maxUses.trim(), 10)) && parseInt(maxUses.trim(), 10) > 0 && (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 12, backgroundColor: colors.warning + "15", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}>
           <IconSymbol name="exclamationmark.circle.fill" size={14} color={colors.warning} />
-          <Text style={{ fontSize: 12, color: colors.warning, fontWeight: "600", flex: 1 }}>
+          <Text style={{ fontSize: fs.xs, color: colors.warning, fontWeight: "600", flex: 1 }}>
             Discount auto-deactivates after {parseInt(maxUses.trim(), 10)} use{parseInt(maxUses.trim(), 10) !== 1 ? "s" : ""}
           </Text>
         </View>
@@ -823,13 +823,13 @@ export default function DiscountsScreen() {
           onPress={resetForm}
           style={({ pressed }) => [styles.formBtnCancel, { borderColor: colors.border }, pressed && { opacity: 0.7 }]}
         >
-          <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14, lineHeight: 20 }}>Cancel</Text>
+          <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: fs.sm, lineHeight: 20 }}>Cancel</Text>
         </Pressable>
         <Pressable
           onPress={handleSave}
           style={({ pressed }) => [styles.formBtnSave, { backgroundColor: colors.primary }, pressed && { opacity: 0.8 }]}
         >
-          <Text style={{ color: "#fff", fontWeight: "600", fontSize: 14, lineHeight: 20 }}>
+          <Text style={{ color: "#fff", fontWeight: "600", fontSize: fs.sm, lineHeight: 20 }}>
             {editingId ? "Update" : "Create"}
           </Text>
         </Pressable>
@@ -908,13 +908,13 @@ export default function DiscountsScreen() {
               />
             )}
             {discountTimeError ? (
-              <Text style={{ color: colors.error, fontSize: 13, textAlign: "center", marginVertical: 8 }}>{discountTimeError}</Text>
+              <Text style={{ color: colors.error, fontSize: fs.xs, textAlign: "center", marginVertical: 8 }}>{discountTimeError}</Text>
             ) : null}
             <Pressable
               onPress={saveTimePicker}
               style={({ pressed }) => [{ backgroundColor: discountTimeError ? colors.border : colors.primary, paddingVertical: 14, borderRadius: 12, alignItems: "center", opacity: pressed ? 0.8 : 1, marginTop: 12 }]}
             >
-              <Text style={{ color: discountTimeError ? colors.muted : "#fff", fontWeight: "700", fontSize: 15 }}>Apply</Text>
+              <Text style={{ color: discountTimeError ? colors.muted : "#fff", fontWeight: "700", fontSize: fs.sm }}>Apply</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -935,7 +935,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   headerBackBtn: { padding: 4 },
-  headerTitle: { fontSize: 20, fontWeight: "700", flex: 1, lineHeight: 26 },
+  headerTitle: { fontSize: fs.lg, fontWeight: "700", flex: 1, lineHeight: 26 },
   addBtn: {
     width: 36,
     height: 36,
@@ -950,8 +950,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     gap: 12,
   },
-  emptyTitle: { fontSize: 20, fontWeight: "700", lineHeight: 26 },
-  emptySubtitle: { fontSize: 14, textAlign: "center", lineHeight: 20 },
+  emptyTitle: { fontSize: fs.lg, fontWeight: "700", lineHeight: 26 },
+  emptySubtitle: { fontSize: fs.sm, textAlign: "center", lineHeight: 20 },
   emptyBtn: {
     paddingHorizontal: 24,
     paddingVertical: 12,
@@ -961,7 +961,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  emptyBtnText: { color: "#fff", fontWeight: "700", fontSize: 15, lineHeight: 20 },
+  emptyBtnText: { color: "#fff", fontWeight: "700", fontSize: fs.sm, lineHeight: 20 },
   card: {
     borderRadius: 16,
     padding: 16,
@@ -976,11 +976,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     width: "100%",
   },
-  cardTitle: { fontSize: 17, fontWeight: "700", lineHeight: 22 },
-  cardSubtitle: { fontSize: 14, marginTop: 2, fontWeight: "600", lineHeight: 18 },
+  cardTitle: { fontSize: fs.md, fontWeight: "700", lineHeight: 22 },
+  cardSubtitle: { fontSize: fs.sm, marginTop: 2, fontWeight: "600", lineHeight: 18 },
   cardDetails: { gap: 8, marginBottom: 14, width: "100%" },
   detailRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  detailText: { fontSize: 13, lineHeight: 18, flex: 1 },
+  detailText: { fontSize: fs.xs, lineHeight: 18, flex: 1 },
   cardActions: { flexDirection: "row", gap: 8, width: "100%" },
   actionBtn: {
     flexDirection: "row",
@@ -991,16 +991,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     minHeight: 40,
   },
-  actionText: { fontSize: 13, fontWeight: "600", lineHeight: 18 },
-  formTitle: { fontSize: 18, fontWeight: "700", marginBottom: 16, lineHeight: 24 },
-  fieldLabel: { fontSize: 12, fontWeight: "500", marginBottom: 6, marginTop: 8 },
+  actionText: { fontSize: fs.xs, fontWeight: "600", lineHeight: 18 },
+  formTitle: { fontSize: fs.md, fontWeight: "700", marginBottom: 16, lineHeight: 24 },
+  fieldLabel: { fontSize: fs.xs, fontWeight: "500", marginBottom: 6, marginTop: 8 },
   input: {
     width: "100%",
     height: 44,
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 12,
-    fontSize: 15,
+    fontSize: fs.sm,
     lineHeight: 20,
     marginBottom: 4,
   },
@@ -1018,7 +1018,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  percentLabel: { fontSize: 18, fontWeight: "700" },
+  percentLabel: { fontSize: fs.md, fontWeight: "700" },
   timeRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1036,7 +1036,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 6,
   },
-  timeBtnText: { fontSize: 14, fontWeight: "600", lineHeight: 20 },
+  timeBtnText: { fontSize: fs.sm, fontWeight: "600", lineHeight: 20 },
   calendarCard: {
     borderRadius: 14,
     borderWidth: 1,
@@ -1052,9 +1052,9 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   calNavBtn: { padding: 4 },
-  calMonthTitle: { fontSize: 16, fontWeight: "700", lineHeight: 22 },
+  calMonthTitle: { fontSize: fs.md, fontWeight: "700", lineHeight: 22 },
   calWeekRow: { flexDirection: "row", marginBottom: 4, width: "100%" },
-  calDayHeader: { flex: 1, textAlign: "center", fontSize: 12, fontWeight: "600" },
+  calDayHeader: { flex: 1, textAlign: "center", fontSize: fs.xs, fontWeight: "600" },
   calGrid: { flexDirection: "row", flexWrap: "wrap", width: "100%" },
   calCell: { width: "14.28%", aspectRatio: 1, alignItems: "center", justifyContent: "center" },
   selectedSummary: {
@@ -1067,7 +1067,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#E5E7EB",
     width: "100%",
   },
-  selectedCount: { fontSize: 13, fontWeight: "600", lineHeight: 18 },
+  selectedCount: { fontSize: fs.xs, fontWeight: "600", lineHeight: 18 },
   serviceWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1167,7 +1167,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     width: "100%",
   },
-  modalTitle: { fontSize: 18, fontWeight: "700", lineHeight: 24 },
+  modalTitle: { fontSize: fs.md, fontWeight: "700", lineHeight: 24 },
   timePickerItem: {
     flexDirection: "row",
     alignItems: "center",

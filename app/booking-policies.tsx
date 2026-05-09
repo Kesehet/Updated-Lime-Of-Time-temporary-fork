@@ -16,7 +16,7 @@ export default function BookingPoliciesScreen() {
   const { state, dispatch, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp } = useResponsive();
+  const { isTablet, hp, fs, buttonHeight, iconButtonSize } = useResponsive();
   const settings = state.settings;
   const policy = settings.cancellationPolicy;
 
@@ -99,7 +99,7 @@ export default function BookingPoliciesScreen() {
           <View style={styles.switchRow}>
             <View style={styles.switchLabel}>
               <IconSymbol name="exclamationmark.triangle.fill" size={20} color="#FF9800" />
-              <Text style={{ fontSize: 15, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Cancellation Fee</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Cancellation Fee</Text>
             </View>
             <Switch
               value={policy.enabled}
@@ -109,13 +109,13 @@ export default function BookingPoliciesScreen() {
             />
           </View>
           {!policy.enabled && (
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 8, lineHeight: 16 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 8, lineHeight: 16 }}>
               Enable to charge a cancellation fee when clients cancel within a set window. The fee is calculated as a percentage of the service price.
             </Text>
           )}
           {policy.enabled && (
             <View style={{ marginTop: 14 }}>
-              <Text style={{ fontSize: 12, fontWeight: "500", color: colors.muted, marginBottom: 8 }}>Hours Before Appointment</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.muted, marginBottom: 8 }}>Hours Before Appointment</Text>
               <View style={styles.chipRow}>
                 {[1, 2, 4, 6, 12, 24].map((h) => (
                   <Pressable
@@ -130,13 +130,13 @@ export default function BookingPoliciesScreen() {
                       },
                     ]}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: "500", color: policy.hoursBeforeAppointment === h ? "#FFFFFF" : colors.foreground }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "500", color: policy.hoursBeforeAppointment === h ? "#FFFFFF" : colors.foreground }}>
                       {h}h
                     </Text>
                   </Pressable>
                 ))}
               </View>
-              <Text style={{ fontSize: 12, fontWeight: "500", color: colors.muted, marginTop: 12, marginBottom: 8 }}>Fee Percentage</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.muted, marginTop: 12, marginBottom: 8 }}>Fee Percentage</Text>
               <View style={styles.chipRow}>
                 {[25, 50, 75, 100].map((p) => (
                   <Pressable
@@ -151,13 +151,13 @@ export default function BookingPoliciesScreen() {
                       },
                     ]}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: "500", color: policy.feePercentage === p ? "#FFFFFF" : colors.foreground }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "500", color: policy.feePercentage === p ? "#FFFFFF" : colors.foreground }}>
                       {p}%
                     </Text>
                   </Pressable>
                 ))}
               </View>
-              <Text style={{ fontSize: 11, color: colors.muted, marginTop: 8, lineHeight: 16 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 8, lineHeight: 16 }}>
                 Clients will be charged {policy.feePercentage}% of the service price if they cancel within {policy.hoursBeforeAppointment} hour{policy.hoursBeforeAppointment > 1 ? "s" : ""} of the appointment.
               </Text>
             </View>
@@ -170,15 +170,15 @@ export default function BookingPoliciesScreen() {
             <View style={styles.switchLabel}>
               <IconSymbol name="clock.fill" size={20} color={colors.primary} />
               <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text style={{ fontSize: 15, fontWeight: "500", color: colors.foreground }}>Request Response Window</Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 16 }}>
+                <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.foreground }}>Request Response Window</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2, lineHeight: 16 }}>
                   How long you have to approve or decline cancel/reschedule requests
                 </Text>
               </View>
             </View>
           </View>
           <View style={{ marginTop: 14 }}>
-            <Text style={{ fontSize: 12, fontWeight: "500", color: colors.muted, marginBottom: 8 }}>Auto-Decline After</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.muted, marginBottom: 8 }}>Auto-Decline After</Text>
             <View style={styles.chipRow}>
               {[12, 24, 48, 72].map((h) => (
                 <Pressable
@@ -193,13 +193,13 @@ export default function BookingPoliciesScreen() {
                     },
                   ]}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: "500", color: responseWindow === h ? "#FFFFFF" : colors.foreground }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "500", color: responseWindow === h ? "#FFFFFF" : colors.foreground }}>
                     {h}h
                   </Text>
                 </Pressable>
               ))}
             </View>
-            <Text style={{ fontSize: 11, color: colors.muted, marginTop: 8, lineHeight: 16 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 8, lineHeight: 16 }}>
               Pending requests will be automatically declined after {responseWindow} hour{responseWindow > 1 ? "s" : ""} with an SMS sent to the client.
             </Text>
           </View>
@@ -211,8 +211,8 @@ export default function BookingPoliciesScreen() {
             <View style={styles.switchLabel}>
               <IconSymbol name="checkmark.circle.fill" size={20} color={colors.success} />
               <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text style={{ fontSize: 15, fontWeight: "500", color: colors.foreground }}>Auto-Complete Appointments</Text>
-                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 16 }}>
+                <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.foreground }}>Auto-Complete Appointments</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2, lineHeight: 16 }}>
                   Automatically mark appointments as completed after the service ends
                 </Text>
               </View>
@@ -226,7 +226,7 @@ export default function BookingPoliciesScreen() {
           </View>
           {autoComplete && (
             <View style={{ marginTop: 14 }}>
-              <Text style={{ fontSize: 12, fontWeight: "500", color: colors.muted, marginBottom: 8 }}>Mark Complete After End Time</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.muted, marginBottom: 8 }}>Mark Complete After End Time</Text>
               <View style={styles.chipRow}>
                 {[5, 10, 15, 30].map((m) => (
                   <Pressable
@@ -241,13 +241,13 @@ export default function BookingPoliciesScreen() {
                       },
                     ]}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: "500", color: autoCompleteDelay === m ? "#FFFFFF" : colors.foreground }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "500", color: autoCompleteDelay === m ? "#FFFFFF" : colors.foreground }}>
                       +{m} min
                     </Text>
                   </Pressable>
                 ))}
               </View>
-              <Text style={{ fontSize: 11, color: colors.muted, marginTop: 8, lineHeight: 16 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 8, lineHeight: 16 }}>
                 Appointments will be automatically marked as completed {autoCompleteDelay} minute{autoCompleteDelay > 1 ? "s" : ""} after the scheduled end time. A notification will be sent to confirm.
               </Text>
             </View>
@@ -259,10 +259,10 @@ export default function BookingPoliciesScreen() {
           <View style={styles.switchRow}>
             <View style={styles.switchLabel}>
               <IconSymbol name="gift.fill" size={20} color="#E91E63" />
-              <Text style={{ fontSize: 15, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Gift Card Validity</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Gift Card Validity</Text>
             </View>
           </View>
-          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 10, marginTop: 4 }}>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 10, marginTop: 4 }}>
             How many days a publicly-purchased gift card remains valid
           </Text>
           <View style={styles.chipRow}>
@@ -275,7 +275,7 @@ export default function BookingPoliciesScreen() {
                   borderColor: giftValidDays === d ? "#E91E63" : colors.border,
                 }]}
               >
-                <Text style={{ fontSize: 13, fontWeight: "600", color: giftValidDays === d ? "#fff" : colors.foreground }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: giftValidDays === d ? "#fff" : colors.foreground }}>
                   {d === 365 ? "1 year" : `${d} days`}
                 </Text>
               </Pressable>
@@ -287,10 +287,10 @@ export default function BookingPoliciesScreen() {
           <View style={styles.switchRow}>
             <View style={styles.switchLabel}>
               <IconSymbol name="link" size={20} color={colors.primary} />
-              <Text style={{ fontSize: 15, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Booking Page URL</Text>
+              <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Booking Page URL</Text>
             </View>
           </View>
-          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 8, marginTop: 4 }}>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8, marginTop: 4 }}>
             Custom slug for your public booking page
           </Text>
           <TextInput
@@ -320,11 +320,11 @@ export default function BookingPoliciesScreen() {
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 0.5 },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "700" },
+  headerTitle: { fontSize: fs.md, fontWeight: "700" },
   card: { borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1 },
   switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   switchLabel: { flexDirection: "row", alignItems: "center", flex: 1 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, alignItems: "center", justifyContent: "center", minHeight: 36 },
-  input: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, fontSize: 14, lineHeight: 20, borderWidth: 1 },
+  input: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, fontSize: fs.sm, lineHeight: 20, borderWidth: 1 },
 });

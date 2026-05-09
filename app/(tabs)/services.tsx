@@ -30,7 +30,7 @@ export default function ServicesScreen() {
   const { state } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { hp, modalMaxWidth, maxContentWidth } = useResponsive();
+  const { hp, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const [activeTab, setActiveTab] = useState<Tab>("services");
   const servicesListRef = useScrollToTopOnFocus<FlatList>();
   const productsListRef = useScrollToTopOnFocus<FlatList>();
@@ -157,7 +157,7 @@ export default function ServicesScreen() {
       <FuturisticBackground />
       {/* Header */}
       <View style={styles.header}>
-        <Text style={{ fontSize: 22, fontWeight: "700", color: colors.foreground }}>
+        <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.foreground }}>
           {activeTab === "services" ? "Services" : "Products"}
         </Text>
         <Pressable
@@ -207,7 +207,7 @@ export default function ServicesScreen() {
               onChangeText={setServiceSearch}
               placeholder="Search services…"
               placeholderTextColor={colors.muted}
-              style={{ flex: 1, marginLeft: 8, fontSize: 14, color: colors.foreground, height: 40 }}
+              style={{ flex: 1, marginLeft: 8, fontSize: fs.sm, color: colors.foreground, height: 40 }}
               returnKeyType="search"
               clearButtonMode="while-editing"
             />
@@ -229,7 +229,7 @@ export default function ServicesScreen() {
                     borderColor: selectedCategory === cat ? colors.primary : colors.border,
                   }]}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: "600", color: selectedCategory === cat ? "#fff" : colors.muted }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: selectedCategory === cat ? "#fff" : colors.muted }}>
                     {cat ?? "All"}
                   </Text>
                 </Pressable>
@@ -251,7 +251,7 @@ export default function ServicesScreen() {
                     style={[styles.groupHeader, { borderBottomColor: colors.border }]}
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1 }}>
-                      <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8 }}>
                         {row.category}
                       </Text>
                       <View style={[styles.countBadge, { backgroundColor: colors.primary + "20" }]}>
@@ -278,16 +278,16 @@ export default function ServicesScreen() {
                     <View style={[styles.colorBar, { backgroundColor: svc.color }]} />
                   )}
                   <View style={styles.cardContent}>
-                    <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }} numberOfLines={1}>{svc.name}</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }} numberOfLines={1}>{svc.name}</Text>
                     <View style={styles.metaRow}>
                       <IconSymbol name="clock.fill" size={12} color={colors.muted} />
-                      <Text style={{ fontSize: 12, color: colors.muted, marginLeft: 4 }}>{svc.duration} min</Text>
-                      <Text style={{ fontSize: 12, color: colors.muted, marginHorizontal: 6 }}>·</Text>
-                      <Text style={{ fontSize: 13, fontWeight: "600", color: colors.primary }}>${svc.price}</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted, marginLeft: 4 }}>{svc.duration} min</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted, marginHorizontal: 6 }}>·</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>${svc.price}</Text>
                       {svc.category && selectedCategory ? (
                         <>
-                          <Text style={{ fontSize: 12, color: colors.muted, marginHorizontal: 6 }}>·</Text>
-                          <Text style={{ fontSize: 12, color: colors.muted }}>{svc.category}</Text>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginHorizontal: 6 }}>·</Text>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted }}>{svc.category}</Text>
                         </>
                       ) : null}
                     </View>
@@ -307,8 +307,8 @@ export default function ServicesScreen() {
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <IconSymbol name="list.bullet" size={48} color={colors.muted} />
-                <Text style={{ fontSize: 15, color: colors.muted, marginTop: 12 }}>No services yet</Text>
-                <Text style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>Tap + to create your first service</Text>
+                <Text style={{ fontSize: fs.sm, color: colors.muted, marginTop: 12 }}>No services yet</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>Tap + to create your first service</Text>
               </View>
             }
             contentContainerStyle={{ paddingBottom: 80 }}
@@ -327,7 +327,7 @@ export default function ServicesScreen() {
               onChangeText={setProductSearch}
               placeholder="Search products…"
               placeholderTextColor={colors.muted}
-              style={{ flex: 1, marginLeft: 8, fontSize: 14, color: colors.foreground, height: 40 }}
+              style={{ flex: 1, marginLeft: 8, fontSize: fs.sm, color: colors.foreground, height: 40 }}
               returnKeyType="search"
               clearButtonMode="while-editing"
             />
@@ -349,7 +349,7 @@ export default function ServicesScreen() {
                     borderColor: selectedBrand === brand ? colors.primary : colors.border,
                   }]}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: "600", color: selectedBrand === brand ? "#fff" : colors.muted }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: selectedBrand === brand ? "#fff" : colors.muted }}>
                     {brand ?? "All"}
                   </Text>
                 </Pressable>
@@ -372,7 +372,7 @@ export default function ServicesScreen() {
                     style={[styles.groupHeader, { borderBottomColor: colors.border }]}
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1 }}>
-                      <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8 }}>
                         {row.brand}
                       </Text>
                       <View style={[styles.countBadge, { backgroundColor: colors.primary + "20" }]}>
@@ -401,18 +401,18 @@ export default function ServicesScreen() {
                     </View>
                   )}
                   <View style={styles.cardContent}>
-                    <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }} numberOfLines={1}>{item.name}</Text>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }} numberOfLines={1}>{item.name}</Text>
                     <View style={styles.metaRow}>
-                      <Text style={{ fontSize: 13, fontWeight: "600", color: colors.primary }}>${item.price.toFixed(2)}</Text>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.primary }}>${item.price.toFixed(2)}</Text>
                       {!item.available && (
                         <>
-                          <Text style={{ fontSize: 12, color: colors.muted, marginHorizontal: 6 }}>·</Text>
-                          <Text style={{ fontSize: 12, color: colors.error }}>Unavailable</Text>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginHorizontal: 6 }}>·</Text>
+                          <Text style={{ fontSize: fs.xs, color: colors.error }}>Unavailable</Text>
                         </>
                       )}
                     </View>
                     {item.description ? (
-                      <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }} numberOfLines={1}>{item.description}</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }} numberOfLines={1}>{item.description}</Text>
                     ) : null}
                   </View>
                   <IconSymbol name="chevron.right" size={16} color={colors.muted} style={{ marginRight: 14 }} />
@@ -422,8 +422,8 @@ export default function ServicesScreen() {
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <IconSymbol name="bag.fill" size={48} color={colors.muted} />
-                <Text style={{ fontSize: 15, color: colors.muted, marginTop: 12 }}>No products yet</Text>
-                <Text style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>Tap + to add your first product</Text>
+                <Text style={{ fontSize: fs.sm, color: colors.muted, marginTop: 12 }}>No products yet</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>Tap + to add your first product</Text>
               </View>
             }
             contentContainerStyle={{ paddingBottom: 80, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   segmentText: {
-    fontSize: 14,
+    fontSize: fs.sm,
     fontWeight: "600",
   },
   searchBar: {
