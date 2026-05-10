@@ -887,7 +887,23 @@ export default function ClientBookingWizardScreen() {
         <Pressable style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.7 }]} onPress={handleBack}>
           <IconSymbol name="chevron.left" size={20} color={TEXT_PRIMARY} />
         </Pressable>
-        <Text style={[s.headerTitle, { color: TEXT_PRIMARY }]}>Book Appointment</Text>
+        {/* Service thumbnail + name in header when a service is pre-selected */}
+        {selectedService && step > STEP_SERVICE ? (
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            {selectedService.imageUrl ? (
+              <Image
+                source={{ uri: selectedService.imageUrl }}
+                style={{ width: 28, height: 28, borderRadius: 6 }}
+                contentFit="cover"
+              />
+            ) : null}
+            <Text numberOfLines={1} style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "700", flexShrink: 1 }}>
+              {selectedService.name}
+            </Text>
+          </View>
+        ) : (
+          <Text style={[s.headerTitle, { color: TEXT_PRIMARY }]}>Book Appointment</Text>
+        )}
         <View style={{ width: 32 }} />
       </View>
 
@@ -1045,13 +1061,9 @@ export default function ClientBookingWizardScreen() {
               )}
               {/* ── Services tab ── */}
               {serviceTab === "services" && <>
-              {/* Category filter chips */}
+              {/* Category filter chips — use wrapping View to avoid ScrollView touch conflicts on iOS */}
               {svcCats.length > 1 && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ paddingHorizontal: 0, paddingBottom: 12, gap: 8, flexDirection: "row", alignItems: "center" }}
-                >
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingBottom: 12 }}>
                   {[null, ...svcCats].map((cat) => {
                     const isAll = cat === null;
                     const isActive = wizardCatFilter === cat;
@@ -1085,7 +1097,7 @@ export default function ClientBookingWizardScreen() {
                       </Pressable>
                     );
                   })}
-                </ScrollView>
+                </View>
               )}
               {filteredServices.length === 0 ? (
                 <Text style={{ color: TEXT_MUTED, textAlign: "center", marginTop: 24 }}>No services in this category.</Text>
@@ -1263,7 +1275,20 @@ export default function ClientBookingWizardScreen() {
         {/* Step 2 (dynamic): Location — only shown when >1 location */}
         {step === STEP_LOCATION && showLocationStep && (
           <View style={s.stepContent}>
-            <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Choose a Location</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+              <Text style={[s.stepTitle, { color: TEXT_PRIMARY, marginBottom: 0 }]}>Choose a Location</Text>
+              {selectedService && (
+                <Pressable
+                  onPress={() => {
+                    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setStep(STEP_SERVICE);
+                  }}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, paddingVertical: 4, paddingHorizontal: 2 }]}
+                >
+                  <Text style={{ color: LIME_GREEN, fontSize: 13, fontWeight: "600" }}>Change service</Text>
+                </Pressable>
+              )}
+            </View>
             <Text style={[s.stepSubtitle, { color: TEXT_MUTED }]}>Select where you'd like your appointment.</Text>
             {locations.map((loc) => (
               <Pressable

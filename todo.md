@@ -2048,3 +2048,6 @@
 - [x] Business detail: Fix sticky bottom bar safe area (home indicator)
 - [x] Business detail: Per-service Book button now lands on Location step (step 1) with service pre-selected
 - [x] Business detail: Book an Appointment button opens wizard at step 0 (Service selection)
+- [x] Booking wizard: Fix category filter chips (replaced horizontal ScrollView with wrapping View to fix iOS touch conflict)
+- [x] Booking wizard: Service thumbnail shown in header when service is pre-selected (steps > 0)
+- [x] Booking wizard: 'Change service' link added on Location step
