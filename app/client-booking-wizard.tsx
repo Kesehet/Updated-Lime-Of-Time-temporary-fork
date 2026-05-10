@@ -244,6 +244,19 @@ export default function ClientBookingWizardScreen() {
       .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
     return past[0]?.clientAddress ?? "";
   }, [state.appointments, effectiveSlug]);
+  const eligibleStaff = useMemo(() => {
+    let filtered = selectedService
+      ? staff.filter((m) => !m.serviceIds?.length || m.serviceIds.includes(selectedService.localId))
+      : staff;
+    // Further filter by selected location (only show staff assigned to that location)
+    if (selectedLocation) {
+      filtered = filtered.filter((m) => {
+        if (!m.locationIds || !m.locationIds.length) return true; // null/empty = all locations
+        return m.locationIds.includes(selectedLocation.localId);
+      });
+    }
+    return filtered;
+  }, [staff, selectedService, selectedLocation]);
   const STEPS = showLocationStep
     ? (hasProducts
         ? (isMobileService ? ["Service", "Location", "Staff", "Date & Time", "Address", "Products", "Promo", "Payment", "Confirm"] : ["Service", "Location", "Staff", "Date & Time", "Products", "Promo", "Payment", "Confirm"])
@@ -723,19 +736,6 @@ export default function ClientBookingWizardScreen() {
 
   const calDays = getDaysInMonth(calYear, calMonth);
   const monthLabel = new Date(calYear, calMonth, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
-  const eligibleStaff = useMemo(() => {
-    let filtered = selectedService
-      ? staff.filter((m) => !m.serviceIds?.length || m.serviceIds.includes(selectedService.localId))
-      : staff;
-    // Further filter by selected location (only show staff assigned to that location)
-    if (selectedLocation) {
-      filtered = filtered.filter((m) => {
-        if (!m.locationIds || !m.locationIds.length) return true; // null/empty = all locations
-        return m.locationIds.includes(selectedLocation.localId);
-      });
-    }
-    return filtered;
-  }, [staff, selectedService, selectedLocation]);
 
   return (
     <ScreenContainer containerClassName="bg-[#0D2318]">
