@@ -281,6 +281,26 @@ export default function ClientBookingWizardScreen() {
   const STEP_PAYMENT = hasProducts ? (showLocationStep ? 6 + _addrOff : 5 + _addrOff) : (showLocationStep ? 5 + _addrOff : 4 + _addrOff);
   const STEP_CONFIRM = hasProducts ? (showLocationStep ? 7 + _addrOff : 6 + _addrOff) : (showLocationStep ? 6 + _addrOff : 5 + _addrOff);
 
+  // Compute the net amount due for the current booking (used to bypass Payment step when $0)
+  const wizardAmountDue = useMemo(() => {
+    if (!selectedService) return 0;
+    const svcPrice = selectedService.price ? parseFloat(selectedService.price) : 0;
+    const activeDiscount = discounts.find(d =>
+      !d.serviceIds || (d.serviceIds as string[]).length === 0 || (d.serviceIds as string[]).includes(selectedService.localId)
+    );
+    const discSaving = activeDiscount ? parseFloat((svcPrice * activeDiscount.percentage / 100).toFixed(2)) : 0;
+    const afterDiscount = svcPrice - discSaving;
+    const promoSaving = promoApplied
+      ? (promoApplied.flatAmount
+          ? Math.min(promoApplied.flatAmount, afterDiscount)
+          : parseFloat((afterDiscount * (promoApplied.percentage ?? 0) / 100).toFixed(2)))
+      : 0;
+    const afterPromo = Math.max(0, afterDiscount - promoSaving);
+    const giftSaving = giftApplied ? Math.min(giftApplied.value, afterPromo) : 0;
+    const travelFee = (isMobileService && selectedService.travelFee && selectedService.travelFee > 0) ? selectedService.travelFee : 0;
+    return Math.max(0, afterPromo - giftSaving) + productCartTotal + travelFee;
+  }, [selectedService, discounts, promoApplied, giftApplied, isMobileService, productCartTotal]);
+
   // Load services, staff, locations, and discounts
   useEffect(() => {
     (async () => {
@@ -553,6 +573,14 @@ export default function ClientBookingWizardScreen() {
 
   const handleNext = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // When the step just before Payment is completed and the net amount due is $0
+    // (gift fully covers the booking), skip the Payment step entirely and jump to Confirm.
+    const nextStep = step + 1;
+    if (nextStep === STEP_PAYMENT && wizardAmountDue <= 0) {
+      setPaymentMethod("cash" as PaymentMethodId); // sentinel — server treats $0 as free/paid
+      setStep(STEP_CONFIRM);
+      return;
+    }
     // Address step: sync address and handle travel zone warning
     if (step === STEP_ADDRESS) {
       if (selectedService?.maxTravelDistance) {
@@ -591,14 +619,17 @@ export default function ClientBookingWizardScreen() {
 
   const handleSubmit = async () => {
     if (!selectedService || !selectedDate || !selectedSlot) return;
-    if (!paymentMethod) {
-      Alert.alert("Payment Required", "Please select a payment method before confirming.");
-      return;
-    }
-    // Card payments don't need a confirmation number — Stripe handles it
-    if (paymentMethod !== "cash" && paymentMethod !== "card" && !paymentConfirmationNumber.trim()) {
-      Alert.alert("Confirmation Number Required", "Please enter your payment confirmation number.");
-      return;
+    // When the gift fully covers the booking ($0 due), skip all payment validation
+    if (wizardAmountDue > 0) {
+      if (!paymentMethod) {
+        Alert.alert("Payment Required", "Please select a payment method before confirming.");
+        return;
+      }
+      // Card payments don't need a confirmation number — Stripe handles it
+      if (paymentMethod !== "cash" && paymentMethod !== "card" && !paymentConfirmationNumber.trim()) {
+        Alert.alert("Confirmation Number Required", "Please enter your payment confirmation number.");
+        return;
+      }
     }
     if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     // Pre-check: if a package is being used, verify it hasn't expired
@@ -677,8 +708,10 @@ export default function ClientBookingWizardScreen() {
           notes: notes.trim() || null,
           staffId: selectedStaffId !== "any" ? selectedStaffId : undefined,
           locationId: selectedLocation?.localId ?? undefined,
-          paymentMethod,
-          paymentConfirmationNumber: paymentMethod !== "cash" ? paymentConfirmationNumber.trim() : undefined,
+          // When the gift fully covers the booking (amount due = $0), mark as free/paid
+          paymentMethod: wizardAmountDue <= 0 ? "free" : paymentMethod,
+          paymentStatus: wizardAmountDue <= 0 ? "paid" : undefined,
+          paymentConfirmationNumber: (paymentMethod !== "cash" && wizardAmountDue > 0) ? paymentConfirmationNumber.trim() : undefined,
           promoCode: promoApplied?.code ?? undefined,
           promoLocalId: promoApplied?.localId ?? undefined,
           giftCode: giftApplied?.code ?? undefined,
