@@ -363,6 +363,20 @@ export default function ClientBookingWizardScreen() {
     }
   }, [preGiftCode]);
 
+  // Auto-advance past Location step for single-location businesses
+  // When the user lands on the Location step and there is only one location (already auto-selected),
+  // wait 300 ms then skip forward to the Staff step automatically.
+  useEffect(() => {
+    if (step !== STEP_LOCATION) return;
+    if (locations.length !== 1) return;
+    if (!selectedLocation) return;
+    const timer = setTimeout(() => {
+      setStep(STEP_STAFF);
+    }, 300);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, STEP_LOCATION, STEP_STAFF, locations.length, selectedLocation]);
+
   // Auto-validate gift code when client reaches the Promo step with a pre-filled code
   useEffect(() => {
     if (step !== STEP_PROMO) return;
@@ -1231,6 +1245,9 @@ export default function ClientBookingWizardScreen() {
                   setSelectedLocation(loc);
                   setSelectedDate(null);
                   setSelectedSlot(null);
+                  // Invalidate the availability cache so the calendar re-fetches slots
+                  // for the newly chosen location on the Date & Time step.
+                  lastAvailFetchKey.current = "";
                 }}
               >
                 <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}20`, alignItems: "center", justifyContent: "center" }]}>
