@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, \"localId\", \"businessOwnerId\", \"paymentStatus\", \"stripePaymentIntentId\", \"stripeCheckoutSessionId\", \"serviceName\", \"clientName\" FROM appointments WHERE \"stripePaymentIntentId\" IS NOT NULL ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, \"localId\", \"businessOwnerId\", \"paymentStatus\", \"stripePaymentIntentId\", \"stripeCheckoutSessionId\", \"serviceName\", \"clientName\" FROM appointments WHERE \"stripePaymentIntentId\" IS NOT NULL ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "3030001",
+      "localId": "localId",
+      "businessOwnerId": "businessOwnerId",
+      "paymentStatus": "paymentStatus",
+      "stripePaymentIntentId": "stripePaymentIntentId",
+      "stripeCheckoutSessionId": "stripeCheckoutSessionId",
+      "serviceName": "serviceName",
+      "clientName": "clientName"
+    },
+    {
+      "id": "3000001",
+      "localId": "localId",
+      "businessOwnerId": "businessOwnerId",
+      "paymentStatus": "paymentStatus",
+      "stripePaymentIntentId": "stripePaymentIntentId",
+      "stripeCheckoutSessionId": "stripeCheckoutSessionId",
+      "serviceName": "serviceName",
+      "clientName": "clientName"
+    },
+    {
+      "id": "2970002",
+      "localId": "localId",
+      "businessOwnerId": "businessOwnerId",
+      "paymentStatus": "paymentStatus",
+      "stripePaymentIntentId": "stripePaymentIntentId",
+      "stripeCheckoutSessionId": "stripeCheckoutSessionId",
+      "serviceName": "serviceName",
+      "clientName": "clientName"
+    },
+    {
+      "id": "2970001",
+      "localId": "localId",
+      "businessOwnerId": "businessOwnerId",
+      "paymentStatus": "paymentStatus",
+      "stripePaymentIntentId": "stripePaymentIntentId",
+      "stripeCheckoutSessionId": "stripeCheckoutSessionId",
+      "serviceName": "serviceName",
+      "clientName": "clientName"
+    },
+    {
+      "id": "2940001",
+      "localId": "localId",
+      "businessOwnerId": "businessOwnerId",
+      "paymentStatus": "paymentStatus",
+      "stripePaymentIntentId": "stripePaymentIntentId",
+      "stripeCheckoutSessionId": "stripeCheckoutSessionId",
+      "serviceName": "serviceName",
+      "clientName": "clientName"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlocalId\tbusinessOwnerId\tpaymentStatus\tstripePaymentIntentId\tstripeCheckoutSessionId\tserviceName\tclientName\n3030001\tlocalId\tbusinessOwnerId\tpaymentStatus\tstripePaymentIntentId\tstripeCheckoutSessionId\tserviceName\tclientName\n3000001\tlocalId\tbusinessOwnerId\tpaymentStatus\tstripePaymentIntentId\tstripeCheckoutSessionId\tserviceName\tclientName\n2970002\tlocalId\tbusinessOwnerId\tpaymentStatus\tstripePaymentIntentId\tstripeCheckoutSessionId\tserviceName\tclientName\n2970001\tlocalId\tbusinessOwnerId\tpaymentStatus\tstripePaymentIntentId\tstripeCheckoutSessionId\tserviceName\tclientName\n2940001\tlocalId\tbusinessOwnerId\tpaymentStatus\tstripePaymentIntentId\tstripeCheckoutSessionId\tserviceName\tclientName\n",
+  "stderr": "",
+  "execution_time_ms": 648
+}

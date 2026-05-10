@@ -569,9 +569,11 @@ export function registerStripeConnectRoutes(app: Express): void {
 
       const sig = req.headers["stripe-signature"] as string;
       let event: Stripe.Event;
-
+      // Use rawBody (preserved by express.json verify callback) if available,
+      // otherwise fall back to req.body (works when express.raw middleware runs first)
+      const rawPayload = (req as any).rawBody ?? req.body;
       try {
-        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+        event = stripe.webhooks.constructEvent(rawPayload, sig, webhookSecret);
       } catch (err: any) {
         console.error("[StripeConnect] Webhook signature verification failed:", err.message);
         res.status(400).send(`Webhook Error: ${err.message}`);
