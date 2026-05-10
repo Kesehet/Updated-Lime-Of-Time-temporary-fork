@@ -1821,7 +1821,7 @@ export default function ClientBookingWizardScreen() {
               ))}
             </View>
 
-            {paymentMethod && paymentMethod !== "cash" && (
+            {paymentMethod && paymentMethod !== "cash" && paymentMethod !== "card" && (
               <View style={{ marginTop: 16 }}>
                 <Text style={[s.notesLabel, { color: TEXT_PRIMARY }]}>
                   {paymentMethod === "zelle" ? "Zelle" : paymentMethod === "venmo" ? "Venmo" : "Cash App"} Confirmation
@@ -1861,6 +1861,14 @@ export default function ClientBookingWizardScreen() {
                 <IconSymbol name="info.circle.fill" size={18} color={TEXT_MUTED} />
                 <Text style={[{ color: TEXT_MUTED, fontSize: 13, flex: 1, lineHeight: 18 }]}>
                   Cash payments are collected at your appointment. The business will confirm receipt from their side.
+                </Text>
+              </View>
+            )}
+            {paymentMethod === "card" && (
+              <View style={[s.cashInfoCard, { backgroundColor: "rgba(74,222,128,0.07)", borderColor: `${LIME_GREEN}40` }]}>
+                <Text style={{ fontSize: 16 }}>💳</Text>
+                <Text style={[{ color: TEXT_MUTED, fontSize: 13, flex: 1, lineHeight: 18 }]}>
+                  You'll be taken to a secure Stripe payment screen after confirming your booking.
                 </Text>
               </View>
             )}
@@ -2462,7 +2470,9 @@ function canProceed(
   }
   if (step === STEP_PAYMENT) {
     if (!paymentMethod) return false;
-    if (paymentMethod !== "cash" && !paymentConfirmationNumber?.trim()) return false;
+    // Card payments don't need a confirmation number — Stripe handles it
+    // Cash payments don't need one either — paid in person
+    if (paymentMethod !== "cash" && paymentMethod !== "card" && !paymentConfirmationNumber?.trim()) return false;
     return true;
   }
   // Promo step is always skippable (optional)
