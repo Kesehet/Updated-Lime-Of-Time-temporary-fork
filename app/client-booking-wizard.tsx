@@ -2224,9 +2224,8 @@ export default function ClientBookingWizardScreen() {
           );
         })()}
       </ScrollView>
-      </KeyboardAvoidingView>
 
-      {/* Bottom Action */}
+      {/* Bottom Action — inside KeyboardAvoidingView so it rises above the keyboard */}
       <View style={[s.bottomAction, { backgroundColor: PORTAL_BG, borderTopColor: DIVIDER }]}>
         {step < STEPS.length - 1 ? (
           <Pressable
@@ -2258,6 +2257,7 @@ export default function ClientBookingWizardScreen() {
           </Pressable>
         )}
       </View>
+      </KeyboardAvoidingView>
 
       {/* Full-screen photo preview modal */}
       <Modal
@@ -2433,7 +2433,7 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     paymentMethodLabel: { fontSize: 15, fontWeight: "600" },
     paymentMethodHint: { fontSize: 12, marginTop: 2 },
     cashInfoCard: { flexDirection: "row", alignItems: "flex-start", borderRadius: 12, borderWidth: 1, padding: 12, gap: 10, marginTop: 12 },
-    bottomAction: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 16, borderTopWidth: 1 },
+    bottomAction: { padding: 16, borderTopWidth: 1 },
     nextBtn: { backgroundColor: LIME_GREEN, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 14 },
     nextBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   });

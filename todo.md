@@ -2051,3 +2051,4 @@
 - [x] Booking wizard: Fix category filter chips (replaced horizontal ScrollView with wrapping View to fix iOS touch conflict)
 - [x] Booking wizard: Service thumbnail shown in header when service is pre-selected (steps > 0)
 - [x] Booking wizard: 'Change service' link added on Location step
+- [x] Booking wizard: Fix Address step Continue button hidden behind keyboard — moved bottomAction inside KeyboardAvoidingView
