@@ -59,6 +59,7 @@ interface RecentlyViewedBusiness {
   reviewCount: number;
   distanceKm: number | null;
   viewedAt: number; // timestamp ms
+  hasMobileServices?: boolean;
 }
 
 async function trackRecentlyViewed(biz: DiscoverBusiness): Promise<void> {
@@ -79,6 +80,7 @@ async function trackRecentlyViewed(biz: DiscoverBusiness): Promise<void> {
       reviewCount: biz.reviewCount,
       distanceKm: biz.distanceKm,
       viewedAt: Date.now(),
+      hasMobileServices: biz.hasMobileServices ?? false,
     };
     // Prepend and keep only last 5
     const updated = [entry, ...filtered].slice(0, 5);
@@ -183,6 +185,13 @@ function RecentlyViewedSection({ items, router, onClear }: { items: RecentlyView
                 ) : (
                   <Text style={[recentStyles.service, { color: TEXT_MUTED }]}>New</Text>
                 )}
+                 {biz.hasMobileServices && (
+                  <View style={{ flexDirection: "row", marginBottom: 4 }}>
+                    <View style={{ backgroundColor: "rgba(74,124,89,0.25)", borderColor: "rgba(74,124,89,0.5)", borderWidth: 1, borderRadius: 20, paddingHorizontal: 6, paddingVertical: 2 }}>
+                      <Text style={{ fontSize: 10, color: "#8FBF6A", fontWeight: "600" }}>🚗 Comes to You</Text>
+                    </View>
+                  </View>
+                )}
                 <View style={[recentStyles.rebookBtn, { backgroundColor: accentColor + "18", borderColor: accentColor + "40" }]}>
                   <Text style={[recentStyles.rebookText, { color: accentColor }]}>View</Text>
                 </View>
@@ -194,7 +203,6 @@ function RecentlyViewedSection({ items, router, onClear }: { items: RecentlyView
     </View>
   );
 }
-
 // ─── Recently Visited Component ─────────────────────────────────────────────
 
 interface RecentBusiness {
@@ -404,7 +412,7 @@ export default function DiscoverScreen() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showRadiusPicker, setShowRadiusPicker] = useState(false);
   const [nearMeLoading, setNearMeLoading] = useState(false);
-  const [sortMode, setSortMode] = useState<"default" | "rating" | "reviews">("default");
+  const [sortMode, setSortMode] = useState<"default" | "rating" | "reviews" | "distance">("default");
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedBusiness[]>([]);
   // Dynamic categories fetched from API (includes custom categories from all businesses)
   const [dynamicCategories, setDynamicCategories] = useState<string[]>([]);
@@ -478,6 +486,7 @@ export default function DiscoverScreen() {
       // When no GPS coords are provided, sort by rating so best businesses appear first
       if (sortMode === "rating") params.set("sortBy", "rating");
       else if (sortMode === "reviews") params.set("sortBy", "reviews");
+      else if (sortMode === "distance") params.set("sortBy", "distance");
       else if (lat == null && lng == null) params.set("sortBy", "rating");
       const res = await fetch(`${apiBase}/api/client/businesses/discover?${params.toString()}`);
       if (res.ok) {
@@ -677,6 +686,21 @@ export default function DiscoverScreen() {
     return businesses;
   }, [businesses, serviceTypeFilter]);
 
+  // Derive the set of categories available in the currently filtered businesses
+  // so category chips only show options that have at least one matching business
+  const availableCategoriesForFilter = useMemo(() => {
+    if (serviceTypeFilter === 'all') return null; // null = show all chips
+    const cats = new Set<string>();
+    for (const biz of filteredBusinesses) {
+      if (biz.serviceCategories && biz.serviceCategories.length > 0) {
+        for (const c of biz.serviceCategories) cats.add(c);
+      } else if (biz.businessCategory) {
+        cats.add(biz.businessCategory);
+      }
+    }
+    return cats;
+  }, [filteredBusinesses, serviceTypeFilter]);
+
   const s = styles(colors);
    return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
@@ -800,11 +824,21 @@ export default function DiscoverScreen() {
               onPress={() => {
                 if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setServiceTypeFilter(type);
-                // Persist service type filter selection
-                AsyncStorage.getItem(DISCOVER_PREFS_KEY).then((json) => {
-                  const prev = json ? JSON.parse(json) : {};
-                  AsyncStorage.setItem(DISCOVER_PREFS_KEY, JSON.stringify({ ...prev, serviceTypeFilter: type })).catch(() => {});
-                }).catch(() => {});
+                // When switching service type, reset category to All so the user isn't
+                // stuck on a category that doesn't exist in the new filter
+                if (state.discoverCategory) {
+                  dispatch({ type: "SET_DISCOVER_CATEGORY", payload: null });
+                  AsyncStorage.getItem(DISCOVER_PREFS_KEY).then((json) => {
+                    const prev = json ? JSON.parse(json) : {};
+                    AsyncStorage.setItem(DISCOVER_PREFS_KEY, JSON.stringify({ ...prev, serviceTypeFilter: type, category: null })).catch(() => {});
+                  }).catch(() => {});
+                } else {
+                  // Persist service type filter selection only
+                  AsyncStorage.getItem(DISCOVER_PREFS_KEY).then((json) => {
+                    const prev = json ? JSON.parse(json) : {};
+                    AsyncStorage.setItem(DISCOVER_PREFS_KEY, JSON.stringify({ ...prev, serviceTypeFilter: type })).catch(() => {});
+                  }).catch(() => {});
+                }
               }}
               style={({ pressed }) => ({
                 paddingHorizontal: 14,
@@ -848,7 +882,18 @@ export default function DiscoverScreen() {
             const pinnedSet = new Set(pinnedCategories);
             const pinned = restChips.filter((c) => pinnedSet.has(c.label));
             const unpinned = restChips.filter((c) => !pinnedSet.has(c.label));
-            const orderedChips = [allChip, ...pinned, ...unpinned];
+            // When a service type filter is active, only show chips that have matching businesses
+            // "All" chip is always shown; other chips are hidden if no businesses in that category match the filter
+            const filteredRestChips = availableCategoriesForFilter
+              ? [...pinned, ...unpinned].filter((c) => {
+                  if (c.label === "All") return true;
+                  // Check if any business in the filtered set has this category
+                  return Array.from(availableCategoriesForFilter).some(
+                    (cat) => cat.toLowerCase() === c.label.toLowerCase()
+                  );
+                })
+              : [...pinned, ...unpinned];
+            const orderedChips = [allChip, ...filteredRestChips];
             return orderedChips.map(({ label, emoji, color }) => {
               const isActive = activeCategory === label;
               const isPinned = pinnedCategories.includes(label);
@@ -882,34 +927,74 @@ export default function DiscoverScreen() {
         </ScrollView>
       </View>
 
-      {/* Sort toggle row */}
-      <View style={{ flexDirection: "row", paddingHorizontal: 16, gap: 8, marginBottom: 4 }}>
-        {(["default", "rating", "reviews"] as const).map((mode) => {
-          const labels = { default: "Best Match", rating: "Top Rated", reviews: "Most Reviews" };
-          const active = sortMode === mode;
-          return (
-            <Pressable
-              key={mode}
-              onPress={() => {
-                setSortMode(mode);
-                fetchBusinesses(userLat ?? undefined, userLng ?? undefined, searchQuery, state.discoverCategory, state.discoverRadius);
-              }}
-              style={({ pressed }) => ({
-                paddingHorizontal: 12,
-                paddingVertical: 5,
-                borderRadius: 20,
-                borderWidth: 1,
-                backgroundColor: active ? "rgba(143,191,106,0.2)" : CARD_BG,
-                borderColor: active ? GREEN_ACCENT : CARD_BORDER,
-                opacity: pressed ? 0.75 : 1,
-              })}
-            >
-              <Text style={{ color: active ? GREEN_ACCENT : TEXT_MUTED, fontSize: 12, fontWeight: active ? "700" : "500" }}>
-                {labels[mode]}
+      {/* Sort toggle row + Saved button */}
+      <View style={{ flexDirection: "row", paddingHorizontal: 16, gap: 8, marginBottom: 4, alignItems: "center" }}>
+        <View style={{ flexDirection: "row", gap: 8, flex: 1 }}>
+          {(["default", "rating", "reviews", "distance"] as const).map((mode) => {
+            const labels = { default: "Best Match", rating: "Top Rated", reviews: "Most Reviews", distance: "Nearest" };
+            const active = sortMode === mode;
+            // Only show Nearest when GPS is available
+            if (mode === "distance" && userLat === null) return null;
+            return (
+              <Pressable
+                key={mode}
+                onPress={() => {
+                  setSortMode(mode);
+                  fetchBusinesses(userLat ?? undefined, userLng ?? undefined, searchQuery, state.discoverCategory, state.discoverRadius);
+                }}
+                style={({ pressed }) => ({
+                  paddingHorizontal: 12,
+                  paddingVertical: 5,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  backgroundColor: active ? "rgba(143,191,106,0.2)" : CARD_BG,
+                  borderColor: active ? GREEN_ACCENT : CARD_BORDER,
+                  opacity: pressed ? 0.75 : 1,
+                })}
+              >
+                <Text style={{ color: active ? GREEN_ACCENT : TEXT_MUTED, fontSize: 12, fontWeight: active ? "700" : "500" }}>
+                  {labels[mode]}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {/* Saved businesses shortcut with count badge */}
+        <Pressable
+          onPress={() => router.push("/client-saved-businesses" as any)}
+          style={({ pressed }) => ({
+            position: "relative",
+            width: 34,
+            height: 34,
+            borderRadius: 17,
+            backgroundColor: CARD_BG,
+            borderWidth: 1,
+            borderColor: state.savedBusinesses.length > 0 ? "rgba(239,68,68,0.5)" : CARD_BORDER,
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text style={{ fontSize: 16 }}>{state.savedBusinesses.length > 0 ? "❤️" : "🤍"}</Text>
+          {state.savedBusinesses.length > 0 && (
+            <View style={{
+              position: "absolute",
+              top: -4,
+              right: -4,
+              backgroundColor: "#EF4444",
+              borderRadius: 8,
+              minWidth: 16,
+              height: 16,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingHorizontal: 3,
+            }}>
+              <Text style={{ color: "#FFF", fontSize: 10, fontWeight: "700", lineHeight: 14 }}>
+                {state.savedBusinesses.length > 99 ? "99+" : state.savedBusinesses.length}
               </Text>
-            </Pressable>
-          );
-        })}
+            </View>
+          )}
+        </Pressable>
       </View>
 
       {/* Results — FlatList with Recently Viewed/Visited in header so everything scrolls together */}
