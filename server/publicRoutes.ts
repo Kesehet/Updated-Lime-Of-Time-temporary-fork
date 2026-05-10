@@ -262,6 +262,8 @@ export function registerPublicRoutes(app: Express) {
         travelFee: (s as any).travelFee != null ? parseFloat(String((s as any).travelFee)) : null,
         maxTravelDistance: (s as any).maxTravelDistance != null ? parseFloat(String((s as any).maxTravelDistance)) : null,
         travelDuration: (s as any).travelDuration != null ? Number((s as any).travelDuration) : null,
+        travelRatePerMile: (s as any).travelRatePerMile != null ? parseFloat(String((s as any).travelRatePerMile)) : null,
+        minTravelFee: (s as any).minTravelFee != null ? parseFloat(String((s as any).minTravelFee)) : null,
       })));
     } catch (err) {
       console.error("[Public API] Error fetching services:", err);
@@ -6120,13 +6122,18 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
               showAddrError('Sorry, your address (' + clientCoords.city + ', ' + clientCoords.state + ') is approximately ' + Math.round(dist) + ' miles away \u2014 outside our ' + maxDist + '-mile service radius. Please contact us to check availability.');
               return;
             }
-            // Compute dynamic travel fee: $0.67/mile (IRS standard mileage rate), round-trip
+            // Compute dynamic travel fee using per-service rate (or IRS default $0.67/mi), round-trip
             var fixedFee = selectedService.travelFee ? parseFloat(selectedService.travelFee) : 0;
-            var distFee = Math.round(dist * 2 * 0.67 * 100) / 100; // round-trip, $0.67/mi
-            dynamicTravelFee = Math.max(fixedFee, distFee); // use whichever is higher
+            var ratePerMile = selectedService.travelRatePerMile ? parseFloat(selectedService.travelRatePerMile) : 0.67;
+            var distFee = Math.round(dist * 2 * ratePerMile * 100) / 100; // round-trip
+            var minFee = selectedService.minTravelFee ? parseFloat(selectedService.minTravelFee) : 0;
+            dynamicTravelFee = Math.max(fixedFee, distFee, minFee); // use the highest of fixed, distance-based, or minimum
           } else {
             calculatedDistanceMi = null;
-            dynamicTravelFee = selectedService.travelFee ? parseFloat(selectedService.travelFee) : null;
+            var fallbackFee = selectedService.travelFee ? parseFloat(selectedService.travelFee) : 0;
+            var fallbackMin = selectedService.minTravelFee ? parseFloat(selectedService.minTravelFee) : 0;
+            var fallbackResult = Math.max(fallbackFee, fallbackMin);
+            dynamicTravelFee = fallbackResult > 0 ? fallbackResult : null;
           }
         }
       }

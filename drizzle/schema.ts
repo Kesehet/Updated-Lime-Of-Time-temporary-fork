@@ -182,6 +182,10 @@ export const services = mysqlTable("services", {
   maxTravelDistance: decimal("maxTravelDistance", { precision: 6, scale: 1 }),
   /** Estimated one-way travel time in minutes for mobile services (added to booking slot) */
   travelDuration: int("travelDuration"),
+  /** Per-mile rate in dollars for dynamic travel fee calculation (null = use global IRS rate $0.67) */
+  travelRatePerMile: decimal("travelRatePerMile", { precision: 6, scale: 2 }),
+  /** Minimum travel fee floor in dollars (null = no minimum) */
+  minTravelFee: decimal("minTravelFee", { precision: 10, scale: 2 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

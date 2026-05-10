@@ -58,6 +58,12 @@ export default function ServiceFormScreen() {
   const [travelDuration, setTravelDuration] = useState<string>(
     existing?.travelDuration != null ? String(existing.travelDuration) : ""
   );
+  const [travelRatePerMile, setTravelRatePerMile] = useState<string>(
+    existing?.travelRatePerMile != null ? String(existing.travelRatePerMile) : ""
+  );
+  const [minTravelFee, setMinTravelFee] = useState<string>(
+    existing?.minTravelFee != null ? String(existing.minTravelFee) : ""
+  );
   const uploadImageMut = trpc.files.uploadImage.useMutation();
   const isEdit = !!existing;
 
@@ -125,6 +131,8 @@ export default function ServiceFormScreen() {
       travelFee: travelFee.trim() !== "" ? (parseFloat(travelFee) || null) : null,
       maxTravelDistance: maxTravelDistance.trim() !== "" ? (parseFloat(maxTravelDistance) || null) : null,
       travelDuration: travelDuration.trim() !== "" ? (parseInt(travelDuration) || null) : null,
+      travelRatePerMile: travelRatePerMile.trim() !== "" ? (parseFloat(travelRatePerMile) || null) : null,
+      minTravelFee: minTravelFee.trim() !== "" ? (parseFloat(minTravelFee) || null) : null,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     if (isEdit) {
@@ -488,6 +496,45 @@ export default function ServiceFormScreen() {
             </View>
             <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
               One-way travel time added to the booking slot so your calendar stays accurate.
+            </Text>
+            {/* Rate per Mile */}
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginTop: 16, marginBottom: 8 }}>
+              Rate per Mile (optional)
+            </Text>
+            <View style={[styles.inputRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={{ fontSize: fs.sm, color: colors.muted, marginRight: 4 }}>$</Text>
+              <TextInput
+                style={[styles.input, { color: colors.foreground, flex: 1 }]}
+                placeholder="0.67"
+                placeholderTextColor={colors.muted}
+                keyboardType="decimal-pad"
+                value={travelRatePerMile}
+                onChangeText={setTravelRatePerMile}
+                returnKeyType="done"
+              />
+              <Text style={{ fontSize: fs.sm, color: colors.muted, marginLeft: 4 }}>/mi</Text>
+            </View>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
+              Dynamic fee = distance × rate. Leave blank to use the default IRS rate ($0.67/mi).
+            </Text>
+            {/* Minimum Travel Fee */}
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginTop: 16, marginBottom: 8 }}>
+              Minimum Travel Fee (optional)
+            </Text>
+            <View style={[styles.inputRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={{ fontSize: fs.sm, color: colors.muted, marginRight: 4 }}>$</Text>
+              <TextInput
+                style={[styles.input, { color: colors.foreground, flex: 1 }]}
+                placeholder="e.g. 10.00"
+                placeholderTextColor={colors.muted}
+                keyboardType="decimal-pad"
+                value={minTravelFee}
+                onChangeText={setMinTravelFee}
+                returnKeyType="done"
+              />
+            </View>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
+              Minimum fee charged even for short trips (e.g. $10 floor regardless of distance).
             </Text>
           </View>
         )}

@@ -477,6 +477,20 @@
       "when": 1778380974759,
       "tag": "0067_salty_the_twelve",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "5",
+      "when": 1778380974760,
+      "tag": "0068_travel_rate_min_fee",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "5",
+      "when": 1778384378095,
+      "tag": "0069_glorious_talisman",
+      "breakpoints": true
     }
   ]
 }

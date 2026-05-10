@@ -13,6 +13,8 @@ export interface Service {
   travelFee?: number | null; // optional travel/surcharge fee added when clientAddress is provided
   maxTravelDistance?: number | null; // max travel distance in miles for mobile services (null = unlimited)
   travelDuration?: number | null; // estimated one-way travel time in minutes (added to booking slot)
+  travelRatePerMile?: number | null; // $/mile rate for dynamic travel fee (null = use global IRS rate $0.67)
+  minTravelFee?: number | null; // minimum travel fee floor in dollars (null = no minimum)
   createdAt: string;
 }
 
