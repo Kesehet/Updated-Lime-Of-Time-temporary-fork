@@ -775,7 +775,7 @@ export function registerPublicRoutes(app: Express) {
         return;
       }
 
-      const { clientName, clientPhone, clientEmail, serviceLocalId, date, time, duration, notes, giftCode, totalPrice, extraItems, giftApplied, giftUsedAmount, discountName, discountPercentage, discountAmount, subtotal, locationId, paymentMethod, paymentConfirmationNumber, promoCode, promoLocalId, clientAddress, travelFee } = req.body;
+      const { clientName, clientPhone, clientEmail, serviceLocalId, date, time, duration, notes, giftCode, totalPrice, extraItems, giftApplied, giftUsedAmount, discountName, discountPercentage, discountAmount, subtotal, locationId, paymentMethod, paymentConfirmationNumber, promoCode, promoLocalId, clientAddress, travelFee, clientToday: bookClientToday, nowMinutes: bookNowMinutes } = req.body;
 
       if (!clientName || !serviceLocalId || !date || !time) {
         res.status(400).json({ error: "Missing required fields: clientName, serviceLocalId, date, time" });
@@ -857,7 +857,10 @@ export function registerPublicRoutes(app: Express) {
 
       const bookMode = (owner.scheduleMode as "weekly" | "custom") || "weekly";
       const bookBuffer = (owner as any).bufferTime || 0;
-      const slots = generateAvailableSlots(date, dur, bookWorkingHours, bookAppts, Math.min(dur, 30), bookSchedule, bookMode, bookBuffer);
+      // Pass client's local date/time so timezone differences don't cause false "slot in the past" errors
+      const bookClientTodayStr: string | null = bookClientToday ?? null;
+      const bookNowMin: number | null = (bookNowMinutes !== undefined && bookNowMinutes !== null) ? Number(bookNowMinutes) : null;
+      const slots = generateAvailableSlots(date, dur, bookWorkingHours, bookAppts, Math.min(dur, 30), bookSchedule, bookMode, bookBuffer, bookClientTodayStr, bookNowMin);
       if (!slots.includes(time)) {
         res.status(400).json({ error: "Selected time slot is no longer available" });
         return;

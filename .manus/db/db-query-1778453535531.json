@@ -1,0 +1,90 @@
+{
+  "query": "SELECT configKey, configValue FROM platform_config WHERE configKey LIKE '%TWILIO%' OR configKey LIKE '%TEST%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, configValue FROM platform_config WHERE configKey LIKE '%TWILIO%' OR configKey LIKE '%TEST%';",
+  "rows": [
+    {
+      "configKey": "TWILIO_ACCOUNT_SID",
+      "configValue": ""
+    },
+    {
+      "configKey": "TWILIO_AUTH_TOKEN",
+      "configValue": ""
+    },
+    {
+      "configKey": "TWILIO_FROM_NUMBER",
+      "configValue": ""
+    },
+    {
+      "configKey": "TWILIO_TEST_MODE",
+      "configValue": "false"
+    },
+    {
+      "configKey": "TWILIO_PER_PHONE_OTP",
+      "configValue": "{}"
+    },
+    {
+      "configKey": "TWILIO_TEST_OTP",
+      "configValue": ""
+    },
+    {
+      "configKey": "STRIPE_TEST_MODE",
+      "configValue": "true"
+    },
+    {
+      "configKey": "TWILIO_VERIFY_SERVICE_SID",
+      "configValue": ""
+    },
+    {
+      "configKey": "STRIPE_TEST_SECRET_KEY",
+      "configValue": "sk_test_51REIGbG6LQX4qfeVbBFQM3haHQQ0zInUNJTEeYJ2Bu7MiIPEbNsyX94ULB8U1KSFP4azC31u0P6puNuFDwFAfenl00jmavr4X0"
+    },
+    {
+      "configKey": "STRIPE_TEST_PUBLISHABLE_KEY",
+      "configValue": "pk_test_51REIGbG6LQX4qfeVRXbxu8HGRslT0jbjhuQmiDZeai1QPBC0zukmY1xiXTch8bVDuNNEgH0N2TMbX7sq9ZJgFZwh00DOmiSfiB"
+    },
+    {
+      "configKey": "STRIPE_TEST_WEBHOOK_SECRET",
+      "configValue": "whsec_aolLxjgn2s4LrRTxq7Gu9WHbDURU6P5V"
+    },
+    {
+      "configKey": "STRIPE_CONNECT_TEST_WEBHOOK_SECRET",
+      "configValue": "whsec_njsYjYGxYVCFYddQLe1d7v6rHwaoWXK9"
+    },
+    {
+      "configKey": "TWILIO_LIVE_ACCOUNT_SID",
+      "configValue": ""
+    },
+    {
+      "configKey": "TWILIO_LIVE_AUTH_TOKEN",
+      "configValue": ""
+    },
+    {
+      "configKey": "TWILIO_LIVE_VERIFY_SERVICE_SID",
+      "configValue": ""
+    },
+    {
+      "configKey": "TWILIO_LIVE_FROM_NUMBER",
+      "configValue": ""
+    },
+    {
+      "configKey": "TWILIO_TEST_ACCOUNT_SID",
+      "configValue": ""
+    },
+    {
+      "configKey": "TWILIO_TEST_AUTH_TOKEN",
+      "configValue": ""
+    },
+    {
+      "configKey": "TWILIO_TEST_VERIFY_SERVICE_SID",
+      "configValue": ""
+    },
+    {
+      "configKey": "TWILIO_TEST_FROM_NUMBER",
+      "configValue": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tconfigValue\nTWILIO_ACCOUNT_SID\t\nTWILIO_AUTH_TOKEN\t\nTWILIO_FROM_NUMBER\t\nTWILIO_TEST_MODE\tfalse\nTWILIO_PER_PHONE_OTP\t{}\nTWILIO_TEST_OTP\t\nSTRIPE_TEST_MODE\ttrue\nTWILIO_VERIFY_SERVICE_SID\t\nSTRIPE_TEST_SECRET_KEY\tsk_test_51REIGbG6LQX4qfeVbBFQM3haHQQ0zInUNJTEeYJ2Bu7MiIPEbNsyX94ULB8U1KSFP4azC31u0P6puNuFDwFAfenl00jmavr4X0\nSTRIPE_TEST_PUBLISHABLE_KEY\tpk_test_51REIGbG6LQX4qfeVRXbxu8HGRslT0jbjhuQmiDZeai1QPBC0zukmY1xiXTch8bVDuNNEgH0N2TMbX7sq9ZJgFZwh00DOmiSfiB\nSTRIPE_TEST_WEBHOOK_SECRET\twhsec_aolLxjgn2s4LrRTxq7Gu9WHbDURU6P5V\nSTRIPE_CONNECT_TEST_WEBHOOK_SECRET\twhsec_njsYjYGxYVCFYddQLe1d7v6rHwaoWXK9\nTWILIO_LIVE_ACCOUNT_SID\t\nTWILIO_LIVE_AUTH_TOKEN\t\nTWILIO_LIVE_VERIFY_SERVICE_SID\t\nTWILIO_LIVE_FROM_NUMBER\t\nTWILIO_TEST_ACCOUNT_SID\t\nTWILIO_TEST_AUTH_TOKEN\t\nTWILIO_TEST_VERIFY_SERVICE_SID\t\nTWILIO_TEST_FROM_NUMBER\t\n",
+  "stderr": "",
+  "execution_time_ms": 603
+}

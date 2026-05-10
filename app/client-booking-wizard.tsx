@@ -769,6 +769,9 @@ export default function ClientBookingWizardScreen() {
           products: selectedProductItems.length > 0 ? selectedProductItems : undefined,
           clientAddress: isMobileService && effectiveClientAddress.trim() ? effectiveClientAddress.trim() : undefined,
           travelFee: travelFeeAmount > 0 ? travelFeeAmount : undefined,
+          // Client's local date/time so server can correctly validate slot availability across timezones
+          clientToday: (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })(),
+          nowMinutes: (() => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); })(),
         }),
       });
       if (!res.ok) {
