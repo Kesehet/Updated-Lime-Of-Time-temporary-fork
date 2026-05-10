@@ -25,6 +25,8 @@ import { ClientStoreProvider } from "@/lib/client-store";
 import { AppLockProvider, ClientAppLockProvider } from "@/lib/app-lock-provider";
 import { SplashDoneProvider } from "@/lib/splash-done-context";
 import { NotificationProvider } from "@/lib/notification-provider";
+import { StripeProvider } from "@stripe/stripe-react-native";
+import { getApiBaseUrl } from "@/constants/oauth";
 import { initSentry, withSentryWrapper } from "@/lib/sentry";
 import { AnimatedSplash } from "@/components/animated-splash";
 import * as FileSystem from "expo-file-system/legacy";
@@ -258,6 +260,14 @@ function RootLayout() {
       }),
   );
   const [trpcClient] = useState(() => createTRPCClient());
+  const [stripePublishableKey, setStripePublishableKey] = useState("");
+  useEffect(() => {
+    const apiBase = getApiBaseUrl();
+    fetch(`${apiBase}/api/public/stripe-config`)
+      .then((r) => r.json())
+      .then((d) => { if (d?.publishableKey) setStripePublishableKey(d.publishableKey); })
+      .catch(() => {});
+  }, []);
 
   // Ensure minimum 8px padding for top and bottom on mobile
   const providerInitialMetrics = useMemo(() => {
@@ -285,6 +295,7 @@ function RootLayout() {
         <AnimatedSplash onFinish={handleSplashFinish} />
       </View>
     )}
+    <StripeProvider publishableKey={stripePublishableKey}>
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
@@ -381,10 +392,10 @@ function RootLayout() {
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>
+    </StripeProvider>
     </View>
   );
-
-  const shouldOverrideSafeArea = Platform.OS === "web";
+  const shouldOverrideSafeAreaa = Platform.OS === "web";
 
   if (shouldOverrideSafeArea) {
     return (

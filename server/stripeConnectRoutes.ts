@@ -293,8 +293,7 @@ export function registerStripeConnectRoutes(app: Express): void {
 
       const session = await stripe.checkout.sessions.create(
         {
-          // Enable all available payment methods: card, Apple Pay, Google Pay, Stripe Link
-          automatic_payment_methods: { enabled: true },
+          payment_method_types: ["card"],
           line_items: [
             {
               price_data: {
@@ -433,8 +432,7 @@ export function registerStripeConnectRoutes(app: Express): void {
 
       const session = await stripe.checkout.sessions.create(
         {
-          // Enable all available payment methods: card, Apple Pay, Google Pay, Stripe Link
-          automatic_payment_methods: { enabled: true },
+          payment_method_types: ["card"],
           line_items: [
             {
               price_data: {
@@ -1013,8 +1011,7 @@ export function registerStripeConnectRoutes(app: Express): void {
 
       const session = await stripe.checkout.sessions.create(
         {
-          // Enable all available payment methods: card, Apple Pay, Google Pay, Stripe Link
-          automatic_payment_methods: { enabled: true },
+          payment_method_types: ["card"],
           line_items: [
             {
               price_data: {
@@ -1515,8 +1512,7 @@ export function registerStripeConnectRoutes(app: Express): void {
 
       const session = await stripe.checkout.sessions.create(
         {
-          // Enable all available payment methods: card, Apple Pay, Google Pay, Stripe Link
-          automatic_payment_methods: { enabled: true },
+          payment_method_types: ["card"],
           line_items: lineItems,
           mode: "payment",
           success_url: successUrl,
@@ -1546,6 +1542,132 @@ export function registerStripeConnectRoutes(app: Express): void {
     } catch (err: any) {
       console.error("[StripeConnect] create-gift-checkout error:", err);
       res.status(500).json({ error: err?.message ?? "Failed to create gift checkout session" });
+    }
+  });
+
+  // ── Native Payment Sheet — create PaymentIntent for Stripe React Native SDK ──
+  // POST /api/stripe-connect/create-payment-sheet
+  // Body: { businessOwnerId, appointmentLocalId, amount, currency?, description?, clientEmail? }
+  // Returns: { publishableKey, paymentIntent (client_secret), accountId }
+  app.post("/api/stripe-connect/create-payment-sheet", async (req: Request, res: Response) => {
+    try {
+      const { businessOwnerId, appointmentLocalId, amount, currency = "usd", description, clientEmail } = req.body as {
+        businessOwnerId: number;
+        appointmentLocalId: string;
+        amount: number;
+        currency?: string;
+        description?: string;
+        clientEmail?: string;
+      };
+      if (!businessOwnerId || !appointmentLocalId || !amount) {
+        res.status(400).json({ error: "businessOwnerId, appointmentLocalId, and amount are required" }); return;
+      }
+      const stripe = await getStripe();
+      if (!stripe) { res.status(503).json({ error: "Stripe not configured" }); return; }
+      const publishableKey = await getPlatformConfig("STRIPE_PUBLISHABLE_KEY");
+      if (!publishableKey) { res.status(503).json({ error: "Stripe publishable key not configured" }); return; }
+      const owner = await getOwner(businessOwnerId);
+      if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
+      const accountId = (owner as any)?.stripeConnectAccountId as string | null;
+      if (!accountId) { res.status(400).json({ error: "Business has not connected Stripe yet" }); return; }
+      const chargesEnabled = (owner as any)?.stripeConnectEnabled as boolean | null;
+      if (!chargesEnabled) { res.status(400).json({ error: "Stripe account is not yet fully set up" }); return; }
+      const amountCents = Math.round(amount * 100);
+      const feePercent = await getPlatformFeePercent();
+      const platformFeeCents = Math.round(amountCents * feePercent);
+      const totalCents = amountCents + platformFeeCents;
+      console.log(`[StripeConnect] create-payment-sheet: amount=$${amount} fee=${platformFeeCents}c accountId=${accountId}`);
+      const paymentIntent = await stripe.paymentIntents.create(
+        {
+          amount: totalCents,
+          currency,
+          payment_method_types: ["card"],
+          application_fee_amount: platformFeeCents,
+          description: description || "Appointment payment",
+          ...(clientEmail ? { receipt_email: clientEmail } : {}),
+          metadata: {
+            appointmentLocalId,
+            businessOwnerId: String(businessOwnerId),
+          },
+        },
+        { stripeAccount: accountId }
+      );
+      // Store payment intent ID on appointment
+      const db = await getDb();
+      if (db) {
+        await db.update(appointments)
+          .set({ stripePaymentIntentId: paymentIntent.id } as any)
+          .where(and(eq(appointments.localId, appointmentLocalId), eq(appointments.businessOwnerId, businessOwnerId)));
+      }
+      res.json({
+        publishableKey,
+        paymentIntent: paymentIntent.client_secret,
+        accountId,
+      });
+    } catch (err: any) {
+      console.error("[StripeConnect] create-payment-sheet error:", err);
+      res.status(500).json({ error: err?.message ?? "Failed to create payment sheet" });
+    }
+  });
+
+  // POST /api/stripe-connect/create-gift-payment-sheet
+  // Body: { businessOwnerId, giftCode, recipientName, items, totalAmount, currency? }
+  // Returns: { publishableKey, paymentIntent (client_secret), accountId }
+  app.post("/api/stripe-connect/create-gift-payment-sheet", async (req: Request, res: Response) => {
+    try {
+      const { businessOwnerId, giftCode, recipientName, items, totalAmount, currency = "usd" } = req.body as {
+        businessOwnerId: number;
+        giftCode: string;
+        recipientName: string;
+        items: { name: string; price: number }[];
+        totalAmount: number;
+        currency?: string;
+      };
+      if (!businessOwnerId || !giftCode || !totalAmount) {
+        res.status(400).json({ error: "businessOwnerId, giftCode, and totalAmount are required" }); return;
+      }
+      const stripe = await getStripe();
+      if (!stripe) { res.status(503).json({ error: "Stripe not configured" }); return; }
+      const publishableKey = await getPlatformConfig("STRIPE_PUBLISHABLE_KEY");
+      if (!publishableKey) { res.status(503).json({ error: "Stripe publishable key not configured" }); return; }
+      const owner = await getOwner(businessOwnerId);
+      if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
+      const accountId = (owner as any)?.stripeConnectAccountId as string | null;
+      if (!accountId) { res.status(400).json({ error: "Business has not connected Stripe yet" }); return; }
+      const chargesEnabled = (owner as any)?.stripeConnectEnabled as boolean | null;
+      if (!chargesEnabled) { res.status(400).json({ error: "Stripe account is not yet fully set up" }); return; }
+      const amountCents = Math.round(totalAmount * 100);
+      const feePercent = await getPlatformFeePercent();
+      const platformFeeCents = Math.round(amountCents * feePercent);
+      const totalCents = amountCents + platformFeeCents;
+      const description = items?.length > 0
+        ? items.map((i: { name: string; price: number }) => i.name).join(", ") + (recipientName ? ` for ${recipientName}` : "")
+        : `Gift Card for ${recipientName}`;
+      console.log(`[StripeConnect] create-gift-payment-sheet: giftCode=${giftCode} amount=$${totalAmount} fee=${platformFeeCents}c accountId=${accountId}`);
+      const paymentIntent = await stripe.paymentIntents.create(
+        {
+          amount: totalCents,
+          currency,
+          payment_method_types: ["card"],
+          application_fee_amount: platformFeeCents,
+          description,
+          metadata: {
+            giftCode,
+            businessOwnerId: String(businessOwnerId),
+            recipientName,
+            type: "gift_purchase",
+          },
+        },
+        { stripeAccount: accountId }
+      );
+      res.json({
+        publishableKey,
+        paymentIntent: paymentIntent.client_secret,
+        accountId,
+      });
+    } catch (err: any) {
+      console.error("[StripeConnect] create-gift-payment-sheet error:", err);
+      res.status(500).json({ error: err?.message ?? "Failed to create gift payment sheet" });
     }
   });
 }

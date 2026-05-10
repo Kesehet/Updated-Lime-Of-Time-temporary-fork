@@ -35,6 +35,7 @@ import * as Haptics from "expo-haptics";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { getCategoryDef, ALL_CATEGORY, SERVICE_CATEGORIES } from "@/constants/categories";
 import * as WebBrowser from "expo-web-browser";
+import { useStripe } from "@stripe/stripe-react-native";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
 const GREEN_DARK   = "#1A3A28";
@@ -405,7 +406,7 @@ export default function ClientBuyGiftScreen() {
       }
       const result = await res.json();
 
-      // ── Card payment: open Stripe Checkout for the gift card ────────────────
+      // ── Card payment: native Stripe payment sheet (iOS/Android) or Checkout (web) ──
       if (paymentMethod === "card" && totalValue > 0) {
         const bizOwnerId = paymentMethods.businessOwnerId;
         if (!bizOwnerId) {
@@ -413,41 +414,65 @@ export default function ClientBuyGiftScreen() {
           return;
         }
         try {
-          // Build the list of items for the Stripe line items
           const giftItems = selectedItemsList.map((i) => ({ name: i.name, price: i.price }));
           if (giftItems.length === 0 && giftMode === "balance") {
             giftItems.push({ name: "Gift Card Balance", price: totalValue });
           }
-          const origin = apiBase.replace(/\/$/, "");
-          const successUrl = `${origin}/api/gift/${encodeURIComponent(result.code ?? "")}?payment=success`;
-          const cancelUrl = `${origin}/api/buy-gift/${slug}`;
-          const stripeRes = await fetch(`${apiBase}/api/stripe-connect/create-gift-checkout`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              businessOwnerId: bizOwnerId,
-              giftCode: result.code,
-              recipientName: recipientName.trim(),
-              items: giftItems,
-              totalAmount: totalValue,
-              successUrl,
-              cancelUrl,
-            }),
-          });
-          if (stripeRes.ok) {
-            const { url } = await stripeRes.json();
-            if (url) {
-              if (Platform.OS === "web") {
-                window.open(url, "_blank");
-              } else {
-                await WebBrowser.openBrowserAsync(url);
-              }
-            } else {
-              Alert.alert("Payment Error", "Could not get payment link. Please try again.");
+          if (Platform.OS !== "web") {
+            // Native: use Stripe payment sheet
+            const sheetRes = await fetch(`${apiBase}/api/stripe-connect/create-gift-payment-sheet`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                businessOwnerId: bizOwnerId,
+                giftCode: result.code,
+                recipientName: recipientName.trim(),
+                items: giftItems,
+                totalAmount: totalValue,
+              }),
+            });
+            const sheetData = await sheetRes.json();
+            if (!sheetRes.ok || !sheetData?.paymentIntent) {
+              Alert.alert("Payment Error", sheetData?.error ?? "Failed to start card payment.");
+              return;
+            }
+            const { error: initError } = await initPaymentSheet({
+              paymentIntentClientSecret: sheetData.paymentIntent,
+              merchantDisplayName: businessName || "Business",
+              stripeAccountId: sheetData.accountId,
+              style: "alwaysDark",
+            });
+            if (initError) { Alert.alert("Payment Error", initError.message); return; }
+            const { error: presentError } = await presentPaymentSheet();
+            if (presentError) {
+              if (presentError.code !== "Canceled") Alert.alert("Payment Failed", presentError.message);
+              return;
             }
           } else {
-            const errData = await stripeRes.json().catch(() => ({}));
-            Alert.alert("Payment Error", (errData as any)?.error ?? "Failed to start card payment. Please try again.");
+            // Web: open Stripe Checkout in browser
+            const origin = apiBase.replace(/\/$/, "");
+            const successUrl = `${origin}/api/gift/${encodeURIComponent(result.code ?? "")}?payment=success`;
+            const cancelUrl = `${origin}/api/buy-gift/${slug}`;
+            const stripeRes = await fetch(`${apiBase}/api/stripe-connect/create-gift-checkout`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                businessOwnerId: bizOwnerId,
+                giftCode: result.code,
+                recipientName: recipientName.trim(),
+                items: giftItems,
+                totalAmount: totalValue,
+                successUrl,
+                cancelUrl,
+              }),
+            });
+            if (stripeRes.ok) {
+              const { url } = await stripeRes.json();
+              if (url) { window.open(url, "_blank"); } else { Alert.alert("Payment Error", "Could not get payment link."); }
+            } else {
+              const errData = await stripeRes.json().catch(() => ({}));
+              Alert.alert("Payment Error", (errData as any)?.error ?? "Failed to start card payment.");
+            }
           }
           // Navigate to confirmation — gift is already created
           // Payment status will be updated by Stripe webhook when payment completes

@@ -25,6 +25,7 @@ import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
 import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
+import { useStripe } from "@stripe/stripe-react-native";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
 const GREEN_DARK   = "#1A3A28";
@@ -60,32 +61,72 @@ export default function ClientGiftConfirmationScreen() {
     businessOwnerId?: string;
   }>();
 
-  const [payingNow, setPayingNow] = useState(false);
-
+   const [payingNow, setPayingNow] = useState(false);
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const handlePayNow = async () => {
     if (!businessOwnerId || !giftCode) return;
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setPayingNow(true);
     try {
       const apiBase = getApiBaseUrl();
-      const res = await fetch(`${apiBase}/api/stripe-connect/create-gift-checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          businessOwnerId: Number(businessOwnerId),
-          giftCode,
-          recipientName: recipientName ?? "",
-          items: [{ name: "Gift Card", price: totalValue ?? "0", type: "gift" }],
-          totalAmount: parseFloat(totalValue ?? "0"),
-          successUrl: `${apiBase}/gift-payment-success?code=${giftCode}`,
-          cancelUrl: `${apiBase}/gift-payment-cancel?code=${giftCode}`,
-        }),
-      });
-      const data = await res.json();
-      if (data?.url) {
-        await WebBrowser.openBrowserAsync(data.url);
+      const amount = parseFloat(totalValue ?? "0");
+      if (Platform.OS !== "web") {
+        // Native: use Stripe payment sheet
+        const sheetRes = await fetch(`${apiBase}/api/stripe-connect/create-gift-payment-sheet`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            businessOwnerId: Number(businessOwnerId),
+            giftCode,
+            recipientName: recipientName ?? "",
+            items: [{ name: "Gift Card", price: amount }],
+            totalAmount: amount,
+          }),
+        });
+        const sheetData = await sheetRes.json();
+        if (!sheetRes.ok || !sheetData?.paymentIntent) {
+          Alert.alert("Payment Error", sheetData?.error ?? "Could not start payment. Please try again.");
+          return;
+        }
+        const { error: initError } = await initPaymentSheet({
+          paymentIntentClientSecret: sheetData.paymentIntent,
+          merchantDisplayName: businessName ?? "Business",
+          stripeAccountId: sheetData.accountId,
+          style: "alwaysDark",
+        });
+        if (initError) {
+          Alert.alert("Payment Error", initError.message);
+          return;
+        }
+        const { error: presentError } = await presentPaymentSheet();
+        if (presentError) {
+          if (presentError.code !== "Canceled") {
+            Alert.alert("Payment Failed", presentError.message);
+          }
+          return;
+        }
+        Alert.alert("Payment Successful", "Your gift card payment has been processed!");
       } else {
-        Alert.alert("Error", data?.error ?? "Could not start payment. Please try again.");
+        // Web: open Stripe Checkout in browser
+        const res = await fetch(`${apiBase}/api/stripe-connect/create-gift-checkout`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            businessOwnerId: Number(businessOwnerId),
+            giftCode,
+            recipientName: recipientName ?? "",
+            items: [{ name: "Gift Card", price: amount }],
+            totalAmount: amount,
+            successUrl: `${apiBase}/gift-payment-success?code=${giftCode}`,
+            cancelUrl: `${apiBase}/gift-payment-cancel?code=${giftCode}`,
+          }),
+        });
+        const data = await res.json();
+        if (data?.url) {
+          await WebBrowser.openBrowserAsync(data.url);
+        } else {
+          Alert.alert("Error", data?.error ?? "Could not start payment. Please try again.");
+        }
       }
     } catch {
       Alert.alert("Error", "Could not connect to payment service. Please try again.");

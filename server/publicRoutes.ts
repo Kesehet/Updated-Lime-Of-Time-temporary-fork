@@ -2152,6 +2152,17 @@ export function registerPublicRoutes(app: Express) {
       res.status(500).send(errorPage());
     }
   });
+
+  // GET /api/public/stripe-config
+  // Returns the platform Stripe publishable key for the native payment sheet
+  app.get("/api/public/stripe-config", async (_req: Request, res: Response) => {
+    try {
+      const publishableKey = await getPlatformConfig("STRIPE_PUBLISHABLE_KEY");
+      res.json({ publishableKey: publishableKey || "" });
+    } catch {
+      res.json({ publishableKey: "" });
+    }
+  });
 }
 
 // ─── HTML Templates ─────────────────────────────────────────────────

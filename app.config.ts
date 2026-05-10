@@ -108,6 +108,7 @@ const config: ExpoConfig = {
 
   plugins: [
     "expo-router",
+    "@stripe/stripe-react-native",
     [
       "expo-image-picker",
       {

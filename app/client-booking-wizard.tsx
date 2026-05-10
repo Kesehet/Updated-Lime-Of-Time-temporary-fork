@@ -41,6 +41,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { getCategoryDef, ALL_CATEGORY } from "@/constants/categories";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as WebBrowser from "expo-web-browser";
+import { useStripe } from "@stripe/stripe-react-native";
 
 const LIME_GREEN = "#4A7C59";
 // ─── Portal palette (same as business detail) ────────────────────────────────
@@ -182,6 +183,8 @@ export default function ClientBookingWizardScreen() {
   const [giftLoading, setGiftLoading] = useState(false);
   const [businessDisplayName, setBusinessDisplayName] = useState<string>("");
   const [stripeConnectEnabled, setStripeConnectEnabled] = useState(false);
+  const [businessOwnerId, setBusinessOwnerId] = useState<number | null>(null);
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   // Build dynamic payment methods list — Card only shown when Stripe is connected
   const PAYMENT_METHODS = useMemo(() => {
     const methods = [...BASE_PAYMENT_METHODS];
@@ -302,6 +305,7 @@ export default function ClientBookingWizardScreen() {
         setDiscounts(Array.isArray(discData) ? discData : []);
         if (bizData?.businessName) setBusinessDisplayName(bizData.businessName);
         if (bizData?.stripeConnectEnabled) setStripeConnectEnabled(true);
+        if (bizData?.id) setBusinessOwnerId(bizData.id);
         setPackages(Array.isArray(pkgData) ? pkgData : []);
         const svcList: PublicService[] = Array.isArray(svcData) ? svcData : [];
         const staffList: PublicStaff[] = Array.isArray(staffData) ? staffData : [];
@@ -315,20 +319,22 @@ export default function ClientBookingWizardScreen() {
         if (locList.length === 1) {
           setSelectedLocation(locList[0]);
         }
+        // Compute the correct initial step: skip Location step if only 1 location (already auto-selected)
+        const initialStaffStep = locList.length > 1 ? 2 : 1;
         if (serviceLocalId) {
           const found = svcList.find((s) => s.localId === serviceLocalId);
           if (found) {
             setSelectedService(found);
-            // Jump directly to step 1 (Staff) since the service is already chosen via the Book button
-            setStep(1);
+            // Jump directly to Staff step — skip Location step if only 1 location
+            setStep(initialStaffStep);
           }
         } else if (preServiceName) {
           // Book Again: pre-select service by name (case-insensitive match)
           const found = svcList.find((s) => s.name.toLowerCase() === String(preServiceName).toLowerCase());
           if (found) {
             setSelectedService(found);
-            // Jump to step 1 (Staff) for Book Again flow as well
-            setStep(1);
+            // Jump to Staff step for Book Again flow as well
+            setStep(initialStaffStep);
           }
         }
         // Pre-select staff from "Book with [Name]" on business detail
@@ -699,32 +705,67 @@ export default function ClientBookingWizardScreen() {
       }
       const selectedStaffMember = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
 
-      // ── Card payment: request Stripe payment link and open it in-app ──────
+      // ── Card payment: native Stripe payment sheet (iOS/Android) or web redirect ──
       if (paymentMethod === "card" && finalPrice > 0) {
         try {
-          const stripeRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
-            body: JSON.stringify({
-              appointmentId,
-              businessSlug: effectiveSlug,
-              amount: finalPrice,
-              description: `${selectedService.name} — ${dateStr} at ${selectedSlot.time}`,
-              clientEmail: state.account?.email ?? undefined,
-            }),
-          });
-          if (stripeRes.ok) {
-            const { paymentUrl } = await stripeRes.json();
-            if (paymentUrl) {
-              if (Platform.OS === "web") {
+          if (Platform.OS !== "web" && businessOwnerId) {
+            // Native: use Stripe React Native payment sheet
+            const sheetRes = await fetch(`${apiBase}/api/stripe-connect/create-payment-sheet`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
+              body: JSON.stringify({
+                businessOwnerId,
+                appointmentLocalId: appointmentId,
+                amount: finalPrice,
+                currency: "usd",
+                description: `${selectedService.name} — ${dateStr} at ${selectedSlot.time}`,
+                clientEmail: state.account?.email ?? undefined,
+              }),
+            });
+            if (sheetRes.ok) {
+              const { publishableKey, paymentIntent, accountId } = await sheetRes.json();
+              const { error: initError } = await initPaymentSheet({
+                merchantDisplayName: businessDisplayName || effectiveSlug,
+                paymentIntentClientSecret: paymentIntent,
+                style: "alwaysDark",
+                stripeAccountId: accountId,
+              });
+              if (!initError) {
+                const { error: presentError } = await presentPaymentSheet();
+                if (presentError && presentError.code !== "Canceled") {
+                  Alert.alert("Payment Failed", presentError.message ?? "Please try again.");
+                }
+              }
+            } else {
+              // Fallback to web checkout
+              const fallbackRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
+                body: JSON.stringify({ appointmentId, businessSlug: effectiveSlug, amount: finalPrice, clientEmail: state.account?.email ?? undefined }),
+              });
+              if (fallbackRes.ok) {
+                const { paymentUrl } = await fallbackRes.json();
+                if (paymentUrl) await WebBrowser.openAuthSessionAsync(paymentUrl, undefined, { showInRecents: false });
+              }
+            }
+          } else {
+            // Web: redirect to Stripe Checkout
+            const stripeRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
+              body: JSON.stringify({
+                appointmentId,
+                businessSlug: effectiveSlug,
+                amount: finalPrice,
+                description: `${selectedService.name} — ${dateStr} at ${selectedSlot.time}`,
+                clientEmail: state.account?.email ?? undefined,
+              }),
+            });
+            if (stripeRes.ok) {
+              const { paymentUrl } = await stripeRes.json();
+              if (paymentUrl) {
                 window.location.href = paymentUrl;
-                return; // Don't navigate to confirmation — Stripe will redirect back
-              } else {
-                // openAuthSessionAsync keeps the user in-app and handles redirect back
-                await WebBrowser.openAuthSessionAsync(paymentUrl, undefined, {
-                  showInRecents: false,
-                  preferEphemeralSession: false,
-                });
+                return;
               }
             }
           }
