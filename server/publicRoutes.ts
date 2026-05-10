@@ -6114,7 +6114,22 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     // ── Street address autocomplete (Nominatim / OpenStreetMap) ──────────
     var _addrSuggestTimer = null;
     var _addrSuggestAbort = null;
+    var _addrSuggestQuery = '';
+    // Bolds portions of text that match any word in query
+    function highlightMatch(text, query) {
+      if (!text || !query) return esc(text);
+      var words = query.trim().split(/\s+/).filter(function(w) { return w.length >= 2; });
+      if (!words.length) return esc(text);
+      var result = esc(text);
+      words.forEach(function(word) {
+        var safeWord = word.replace(/[-.*+?^$()|\\]/g, '\\$&');
+        var re = new RegExp('(' + safeWord + ')', 'gi');
+        result = result.replace(re, '<strong style="color:var(--text);">$1</strong>');
+      });
+      return result;
+    }
     function onAddrStreetInput(val) {
+      _addrSuggestQuery = val;
       var box = document.getElementById('addrSuggestBox');
       if (!box) return;
       if (_addrSuggestTimer) clearTimeout(_addrSuggestTimer);
@@ -6134,10 +6149,13 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
             var state = a.state || '';
             var zip = a.postcode || '';
             var display = item.display_name;
+            var q = _addrSuggestQuery;
+            var streetLabel = street || display.split(',')[0];
+            var subLabel = [city, state, zip].filter(Boolean).join(', ');
             return '<div data-idx="' + i + '" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);" ' +
               'onmousedown="selectAddrSuggestion(' + JSON.stringify(street) + ',' + JSON.stringify(city) + ',' + JSON.stringify(state) + ',' + JSON.stringify(zip) + ')">' +
-              '<div style="font-weight:600;">' + esc(street || display.split(',')[0]) + '</div>' +
-              '<div style="font-size:11px;color:#888;margin-top:2px;">' + esc([city, state, zip].filter(Boolean).join(', ')) + '</div>' +
+              '<div style="font-weight:600;">' + highlightMatch(streetLabel, q) + '</div>' +
+              '<div style="font-size:11px;color:#888;margin-top:2px;">' + highlightMatch(subLabel, q) + '</div>' +
               '</div>';
           }).join('');
           box.style.display = 'block';
@@ -7260,8 +7278,11 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         const addrStr = getClientAddressString();
         if (addrStr) {
           const mapUrl = 'https://maps.google.com/?q=' + encodeURIComponent(addrStr);
-          locationHtml = '<div class="confirm-row"><span class="confirm-label">Service Type</span><span class="confirm-value">🚗 Mobile — We Come to You</span></div>' +
-            '<div class="confirm-row"><span class="confirm-label">Service Address</span><span class="confirm-value"><a href="' + mapUrl + '" target="_blank" style="color:var(--accent);text-decoration:underline;">' + esc(addrStr) + '</a></span></div>';
+          locationHtml = '<div class="confirm-row" style="background:linear-gradient(135deg,#f0fdf4,#eff6ff);border:1.5px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-bottom:4px;">' +
+            '<span style="font-size:18px;margin-right:8px;">🚗</span>' +
+            '<span style="font-size:13px;font-weight:600;color:#15803d;">' +
+            'We\'ll come to you at <a href="' + mapUrl + '" target="_blank" style="color:#0369a1;text-decoration:underline;font-weight:700;">' + esc(addrStr) + '</a>' +
+            '</span></div>';
         }
         if (selectedService.travelFee && parseFloat(selectedService.travelFee) > 0) {
           locationHtml += '<div class="confirm-row"><span class="confirm-label">Travel Fee</span><span class="confirm-value">$' + parseFloat(selectedService.travelFee).toFixed(2) + '</span></div>';
