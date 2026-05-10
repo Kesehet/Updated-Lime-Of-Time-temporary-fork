@@ -5152,8 +5152,9 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           </div>
         </div>
       </div>
-      <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;">We'll come to you at this address. Travel fee and travel time will be added to your appointment.</p>
+      <p id="addrFeeNote" style="font-size:12px;color:var(--text-secondary);margin-top:10px;">We'll come to you at this address.</p>
       <div id="addrErrorMsg" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;font-size:13px;color:#b91c1c;margin-top:10px;"></div>
+      <div id="addrFeePreview" style="display:none;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:10px 14px;font-size:13px;color:#1d4ed8;margin-top:10px;"></div>
       <div style="display:flex;gap:8px;margin-top:16px;">
         <button class="btn btn-secondary" onclick="goToStep(4)" style="flex:1">Back</button>
         <button id="addrContinueBtn" class="btn btn-primary" onclick="validateAndProceedFromAddress()" style="flex:1">Continue</button>
@@ -6033,7 +6034,18 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       updateSelectedLocBanner();
       if (step === 3) renderStaffStep();
       if (step === 4) renderCalendar();
-      if (step === '4b') renderMobileServiceInfo();
+      if (step === '4b') {
+        renderMobileServiceInfo();
+        // Reset fee preview state so it shows fresh on each visit
+        var feePreview = document.getElementById('addrFeePreview');
+        var addrBtn = document.getElementById('addrContinueBtn');
+        var addrNote = document.getElementById('addrFeeNote');
+        if (feePreview) { feePreview.style.display = 'none'; feePreview.dataset.confirmed = ''; }
+        if (addrBtn) addrBtn.textContent = 'Continue';
+        if (addrNote) addrNote.style.display = 'block';
+        dynamicTravelFee = null;
+        calculatedDistanceMi = null;
+      }
       if (step === 5) initAddMoreStep();
       if (step === 6) renderPaymentStep();
       if (step === 7) renderConfirmation();
@@ -6092,14 +6104,38 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       } catch(e) {}
       if (spinner) spinner.style.display = 'none';
     }
+    function showFeePreview(fee, distMi) {
+      var el = document.getElementById('addrFeePreview');
+      var note = document.getElementById('addrFeeNote');
+      if (!el) return;
+      if (fee != null && fee > 0) {
+        var distText = distMi != null ? ' (' + Math.round(distMi) + ' mi)' : '';
+        el.textContent = '\uD83D\uDE97 Estimated Travel Fee: $' + fee.toFixed(2) + distText;
+        el.style.display = 'block';
+        if (note) note.style.display = 'none';
+      } else {
+        el.style.display = 'none';
+        if (note) note.style.display = 'block';
+      }
+    }
     async function validateAndProceedFromAddress() {
       if (!isAddressComplete()) {
         showAddrError('Please fill in all address fields (Street, City, State, ZIP Code).');
         return;
       }
       showAddrError('');
-      // If service has a maxTravelDistance, validate the client ZIP is within range
-      if (selectedService && selectedService.maxTravelDistance && parseFloat(selectedService.maxTravelDistance) > 0) {
+      // Check if this service has any travel fee configuration
+      var hasFeeConfig = selectedService && (
+        (selectedService.travelFee && parseFloat(selectedService.travelFee) > 0) ||
+        (selectedService.travelRatePerMile && parseFloat(selectedService.travelRatePerMile) > 0) ||
+        (selectedService.minTravelFee && parseFloat(selectedService.minTravelFee) > 0)
+      );
+      // If service has a maxTravelDistance or fee config, do ZIP distance lookup
+      var needsDistanceLookup = selectedService && (
+        (selectedService.maxTravelDistance && parseFloat(selectedService.maxTravelDistance) > 0) ||
+        hasFeeConfig
+      );
+      if (needsDistanceLookup) {
         var clientZip = clientAddress.zip.trim();
         var businessZip = null;
         var loc = selectedLocation ? locations.find(function(l) { return l.localId === selectedLocation; }) : (locations.length > 0 ? locations[0] : null);
@@ -6117,26 +6153,57 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           if (bizCoords) {
             var dist = haversineDistance(bizCoords.lat, bizCoords.lon, clientCoords.lat, clientCoords.lon);
             calculatedDistanceMi = dist; // store for dynamic fee & arrival window
-            var maxDist = parseFloat(selectedService.maxTravelDistance);
-            if (dist > maxDist) {
+            var maxDist = selectedService.maxTravelDistance ? parseFloat(selectedService.maxTravelDistance) : null;
+            if (maxDist && dist > maxDist) {
               showAddrError('Sorry, your address (' + clientCoords.city + ', ' + clientCoords.state + ') is approximately ' + Math.round(dist) + ' miles away \u2014 outside our ' + maxDist + '-mile service radius. Please contact us to check availability.');
               return;
             }
-            // Compute dynamic travel fee using per-service rate (or IRS default $0.67/mi), round-trip
-            var fixedFee = selectedService.travelFee ? parseFloat(selectedService.travelFee) : 0;
-            var ratePerMile = selectedService.travelRatePerMile ? parseFloat(selectedService.travelRatePerMile) : 0.67;
-            var distFee = Math.round(dist * 2 * ratePerMile * 100) / 100; // round-trip
-            var minFee = selectedService.minTravelFee ? parseFloat(selectedService.minTravelFee) : 0;
-            dynamicTravelFee = Math.max(fixedFee, distFee, minFee); // use the highest of fixed, distance-based, or minimum
+            if (hasFeeConfig) {
+              // Compute dynamic travel fee using per-service rate (or IRS default $0.67/mi), round-trip
+              var fixedFee = selectedService.travelFee ? parseFloat(selectedService.travelFee) : 0;
+              var ratePerMile = selectedService.travelRatePerMile ? parseFloat(selectedService.travelRatePerMile) : 0.67;
+              var distFee = Math.round(dist * 2 * ratePerMile * 100) / 100; // round-trip
+              var minFee = selectedService.minTravelFee ? parseFloat(selectedService.minTravelFee) : 0;
+              dynamicTravelFee = Math.max(fixedFee, distFee, minFee);
+              showFeePreview(dynamicTravelFee, dist);
+            } else {
+              dynamicTravelFee = null;
+              showFeePreview(null, null);
+            }
           } else {
             calculatedDistanceMi = null;
-            var fallbackFee = selectedService.travelFee ? parseFloat(selectedService.travelFee) : 0;
-            var fallbackMin = selectedService.minTravelFee ? parseFloat(selectedService.minTravelFee) : 0;
-            var fallbackResult = Math.max(fallbackFee, fallbackMin);
-            dynamicTravelFee = fallbackResult > 0 ? fallbackResult : null;
+            if (hasFeeConfig) {
+              var fallbackFee = selectedService.travelFee ? parseFloat(selectedService.travelFee) : 0;
+              var fallbackMin = selectedService.minTravelFee ? parseFloat(selectedService.minTravelFee) : 0;
+              var fallbackResult = Math.max(fallbackFee, fallbackMin);
+              dynamicTravelFee = fallbackResult > 0 ? fallbackResult : null;
+              showFeePreview(dynamicTravelFee, null);
+            } else {
+              dynamicTravelFee = null;
+              showFeePreview(null, null);
+            }
           }
+          // If fee preview is shown, pause so user sees it; second tap proceeds
+          if (dynamicTravelFee != null && dynamicTravelFee > 0) {
+            var preview = document.getElementById('addrFeePreview');
+            var continueBtn = document.getElementById('addrContinueBtn');
+            if (preview && preview.dataset.confirmed === '1') {
+              // Second tap — proceed
+              _showStep(5);
+            } else {
+              // First tap — show preview and update button
+              if (preview) preview.dataset.confirmed = '1';
+              if (continueBtn) continueBtn.textContent = 'Confirm & Continue';
+              return;
+            }
+          } else {
+            _showStep(5);
+          }
+          return;
         }
       }
+      // No fee config and no distance check needed — proceed directly
+      dynamicTravelFee = null;
       _showStep(5);
     }
     function renderMobileServiceInfo() {
