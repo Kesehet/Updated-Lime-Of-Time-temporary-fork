@@ -5056,9 +5056,11 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         <input id="svcSearch" type="text" placeholder="&#128269; Search services..." oninput="onSvcSearch(this.value)"
           style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:var(--bg-card);color:var(--text);outline:none;">
       </div>
-      <!-- Mobile-only filter chip (shown only when mobile services exist) -->
-      <div id="mobileFilterChip" style="display:none;margin-bottom:12px;">
-        <button id="mobileFilterBtn" onclick="toggleMobileFilter()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;">🚗 Mobile Only</button>
+      <!-- Service type filter chips (shown only when both types exist) -->
+      <div id="svcTypeFilterRow" style="display:none;margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="svcFilterAll" onclick="setSvcTypeFilter('all')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;">All</button>
+        <button id="svcFilterInStore" onclick="setSvcTypeFilter('in_store')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;">🏢 In Store</button>
+        <button id="svcFilterMobile" onclick="setSvcTypeFilter('mobile')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;">🚗 Mobile</button>
       </div>
       <!-- Most Popular row -->
       <div id="svcPopularRow" style="display:none;margin-bottom:16px;">
@@ -5130,9 +5132,12 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">This service is performed at your location. Please enter the address where you'd like the service performed.</p>
       <div id="mobileServiceInfo" style="background:var(--accent-bg);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--text);"></div>
       <div style="display:flex;flex-direction:column;gap:12px;">
-        <div>
+        <div style="position:relative;">
           <label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;display:block;">Street Address <span style="color:#ef4444;">*</span></label>
-          <input id="addrStreet" type="text" placeholder="e.g. 456 Oak Avenue" oninput="clientAddress.street=this.value" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border-input);border-radius:12px;font-size:14px;background:var(--bg-card);color:var(--text);outline:none;" />
+          <input id="addrStreet" type="text" placeholder="e.g. 456 Oak Avenue" autocomplete="off"
+            oninput="clientAddress.street=this.value;onAddrStreetInput(this.value)"
+            style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border-input);border-radius:12px;font-size:14px;background:var(--bg-card);color:var(--text);outline:none;" />
+          <div id="addrSuggestBox" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:100;background:var(--bg-card);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);margin-top:2px;max-height:200px;overflow-y:auto;"></div>
         </div>
         <div>
           <label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;display:block;">City <span style="color:#ef4444;">*</span></label>
@@ -5594,15 +5599,19 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
 
      // ── Step 1 drill-down state ──────────────────────────────────────────
     var selectedSvcCat = null; // null = show tiles, string = show list for that cat
-    var mobileFilterActive = false; // whether the Mobile Only chip is toggled on
-    function toggleMobileFilter() {
-      mobileFilterActive = !mobileFilterActive;
-      var btn = document.getElementById('mobileFilterBtn');
-      if (btn) {
-        btn.style.background = mobileFilterActive ? '#0369a1' : 'var(--bg-card)';
-        btn.style.color = mobileFilterActive ? '#fff' : 'var(--text-secondary)';
-        btn.style.borderColor = mobileFilterActive ? '#0369a1' : 'var(--border)';
-      }
+    var svcTypeFilter = 'all'; // 'all' | 'in_store' | 'mobile'
+    function setSvcTypeFilter(type) {
+      svcTypeFilter = type;
+      // Update chip active states
+      var chips = { all: 'svcFilterAll', in_store: 'svcFilterInStore', mobile: 'svcFilterMobile' };
+      Object.keys(chips).forEach(function(k) {
+        var el = document.getElementById(chips[k]);
+        if (!el) return;
+        var isActive = k === type;
+        el.style.background = isActive ? 'var(--accent)' : 'var(--bg-card)';
+        el.style.color = isActive ? '#fff' : 'var(--text-secondary)';
+        el.style.borderColor = isActive ? 'var(--accent)' : 'var(--border)';
+      });
       // Reset drill-down state and re-render
       selectedSvcCat = null;
       document.getElementById('svcItemList').style.display = 'none';
@@ -5611,8 +5620,9 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       renderSvcCategoryTiles();
     }
     function getFilteredServices() {
-      if (!mobileFilterActive) return services;
-      return services.filter(function(s) { return s.serviceType === 'mobile'; });
+      if (svcTypeFilter === 'mobile') return services.filter(function(s) { return s.serviceType === 'mobile'; });
+      if (svcTypeFilter === 'in_store') return services.filter(function(s) { return s.serviceType !== 'mobile'; });
+      return services;
     }
     function renderServices() {
       if (services.length === 0) {
@@ -5620,17 +5630,32 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         return;
       }
       selectedSvcCat = null;
-      mobileFilterActive = false;
+      svcTypeFilter = 'all';
       document.getElementById('svcItemList').style.display = 'none';
       document.getElementById('svcSearchResults').style.display = 'none';
-      // Show mobile filter chip only if there are mobile services
+      // Show filter chips only when both in-store and mobile services exist
       var hasMobile = services.some(function(s) { return s.serviceType === 'mobile'; });
-      var chipEl = document.getElementById('mobileFilterChip');
-      if (chipEl) chipEl.style.display = hasMobile ? 'block' : 'none';
-      renderSvcPopularRow();
-      renderSvcCategoryTiles();
+      var hasInStore = services.some(function(s) { return s.serviceType !== 'mobile'; });
+      var filterRow = document.getElementById('svcTypeFilterRow');
+      if (filterRow) filterRow.style.display = (hasMobile && hasInStore) ? 'flex' : 'none';
+      // Reset chip states to 'all' — this also calls renderSvcPopularRow + renderSvcCategoryTiles
+      setSvcTypeFilter('all');
     }
 
+    // Returns the appropriate mobile badge HTML for a service:
+    // - "🚗 Free Travel" (green) if mobile with no fee configured
+    // - "🚗 Mobile" (blue) if mobile with a fee configured
+    // - "" if in-store
+    function mobileBadgeHtml(s) {
+      if (!s || s.serviceType !== 'mobile') return '';
+      var hasFee = (s.travelFee && parseFloat(s.travelFee) > 0) ||
+                   (s.travelRatePerMile && parseFloat(s.travelRatePerMile) > 0) ||
+                   (s.minTravelFee && parseFloat(s.minTravelFee) > 0);
+      if (!hasFee) {
+        return ' <span style="display:inline-block;background:#dcfce7;color:#15803d;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;vertical-align:middle;">🚗 Free Travel</span>';
+      }
+      return ' <span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;vertical-align:middle;">🚗 Mobile</span>';
+    }
     function renderSvcPopularRow() {
       // Rank services by appointment count (use appointmentCount field if available, else random stable sort)
       var ranked = getFilteredServices().slice().sort(function(a, b) {
@@ -5654,7 +5679,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           photoEl +
           '<div style="padding:8px 10px 10px;">' +
           '<div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:4px;">' + esc(s.name) +
-          (s.serviceType === 'mobile' ? ' <span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;vertical-align:middle;">🚗 Mobile</span>' : '') + '</div>' +
+          mobileBadgeHtml(s) + '</div>' +
           '<div style="font-size:11px;color:#888;">' + dur + '</div>' +
           '<div style="font-size:13px;font-weight:700;color:var(--accent);margin-top:6px;">$' + parseFloat(s.price).toFixed(2) + '</div>' +
           '</div></div>';
@@ -5742,7 +5767,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         html += '<div class="service-item" data-svc-id="' + esc(s.localId) + '">' +
           svcThumb +
           '<div class="service-info"><div class="service-name">' + esc(s.name) +
-          (s.serviceType === 'mobile' ? ' <span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;vertical-align:middle;">🚗 Mobile</span>' : '') + '</div>' +
+          mobileBadgeHtml(s) + '</div>' +
           '<div class="service-meta">' + dur + '</div></div>' +
           '<div class="service-price">$' + parseFloat(s.price).toFixed(2) + '</div></div>';
       });
@@ -5771,7 +5796,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       var html = '';
       if (s.photoUri) html += '<img src="' + esc(s.photoUri) + '" style="width:100%;height:180px;object-fit:cover;border-radius:12px;margin-bottom:14px;">';
       html += '<div style="display:inline-block;background:var(--accent-bg-light);color:var(--accent);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;">' + esc((s.category || 'General').trim() || 'General') + '</div>' +
-        (s.serviceType === 'mobile' ? ' <span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;margin-left:6px;">🚗 Mobile Service</span>' : '');
+        (s.serviceType === 'mobile' ? ' ' + mobileBadgeHtml(s).replace('font-size:9px', 'font-size:11px').replace('padding:1px 6px', 'padding:3px 10px') : '');
       html += '<div class="detail-name">' + esc(s.name) + '</div>';
       html += '<div class="detail-price">$' + parseFloat(s.price).toFixed(2) + '</div>';
       html += '<div class="detail-meta">' + dur + '</div>';
@@ -5830,7 +5855,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           html += '<div class="service-item" data-svc-id="' + esc(s.localId) + '">' +
             svcThumbS +
             '<div class="service-info"><div class="service-name">' + esc(s.name) +
-            (s.serviceType === 'mobile' ? ' <span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;vertical-align:middle;">🚗 Mobile</span>' : '') + '</div>' +
+            mobileBadgeHtml(s) + '</div>' +
             '<div class="service-meta">' + dur + (s.category ? ' · ' + esc(s.category) : '') + '</div></div>' +
             '<div class="service-price">$' + parseFloat(s.price).toFixed(2) + '</div></div>';
         });
@@ -6072,6 +6097,75 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       } catch(e) {}
       return null;
     }
+    // ── US state name → abbreviation lookup ─────────────────────
+    var stateAbbreviations = {
+      'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA',
+      'Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA',
+      'Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS',
+      'Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA',
+      'Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT',
+      'Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM',
+      'New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK',
+      'Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC',
+      'South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT',
+      'Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY',
+      'District of Columbia':'DC'
+    };
+    // ── Street address autocomplete (Nominatim / OpenStreetMap) ──────────
+    var _addrSuggestTimer = null;
+    var _addrSuggestAbort = null;
+    function onAddrStreetInput(val) {
+      var box = document.getElementById('addrSuggestBox');
+      if (!box) return;
+      if (_addrSuggestTimer) clearTimeout(_addrSuggestTimer);
+      if (!val || val.length < 4) { box.style.display = 'none'; return; }
+      _addrSuggestTimer = setTimeout(async function() {
+        try {
+          if (_addrSuggestAbort) _addrSuggestAbort.abort();
+          _addrSuggestAbort = new AbortController();
+          var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=us&q=' + encodeURIComponent(val);
+          var res = await fetch(url, { signal: _addrSuggestAbort.signal, headers: { 'Accept-Language': 'en' } });
+          var data = await res.json();
+          if (!data || data.length === 0) { box.style.display = 'none'; return; }
+          box.innerHTML = data.map(function(item, i) {
+            var a = item.address || {};
+            var street = (a.house_number ? a.house_number + ' ' : '') + (a.road || '');
+            var city = a.city || a.town || a.village || a.county || '';
+            var state = a.state || '';
+            var zip = a.postcode || '';
+            var display = item.display_name;
+            return '<div data-idx="' + i + '" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);" ' +
+              'onmousedown="selectAddrSuggestion(' + JSON.stringify(street) + ',' + JSON.stringify(city) + ',' + JSON.stringify(state) + ',' + JSON.stringify(zip) + ')">' +
+              '<div style="font-weight:600;">' + esc(street || display.split(',')[0]) + '</div>' +
+              '<div style="font-size:11px;color:#888;margin-top:2px;">' + esc([city, state, zip].filter(Boolean).join(', ')) + '</div>' +
+              '</div>';
+          }).join('');
+          box.style.display = 'block';
+        } catch(e) {
+          if (e.name !== 'AbortError') box.style.display = 'none';
+        }
+      }, 350);
+    }
+    function selectAddrSuggestion(street, city, state, zip) {
+      var streetEl = document.getElementById('addrStreet');
+      var cityEl = document.getElementById('addrCity');
+      var stateEl = document.getElementById('addrState');
+      var zipEl = document.getElementById('addrZip');
+      var box = document.getElementById('addrSuggestBox');
+      if (streetEl && street) { streetEl.value = street; clientAddress.street = street; }
+      if (cityEl && city) { cityEl.value = city; clientAddress.city = city; }
+      if (stateEl && state) {
+        var abbr = state.length === 2 ? state.toUpperCase() : (stateAbbreviations[state] || state.substring(0,2).toUpperCase());
+        stateEl.value = abbr; clientAddress.state = abbr;
+      }
+      if (zipEl && zip) { zipEl.value = zip; clientAddress.zip = zip; autoFillStateFromZip(zip); }
+      if (box) box.style.display = 'none';
+    }
+    // Close suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+      var box = document.getElementById('addrSuggestBox');
+      if (box && !box.contains(e.target) && e.target.id !== 'addrStreet') box.style.display = 'none';
+    });
     function showAddrError(msg) {
       var el = document.getElementById('addrErrorMsg');
       if (!el) return;
