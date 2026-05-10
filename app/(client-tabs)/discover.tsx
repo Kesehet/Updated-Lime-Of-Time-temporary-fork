@@ -410,6 +410,8 @@ export default function DiscoverScreen() {
   const [dynamicCategories, setDynamicCategories] = useState<string[]>([]);
   // Pinned categories — long-press a chip to pin/unpin; pinned chips float to the front
   const [pinnedCategories, setPinnedCategories] = useState<string[]>([]);
+  // Service type filter: 'all' | 'instore' | 'mobile'
+  const [serviceTypeFilter, setServiceTypeFilter] = useState<'all' | 'instore' | 'mobile'>('all');
   const clearRecentlyViewed = useCallback(async () => {
     await AsyncStorage.removeItem(RECENTLY_VIEWED_KEY);
     setRecentlyViewed([]);
@@ -658,6 +660,14 @@ export default function DiscoverScreen() {
       .sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
   }, [state.appointments, state.account]);
 
+  // Apply service type filter client-side on top of server results
+  const filteredBusinesses = useMemo(() => {
+    if (serviceTypeFilter === 'all') return businesses;
+    if (serviceTypeFilter === 'mobile') return businesses.filter((b) => b.hasMobileServices);
+    if (serviceTypeFilter === 'instore') return businesses.filter((b) => b.hasInStoreServices);
+    return businesses;
+  }, [businesses, serviceTypeFilter]);
+
   const s = styles(colors);
    return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
@@ -828,6 +838,36 @@ export default function DiscoverScreen() {
         </ScrollView>
       </View>
 
+      {/* Service type filter chips: All / In Store / Comes to You */}
+      <View style={{ flexDirection: "row", paddingHorizontal: 16, gap: 8, marginBottom: 4, marginTop: 2 }}>
+        {(["all", "instore", "mobile"] as const).map((type) => {
+          const labels = { all: "All", instore: "🏪 In Store", mobile: "🚗 Comes to You" };
+          const active = serviceTypeFilter === type;
+          return (
+            <Pressable
+              key={type}
+              onPress={() => {
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setServiceTypeFilter(type);
+              }}
+              style={({ pressed }) => ({
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 20,
+                borderWidth: 1.5,
+                backgroundColor: active ? (type === "mobile" ? "rgba(59,130,246,0.18)" : "rgba(143,191,106,0.2)") : CARD_BG,
+                borderColor: active ? (type === "mobile" ? "#3B82F6" : GREEN_ACCENT) : CARD_BORDER,
+                opacity: pressed ? 0.75 : 1,
+              })}
+            >
+              <Text style={{ color: active ? (type === "mobile" ? "#3B82F6" : GREEN_ACCENT) : TEXT_MUTED, fontSize: 13, fontWeight: active ? "700" : "500" }}>
+                {labels[type]}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {/* Sort toggle row */}
       <View style={{ flexDirection: "row", paddingHorizontal: 16, gap: 8, marginBottom: 4 }}>
         {(["default", "rating", "reviews"] as const).map((mode) => {
@@ -866,7 +906,7 @@ export default function DiscoverScreen() {
         </View>
       ) : (
         <FlatList
-          data={businesses}
+          data={filteredBusinesses}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}

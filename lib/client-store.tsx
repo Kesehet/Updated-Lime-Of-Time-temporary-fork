@@ -89,6 +89,8 @@ export interface DiscoverBusiness {
   customSlug: string | null;
   serviceCategories?: string[];
   firstServicePhotoUri?: string | null;
+  hasMobileServices?: boolean;
+  hasInStoreServices?: boolean;
 }
 
 export interface ClientState {

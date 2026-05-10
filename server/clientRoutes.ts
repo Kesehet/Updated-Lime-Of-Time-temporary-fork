@@ -319,7 +319,9 @@ export function registerClientRoutes(app: Express) {
               serviceCategories.push(normalized);
             }
           }
-          return { ...b, locationText, bizLat, bizLng, displayAddress, locs, avgRating, reviewCount, serviceCategories, firstServicePhotoUri };
+          const hasMobileServices = servicesList.some((svc: any) => svc.serviceType === 'mobile');
+          const hasInStoreServices = servicesList.some((svc: any) => !svc.serviceType || svc.serviceType === 'in-store');
+          return { ...b, locationText, bizLat, bizLng, displayAddress, locs, avgRating, reviewCount, serviceCategories, firstServicePhotoUri, hasMobileServices, hasInStoreServices };
         })
       );
 
@@ -365,7 +367,7 @@ export function registerClientRoutes(app: Express) {
           }
           const slug = b.customSlug ?? db.sanitizeSlug(b.businessName ?? "");
           const { locationText: _lt, bizLat: _bl, bizLng: _bg, locs: _locs, ...rest } = b;
-          return { ...rest, distanceKm, slug, avgRating: b.avgRating, reviewCount: b.reviewCount, serviceCategories: b.serviceCategories };
+          return { ...rest, distanceKm, slug, avgRating: b.avgRating, reviewCount: b.reviewCount, serviceCategories: b.serviceCategories, hasMobileServices: (b as any).hasMobileServices ?? false, hasInStoreServices: (b as any).hasInStoreServices ?? true };
         })
         .filter((b) => {
           // Only apply radius filter when we have both client coords AND business coords
