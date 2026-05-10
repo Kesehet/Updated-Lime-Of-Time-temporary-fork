@@ -29,7 +29,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { Image as ExpoImage } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useAppLockContext } from "@/lib/app-lock-provider";
+import { useAppLockContextSafe } from "@/lib/app-lock-provider";
 
 const GREEN_ACCENT = "#8FBF6A";
 const GREEN_DARK = "#1A3A28";
@@ -81,7 +81,8 @@ export default function ClientProfileScreen() {
   const insets = useSafeAreaInsets();
   const { state, signOut, dispatch } = useClientStore();
   const [signingOut, setSigningOut] = useState(false);
-  const { biometricEnabled, biometricAvailable, biometricType, toggleBiometric } = useAppLockContext();
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const { biometricEnabled, biometricAvailable, biometricType, toggleBiometric } = useAppLockContextSafe();
 
   const handleToggleFaceId = async (value: boolean) => {
     if (!biometricAvailable) {
@@ -303,7 +304,6 @@ export default function ClientProfileScreen() {
     );
   }
 
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const handlePickAvatar = async () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();

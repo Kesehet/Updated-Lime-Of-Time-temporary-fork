@@ -83,3 +83,20 @@ export function useAppLockContext(): AppLockContextType {
   }
   return ctx;
 }
+
+/**
+ * Safe version of useAppLockContext that returns a no-op fallback instead of
+ * throwing when the provider has been unmounted (e.g. during navigation away).
+ * Use this in screens that may briefly render after their provider unmounts.
+ */
+const FALLBACK_LOCK_CTX: AppLockContextType = {
+  isLocked: false,
+  biometricEnabled: false,
+  biometricAvailable: false,
+  biometricType: "none",
+  authenticate: async () => false,
+  toggleBiometric: async () => false,
+};
+export function useAppLockContextSafe(): AppLockContextType {
+  return useContext(AppLockContext) ?? FALLBACK_LOCK_CTX;
+}
