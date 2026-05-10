@@ -5144,9 +5144,10 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         </div>
       </div>
       <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;">We'll come to you at this address. Travel fee and travel time will be added to your appointment.</p>
+      <div id="addrErrorMsg" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;font-size:13px;color:#b91c1c;margin-top:10px;"></div>
       <div style="display:flex;gap:8px;margin-top:16px;">
         <button class="btn btn-secondary" onclick="goToStep(4)" style="flex:1">Back</button>
-        <button class="btn btn-primary" onclick="validateAndProceedFromAddress()" style="flex:1">Continue</button>
+        <button id="addrContinueBtn" class="btn btn-primary" onclick="validateAndProceedFromAddress()" style="flex:1">Continue</button>
       </div>
     </div>
 
@@ -5614,7 +5615,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           'border-radius:12px;padding:0;overflow:hidden;cursor:pointer;transition:box-shadow 0.15s;">' +
           photoEl +
           '<div style="padding:8px 10px 10px;">' +
-          '<div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:4px;">' + esc(s.name) + '</div>' +
+          '<div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:4px;">' + esc(s.name) +
+          (s.serviceType === 'mobile' ? ' <span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;vertical-align:middle;">🚗 Mobile</span>' : '') + '</div>' +
           '<div style="font-size:11px;color:#888;">' + dur + '</div>' +
           '<div style="font-size:13px;font-weight:700;color:var(--accent);margin-top:6px;">$' + parseFloat(s.price).toFixed(2) + '</div>' +
           '</div></div>';
@@ -5699,7 +5701,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           : '<div class="service-dot" style="background:' + (s.color || '#4a8c3f') + '20;color:' + (s.color || '#4a8c3f') + ';">' + esc((s.name||'?')[0].toUpperCase()) + '</div>';
         html += '<div class="service-item" data-svc-id="' + esc(s.localId) + '">' +
           svcThumb +
-          '<div class="service-info"><div class="service-name">' + esc(s.name) + '</div>' +
+          '<div class="service-info"><div class="service-name">' + esc(s.name) +
+          (s.serviceType === 'mobile' ? ' <span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;vertical-align:middle;">🚗 Mobile</span>' : '') + '</div>' +
           '<div class="service-meta">' + dur + '</div></div>' +
           '<div class="service-price">$' + parseFloat(s.price).toFixed(2) + '</div></div>';
       });
@@ -5727,7 +5730,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       var isSelected = selectedService && selectedService.localId === id;
       var html = '';
       if (s.photoUri) html += '<img src="' + esc(s.photoUri) + '" style="width:100%;height:180px;object-fit:cover;border-radius:12px;margin-bottom:14px;">';
-      html += '<div style="display:inline-block;background:var(--accent-bg-light);color:var(--accent);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;">' + esc((s.category || 'General').trim() || 'General') + '</div>';
+      html += '<div style="display:inline-block;background:var(--accent-bg-light);color:var(--accent);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;">' + esc((s.category || 'General').trim() || 'General') + '</div>' +
+        (s.serviceType === 'mobile' ? ' <span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;margin-left:6px;">🚗 Mobile Service</span>' : '');
       html += '<div class="detail-name">' + esc(s.name) + '</div>';
       html += '<div class="detail-price">$' + parseFloat(s.price).toFixed(2) + '</div>';
       html += '<div class="detail-meta">' + dur + '</div>';
@@ -5785,7 +5789,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
             : '<div class="service-dot" style="background:' + (s.color || '#4a8c3f') + '20;color:' + (s.color || '#4a8c3f') + ';">' + esc((s.name||'?')[0].toUpperCase()) + '</div>';
           html += '<div class="service-item" data-svc-id="' + esc(s.localId) + '">' +
             svcThumbS +
-            '<div class="service-info"><div class="service-name">' + esc(s.name) + '</div>' +
+            '<div class="service-info"><div class="service-name">' + esc(s.name) +
+            (s.serviceType === 'mobile' ? ' <span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;vertical-align:middle;">🚗 Mobile</span>' : '') + '</div>' +
             '<div class="service-meta">' + dur + (s.category ? ' · ' + esc(s.category) : '') + '</div></div>' +
             '<div class="service-price">$' + parseFloat(s.price).toFixed(2) + '</div></div>';
         });
@@ -5995,10 +6000,64 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       if (step === 7) renderConfirmation();
       window.scrollTo(0, 0);
     }
-    function validateAndProceedFromAddress() {
+    // Haversine formula: returns distance in miles between two lat/lng points
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+      var R = 3958.8;
+      var dLat = (lat2 - lat1) * Math.PI / 180;
+      var dLon = (lon2 - lon1) * Math.PI / 180;
+      var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+    async function getZipCoords(zip) {
+      try {
+        var r = await fetch('https://api.zippopotam.us/us/' + encodeURIComponent(zip.replace(/\s/g, '')));
+        if (!r.ok) return null;
+        var d = await r.json();
+        if (d && d.places && d.places.length > 0) {
+          return { lat: parseFloat(d.places[0].latitude), lon: parseFloat(d.places[0].longitude), city: d.places[0]['place name'], state: d.places[0]['state abbreviation'] };
+        }
+      } catch(e) {}
+      return null;
+    }
+    function showAddrError(msg) {
+      var el = document.getElementById('addrErrorMsg');
+      if (!el) return;
+      el.textContent = msg;
+      el.style.display = msg ? 'block' : 'none';
+    }
+    async function validateAndProceedFromAddress() {
       if (!isAddressComplete()) {
-        alert('Please fill in all address fields (Street, City, State, ZIP Code).');
+        showAddrError('Please fill in all address fields (Street, City, State, ZIP Code).');
         return;
+      }
+      showAddrError('');
+      // If service has a maxTravelDistance, validate the client ZIP is within range
+      if (selectedService && selectedService.maxTravelDistance && parseFloat(selectedService.maxTravelDistance) > 0) {
+        var clientZip = clientAddress.zip.trim();
+        var businessZip = null;
+        var loc = selectedLocation ? locations.find(function(l) { return l.localId === selectedLocation; }) : (locations.length > 0 ? locations[0] : null);
+        if (loc) businessZip = loc.zipCode || null;
+        if (businessZip && clientZip) {
+          var btn = document.getElementById('addrContinueBtn');
+          if (btn) { btn.disabled = true; btn.textContent = 'Checking distance\u2026'; }
+          var results = await Promise.all([getZipCoords(businessZip), getZipCoords(clientZip)]);
+          var bizCoords = results[0], clientCoords = results[1];
+          if (btn) { btn.disabled = false; btn.textContent = 'Continue'; }
+          if (!clientCoords) {
+            showAddrError('We could not verify your ZIP code. Please double-check and try again.');
+            return;
+          }
+          if (bizCoords) {
+            var dist = haversineDistance(bizCoords.lat, bizCoords.lon, clientCoords.lat, clientCoords.lon);
+            var maxDist = parseFloat(selectedService.maxTravelDistance);
+            if (dist > maxDist) {
+              showAddrError('Sorry, your address (' + clientCoords.city + ', ' + clientCoords.state + ') is approximately ' + Math.round(dist) + ' miles away \u2014 outside our ' + maxDist + '-mile service radius. Please contact us to check availability.');
+              return;
+            }
+          }
+        }
       }
       _showStep(5);
     }
