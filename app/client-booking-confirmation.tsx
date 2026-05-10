@@ -59,6 +59,7 @@ export default function ClientBookingConfirmationScreen() {
     locationName,
     locationAddress,
     locationPhone,
+    clientAddress,
   } = useLocalSearchParams<{
     serviceName: string;
     staffName?: string;
@@ -72,6 +73,7 @@ export default function ClientBookingConfirmationScreen() {
     locationName?: string;
     locationAddress?: string;
     locationPhone?: string;
+    clientAddress?: string;
   }>();
 
   // Entrance animation
@@ -299,11 +301,14 @@ export default function ClientBookingConfirmationScreen() {
                   Linking.openURL(url).catch(() => Linking.openURL(`https://maps.google.com/?q=${encoded}`));
                 }}
               >
-                <SummaryRow icon="location" label="Address" value={locationAddress} last tappable />
+                <SummaryRow icon="location" label="Address" value={locationAddress} last={!clientAddress} tappable />
                 <Text style={{ color: GREEN_ACCENT, fontSize: 12, fontWeight: "600", marginLeft: 46, marginTop: -6, marginBottom: 8 }}>
                   Get Directions →
                 </Text>
               </TouchableOpacity>
+            ) : null}
+            {clientAddress ? (
+              <SummaryRow icon="location" label="Your Address" value={clientAddress} last />
             ) : null}
           </View>
 

@@ -206,6 +206,7 @@ export default function CalendarBookingScreen() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(() => params.clientId ?? null);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
+  const [clientAddress, setClientAddress] = useState("");
   const [clientSearch, setClientSearch] = useState("");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [quickName, setQuickName] = useState("");
@@ -613,6 +614,7 @@ export default function CalendarBookingScreen() {
       totalPrice,
       staffId: selectedStaffId ?? undefined,
       locationId: effectiveLocationId ?? undefined,
+      clientAddress: clientAddress.trim() || undefined,
       discountPercent: appliedDiscount?.percentage ?? appliedManualDiscount?.percentage,
       discountAmount: (discountAmount + promoDiscountAmount + manualDiscountAmount) > 0 ? (discountAmount + promoDiscountAmount + manualDiscountAmount) : undefined,
       discountName: (() => {
@@ -3509,6 +3511,41 @@ export default function CalendarBookingScreen() {
             />
           </View>
 
+          {/* Client Address (mobile services only) */}
+          {(() => {
+            const selectedSvc = state.services.find(s => s.id === selectedServiceId);
+            if (selectedSvc?.serviceType !== 'mobile') return null;
+            return (
+              <View style={{ marginTop: 12 }}>
+                <Text style={{
+                  fontSize: fs.xs,
+                  fontWeight: "600",
+                  color: colors.foreground,
+                  marginBottom: 6,
+                }}>
+                  Client Address <Text style={{ color: colors.error }}>*</Text>
+                </Text>
+                <TextInput
+                  placeholder="Enter client's full address..."
+                  placeholderTextColor={colors.muted}
+                  value={clientAddress}
+                  onChangeText={setClientAddress}
+                  style={[
+                    styles.notesInput,
+                    {
+                      color: colors.foreground,
+                      borderColor: clientAddress.trim() ? colors.border : colors.error + "80",
+                      backgroundColor: colors.surface,
+                    },
+                  ]}
+                  returnKeyType="done"
+                />
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>
+                  Required — we will travel to this address
+                </Text>
+              </View>
+            );
+          })()}
           {/* Promo Code */}
           <View style={{ marginTop: 12 }}>
             {!appliedPromoCode ? (

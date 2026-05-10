@@ -165,6 +165,7 @@ const MAPPING = {
   "leaf.fill": "eco",
   "ellipsis.circle.fill": "more-horiz",
   "eyebrow": "face-retouching-natural",
+  "car.fill": "directions-car",
 } as unknown as IconMapping;
 
 export function IconSymbol({

@@ -59,6 +59,7 @@ interface PublicService {
   description: string | null;
   category?: string | null;
   photoUri?: string | null;
+  serviceType?: 'in_store' | 'mobile' | null;
 }
 interface PublicPackage {
   localId: string;
@@ -153,6 +154,7 @@ export default function ClientBookingWizardScreen() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
   const [notes, setNotes] = useState("");
+  const [clientAddress, setClientAddress] = useState("");
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId | null>(null);
   const [paymentConfirmationNumber, setPaymentConfirmationNumber] = useState("");
@@ -222,19 +224,27 @@ export default function ClientBookingWizardScreen() {
   // Build the step list dynamically — Date & Time are merged into one step
   // Products step is only shown when the business has products available
   const hasProducts = wizardProducts.length > 0;
+  // Address step is shown when selected service is mobile type
+  const isMobileService = selectedService?.serviceType === 'mobile';
   const STEPS = showLocationStep
-    ? (hasProducts ? ["Service", "Staff", "Location", "Date & Time", "Products", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Location", "Date & Time", "Promo", "Payment", "Confirm"])
-    : (hasProducts ? ["Service", "Staff", "Date & Time", "Products", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Date & Time", "Promo", "Payment", "Confirm"]);
-  // Step indices (dynamic based on whether location step is shown and whether products exist)
+    ? (hasProducts
+        ? (isMobileService ? ["Service", "Staff", "Location", "Date & Time", "Address", "Products", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Location", "Date & Time", "Products", "Promo", "Payment", "Confirm"])
+        : (isMobileService ? ["Service", "Staff", "Location", "Date & Time", "Address", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Location", "Date & Time", "Promo", "Payment", "Confirm"]))
+    : (hasProducts
+        ? (isMobileService ? ["Service", "Staff", "Date & Time", "Address", "Products", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Date & Time", "Products", "Promo", "Payment", "Confirm"])
+        : (isMobileService ? ["Service", "Staff", "Date & Time", "Address", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Date & Time", "Promo", "Payment", "Confirm"]));
+  // Step indices (dynamic)
   const STEP_SERVICE = 0;
   const STEP_STAFF = 1;
   const STEP_LOCATION = showLocationStep ? 2 : -1;
-  const STEP_DATE = showLocationStep ? 3 : 2;   // merged Date+Time step
-  const STEP_TIME = STEP_DATE;                   // same step as date
-  const STEP_PRODUCTS = hasProducts ? (showLocationStep ? 4 : 3) : -1;
-  const STEP_PROMO = hasProducts ? (showLocationStep ? 5 : 4) : (showLocationStep ? 4 : 3);
-  const STEP_PAYMENT = hasProducts ? (showLocationStep ? 6 : 5) : (showLocationStep ? 5 : 4);
-  const STEP_CONFIRM = hasProducts ? (showLocationStep ? 7 : 6) : (showLocationStep ? 6 : 5);
+  const STEP_DATE = showLocationStep ? 3 : 2;
+  const STEP_TIME = STEP_DATE;
+  const _addrOff = isMobileService ? 1 : 0;
+  const STEP_ADDRESS = isMobileService ? (showLocationStep ? 4 : 3) : -1;
+  const STEP_PRODUCTS = hasProducts ? (showLocationStep ? 4 + _addrOff : 3 + _addrOff) : -1;
+  const STEP_PROMO = hasProducts ? (showLocationStep ? 5 + _addrOff : 4 + _addrOff) : (showLocationStep ? 4 + _addrOff : 3 + _addrOff);
+  const STEP_PAYMENT = hasProducts ? (showLocationStep ? 6 + _addrOff : 5 + _addrOff) : (showLocationStep ? 5 + _addrOff : 4 + _addrOff);
+  const STEP_CONFIRM = hasProducts ? (showLocationStep ? 7 + _addrOff : 6 + _addrOff) : (showLocationStep ? 6 + _addrOff : 5 + _addrOff);
 
   // Load services, staff, locations, and discounts
   useEffect(() => {
@@ -581,6 +591,7 @@ export default function ClientBookingWizardScreen() {
           subtotal: servicePrice,
           totalPrice: finalPrice,
           products: selectedProductItems.length > 0 ? selectedProductItems : undefined,
+          clientAddress: isMobileService && clientAddress.trim() ? clientAddress.trim() : undefined,
         }),
       });
       if (!res.ok) {
@@ -660,6 +671,7 @@ export default function ClientBookingWizardScreen() {
           giftSaving: giftApplied ? `$${Math.min(giftApplied.value, Math.max(0, (selectedService ? (parseFloat(selectedService.price ?? "0") || 0) : 0) - (discountAmount ?? 0) - (promoSaving ?? 0))).toFixed(2)}` : "",
           paymentMethod: paymentMethod ?? "",
           paymentConfirmationNumber: paymentMethod !== "cash" ? paymentConfirmationNumber.trim() : "",
+          clientAddress: isMobileService && clientAddress.trim() ? clientAddress.trim() : "",
         },
       } as any);
     } catch (err: any) {
@@ -1592,6 +1604,61 @@ export default function ClientBookingWizardScreen() {
           );
         })()}
 
+        {/* Address Step (mobile services) */}
+        {step === STEP_ADDRESS && (
+          <View style={s.stepContent}>
+            <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Your Address</Text>
+            <Text style={[s.stepSubtitle, { color: TEXT_MUTED }]}>This service is performed at your location. Please enter the address where you'd like the service.</Text>
+            <View style={[s.card, { padding: 16, marginTop: 8 }]}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: TEXT_MUTED, marginBottom: 8 }}>
+                Service Address <Text style={{ color: "#EF4444" }}>*</Text>
+              </Text>
+              <TextInput
+                placeholder="123 Main St, City, State ZIP"
+                placeholderTextColor={TEXT_MUTED}
+                value={clientAddress}
+                onChangeText={setClientAddress}
+                multiline
+                numberOfLines={3}
+                style={{
+                  color: TEXT_PRIMARY,
+                  fontSize: fs.sm,
+                  borderWidth: 1,
+                  borderColor: clientAddress.trim() ? "rgba(255,255,255,0.2)" : "#EF444480",
+                  borderRadius: 10,
+                  padding: 12,
+                  backgroundColor: "rgba(255,255,255,0.05)",
+                  minHeight: 80,
+                  textAlignVertical: "top",
+                }}
+                returnKeyType="done"
+              />
+              <Text style={{ fontSize: fs.xs, color: TEXT_MUTED, marginTop: 8 }}>
+                We'll come to you at this address.
+              </Text>
+            </View>
+            <View style={{ flex: 1 }} />
+            <Pressable
+              onPress={() => {
+                if (!clientAddress.trim()) {
+                  Alert.alert("Address Required", "Please enter your address for this mobile service.");
+                  return;
+                }
+                setStep(step + 1);
+              }}
+              style={({ pressed }) => ({
+                backgroundColor: LIME_GREEN,
+                borderRadius: 14,
+                paddingVertical: 16,
+                alignItems: "center",
+                marginTop: 24,
+                opacity: pressed ? 0.85 : 1,
+              })}
+            >
+              <Text style={{ color: "#0D2318", fontSize: fs.md, fontWeight: "700" }}>Continue</Text>
+            </Pressable>
+          </View>
+        )}
         {/* Promo / Discount step */}
         {step === STEP_PROMO && selectedService && (
           <View style={s.stepContent}>

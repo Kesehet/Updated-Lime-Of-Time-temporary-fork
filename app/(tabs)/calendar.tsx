@@ -1274,6 +1274,15 @@ export default function CalendarScreen() {
               </View>
             );
           })()}
+          {appt.clientAddress && (() => {
+            const svc = state.services.find(s => s.id === appt.serviceId);
+            if (svc?.serviceType !== 'mobile') return null;
+            return (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#0ea5e918", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#0ea5e9" }}>🚗 Mobile</Text>
+              </View>
+            );
+          })()}
         </View>
         {appt.paymentStatus !== "paid" && appt.status !== "cancelled" && (
           <Pressable

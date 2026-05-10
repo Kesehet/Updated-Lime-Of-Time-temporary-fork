@@ -48,6 +48,7 @@ export default function ServiceFormScreen() {
   const [reminderHours, setReminderHours] = useState<string>(
     existing?.reminderHours != null ? String(existing.reminderHours) : ""
   );
+  const [serviceType, setServiceType] = useState<'in_store' | 'mobile'>(existing?.serviceType ?? 'in_store');
   const uploadImageMut = trpc.files.uploadImage.useMutation();
   const isEdit = !!existing;
 
@@ -111,6 +112,7 @@ export default function ServiceFormScreen() {
       description: description.trim() || undefined,
       photoUri: photoUri || undefined,
       reminderHours: reminderHours.trim() !== "" ? (parseFloat(reminderHours) || null) : null,
+      serviceType,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     if (isEdit) {
@@ -369,6 +371,51 @@ export default function ServiceFormScreen() {
           </View>
         )}
 
+        {/* ── Service Type ── */}
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 8 }}>
+            Service Type
+          </Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <Pressable
+              onPress={() => setServiceType('in_store')}
+              style={({ pressed }) => ({
+                flex: 1,
+                paddingVertical: 10,
+                borderRadius: 10,
+                borderWidth: 1.5,
+                borderColor: serviceType === 'in_store' ? colors.primary : colors.border,
+                backgroundColor: serviceType === 'in_store' ? colors.primary + "18" : colors.surface,
+                alignItems: "center",
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: serviceType === 'in_store' ? colors.primary : colors.muted }}>
+                🏪 In-Store
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setServiceType('mobile')}
+              style={({ pressed }) => ({
+                flex: 1,
+                paddingVertical: 10,
+                borderRadius: 10,
+                borderWidth: 1.5,
+                borderColor: serviceType === 'mobile' ? colors.primary : colors.border,
+                backgroundColor: serviceType === 'mobile' ? colors.primary + "18" : colors.surface,
+                alignItems: "center",
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: serviceType === 'mobile' ? colors.primary : colors.muted }}>
+                🚗 Mobile / At-Home
+              </Text>
+            </Pressable>
+          </View>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
+            {serviceType === 'mobile' ? "Client's address will be collected at booking." : "Client comes to your location."}
+          </Text>
+        </View>
         {/* ── Delete ── */}
         {isEdit && (
           <Pressable

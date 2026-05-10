@@ -176,6 +176,7 @@ export const services = mysqlTable("services", {
   photoUri: varchar("photoUri", { length: 2048 }),
   /** Override global SMS reminder timing (hours before appointment, null = use global) */
   reminderHours: decimal("reminderHours", { precision: 5, scale: 2 }),
+  serviceType: varchar("serviceType", { length: 20 }).default("in_store"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -286,6 +287,7 @@ export const appointments = mysqlTable("appointments", {
    * JSON: { sent24h?: boolean, sent1h?: boolean, sent30m?: boolean }
    */
   clientReminderFlags: json("clientReminderFlags"),
+  clientAddress: text("clientAddress"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

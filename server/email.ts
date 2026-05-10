@@ -110,6 +110,7 @@ export interface ConfirmationEmailData {
   businessAddress?: string;
   customSlug?: string;
   locationId?: string;
+  clientAddress?: string;
 }
 
 /**
@@ -229,6 +230,7 @@ export interface BookingNotificationData {
   notes?: string;
   locationName?: string;
   locationAddress?: string;
+  clientAddress?: string;
 }
 
 /**
@@ -275,7 +277,9 @@ export async function sendBookingNotificationEmail(
 
   // Location
   if (data.locationName) {
-    const locValue = data.locationAddress
+    const locValue = data.clientAddress
+      ? `Client Address: ${data.clientAddress}`
+      : data.locationAddress
       ? `${data.locationName} — ${data.locationAddress}`
       : data.locationName;
     detailsHtml += detailRow("📍", "Location", locValue);

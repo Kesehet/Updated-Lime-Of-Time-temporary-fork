@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE services ADD COLUMN IF NOT EXISTS serviceType varchar(20) DEFAULT 'in_store';\nALTER TABLE appointments ADD COLUMN IF NOT EXISTS clientAddress text;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \nALTER TABLE services ADD COLUMN IF NOT EXISTS serviceType varchar(20) DEFAULT 'in_store';\nALTER TABLE appointments ADD COLUMN IF NOT EXISTS clientAddress text;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 800
+}

@@ -141,6 +141,7 @@ export async function notifyNewBooking(
     clientPhone?: string;
     staffName?: string;
     notes?: string;
+    clientAddress?: string;
   }
 ): Promise<boolean> {
   const endTime = opts?.duration ? computeEndTime(time, opts.duration) : null;
@@ -153,6 +154,7 @@ export async function notifyNewBooking(
     `📅 Date: ${date}`,
     `⏰ Time: ${timeRange}`,
     opts?.locationName ? `📍 Location: ${opts.locationName}` : null,
+    opts?.clientAddress ? `🏠 Client Address: ${opts.clientAddress}` : null,
     opts?.staffName ? `🧑‍💼 Staff: ${opts.staffName}` : null,
     opts?.notes ? `📝 Notes: ${opts.notes}` : null,
     ``,

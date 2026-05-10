@@ -449,6 +449,13 @@
       "when": 1778286360592,
       "tag": "0063_fancy_retro_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "5",
+      "when": 1778371150835,
+      "tag": "0064_rare_bloodstrike",
+      "breakpoints": true
     }
   ]
 }

@@ -495,6 +495,7 @@ export function registerClientRoutes(app: Express) {
             staffAvatarUrl: staff?.photoUri ?? null,
             locationName: location?.name ?? null,
             locationAddress: location?.address ?? null,
+            clientAddress: (appt as any).clientAddress ?? null,
           };
         })
       );
@@ -556,6 +557,7 @@ export function registerClientRoutes(app: Express) {
           location.zipCode,
         ].filter(Boolean).join(", ") : null,
         locationPhone: location?.phone ?? null,
+        clientAddress: (appt as any).clientAddress ?? null,
       });
     } catch (err: any) {
       res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });

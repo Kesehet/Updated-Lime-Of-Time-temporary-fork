@@ -168,6 +168,7 @@ const servicesRouter = router({
         description: z.string().optional().nullable(),
         photoUri: z.string().optional().nullable(),
         reminderHours: z.number().optional().nullable(),
+        serviceType: z.enum(['in_store', 'mobile']).optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -193,6 +194,7 @@ const servicesRouter = router({
         description: z.string().optional().nullable(),
         photoUri: z.string().optional().nullable(),
         reminderHours: z.number().optional().nullable(),
+        serviceType: z.enum(['in_store', 'mobile']).optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -303,6 +305,7 @@ const appointmentsRouter = router({
         giftUsedAmount: z.number().optional(),
         staffId: z.string().optional(),
         locationId: z.string().optional(),
+        clientAddress: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -360,6 +363,7 @@ const appointmentsRouter = router({
         giftUsedAmount: z.number().optional(),
         staffId: z.string().optional(),
         locationId: z.string().optional(),
+        clientAddress: z.string().optional(),
         cancellationReason: z.string().optional(),
         paymentMethod: z.string().optional(),
         paymentStatus: z.enum(["unpaid", "pending_cash", "paid"]).optional(),

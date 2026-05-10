@@ -1436,6 +1436,14 @@ Would you also like to charge a no-show fee via Stripe?`,
               onPress={handleOpenMap}
             />
           ) : null}
+          {appointment.clientAddress ? (
+            <DetailRow
+              icon="car.fill"
+              label="Client Address"
+              value={appointment.clientAddress}
+              colors={colors}
+            />
+          ) : null}
         </View>
 
         {/* Cancellation Policy Info */}

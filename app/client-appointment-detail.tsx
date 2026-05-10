@@ -328,6 +328,17 @@ export default function ClientAppointmentDetailScreen() {
           {appt.locationAddress ? (
             <AddressRow address={appt.locationAddress} />
           ) : null}
+          {(appt as any).clientAddress ? (
+            <View style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }}>
+              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: "rgba(10,126,164,0.15)", alignItems: "center", justifyContent: "center", marginRight: 12 }}>
+                <Text style={{ fontSize: 16 }}>🚗</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, fontWeight: "600", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Your Address</Text>
+                <Text style={{ fontSize: 14, color: "#FFFFFF", fontWeight: "500" }}>{(appt as any).clientAddress}</Text>
+              </View>
+            </View>
+          ) : null}
           {(appt as any).locationPhone ? (
             <Pressable
               style={({ pressed }) => [{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 4, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }, pressed && { opacity: 0.7 }]}

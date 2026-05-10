@@ -9,6 +9,7 @@ export interface Service {
   photoUri?: string; // optional photo shown on booking page
   locationIds?: string[] | null; // null = all locations
   reminderHours?: number | null; // override global SMS reminder timing for this service (null = use global)
+  serviceType?: 'in_store' | 'mobile'; // whether service is performed at client location
   createdAt: string;
 }
 
@@ -87,6 +88,8 @@ export interface Appointment {
   discountName?: string;
   /** Location assigned to this appointment */
   locationId?: string;
+  /** Client address for mobile/at-home service appointments */
+  clientAddress?: string;
   /** Reason for cancellation (set when status changes to 'cancelled') */
   cancellationReason?: string;
   /** Payment method chosen: zelle | venmo | cashapp | cash | card | unpaid */

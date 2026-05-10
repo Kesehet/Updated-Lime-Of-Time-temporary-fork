@@ -672,6 +672,7 @@ export function dbServiceToLocal(s: any): Service {
     description: s.description ?? undefined,
     photoUri: s.photoUri ?? undefined,
     reminderHours: s.reminderHours != null ? parseFloat(s.reminderHours) : null,
+    serviceType: (s.serviceType as 'in_store' | 'mobile') ?? 'in_store',
     createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : new Date().toISOString(),
   };
 }
@@ -792,6 +793,7 @@ export function dbAppointmentToLocal(a: any): Appointment {
     discountName,
     staffId: a.staffId ?? undefined,
     locationId: a.locationId ?? undefined,
+    clientAddress: a.clientAddress ?? undefined,
     paymentStatus: (a.paymentStatus as Appointment['paymentStatus']) ?? undefined,
     paymentMethod: (a.paymentMethod as Appointment['paymentMethod']) ?? undefined,
     paymentConfirmationNumber: a.paymentConfirmationNumber ?? undefined,
@@ -1799,6 +1801,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               description: svc.description,
               photoUri: svc.photoUri,
               reminderHours: svc.reminderHours != null ? svc.reminderHours : undefined,
+              serviceType: svc.serviceType,
             });
             break;
           }
@@ -1816,6 +1819,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               description: svc.description,
               photoUri: svc.photoUri,
               reminderHours: svc.reminderHours != null ? svc.reminderHours : undefined,
+              serviceType: svc.serviceType,
             });
             break;
           }
@@ -1907,6 +1911,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               giftUsedAmount: appt.giftUsedAmount,
               staffId: appt.staffId,
               locationId: appt.locationId,
+              clientAddress: appt.clientAddress,
             });
             break;
           }
@@ -1929,6 +1934,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               giftUsedAmount: appt.giftUsedAmount,
               staffId: appt.staffId,
               locationId: appt.locationId,
+              clientAddress: appt.clientAddress,
               paymentStatus: appt.paymentStatus,
               paymentMethod: appt.paymentMethod || undefined,
               paymentConfirmationNumber: appt.paymentConfirmationNumber || undefined,
