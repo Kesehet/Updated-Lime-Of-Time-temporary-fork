@@ -2044,3 +2044,7 @@
 - [x] Client Bookings screen: Show '🎁 Gift — Fully Covered' green badge on appointment cards for $0 gift-covered bookings
 - [x] Booking wizard Payment step: Show prominent '🎁 Gift Applied — $X off / Remaining: $Y' banner at top when gift partially covers the total
 - [x] Client business detail: Convert from fullScreenModal to formSheet (slide-up bottom sheet) with drag handle and swipe-to-dismiss
+- [x] Business detail: Remove leftover drag handle pill from loading state
+- [x] Business detail: Fix sticky bottom bar safe area (home indicator)
+- [x] Business detail: Per-service Book button now lands on Location step (step 1) with service pre-selected
+- [x] Business detail: Book an Appointment button opens wizard at step 0 (Service selection)

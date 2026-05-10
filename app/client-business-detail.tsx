@@ -21,6 +21,7 @@ import { getApiBaseUrl } from "@/constants/oauth";
 import { getCategoryDef, ALL_CATEGORY } from "@/constants/categories";
 import * as Haptics from "expo-haptics";
 import { ClientPortalBackground } from "@/components/client-portal-background";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // ─── Portal theme constants ───────────────────────────────────────────────────
 const PORTAL_BG   = "#1A3A28";
@@ -116,6 +117,7 @@ const isRemoteUri = (uri: string | null | undefined) =>
 export default function ClientBusinessDetailScreen() {
   const colors = useColors();
   const { modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { slug, distanceKm } = useLocalSearchParams<{ slug: string; distanceKm?: string }>();
   const distanceMiles = distanceKm && distanceKm !== "" ? (parseFloat(distanceKm) * 0.621371).toFixed(1) : null;
@@ -259,11 +261,6 @@ export default function ClientBusinessDetailScreen() {
       <ScreenContainer containerClassName="bg-[#0D2318]">
       <StatusBar style="light" />
         <ClientPortalBackground />
-      {/* Drag handle */}
-      <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 4 }}>
-        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" }} />
-      </View>
-
         <View style={s.loadingContainer}><ActivityIndicator size="large" color={ACCENT} /></View>
       </ScreenContainer>
     );
@@ -295,7 +292,7 @@ export default function ClientBusinessDetailScreen() {
       <ClientPortalBackground />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 120 + Math.max(insets.bottom, 12) }}
         onScroll={(e: NativeSyntheticEvent<NativeScrollEvent>) => setScrollY(e.nativeEvent.contentOffset.y)}
         scrollEventThrottle={16}
       >
@@ -970,7 +967,7 @@ export default function ClientBusinessDetailScreen() {
         </KeyboardAvoidingView>
       </Modal>
       {/* ── Sticky Book Button ── */}
-      <View style={[s.stickyBook, { backgroundColor: PORTAL_BG, borderTopColor: DIVIDER }]}>
+      <View style={[s.stickyBook, { backgroundColor: PORTAL_BG, borderTopColor: DIVIDER, bottom: 0, paddingBottom: Math.max(insets.bottom, 12) }]}>
         <View style={{ flexDirection: "row", gap: 10 }}>
           <Pressable
             style={({ pressed }) => [s.stickyGiftBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
@@ -1066,7 +1063,7 @@ const s = StyleSheet.create({
   reviewInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 13, minHeight: 80, textAlignVertical: "top", marginBottom: 16 },
   reviewSubmitBtn: { backgroundColor: ACCENT, borderRadius: 12, paddingVertical: 14, alignItems: "center" },
   reviewSubmitBtnText: { color: "#fff", fontSize: 13, fontWeight: "700" },
-  stickyBook: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 16, borderTopWidth: 1 },
+  stickyBook: { position: "absolute", left: 0, right: 0, padding: 16, borderTopWidth: 1 },
   stickyGiftBtn: { backgroundColor: "rgba(255,255,255,0.10)", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 14, paddingHorizontal: 18, borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.18)" },
   stickyGiftBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
   stickyBookBtn: { backgroundColor: LIME_GREEN, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14, borderRadius: 14 },
