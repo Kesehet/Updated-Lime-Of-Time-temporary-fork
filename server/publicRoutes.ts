@@ -5054,6 +5054,10 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         <input id="svcSearch" type="text" placeholder="&#128269; Search services..." oninput="onSvcSearch(this.value)"
           style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:var(--bg-card);color:var(--text);outline:none;">
       </div>
+      <!-- Mobile-only filter chip (shown only when mobile services exist) -->
+      <div id="mobileFilterChip" style="display:none;margin-bottom:12px;">
+        <button id="mobileFilterBtn" onclick="toggleMobileFilter()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;">🚗 Mobile Only</button>
+      </div>
       <!-- Most Popular row -->
       <div id="svcPopularRow" style="display:none;margin-bottom:16px;">
         <div style="font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">&#11088; Most Popular</div>
@@ -5139,7 +5143,10 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           </div>
           <div style="flex:1;">
             <label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;display:block;">ZIP Code <span style="color:#ef4444;">*</span></label>
-            <input id="addrZip" type="text" placeholder="e.g. 15222" maxlength="10" oninput="clientAddress.zip=this.value" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border-input);border-radius:12px;font-size:14px;background:var(--bg-card);color:var(--text);outline:none;" />
+            <div style="position:relative;">
+              <input id="addrZip" type="text" placeholder="e.g. 15222" maxlength="10" oninput="clientAddress.zip=this.value;autoFillStateFromZip(this.value)" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border-input);border-radius:12px;font-size:14px;background:var(--bg-card);color:var(--text);outline:none;" />
+              <span id="zipLookupSpinner" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:#888;">&#8987;</span>
+            </div>
           </div>
         </div>
       </div>
@@ -5578,24 +5585,48 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       return getEffectiveWorkingDays()[dayName] || false;
     }
 
-    // ── Step 1 drill-down state ──────────────────────────────────────────
+     // ── Step 1 drill-down state ──────────────────────────────────────────
     var selectedSvcCat = null; // null = show tiles, string = show list for that cat
-
-    function renderServices() {
-      if (services.length === 0) {
-        document.getElementById('svcCatGrid').innerHTML = '<div style="text-align:center;color:#888;padding:20px;">No services available</div>';
-        return;
+    var mobileFilterActive = false; // whether the Mobile Only chip is toggled on
+    function toggleMobileFilter() {
+      mobileFilterActive = !mobileFilterActive;
+      var btn = document.getElementById('mobileFilterBtn');
+      if (btn) {
+        btn.style.background = mobileFilterActive ? '#0369a1' : 'var(--bg-card)';
+        btn.style.color = mobileFilterActive ? '#fff' : 'var(--text-secondary)';
+        btn.style.borderColor = mobileFilterActive ? '#0369a1' : 'var(--border)';
       }
+      // Reset drill-down state and re-render
       selectedSvcCat = null;
       document.getElementById('svcItemList').style.display = 'none';
       document.getElementById('svcSearchResults').style.display = 'none';
       renderSvcPopularRow();
       renderSvcCategoryTiles();
     }
+    function getFilteredServices() {
+      if (!mobileFilterActive) return services;
+      return services.filter(function(s) { return s.serviceType === 'mobile'; });
+    }
+    function renderServices() {
+      if (services.length === 0) {
+        document.getElementById('svcCatGrid').innerHTML = '<div style="text-align:center;color:#888;padding:20px;">No services available</div>';
+        return;
+      }
+      selectedSvcCat = null;
+      mobileFilterActive = false;
+      document.getElementById('svcItemList').style.display = 'none';
+      document.getElementById('svcSearchResults').style.display = 'none';
+      // Show mobile filter chip only if there are mobile services
+      var hasMobile = services.some(function(s) { return s.serviceType === 'mobile'; });
+      var chipEl = document.getElementById('mobileFilterChip');
+      if (chipEl) chipEl.style.display = hasMobile ? 'block' : 'none';
+      renderSvcPopularRow();
+      renderSvcCategoryTiles();
+    }
 
     function renderSvcPopularRow() {
       // Rank services by appointment count (use appointmentCount field if available, else random stable sort)
-      var ranked = services.slice().sort(function(a, b) {
+      var ranked = getFilteredServices().slice().sort(function(a, b) {
         return (b.appointmentCount || 0) - (a.appointmentCount || 0);
       });
       // Take top 5; if no counts available, take first 5 alphabetically
@@ -5650,8 +5681,9 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       return '🔖';
     }
         function renderSvcCategoryTiles() {
+      var filteredSvcs = getFilteredServices();
       var catMap = {};
-      services.forEach(function(s) {
+      filteredSvcs.forEach(function(s) {
         var cat = (s.category || '').trim() || 'General';
         if (!catMap[cat]) catMap[cat] = [];
         catMap[cat].push(s);
@@ -5667,7 +5699,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       html += '<div class="tile-card tile-all" data-svc-cat="__all__">' +
         '<div class="tile-emoji">' + getCategoryEmoji('all') + '</div>' +
         '<div class="tile-name">All</div>' +
-        '<div class="tile-count">' + services.length + '</div></div>';
+        '<div class="tile-count">' + filteredSvcs.length + '</div></div>';
       cats.forEach(function(cat) {
         var titleAttr = cat.length > 25 ? ' title="' + esc(cat) + '"' : '';
         html += '<div class="tile-card" data-svc-cat="' + esc(cat) + '"' + titleAttr + '>' +
@@ -5686,7 +5718,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
 
     function drillIntoSvcCategory(cat) {
       selectedSvcCat = cat;
-      var filtered = cat === '__all__' ? services : services.filter(function(s) {
+      var baseList = getFilteredServices();
+      var filtered = cat === '__all__' ? baseList : baseList.filter(function(s) {
         return ((s.category || '').trim() || 'General') === cat;
       });
       var listEl = document.getElementById('svcItemList');
@@ -5773,7 +5806,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       }
       catGrid.style.display = 'none';
       listEl.style.display = 'none';
-      var matches = services.filter(function(s) {
+      var matches = getFilteredServices().filter(function(s) {
         return s.name.toLowerCase().includes(q) ||
           (s.category || '').toLowerCase().includes(q) ||
           (s.description || '').toLowerCase().includes(q);
@@ -6026,6 +6059,32 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       if (!el) return;
       el.textContent = msg;
       el.style.display = msg ? 'block' : 'none';
+    }
+    async function autoFillStateFromZip(zip) {
+      var clean = zip.replace(/\D/g, '');
+      if (clean.length !== 5) return;
+      var spinner = document.getElementById('zipLookupSpinner');
+      if (spinner) spinner.style.display = 'inline';
+      try {
+        var r = await fetch('https://api.zippopotam.us/us/' + clean);
+        if (r.ok) {
+          var d = await r.json();
+          if (d && d.places && d.places.length > 0) {
+            var place = d.places[0];
+            var stateEl = document.getElementById('addrState');
+            var cityEl = document.getElementById('addrCity');
+            if (stateEl && !stateEl.value.trim()) {
+              stateEl.value = place['state abbreviation'] || '';
+              clientAddress.state = stateEl.value;
+            }
+            if (cityEl && !cityEl.value.trim()) {
+              cityEl.value = place['place name'] || '';
+              clientAddress.city = cityEl.value;
+            }
+          }
+        }
+      } catch(e) {}
+      if (spinner) spinner.style.display = 'none';
     }
     async function validateAndProceedFromAddress() {
       if (!isAddressComplete()) {
@@ -6926,27 +6985,26 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       if (selectedStaff) {
         staffHtml = '<div class="confirm-row"><span class="confirm-label">Staff</span><span class="confirm-value"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (selectedStaff.color || '#6366f1') + ';margin-right:6px;"></span>' + esc(selectedStaff.name) + '</span></div>';
       }
-
       // Build items list
-      let itemsHtml = '<div class="confirm-row"><span class="confirm-label">Service</span><span class="confirm-value">' + esc(selectedService.name) + ' — $' + parseFloat(selectedService.price).toFixed(2) + '</span></div>';
+      let itemsHtml = '<div class="confirm-row"><span class="confirm-label">Service</span><span class="confirm-value">' + esc(selectedService.name) + ' \u2014 $' + parseFloat(selectedService.price).toFixed(2) + '</span></div>';
       cart.forEach(c => {
         const label = c.type === 'product' ? 'Product' : 'Service';
-        itemsHtml += '<div class="confirm-row"><span class="confirm-label">' + label + '</span><span class="confirm-value">' + esc(c.name) + ' — $' + c.price.toFixed(2) + '</span></div>';
+        itemsHtml += '<div class="confirm-row"><span class="confirm-label">' + label + '</span><span class="confirm-value">' + esc(c.name) + ' \u2014 $' + c.price.toFixed(2) + '</span></div>';
       });
-
+      // Travel fee line item (mobile services only)
+      if (isMobileService() && selectedService.travelFee && parseFloat(selectedService.travelFee) > 0) {
+        itemsHtml += '<div class="confirm-row"><span class="confirm-label" style="color:#0369a1;">\ud83d\ude97 Travel Fee</span><span class="confirm-value" style="color:#0369a1;">$' + parseFloat(selectedService.travelFee).toFixed(2) + '</span></div>';
+      }
       let totalPrice = getTotalPrice();
       let discountAmt = getDiscountAmount();
       let discountedTotal = getDiscountedTotal();
       let chargedPrice = getChargedPrice();
       let giftUsed = getGiftUsedAmount();
-
       // Build price breakdown HTML
       let breakdownHtml = '';
-
-      // Subtotal row
-      breakdownHtml += '<div class="confirm-row" style="border-top:2px solid #e8ece8;padding-top:10px;"><span class="confirm-label">Subtotal</span><span class="confirm-value">$' + totalPrice.toFixed(2) + '</span></div>';
-
-      // Discount row (if applicable)
+      // Subtotal row (label changes for mobile to clarify travel fee is included)
+      const subtotalLabel = (isMobileService() && selectedService.travelFee && parseFloat(selectedService.travelFee) > 0) ? 'Total (incl. travel)' : 'Subtotal';
+      breakdownHtml += '<div class="confirm-row" style="border-top:2px solid #e8ece8;padding-top:10px;"><span class="confirm-label">' + subtotalLabel + '</span><span class="confirm-value">$' + totalPrice.toFixed(2) + '</span></div>';     // Discount row (if applicable)
       if (appliedDiscount && discountAmt > 0) {
         breakdownHtml += '<div class="confirm-row"><span class="confirm-label" style="color:#b45309;">\ud83c\udf89 ' + esc(appliedDiscount.name) + ' (' + appliedDiscount.percentage + '% off)</span><span class="confirm-value" style="color:#b45309;">-$' + discountAmt.toFixed(2) + '</span></div>';
       }

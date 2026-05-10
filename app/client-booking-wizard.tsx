@@ -163,6 +163,7 @@ export default function ClientBookingWizardScreen() {
   const [addrCity, setAddrCity] = useState("");
   const [addrState, setAddrState] = useState("");
   const [addrZip, setAddrZip] = useState("");
+  const [zipLookupLoading, setZipLookupLoading] = useState(false);
   // Derived full address from sub-fields
   const fullClientAddress = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(", ");
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
@@ -398,6 +399,28 @@ export default function ClientBookingWizardScreen() {
       }
     })();
   }, [effectiveSlug, selectedLocation, apiBase]);
+
+  // Auto-detect state (and city) from ZIP code using Zippopotam.us
+  const handleZipChange = useCallback(async (zip: string) => {
+    setAddrZip(zip);
+    const clean = zip.replace(/\D/g, "");
+    if (clean.length === 5) {
+      setZipLookupLoading(true);
+      try {
+        const r = await fetch(`https://api.zippopotam.us/us/${clean}`);
+        if (r.ok) {
+          const d = await r.json();
+          if (d?.places?.[0]) {
+            const place = d.places[0];
+            // Only auto-fill if user hasn't already typed something
+            setAddrState((prev) => prev.trim() ? prev : (place["state abbreviation"] || ""));
+            setAddrCity((prev) => prev.trim() ? prev : (place["place name"] || ""));
+          }
+        }
+      } catch (_) {}
+      setZipLookupLoading(false);
+    }
+  }, []);
 
   // Fetch month-level availability: for each day in the visible month, check if any slots exist.
   // Uses the slots endpoint per day but only for the current calendar month when it changes.
@@ -1775,24 +1798,30 @@ export default function ClientBookingWizardScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 4 }}>ZIP Code <Text style={{ color: "#EF4444" }}>*</Text></Text>
-                  <TextInput
-                    placeholder="ZIP code"
-                    placeholderTextColor={TEXT_MUTED}
-                    value={addrZip}
-                    onChangeText={setAddrZip}
-                    keyboardType="number-pad"
-                    maxLength={10}
-                    style={{
-                      color: TEXT_PRIMARY,
-                      fontSize: 13,
-                      borderWidth: 1,
-                      borderColor: addrZip.trim() ? "rgba(255,255,255,0.2)" : "#EF444480",
-                      borderRadius: 10,
-                      padding: 12,
-                      backgroundColor: "rgba(255,255,255,0.05)",
-                    }}
-                    returnKeyType="done"
-                  />
+                  <View style={{ position: "relative" }}>
+                    <TextInput
+                      placeholder="ZIP code"
+                      placeholderTextColor={TEXT_MUTED}
+                      value={addrZip}
+                      onChangeText={handleZipChange}
+                      keyboardType="number-pad"
+                      maxLength={10}
+                      style={{
+                        color: TEXT_PRIMARY,
+                        fontSize: 13,
+                        borderWidth: 1,
+                        borderColor: addrZip.trim() ? "rgba(255,255,255,0.2)" : "#EF444480",
+                        borderRadius: 10,
+                        padding: 12,
+                        paddingRight: zipLookupLoading ? 36 : 12,
+                        backgroundColor: "rgba(255,255,255,0.05)",
+                      }}
+                      returnKeyType="done"
+                    />
+                    {zipLookupLoading && (
+                      <ActivityIndicator size="small" color={TEXT_MUTED} style={{ position: "absolute", right: 10, top: 12 }} />
+                    )}
+                  </View>
                 </View>
               </View>
               <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 8 }}>
