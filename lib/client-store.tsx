@@ -48,6 +48,8 @@ export interface ClientAppointment {
   cancelRequest?: { status: "pending" | "approved" | "declined"; reason?: string } | null;
   rescheduleRequest?: { status: "pending" | "approved" | "declined"; requestedDate: string; requestedTime: string } | null;
   hasMobileServices?: boolean;
+  giftCode?: string | null;
+  paymentMethod?: string | null;
 }
 
 export interface ClientMessage {

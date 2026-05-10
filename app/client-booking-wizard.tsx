@@ -1667,6 +1667,16 @@ export default function ClientBookingWizardScreen() {
           return (
           <View style={s.stepContent}>
             <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Payment</Text>
+            {/* 🎁 Partial gift banner — shown when gift covers some but not all of the total */}
+            {_giftSaving > 0 && _finalPrice > 0 && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "rgba(74,222,128,0.10)", borderRadius: 12, borderWidth: 1, borderColor: "rgba(74,222,128,0.35)", padding: 12, marginBottom: 12 }}>
+                <Text style={{ fontSize: 20 }}>🎁</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: "#4ADE80", fontSize: 13, fontWeight: "700", marginBottom: 2 }}>Gift Applied — ${_giftSaving.toFixed(2)} off</Text>
+                  <Text style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "800" }}>Remaining: ${_finalPrice.toFixed(2)}</Text>
+                </View>
+              </View>
+            )}
             {/* Price breakdown summary card */}
             <View style={{ backgroundColor: "rgba(74,124,89,0.12)", borderRadius: 12, borderWidth: 1, borderColor: `${LIME_GREEN}40`, padding: 14, marginBottom: 16, gap: 6 }}>
               <Text style={{ color: LIME_GREEN, fontSize: 13, fontWeight: "700", marginBottom: 4 }}>Order Summary</Text>
@@ -2154,7 +2164,16 @@ export default function ClientBookingWizardScreen() {
                     colors={colors}
                   />
                 )}
-                {paymentMethod && (
+                {/* 🎁 Fully covered by gift banner */}
+                {giftSaving > 0 && finalPrice <= 0 && (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: DIVIDER }}>
+                    <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(74,222,128,0.12)", borderRadius: 8, borderWidth: 1, borderColor: "rgba(74,222,128,0.35)", paddingHorizontal: 10, paddingVertical: 7 }}>
+                      <Text style={{ fontSize: 16 }}>🎁</Text>
+                      <Text style={{ color: "#4ADE80", fontSize: 13, fontWeight: "700", flex: 1 }}>Fully covered by gift — No payment needed</Text>
+                    </View>
+                  </View>
+                )}
+                {paymentMethod && wizardAmountDue > 0 && (
                   <Row
                     label="Payment"
                     value={PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.label ?? paymentMethod}

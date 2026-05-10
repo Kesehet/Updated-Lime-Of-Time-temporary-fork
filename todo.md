@@ -2040,3 +2040,6 @@
 - [x] Booking wizard: Filter time slots by selected location (cache invalidated on location change; API already location-aware)
 - [x] Booking wizard: Redeem Gift now lands on Location step (step 1) instead of jumping to Staff step, so client picks branch first before proceeding
 - [x] Booking wizard: Bypass Payment step when gift fully covers the booking (Amount Due = $0.00); auto-mark as free/paid
+- [x] Booking wizard Confirm step: Show '🎁 Fully covered by gift — No payment needed' green banner when gift covers 100% of total
+- [x] Client Bookings screen: Show '🎁 Gift — Fully Covered' green badge on appointment cards for $0 gift-covered bookings
+- [x] Booking wizard Payment step: Show prominent '🎁 Gift Applied — $X off / Remaining: $Y' banner at top when gift partially covers the total

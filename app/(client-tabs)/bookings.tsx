@@ -348,6 +348,13 @@ export default function BookingsScreen() {
                   </View>
                 )}
               </View>
+              {/* 🎁 Free / Gift badge — shown when appointment was fully covered by a gift */}
+              {item.giftCode && (parseFloat(item.totalPrice ?? "1") <= 0 || item.paymentMethod === "free") && (
+                <View style={[s.requestBadge, { backgroundColor: "rgba(74,222,128,0.12)", borderColor: "rgba(74,222,128,0.3)", borderWidth: 1, marginTop: 6 }]}>
+                  <Text style={{ fontSize: 12 }}>🎁</Text>
+                  <Text style={[s.requestBadgeText, { color: "#4ADE80" }]}>Gift — Fully Covered</Text>
+                </View>
+              )}
               {/* Cancel/Reschedule request badge */}
               {(item.cancelRequest?.status === "pending" || item.rescheduleRequest?.status === "pending") && (
                 <View style={[s.requestBadge, { backgroundColor: "rgba(252,211,77,0.15)" }]}>
