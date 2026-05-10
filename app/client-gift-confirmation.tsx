@@ -47,6 +47,7 @@ export default function ClientGiftConfirmationScreen() {
     businessSlug,
     paymentMethod,
     bannerImageUri,
+    businessOwnerId,
   } = useLocalSearchParams<{
     giftCode: string;
     shareLink: string;

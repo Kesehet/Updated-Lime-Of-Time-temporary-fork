@@ -57,6 +57,7 @@ function getCategoryEmoji(category?: string | null): string {
 interface ApiService {
   localId: string; name: string; description: string | null;
   duration: number; price: string | null; category: string | null; photoUri: string | null;
+  serviceType?: string | null; // 'mobile' | 'in_store' | null
 }
 interface ApiStaff {
   localId: string; name: string; role: string | null; bio?: string | null; photoUri: string | null;
@@ -135,6 +136,7 @@ export default function ClientBusinessDetailScreen() {
   const [activeTab, setActiveTab] = useState<"services"|"packages"|"staff"|"hours"|"reviews"|"gallery">("services");
   const reviewsTabRef = useRef<any>(null);
   const [serviceCategory, setServiceCategory] = useState<string | null>(null);
+  const [serviceTypeFilter, setServiceTypeFilter] = useState<'all' | 'mobile' | 'in_store'>('all');
   const [detailReviewVisible, setDetailReviewVisible] = useState(false);
   const [detailReviewRating, setDetailReviewRating] = useState(5);
   const [detailReviewComment, setDetailReviewComment] = useState("");
@@ -151,14 +153,28 @@ export default function ClientBusinessDetailScreen() {
   const apiBase = getApiBaseUrl();
 
   const serviceCategories = useMemo(() => {
-    const cats = services.map(s => s.category).filter(Boolean) as string[];
+    // Filter categories based on current service type filter
+    let list = services;
+    if (serviceTypeFilter === 'mobile') list = list.filter(s => s.serviceType === 'mobile');
+    else if (serviceTypeFilter === 'in_store') list = list.filter(s => s.serviceType !== 'mobile');
+    const cats = list.map(s => s.category).filter(Boolean) as string[];
     return Array.from(new Set(cats));
-  }, [services]);
+  }, [services, serviceTypeFilter]);
 
   const filteredServices = useMemo(() => {
-    if (!serviceCategory) return services;
-    return services.filter(s => s.category === serviceCategory);
-  }, [services, serviceCategory]);
+    let list = services;
+    if (serviceTypeFilter === 'mobile') list = list.filter(s => s.serviceType === 'mobile');
+    else if (serviceTypeFilter === 'in_store') list = list.filter(s => s.serviceType !== 'mobile');
+    if (!serviceCategory) return list;
+    return list.filter(s => s.category === serviceCategory);
+  }, [services, serviceCategory, serviceTypeFilter]);
+
+  // Whether this business has both in-store and mobile services
+  const hasMixedServiceTypes = useMemo(() => {
+    const hasMobile = services.some(s => s.serviceType === 'mobile');
+    const hasInStore = services.some(s => s.serviceType !== 'mobile');
+    return hasMobile && hasInStore;
+  }, [services]);
 
   useEffect(() => {
     if (!slug) return;
@@ -404,6 +420,27 @@ export default function ClientBusinessDetailScreen() {
         {/* ── Services Tab ── */}
         {activeTab === "services" && (
           <View>
+            {/* Service type filter chips — only shown when business has both in-store and mobile services */}
+            {hasMixedServiceTypes && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4, gap: 8, flexDirection: "row" }}>
+                {(["all", "in_store", "mobile"] as const).map((type) => {
+                  const isActive = serviceTypeFilter === type;
+                  const label = type === "all" ? "All" : type === "mobile" ? "🚗 Comes to You" : "🏢 In Store";
+                  return (
+                    <Pressable
+                      key={type}
+                      onPress={() => {
+                        setServiceTypeFilter(type);
+                        setServiceCategory(null); // reset category when switching service type
+                      }}
+                      style={[s.catChip, isActive && { backgroundColor: "#4CAF5030", borderColor: "#4CAF50" }]}
+                    >
+                      <Text style={[s.catChipText, isActive && { color: "#4CAF50", fontWeight: "700" }]}>{label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            )}
             {serviceCategories.length > 1 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, gap: 8, flexDirection: "row" }}>
                 {/* All chip */}
@@ -460,6 +497,12 @@ export default function ClientBusinessDetailScreen() {
                           <Text style={[s.serviceDuration, { color: TEXT_MUTED }]}>⏱ {svc.duration} min</Text>
                           <Text style={[s.servicePrice, { color: TEXT_PRIMARY }]}>{formatPrice(svc.price)}</Text>
                         </View>
+                        {svc.serviceType === 'mobile' && (
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4, backgroundColor: "#4CAF5020", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, alignSelf: "flex-start" }}>
+                            <Text style={{ fontSize: 11 }}>🚗</Text>
+                            <Text style={{ fontSize: 10, fontWeight: "700", color: "#4CAF50", letterSpacing: 0.3 }}>Comes to You</Text>
+                          </View>
+                        )}
                       </View>
                       <Pressable style={({ pressed }) => [s.bookBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]} onPress={() => handleBookService(svc)}>
                         <Text style={s.bookBtnText}>Book</Text>

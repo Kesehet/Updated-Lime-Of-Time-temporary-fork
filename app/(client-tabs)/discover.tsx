@@ -970,7 +970,7 @@ export default function DiscoverScreen() {
 
       {/* Sort toggle row + Saved button */}
       <View style={{ flexDirection: "row", paddingHorizontal: 16, gap: 8, marginBottom: 4, alignItems: "center" }}>
-        <View style={{ flexDirection: "row", gap: 8, flex: 1 }}>
+        <View style={{ flexDirection: "row", gap: 8, flex: 1, flexWrap: "wrap" }}>
           {(["default", "rating", "reviews", "distance"] as const).map((mode) => {
             const labels = { default: "Best Match", rating: "Top Rated", reviews: "Most Reviews", distance: "Nearest" };
             const active = sortMode === mode;

@@ -112,6 +112,14 @@ function formatDateLabel(d: Date): string {
   return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
+/** Auto-format a US phone number as (XXX) XXX-XXXX while typing */
+function formatPhoneNumber(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 10);
+  if (digits.length <= 3) return digits.length ? `(${digits}` : "";
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 export default function ClientBuyGiftScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -913,7 +921,7 @@ export default function ClientBuyGiftScreen() {
               placeholder="(412) 555-0100"
               placeholderTextColor={TEXT_MUTED}
               value={recipientPhone}
-              onChangeText={setRecipientPhone}
+              onChangeText={(text) => setRecipientPhone(formatPhoneNumber(text))}
               keyboardType="phone-pad"
               returnKeyType="next"
             />
