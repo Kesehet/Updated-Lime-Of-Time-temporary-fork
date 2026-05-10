@@ -1453,8 +1453,10 @@ export default function HomeScreen() {
       )
         .then((data) => {
           if (data) {
-            const avail = (data.available ?? []).reduce((s: number, b: { amount: number }) => s + b.amount, 0) / 100;
-            const pend = (data.pending ?? []).reduce((s: number, b: { amount: number }) => s + b.amount, 0) / 100;
+            // Server already returns amounts in dollars (server divides cents by 100)
+            // No additional division needed here
+            const avail = (data.available ?? []).reduce((s: number, b: { amount: number }) => s + b.amount, 0);
+            const pend = (data.pending ?? []).reduce((s: number, b: { amount: number }) => s + b.amount, 0);
             setStripeBalance({ available: avail, pending: pend });
           }
         })
