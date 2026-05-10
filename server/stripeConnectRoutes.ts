@@ -1740,4 +1740,43 @@ export function registerStripeConnectRoutes(app: Express): void {
       res.status(500).json({ error: err?.message ?? "Failed to create gift payment sheet" });
     }
   });
+
+  // GET /api/stripe-connect/payment-intent-last4?appointmentId=<localId>&businessOwnerId=<id>
+  // Returns the last 4 digits of the card used to pay for an appointment (for receipt display).
+  app.get("/api/stripe-connect/payment-intent-last4", async (req: Request, res: Response) => {
+    try {
+      const { appointmentId, businessOwnerId } = req.query as { appointmentId: string; businessOwnerId: string };
+      if (!appointmentId || !businessOwnerId) {
+        res.status(400).json({ error: "appointmentId and businessOwnerId are required" }); return;
+      }
+      const stripe = await getStripe();
+      if (!stripe) { res.status(503).json({ error: "Stripe not configured" }); return; }
+      const db = await getDb();
+      if (!db) { res.status(503).json({ error: "DB not available" }); return; }
+      // Fetch appointment to get stripePaymentIntentId
+      const apptRows = await db.select().from(appointments)
+        .where(and(eq(appointments.localId, appointmentId), eq(appointments.businessOwnerId, parseInt(businessOwnerId, 10))));
+      const appt = apptRows[0] as any;
+      if (!appt?.stripePaymentIntentId) {
+        res.json({ last4: null, brand: null }); return;
+      }
+      // Get the connected account ID for this business owner
+      const owner = await getOwner(parseInt(businessOwnerId, 10));
+      const accountId = (owner as any)?.stripeConnectAccountId as string | null;
+      if (!accountId) { res.json({ last4: null, brand: null }); return; }
+      // Retrieve the payment intent with expanded payment method
+      const pi = await stripe.paymentIntents.retrieve(
+        appt.stripePaymentIntentId,
+        { expand: ["payment_method"] },
+        { stripeAccount: accountId }
+      );
+      const pm = pi.payment_method as Stripe.PaymentMethod | null;
+      const last4 = (pm as any)?.card?.last4 ?? null;
+      const brand = (pm as any)?.card?.brand ?? null;
+      res.json({ last4, brand });
+    } catch (err: any) {
+      console.error("[StripeConnect] payment-intent-last4 error:", err);
+      res.json({ last4: null, brand: null });
+    }
+  });
 }

@@ -99,9 +99,9 @@ interface AvailableSlot {
 
 type PaymentMethodId = "zelle" | "venmo" | "cashapp" | "cash" | "card";
 const BASE_PAYMENT_METHODS: { id: PaymentMethodId; label: string; icon: string; hint: string }[] = [
-  { id: "zelle",   label: "Zelle",    icon: "💜", hint: "Send to business Zelle number" },
-  { id: "venmo",   label: "Venmo",    icon: "💙", hint: "Send via @username" },
-  { id: "cashapp", label: "Cash App", icon: "💚", hint: "Send via $cashtag" },
+  { id: "zelle",   label: "Zelle",    icon: "💜", hint: "" },
+  { id: "venmo",   label: "Venmo",    icon: "💙", hint: "" },
+  { id: "cashapp", label: "Cash App", icon: "💚", hint: "" },
   { id: "cash",    label: "Cash",     icon: "💵", hint: "Pay in person at appointment" },
 ];
 
@@ -191,6 +191,12 @@ export default function ClientBookingWizardScreen() {
   const [businessDisplayName, setBusinessDisplayName] = useState<string>("");
   const [stripeConnectEnabled, setStripeConnectEnabled] = useState(false);
   const [businessOwnerId, setBusinessOwnerId] = useState<number | null>(null);
+  // Business payment handles — loaded from bizData, shown on Payment step
+  const [bizZelleHandle, setBizZelleHandle] = useState<string>("");
+  const [bizVenmoHandle, setBizVenmoHandle] = useState<string>("");
+  const [bizCashAppHandle, setBizCashAppHandle] = useState<string>("");
+  // Ref to hold card last4 after Stripe payment sheet succeeds (passed to confirmation screen)
+  const cardLast4Ref = useRef<{ last4: string; brand: string } | null>(null);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   // Build dynamic payment methods list — Card only shown when Stripe is connected
   const PAYMENT_METHODS = useMemo(() => {
@@ -355,6 +361,9 @@ export default function ClientBookingWizardScreen() {
         if (bizData?.businessName) setBusinessDisplayName(bizData.businessName);
         if (bizData?.stripeConnectEnabled) setStripeConnectEnabled(true);
         if (bizData?.id) setBusinessOwnerId(bizData.id);
+        if (bizData?.zelleHandle) setBizZelleHandle(bizData.zelleHandle);
+        if (bizData?.venmoHandle) setBizVenmoHandle(bizData.venmoHandle);
+        if (bizData?.cashAppHandle) setBizCashAppHandle(bizData.cashAppHandle);
         setPackages(Array.isArray(pkgData) ? pkgData : []);
         const svcList: PublicService[] = Array.isArray(svcData) ? svcData : [];
         const staffList: PublicStaff[] = Array.isArray(staffData) ? staffData : [];
@@ -812,6 +821,18 @@ export default function ClientBookingWizardScreen() {
                 const { error: presentError } = await presentPaymentSheet();
                 if (presentError && presentError.code !== "Canceled") {
                   Alert.alert("Payment Failed", presentError.message ?? "Please try again.");
+                } else if (!presentError) {
+                  // Payment succeeded — fetch card last4 for receipt display
+                  try {
+                    const last4Res = await fetch(
+                      `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(appointmentId)}&businessOwnerId=${encodeURIComponent(String(businessOwnerId))}`,
+                      { headers: { "Authorization": `Bearer ${state.sessionToken}` } }
+                    );
+                    if (last4Res.ok) {
+                      const { last4, brand } = await last4Res.json();
+                      if (last4) cardLast4Ref.current = { last4, brand: brand ?? "card" };
+                    }
+                  } catch { /* non-blocking */ }
                 }
               }
             } else {
@@ -889,6 +910,8 @@ export default function ClientBookingWizardScreen() {
           giftSaving: giftApplied ? `$${Math.min(giftApplied.value, Math.max(0, (selectedService ? (parseFloat(selectedService.price ?? "0") || 0) : 0) - (discountAmount ?? 0) - (promoSaving ?? 0))).toFixed(2)}` : "",
           paymentMethod: paymentMethod ?? "",
           paymentConfirmationNumber: paymentMethod !== "cash" ? paymentConfirmationNumber.trim() : "",
+          cardLast4: cardLast4Ref.current?.last4 ?? "",
+          cardBrand: cardLast4Ref.current?.brand ?? "",
           clientAddress: isMobileService && effectiveClientAddress.trim() ? effectiveClientAddress.trim() : "",
           travelFee: travelFeeAmount > 0 ? `$${travelFeeAmount.toFixed(2)}` : "",
         },
@@ -1812,7 +1835,15 @@ export default function ClientBookingWizardScreen() {
                   <Text style={{ fontSize: 22 }}>{method.icon}</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={[s.paymentMethodLabel, { color: TEXT_PRIMARY }]}>{method.label}</Text>
-                    <Text style={[s.paymentMethodHint, { color: TEXT_MUTED }]}>{method.hint}</Text>
+                    <Text style={[s.paymentMethodHint, { color: TEXT_MUTED }]}>
+                      {method.id === "zelle" && bizZelleHandle
+                        ? `Send to: ${bizZelleHandle}`
+                        : method.id === "venmo" && bizVenmoHandle
+                        ? `Send to: ${bizVenmoHandle}`
+                        : method.id === "cashapp" && bizCashAppHandle
+                        ? `Send to: ${bizCashAppHandle}`
+                        : method.hint || (method.id === "zelle" ? "Send to business Zelle" : method.id === "venmo" ? "Send via @username" : method.id === "cashapp" ? "Send via $cashtag" : "")}
+                    </Text>
                   </View>
                   {paymentMethod === method.id && (
                     <IconSymbol name="checkmark.circle.fill" size={22} color={LIME_GREEN} />
@@ -1829,9 +1860,11 @@ export default function ClientBookingWizardScreen() {
                 <TextInput
                   style={[s.notesInput, { backgroundColor: CARD_BG, borderColor: paymentConfirmationNumber.trim() ? LIME_GREEN : CARD_BORDER, color: TEXT_PRIMARY }]}
                   placeholder={
-                    paymentMethod === "zelle" ? "e.g. Phone or email you sent to" :
-                    paymentMethod === "venmo" ? "e.g. @username or transaction ID" :
-                    "e.g. $cashtag or transaction ID"
+                    paymentMethod === "zelle"
+                      ? (bizZelleHandle ? `Sent to ${bizZelleHandle}? Enter confirmation` : "e.g. Phone or email you sent to")
+                      : paymentMethod === "venmo"
+                      ? (bizVenmoHandle ? `Sent to ${bizVenmoHandle}? Enter confirmation` : "e.g. @username or transaction ID")
+                      : (bizCashAppHandle ? `Sent to ${bizCashAppHandle}? Enter confirmation` : "e.g. $cashtag or transaction ID")
                   }
                   placeholderTextColor={TEXT_MUTED}
                   value={paymentConfirmationNumber}

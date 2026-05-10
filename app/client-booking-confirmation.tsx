@@ -61,6 +61,9 @@ export default function ClientBookingConfirmationScreen() {
     locationPhone,
     clientAddress,
     travelFee,
+    paymentMethod,
+    cardLast4,
+    cardBrand,
   } = useLocalSearchParams<{
     serviceName: string;
     staffName?: string;
@@ -76,6 +79,9 @@ export default function ClientBookingConfirmationScreen() {
     locationPhone?: string;
     clientAddress?: string;
     travelFee?: string;
+    paymentMethod?: string;
+    cardLast4?: string;
+    cardBrand?: string;
   }>();
 
   // Entrance animation
@@ -266,6 +272,23 @@ export default function ClientBookingConfirmationScreen() {
                 <SummaryRow icon="creditcard" label="Service Price" value={price} />
                 {!!travelFee && <SummaryRow icon="car.fill" label="Travel Fee" value={travelFee} />}
               </>
+            ) : null}
+            {paymentMethod === "card" && cardLast4 ? (
+              <SummaryRow
+                icon="creditcard"
+                label="Paid by Card"
+                value={`${cardBrand ? cardBrand.charAt(0).toUpperCase() + cardBrand.slice(1) : "Card"} \u2022\u2022\u2022\u2022 ${cardLast4}`}
+              />
+            ) : paymentMethod === "card" && !cardLast4 ? (
+              <SummaryRow icon="creditcard" label="Payment" value="Card (Stripe)" />
+            ) : paymentMethod && paymentMethod !== "cash" && paymentMethod !== "free" ? (
+              <SummaryRow
+                icon="creditcard"
+                label="Payment"
+                value={paymentMethod === "zelle" ? "Zelle" : paymentMethod === "venmo" ? "Venmo" : paymentMethod === "cashapp" ? "Cash App" : paymentMethod}
+              />
+            ) : paymentMethod === "cash" ? (
+              <SummaryRow icon="creditcard" label="Payment" value="Cash at appointment" />
             ) : null}
             <SummaryRow
               icon="building.2"
