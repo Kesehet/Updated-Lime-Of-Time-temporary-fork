@@ -293,13 +293,8 @@ export function registerStripeConnectRoutes(app: Express): void {
 
       const session = await stripe.checkout.sessions.create(
         {
-          // Accept card, Apple Pay, Google Pay, and Link (Stripe's 1-click checkout)
-          payment_method_types: ["card"],
-          payment_method_options: {
-            card: {
-              request_three_d_secure: "automatic",
-            },
-          },
+          // Enable all available payment methods: card, Apple Pay, Google Pay, Stripe Link
+          automatic_payment_methods: { enabled: true },
           line_items: [
             {
               price_data: {
@@ -438,8 +433,8 @@ export function registerStripeConnectRoutes(app: Express): void {
 
       const session = await stripe.checkout.sessions.create(
         {
-          payment_method_types: ["card"],
-          payment_method_options: { card: { request_three_d_secure: "automatic" } },
+          // Enable all available payment methods: card, Apple Pay, Google Pay, Stripe Link
+          automatic_payment_methods: { enabled: true },
           line_items: [
             {
               price_data: {
@@ -1018,10 +1013,8 @@ export function registerStripeConnectRoutes(app: Express): void {
 
       const session = await stripe.checkout.sessions.create(
         {
-          payment_method_types: ["card"],
-          payment_method_options: {
-            card: { request_three_d_secure: "automatic" },
-          },
+          // Enable all available payment methods: card, Apple Pay, Google Pay, Stripe Link
+          automatic_payment_methods: { enabled: true },
           line_items: [
             {
               price_data: {
@@ -1522,7 +1515,8 @@ export function registerStripeConnectRoutes(app: Express): void {
 
       const session = await stripe.checkout.sessions.create(
         {
-          payment_method_types: ["card"],
+          // Enable all available payment methods: card, Apple Pay, Google Pay, Stripe Link
+          automatic_payment_methods: { enabled: true },
           line_items: lineItems,
           mode: "payment",
           success_url: successUrl,

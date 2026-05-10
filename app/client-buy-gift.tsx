@@ -453,6 +453,7 @@ export default function ClientBuyGiftScreen() {
               businessName,
               businessSlug: slug,
               paymentMethod,
+              businessOwnerId: String(bizOwnerId ?? ""),
             },
           } as any);
         } catch {
@@ -468,6 +469,7 @@ export default function ClientBuyGiftScreen() {
               businessName,
               businessSlug: slug,
               paymentMethod,
+              businessOwnerId: String(bizOwnerId ?? ""),
             },
           } as any);
         }

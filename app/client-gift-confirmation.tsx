@@ -4,7 +4,7 @@
  * Shown after a successful gift card purchase.
  * Displays the gift code, share link, and summary.
  */
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
   ScrollView,
   Animated,
   Image,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ClientPortalBackground } from "@/components/client-portal-background";
@@ -22,6 +23,8 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
+import * as WebBrowser from "expo-web-browser";
+import { getApiBaseUrl } from "@/constants/oauth";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
 const GREEN_DARK   = "#1A3A28";
@@ -53,7 +56,42 @@ export default function ClientGiftConfirmationScreen() {
     businessSlug: string;
     paymentMethod: string;
     bannerImageUri?: string;
+    businessOwnerId?: string;
   }>();
+
+  const [payingNow, setPayingNow] = useState(false);
+
+  const handlePayNow = async () => {
+    if (!businessOwnerId || !giftCode) return;
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPayingNow(true);
+    try {
+      const apiBase = getApiBaseUrl();
+      const res = await fetch(`${apiBase}/api/stripe-connect/create-gift-checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessOwnerId: Number(businessOwnerId),
+          giftCode,
+          recipientName: recipientName ?? "",
+          items: [{ name: "Gift Card", price: totalValue ?? "0", type: "gift" }],
+          totalAmount: parseFloat(totalValue ?? "0"),
+          successUrl: `${apiBase}/gift-payment-success?code=${giftCode}`,
+          cancelUrl: `${apiBase}/gift-payment-cancel?code=${giftCode}`,
+        }),
+      });
+      const data = await res.json();
+      if (data?.url) {
+        await WebBrowser.openBrowserAsync(data.url);
+      } else {
+        Alert.alert("Error", data?.error ?? "Could not start payment. Please try again.");
+      }
+    } catch {
+      Alert.alert("Error", "Could not connect to payment service. Please try again.");
+    } finally {
+      setPayingNow(false);
+    }
+  };
 
   // ── Entrance animation ─────────────────────────────────────────────────────
   const scaleAnim = useRef(new Animated.Value(0.6)).current;
@@ -162,13 +200,45 @@ export default function ClientGiftConfirmationScreen() {
         </View>
 
         {/* Payment reminder */}
-        {paymentMethod !== "cash" && (
+        {paymentMethod === "card" ? (
+          <View style={[s.reminderCard, { backgroundColor: "rgba(59,130,246,0.10)", borderColor: "rgba(59,130,246,0.25)" }]}>
+            <Text style={{ fontSize: 18 }}>💳</Text>
+            <Text style={[s.reminderText, { color: "rgba(147,197,253,0.90)" }]}>
+              Your card payment is pending. Tap "Pay Now" below to complete your payment and activate this gift card.
+            </Text>
+          </View>
+        ) : paymentMethod !== "cash" ? (
           <View style={s.reminderCard}>
             <Text style={{ fontSize: 18 }}>⚠️</Text>
             <Text style={s.reminderText}>
               Remember to send your {paymentLabel} payment to the business to activate this gift card.
             </Text>
           </View>
+        ) : null}
+
+        {/* Pay Now button — only for card payments */}
+        {paymentMethod === "card" && businessOwnerId && (
+          <Pressable
+            style={({ pressed }) => [{
+              backgroundColor: pressed || payingNow ? "rgba(59,130,246,0.7)" : "#3B82F6",
+              flexDirection: "row" as const,
+              alignItems: "center" as const,
+              justifyContent: "center" as const,
+              gap: 8,
+              paddingVertical: 14,
+              borderRadius: 14,
+              marginBottom: 12,
+              opacity: payingNow ? 0.7 : 1,
+              transform: pressed ? [{ scale: 0.97 }] : [],
+            }]}
+            onPress={handlePayNow}
+            disabled={payingNow}
+          >
+            <Text style={{ fontSize: 18 }}>💳</Text>
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
+              {payingNow ? "Opening Payment..." : "Pay Now"}
+            </Text>
+          </Pressable>
         )}
 
         {/* Share button */}

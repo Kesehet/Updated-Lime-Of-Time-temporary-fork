@@ -71,13 +71,20 @@ function PublicGiftCard({
           </Text>
           <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{card.code}</Text>
         </View>
-        <View style={{
-          paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
-          backgroundColor: isRedeemed ? colors.muted + "30" : isPaid ? colors.success + "20" : colors.warning + "20",
-        }}>
-          <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isRedeemed ? colors.muted : isPaid ? colors.success : colors.warning }}>
-            {isRedeemed ? "Redeemed" : isPaid ? "Paid" : "Awaiting Payment"}
-          </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {!isPaid && !isRedeemed && paymentMethod === "card" && (
+            <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, backgroundColor: "rgba(59,130,246,0.15)", borderWidth: 1, borderColor: "rgba(59,130,246,0.30)" }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#3B82F6" }}>💳 Pending Card</Text>
+            </View>
+          )}
+          <View style={{
+            paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
+            backgroundColor: isRedeemed ? colors.muted + "30" : isPaid ? colors.success + "20" : colors.warning + "20",
+          }}>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: isRedeemed ? colors.muted : isPaid ? colors.success : colors.warning }}>
+              {isRedeemed ? "Redeemed" : isPaid ? "Paid" : "Awaiting Payment"}
+            </Text>
+          </View>
         </View>
       </View>
       {card.giftType === "balance" ? (

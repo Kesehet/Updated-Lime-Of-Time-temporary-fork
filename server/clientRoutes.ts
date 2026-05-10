@@ -483,6 +483,7 @@ export function registerClientRoutes(app: Express) {
             const photos = await db.getServicePhotos(appt.businessOwnerId, service.localId);
             servicePhotoUri = photos[0]?.uri ?? null;
           }
+          const hasMobileServices = (services as any[]).some((s: any) => s.serviceType === 'mobile');
           return {
             ...appt,
             businessName: owner?.businessName ?? "Unknown",
@@ -498,6 +499,7 @@ export function registerClientRoutes(app: Express) {
             locationName: location?.name ?? null,
             locationAddress: location?.address ?? null,
             clientAddress: (appt as any).clientAddress ?? null,
+            hasMobileServices,
           };
         })
       );

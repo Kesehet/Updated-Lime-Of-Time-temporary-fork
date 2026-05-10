@@ -46,6 +46,7 @@ export interface ClientAppointment {
   clientAddress?: string | null;
   cancelRequest?: { status: "pending" | "approved" | "declined"; reason?: string } | null;
   rescheduleRequest?: { status: "pending" | "approved" | "declined"; requestedDate: string; requestedTime: string } | null;
+  hasMobileServices?: boolean;
 }
 
 export interface ClientMessage {

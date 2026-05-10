@@ -213,6 +213,7 @@ interface RecentBusiness {
   businessCategory: string | null;
   lastVisited: string; // ISO date string
   lastService: string;
+  hasMobileServices?: boolean;
 }
 
 function RecentlyVisited({ items, router }: { items: RecentBusiness[]; router: ReturnType<typeof useRouter> }) {
@@ -267,6 +268,12 @@ function RecentlyVisited({ items, router }: { items: RecentBusiness[]; router: R
                 <Text style={[recentStyles.service, { color: TEXT_MUTED }]} numberOfLines={1}>
                   {biz.lastService}
                 </Text>
+                {biz.hasMobileServices && (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 4, backgroundColor: "#16A34A18", borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2, alignSelf: "flex-start", borderWidth: 1, borderColor: "#16A34A30" }}>
+                    <Text style={{ fontSize: 9, lineHeight: 12 }}>🚗</Text>
+                    <Text style={{ fontSize: 9, fontWeight: "600", color: "#16A34A", lineHeight: 12 }}>Comes to You</Text>
+                  </View>
+                )}
                 <View style={[recentStyles.rebookBtn, { backgroundColor: accentColor + "18", borderColor: accentColor + "40" }]}>
                   <Text style={[recentStyles.rebookText, { color: accentColor }]}>Rebook</Text>
                 </View>
@@ -656,6 +663,7 @@ export default function DiscoverScreen() {
           businessCategory: appt.businessCategory ?? null,
           lastVisited: appt.date,
           lastService: appt.serviceName,
+          hasMobileServices: appt.hasMobileServices ?? false,
         });
       }
     }
@@ -857,6 +865,39 @@ export default function DiscoverScreen() {
           );
         })}
       </View>
+
+      {/* Clear filters button — shown when both service type AND category are active */}
+      {serviceTypeFilter !== "all" && activeCategory !== "All" && (
+        <Pressable
+          onPress={() => {
+            if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setServiceTypeFilter("all");
+            dispatch({ type: "SET_DISCOVER_CATEGORY", payload: null });
+            AsyncStorage.getItem(DISCOVER_PREFS_KEY).then((json) => {
+              const prev = json ? JSON.parse(json) : {};
+              AsyncStorage.setItem(DISCOVER_PREFS_KEY, JSON.stringify({ ...prev, serviceTypeFilter: "all", category: null })).catch(() => {});
+            }).catch(() => {});
+          }}
+          style={({ pressed }) => ({
+            flexDirection: "row" as const,
+            alignItems: "center" as const,
+            alignSelf: "flex-start" as const,
+            marginHorizontal: 16,
+            marginBottom: 6,
+            gap: 5,
+            paddingHorizontal: 12,
+            paddingVertical: 5,
+            borderRadius: 20,
+            backgroundColor: "rgba(239,68,68,0.12)",
+            borderWidth: 1,
+            borderColor: "rgba(239,68,68,0.30)",
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text style={{ fontSize: 12, lineHeight: 16 }}>✕</Text>
+          <Text style={{ fontSize: 12, fontWeight: "600", color: "#EF4444", lineHeight: 16 }}>Clear filters</Text>
+        </Pressable>
+      )}
 
       {/* Category chips — fixed height horizontal scroll */}
       <View style={s.categoryWrapper}>
