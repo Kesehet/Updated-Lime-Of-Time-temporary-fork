@@ -88,6 +88,7 @@ interface PaymentMethods {
   venmo: string | null;
   cashEnabled: boolean;
   stripeEnabled?: boolean;
+  businessOwnerId?: number;
 }
 
 const STEPS = ["Items", "Products", "Details", "Date", "Staff", "Payment"];
@@ -396,33 +397,81 @@ export default function ClientBuyGiftScreen() {
       }
       const result = await res.json();
 
-      // ── Card payment: request Stripe payment link and open it ────────────
+      // ── Card payment: open Stripe Checkout for the gift card ────────────────
       if (paymentMethod === "card" && totalValue > 0) {
+        const bizOwnerId = paymentMethods.businessOwnerId;
+        if (!bizOwnerId) {
+          Alert.alert("Payment Error", "Unable to process card payment. Please try another payment method.");
+          return;
+        }
         try {
-          const stripeRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
+          // Build the list of items for the Stripe line items
+          const giftItems = selectedItemsList.map((i) => ({ name: i.name, price: i.price }));
+          if (giftItems.length === 0 && giftMode === "balance") {
+            giftItems.push({ name: "Gift Card Balance", price: totalValue });
+          }
+          const origin = apiBase.replace(/\/$/, "");
+          const successUrl = `${origin}/api/gift/${encodeURIComponent(result.code ?? "")}?payment=success`;
+          const cancelUrl = `${origin}/api/buy-gift/${slug}`;
+          const stripeRes = await fetch(`${apiBase}/api/stripe-connect/create-gift-checkout`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+              businessOwnerId: bizOwnerId,
               giftCode: result.code,
-              businessSlug: slug,
-              amount: totalValue,
-              description: `Gift Card — ${businessName}`,
-              clientEmail: purchaserEmail.trim() || undefined,
+              recipientName: recipientName.trim(),
+              items: giftItems,
+              totalAmount: totalValue,
+              successUrl,
+              cancelUrl,
             }),
           });
           if (stripeRes.ok) {
-            const { paymentUrl } = await stripeRes.json();
-            if (paymentUrl) {
+            const { url } = await stripeRes.json();
+            if (url) {
               if (Platform.OS === "web") {
-                window.open(paymentUrl, "_blank");
+                window.open(url, "_blank");
               } else {
-                await WebBrowser.openBrowserAsync(paymentUrl);
+                await WebBrowser.openBrowserAsync(url);
               }
+            } else {
+              Alert.alert("Payment Error", "Could not get payment link. Please try again.");
             }
+          } else {
+            const errData = await stripeRes.json().catch(() => ({}));
+            Alert.alert("Payment Error", (errData as any)?.error ?? "Failed to start card payment. Please try again.");
           }
+          // Navigate to confirmation — gift is already created
+          // Payment status will be updated by Stripe webhook when payment completes
+          router.replace({
+            pathname: "/client-gift-confirmation",
+            params: {
+              giftCode: result.code ?? "",
+              shareLink: result.shareLink ?? "",
+              totalValue: String(result.totalValue ?? totalValue),
+              recipientName: recipientName.trim(),
+              businessName,
+              businessSlug: slug,
+              paymentMethod,
+            },
+          } as any);
         } catch {
-          // Non-blocking — gift card is created, payment link failure is recoverable
+          // Stripe call failed — gift is already created, navigate to confirmation anyway
+          Alert.alert("Payment Error", "Could not connect to payment service. Your gift was created but payment was not completed. Please contact the business to arrange payment.");
+          router.replace({
+            pathname: "/client-gift-confirmation",
+            params: {
+              giftCode: result.code ?? "",
+              shareLink: result.shareLink ?? "",
+              totalValue: String(result.totalValue ?? totalValue),
+              recipientName: recipientName.trim(),
+              businessName,
+              businessSlug: slug,
+              paymentMethod,
+            },
+          } as any);
         }
+        return;
       }
 
       // Navigate to confirmation

@@ -1837,6 +1837,7 @@ export function registerPublicRoutes(app: Express) {
           venmo: o.venmoHandle || null,
           cashEnabled: true,
           stripeEnabled: !!(o.stripeConnectEnabled),
+          businessOwnerId: owner.id,
         },
         services: (services as any[]).filter(s => s.available !== false).map(s => ({
           localId: s.localId, name: s.name, price: parseFloat(String(s.price)),
@@ -1942,7 +1943,7 @@ export function registerPublicRoutes(app: Express) {
         recipientName, recipientPhone: recipientPhone || null, message: messageWithData,
         redeemed: false, expiresAt, purchaserName, purchaserEmail,
         recipientEmail: recipientEmail || null, recipientChoosesDate: giftType === "balance" ? true : !!recipientChoosesDate,
-        paymentMethod, paymentStatus: paymentMethod === "card" ? "paid" : "unpaid",
+        paymentMethod, paymentStatus: "unpaid",
         totalValue: String(totalValue.toFixed(2)), purchasedPublicly: true,
         preselectedDate: giftType !== "balance" ? (preselectedDate || null) : null,
         preselectedTime: giftType !== "balance" ? (preselectedTime || null) : null,
