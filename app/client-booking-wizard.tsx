@@ -508,6 +508,27 @@ export default function ClientBookingWizardScreen() {
 
   const handleNext = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Address step: sync address and handle travel zone warning
+    if (step === STEP_ADDRESS) {
+      if (selectedService?.maxTravelDistance) {
+        Alert.alert(
+          "⚠️ Check Service Area",
+          `This service has a maximum travel distance of ${selectedService.maxTravelDistance} miles. Please confirm your address is within the service area before continuing.`,
+          [
+            { text: "Go Back", style: "cancel" },
+            {
+              text: "I'm in Range",
+              onPress: () => {
+                setClientAddress(fullClientAddress);
+                setStep((s) => Math.min(s + 1, STEPS.length - 1));
+              },
+            },
+          ]
+        );
+        return;
+      }
+      setClientAddress(fullClientAddress);
+    }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
   const handleBack = () => {
@@ -1079,6 +1100,13 @@ export default function ClientBookingWizardScreen() {
                 </View>
               )}
             </Pressable>
+            {eligibleStaff.length === 0 && (
+              <View style={{ paddingVertical: 12, paddingHorizontal: 4 }}>
+                <Text style={{ color: TEXT_MUTED, fontSize: 13, textAlign: "center" }}>
+                  No individual staff members are listed. Select "Any Available" to continue.
+                </Text>
+              </View>
+            )}
             {eligibleStaff.map((member) => (
               <Pressable
                 key={member.localId}
@@ -1145,12 +1173,7 @@ export default function ClientBookingWizardScreen() {
                     <Text style={[s.optionDesc, { color: TEXT_MUTED }]} numberOfLines={2}>{loc.address}</Text>
                   ) : null}
                   {loc.phone ? (
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => Linking.openURL(`tel:${loc.phone.replace(/\D/g, "")}`)}
-                    >
-                      <Text style={[s.optionMeta, { color: LIME_GREEN, textDecorationLine: "underline" }]}>{formatPhone(loc.phone)}</Text>
-                    </TouchableOpacity>
+                    <Text style={[s.optionMeta, { color: TEXT_MUTED }]}>{formatPhone(loc.phone)}</Text>
                   ) : null}
                 </View>
                 {selectedLocation?.localId === loc.localId && (
@@ -1645,9 +1668,6 @@ export default function ClientBookingWizardScreen() {
             <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Your Address</Text>
             <Text style={[s.stepSubtitle, { color: TEXT_MUTED }]}>This service is performed at your location. Please enter the address where you'd like the service.</Text>
             <View style={[s.card, { padding: 16, marginTop: 8 }]}>
-              <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 8 }}>
-                Service Address <Text style={{ color: "#EF4444" }}>*</Text>
-              </Text>
               {/* Pre-fill hint when a previous address is available */}
               {!addrStreet && lastUsedAddress ? (
                 <Pressable
@@ -1690,7 +1710,7 @@ export default function ClientBookingWizardScreen() {
               {/* Street Address */}
               <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 4 }}>Street Address <Text style={{ color: "#EF4444" }}>*</Text></Text>
               <TextInput
-                placeholder="123 Main St"
+                placeholder="e.g. 456 Oak Ave"
                 placeholderTextColor={TEXT_MUTED}
                 value={addrStreet}
                 onChangeText={setAddrStreet}
@@ -1709,7 +1729,7 @@ export default function ClientBookingWizardScreen() {
               {/* City */}
               <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 4 }}>City <Text style={{ color: "#EF4444" }}>*</Text></Text>
               <TextInput
-                placeholder="Austin"
+                placeholder="Your city"
                 placeholderTextColor={TEXT_MUTED}
                 value={addrCity}
                 onChangeText={setAddrCity}
@@ -1730,7 +1750,7 @@ export default function ClientBookingWizardScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 4 }}>State <Text style={{ color: "#EF4444" }}>*</Text></Text>
                   <TextInput
-                    placeholder="TX"
+                    placeholder="ST"
                     placeholderTextColor={TEXT_MUTED}
                     value={addrState}
                     onChangeText={setAddrState}
@@ -1751,7 +1771,7 @@ export default function ClientBookingWizardScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 4 }}>ZIP Code <Text style={{ color: "#EF4444" }}>*</Text></Text>
                   <TextInput
-                    placeholder="78701"
+                    placeholder="ZIP code"
                     placeholderTextColor={TEXT_MUTED}
                     value={addrZip}
                     onChangeText={setAddrZip}
@@ -1775,45 +1795,6 @@ export default function ClientBookingWizardScreen() {
               </Text>
             </View>
             <View style={{ flex: 1 }} />
-            <Pressable
-              onPress={() => {
-                if (!addrStreet.trim() || !addrCity.trim() || !addrState.trim() || !addrZip.trim()) {
-                  Alert.alert("Address Required", "Please fill in all address fields (Street, City, State, ZIP) for this mobile service.");
-                  return;
-                }
-                // Travel zone guard: warn if maxTravelDistance is set
-                if (selectedService?.maxTravelDistance) {
-                  Alert.alert(
-                    "⚠️ Check Service Area",
-                    `This service has a maximum travel distance of ${selectedService.maxTravelDistance} miles. Please confirm your address is within the service area before continuing.`,
-                    [
-                      { text: "Go Back", style: "cancel" },
-                      {
-                        text: "I'm in Range",
-                        onPress: () => {
-                          setClientAddress(fullClientAddress);
-                          setStep(step + 1);
-                        },
-                      },
-                    ]
-                  );
-                  return;
-                }
-                // Sync fullClientAddress to clientAddress for downstream use
-                setClientAddress(fullClientAddress);
-                setStep(step + 1);
-              }}
-              style={({ pressed }) => ({
-                backgroundColor: LIME_GREEN,
-                borderRadius: 14,
-                paddingVertical: 16,
-                alignItems: "center",
-                marginTop: 24,
-                opacity: pressed ? 0.85 : 1,
-              })}
-            >
-              <Text style={{ color: "#0D2318", fontSize: 15, fontWeight: "700" }}>Continue</Text>
-            </Pressable>
           </View>
         )}
         {/* Promo / Discount step */}
@@ -2047,11 +2028,11 @@ export default function ClientBookingWizardScreen() {
           <Pressable
             style={({ pressed }) => [
               s.nextBtn,
-              { opacity: canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length) ? 1 : 0.4 },
-              pressed && canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length) && { transform: [{ scale: 0.97 }] },
+              { opacity: canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length, STEP_ADDRESS, addrStreet, addrCity, addrState, addrZip) ? 1 : 0.4 },
+              pressed && canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length, STEP_ADDRESS, addrStreet, addrCity, addrState, addrZip) && { transform: [{ scale: 0.97 }] },
             ]}
             onPress={handleNext}
-            disabled={!canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length)}
+            disabled={!canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length, STEP_ADDRESS, addrStreet, addrCity, addrState, addrZip)}
           >
             <Text style={s.nextBtnText}>Continue</Text>
             <IconSymbol name="chevron.right" size={16} color="#FFFFFF" />
@@ -2118,13 +2099,22 @@ function canProceed(
   selectedSlot: any,
   paymentMethod?: string | null,
   paymentConfirmationNumber?: string,
-  selectedServicesCount?: number
+  selectedServicesCount?: number,
+  STEP_ADDRESS?: number,
+  addrStreet?: string,
+  addrCity?: string,
+  addrState?: string,
+  addrZip?: string
 ): boolean {
   if (step === STEP_SERVICE) return selectedService != null || (selectedServicesCount ?? 0) > 0;
   if (step === STEP_STAFF) return selectedStaffId !== undefined;
   if (showLocationStep && step === STEP_LOCATION) return selectedLocation != null;
   // Date and Time are merged — require both a date AND a time slot to proceed
   if (step === STEP_DATE) return selectedDate != null && selectedSlot != null;
+  // Address step — all four fields required
+  if (STEP_ADDRESS !== undefined && STEP_ADDRESS >= 0 && step === STEP_ADDRESS) {
+    return !!(addrStreet?.trim() && addrCity?.trim() && addrState?.trim() && addrZip?.trim());
+  }
   if (step === STEP_PAYMENT) {
     if (!paymentMethod) return false;
     if (paymentMethod !== "cash" && !paymentConfirmationNumber?.trim()) return false;
