@@ -5345,6 +5345,10 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     let cart = []; // { type: 'service'|'product', id, name, price, duration }
     // Mobile service address
     let clientAddress = { street: '', city: '', state: '', zip: '' };
+    // Distance (miles) calculated during address validation — used for dynamic travel fee
+    let calculatedDistanceMi = null;
+    // Dynamic travel fee: computed from distance × per-mile rate (overrides fixed travelFee when > 0)
+    let dynamicTravelFee = null;
     function isMobileService() { return selectedService && selectedService.serviceType === 'mobile'; }
     function getClientAddressString() {
       const p = clientAddress;
@@ -6110,11 +6114,19 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           }
           if (bizCoords) {
             var dist = haversineDistance(bizCoords.lat, bizCoords.lon, clientCoords.lat, clientCoords.lon);
+            calculatedDistanceMi = dist; // store for dynamic fee & arrival window
             var maxDist = parseFloat(selectedService.maxTravelDistance);
             if (dist > maxDist) {
               showAddrError('Sorry, your address (' + clientCoords.city + ', ' + clientCoords.state + ') is approximately ' + Math.round(dist) + ' miles away \u2014 outside our ' + maxDist + '-mile service radius. Please contact us to check availability.');
               return;
             }
+            // Compute dynamic travel fee: $0.67/mile (IRS standard mileage rate), round-trip
+            var fixedFee = selectedService.travelFee ? parseFloat(selectedService.travelFee) : 0;
+            var distFee = Math.round(dist * 2 * 0.67 * 100) / 100; // round-trip, $0.67/mi
+            dynamicTravelFee = Math.max(fixedFee, distFee); // use whichever is higher
+          } else {
+            calculatedDistanceMi = null;
+            dynamicTravelFee = selectedService.travelFee ? parseFloat(selectedService.travelFee) : null;
           }
         }
       }
@@ -6909,9 +6921,10 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     function getTotalPrice() {
       let total = selectedService ? parseFloat(selectedService.price) : 0;
       cart.forEach(c => { total += c.price; });
-      // Add travel fee for mobile services
-      if (isMobileService() && selectedService.travelFee) {
-        total += parseFloat(selectedService.travelFee);
+      // Add travel fee for mobile services — use dynamic fee (distance-based) if available, else fixed
+      if (isMobileService()) {
+        var fee = dynamicTravelFee != null ? dynamicTravelFee : (selectedService.travelFee ? parseFloat(selectedService.travelFee) : 0);
+        total += fee;
       }
       return total;
     }
@@ -6991,9 +7004,27 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         const label = c.type === 'product' ? 'Product' : 'Service';
         itemsHtml += '<div class="confirm-row"><span class="confirm-label">' + label + '</span><span class="confirm-value">' + esc(c.name) + ' \u2014 $' + c.price.toFixed(2) + '</span></div>';
       });
-      // Travel fee line item (mobile services only)
-      if (isMobileService() && selectedService.travelFee && parseFloat(selectedService.travelFee) > 0) {
-        itemsHtml += '<div class="confirm-row"><span class="confirm-label" style="color:#0369a1;">\ud83d\ude97 Travel Fee</span><span class="confirm-value" style="color:#0369a1;">$' + parseFloat(selectedService.travelFee).toFixed(2) + '</span></div>';
+      // Travel fee line item (mobile services only) — use dynamic fee when available
+      var effectiveTravelFee = isMobileService() ? (dynamicTravelFee != null ? dynamicTravelFee : (selectedService.travelFee ? parseFloat(selectedService.travelFee) : 0)) : 0;
+      if (isMobileService() && effectiveTravelFee > 0) {
+        var feeLabel = calculatedDistanceMi != null ? '\ud83d\ude97 Travel Fee (' + Math.round(calculatedDistanceMi) + ' mi)' : '\ud83d\ude97 Travel Fee';
+        itemsHtml += '<div class="confirm-row"><span class="confirm-label" style="color:#0369a1;">' + feeLabel + '</span><span class="confirm-value" style="color:#0369a1;">$' + effectiveTravelFee.toFixed(2) + '</span></div>';
+      }
+      // Estimated arrival window for mobile services
+      if (isMobileService() && selectedService.travelDuration && selectedTime) {
+        var tParts = selectedTime.split(':').map(Number);
+        var apptStartMin = tParts[0] * 60 + tParts[1];
+        var arrivalMin = apptStartMin - selectedService.travelDuration;
+        if (arrivalMin < 0) arrivalMin = 0;
+        var arrH = Math.floor(arrivalMin / 60), arrM = arrivalMin % 60;
+        var arrAmpm = arrH >= 12 ? 'PM' : 'AM'; var arrH12 = arrH === 0 ? 12 : arrH > 12 ? arrH - 12 : arrH;
+        var arrivalStr = arrH12 + ':' + String(arrM).padStart(2,'0') + ' ' + arrAmpm;
+        // Window = arrival to arrival + 15 min
+        var arrWinMin = arrivalMin + 15;
+        var awH = Math.floor(arrWinMin / 60), awM = arrWinMin % 60;
+        var awAmpm = awH >= 12 ? 'PM' : 'AM'; var awH12 = awH === 0 ? 12 : awH > 12 ? awH - 12 : awH;
+        var arrivalWinStr = awH12 + ':' + String(awM).padStart(2,'0') + ' ' + awAmpm;
+        itemsHtml += '<div class="confirm-row"><span class="confirm-label" style="color:#0369a1;">\ud83d\udd50 Est. Arrival</span><span class="confirm-value" style="color:#0369a1;">' + arrivalStr + ' \u2013 ' + arrivalWinStr + '</span></div>';
       }
       let totalPrice = getTotalPrice();
       let discountAmt = getDiscountAmount();
@@ -7003,7 +7034,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       // Build price breakdown HTML
       let breakdownHtml = '';
       // Subtotal row (label changes for mobile to clarify travel fee is included)
-      const subtotalLabel = (isMobileService() && selectedService.travelFee && parseFloat(selectedService.travelFee) > 0) ? 'Total (incl. travel)' : 'Subtotal';
+      const subtotalLabel = (isMobileService() && effectiveTravelFee > 0) ? 'Total (incl. travel)' : 'Subtotal';
       breakdownHtml += '<div class="confirm-row" style="border-top:2px solid #e8ece8;padding-top:10px;"><span class="confirm-label">' + subtotalLabel + '</span><span class="confirm-value">$' + totalPrice.toFixed(2) + '</span></div>';     // Discount row (if applicable)
       if (appliedDiscount && discountAmt > 0) {
         breakdownHtml += '<div class="confirm-row"><span class="confirm-label" style="color:#b45309;">\ud83c\udf89 ' + esc(appliedDiscount.name) + ' (' + appliedDiscount.percentage + '% off)</span><span class="confirm-value" style="color:#b45309;">-$' + discountAmt.toFixed(2) + '</span></div>';
@@ -7162,7 +7193,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
               promoCode: appliedPromo ? appliedPromo.code : null,
               promoLocalId: appliedPromo ? appliedPromo.localId : null,
               clientAddress: isMobileService() ? getClientAddressString() : null,
-              travelFee: isMobileService() && selectedService.travelFee ? parseFloat(selectedService.travelFee) : null,
+              travelFee: isMobileService() ? (dynamicTravelFee != null ? dynamicTravelFee : (selectedService.travelFee ? parseFloat(selectedService.travelFee) : null)) : null,
             }),
           });
           const bookData = await bookRes.json();
@@ -7230,7 +7261,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
             promoCode: appliedPromo ? appliedPromo.code : null,
             promoLocalId: appliedPromo ? appliedPromo.localId : null,
             clientAddress: isMobileService() ? getClientAddressString() : null,
-            travelFee: isMobileService() && selectedService.travelFee ? parseFloat(selectedService.travelFee) : null,
+            travelFee: isMobileService() ? (dynamicTravelFee != null ? dynamicTravelFee : (selectedService.travelFee ? parseFloat(selectedService.travelFee) : null)) : null,
           }),
         });
         const data = await res.json();

@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, localId, name FROM services WHERE businessOwnerId = 1620003 ORDER BY id LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, localId, name FROM services WHERE businessOwnerId = 1620003 ORDER BY id LIMIT 10;",
+  "rows": [
+    {
+      "id": "1500043",
+      "localId": "seed-1777610087401-4",
+      "name": "Women's Haircut & Style"
+    },
+    {
+      "id": "1500044",
+      "localId": "seed-1777610087410-5",
+      "name": "Men's Haircut"
+    },
+    {
+      "id": "1500045",
+      "localId": "seed-1777610087419-6",
+      "name": "Children's Haircut"
+    },
+    {
+      "id": "1500046",
+      "localId": "seed-1777610087428-7",
+      "name": "Blowout & Style"
+    },
+    {
+      "id": "1500047",
+      "localId": "seed-1777610087437-8",
+      "name": "Updo & Special Occasion"
+    },
+    {
+      "id": "1500048",
+      "localId": "seed-1777610087445-9",
+      "name": "Balayage"
+    },
+    {
+      "id": "1500049",
+      "localId": "seed-1777610087454-10",
+      "name": "Full Color"
+    },
+    {
+      "id": "1500050",
+      "localId": "seed-1777610087463-11",
+      "name": "Highlights"
+    },
+    {
+      "id": "1500051",
+      "localId": "seed-1777610087471-12",
+      "name": "Gloss & Toner"
+    },
+    {
+      "id": "1500052",
+      "localId": "seed-1777610087479-13",
+      "name": "Keratin Treatment"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlocalId\tname\n1500043\tseed-1777610087401-4\tWomen's Haircut & Style\n1500044\tseed-1777610087410-5\tMen's Haircut\n1500045\tseed-1777610087419-6\tChildren's Haircut\n1500046\tseed-1777610087428-7\tBlowout & Style\n1500047\tseed-1777610087437-8\tUpdo & Special Occasion\n1500048\tseed-1777610087445-9\tBalayage\n1500049\tseed-1777610087454-10\tFull Color\n1500050\tseed-1777610087463-11\tHighlights\n1500051\tseed-1777610087471-12\tGloss & Toner\n1500052\tseed-1777610087479-13\tKeratin Treatment\n",
+  "stderr": "",
+  "execution_time_ms": 555
+}

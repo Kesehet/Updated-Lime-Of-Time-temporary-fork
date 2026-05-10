@@ -1,0 +1,28 @@
+{
+  "query": "SELECT bo.id, bo.businessName, COUNT(sm.id) as total_staff, SUM(CASE WHEN sm.localId NOT LIKE 'seed-%' THEN 1 ELSE 0 END) as user_staff FROM business_owners bo LEFT JOIN staff_members sm ON sm.businessOwnerId = bo.id GROUP BY bo.id, bo.businessName ORDER BY user_staff DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT bo.id, bo.businessName, COUNT(sm.id) as total_staff, SUM(CASE WHEN sm.localId NOT LIKE 'seed-%' THEN 1 ELSE 0 END) as user_staff FROM business_owners bo LEFT JOIN staff_members sm ON sm.businessOwnerId = bo.id GROUP BY bo.id, bo.businessName ORDER BY user_staff DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "1620003",
+      "businessName": "Lime Cut & Wellness",
+      "total_staff": "15",
+      "user_staff": "0"
+    },
+    {
+      "id": "1650001",
+      "businessName": "Wellness Suite",
+      "total_staff": "0",
+      "user_staff": "0"
+    },
+    {
+      "id": "1710001",
+      "businessName": "New Business",
+      "total_staff": "0",
+      "user_staff": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbusinessName\ttotal_staff\tuser_staff\n1620003\tLime Cut & Wellness\t15\t0\n1650001\tWellness Suite\t0\t0\n1710001\tNew Business\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 567
+}

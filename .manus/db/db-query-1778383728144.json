@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, name, LEFT(serviceIds, 200) as serviceIds_sample FROM staff_members WHERE businessOwnerId = 1620003 ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, name, LEFT(serviceIds, 200) as serviceIds_sample FROM staff_members WHERE businessOwnerId = 1620003 ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "870030",
+      "name": "Monique Hall",
+      "serviceIds_sample": "[\"seed-1777610087401-4\", \"seed-1777610087410-5\", \"seed-1777610087419-6\", \"seed-1777610087428-7\", \"seed-1777610087437-8\", \"seed-1777610087445-9\", \"seed-1777610087454-10\", \"seed-1777610087463-11\", \"seed"
+    },
+    {
+      "id": "870029",
+      "name": "Danielle Walker",
+      "serviceIds_sample": "[\"seed-1777610087401-4\", \"seed-1777610087410-5\", \"seed-1777610087419-6\", \"seed-1777610087428-7\", \"seed-1777610087437-8\", \"seed-1777610087445-9\", \"seed-1777610087454-10\", \"seed-1777610087463-11\", \"seed"
+    },
+    {
+      "id": "870028",
+      "name": "Crystal Lewis",
+      "serviceIds_sample": "[\"seed-1777610087401-4\", \"seed-1777610087410-5\", \"seed-1777610087419-6\", \"seed-1777610087428-7\", \"seed-1777610087437-8\", \"seed-1777610087445-9\"]"
+    },
+    {
+      "id": "870027",
+      "name": "Lauren Clark",
+      "serviceIds_sample": "[\"seed-1777610087401-4\", \"seed-1777610087410-5\", \"seed-1777610087419-6\", \"seed-1777610087428-7\", \"seed-1777610087437-8\", \"seed-1777610087445-9\", \"seed-1777610087454-10\", \"seed-1777610087463-11\", \"seed"
+    },
+    {
+      "id": "870026",
+      "name": "Kimberly Harris",
+      "serviceIds_sample": "[\"seed-1777610087401-4\", \"seed-1777610087410-5\", \"seed-1777610087419-6\", \"seed-1777610087428-7\", \"seed-1777610087437-8\", \"seed-1777610087445-9\", \"seed-1777610087454-10\", \"seed-1777610087463-11\", \"seed"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tserviceIds_sample\n870030\tMonique Hall\t[\"seed-1777610087401-4\", \"seed-1777610087410-5\", \"seed-1777610087419-6\", \"seed-1777610087428-7\", \"seed-1777610087437-8\", \"seed-1777610087445-9\", \"seed-1777610087454-10\", \"seed-1777610087463-11\", \"seed\n870029\tDanielle Walker\t[\"seed-1777610087401-4\", \"seed-1777610087410-5\", \"seed-1777610087419-6\", \"seed-1777610087428-7\", \"seed-1777610087437-8\", \"seed-1777610087445-9\", \"seed-1777610087454-10\", \"seed-1777610087463-11\", \"seed\n870028\tCrystal Lewis\t[\"seed-1777610087401-4\", \"seed-1777610087410-5\", \"seed-1777610087419-6\", \"seed-1777610087428-7\", \"seed-1777610087437-8\", \"seed-1777610087445-9\"]\n870027\tLauren Clark\t[\"seed-1777610087401-4\", \"seed-1777610087410-5\", \"seed-1777610087419-6\", \"seed-1777610087428-7\", \"seed-1777610087437-8\", \"seed-1777610087445-9\", \"seed-1777610087454-10\", \"seed-1777610087463-11\", \"seed\n870026\tKimberly Harris\t[\"seed-1777610087401-4\", \"seed-1777610087410-5\", \"seed-1777610087419-6\", \"seed-1777610087428-7\", \"seed-1777610087437-8\", \"seed-1777610087445-9\", \"seed-1777610087454-10\", \"seed-1777610087463-11\", \"seed\n",
+  "stderr": "",
+  "execution_time_ms": 574
+}

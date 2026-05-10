@@ -1,0 +1,14 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(CASE WHEN localId NOT LIKE 'seed-%' THEN 1 ELSE 0 END) as user_created FROM staff_members WHERE businessOwnerId = 1620003;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT COUNT(*) as total, SUM(CASE WHEN localId NOT LIKE 'seed-%' THEN 1 ELSE 0 END) as user_created FROM staff_members WHERE businessOwnerId = 1620003;",
+  "rows": [
+    {
+      "total": "15",
+      "user_created": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tuser_created\n15\t0\n",
+  "stderr": "",
+  "execution_time_ms": 563
+}
