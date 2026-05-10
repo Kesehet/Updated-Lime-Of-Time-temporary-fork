@@ -1349,8 +1349,8 @@ Would you also like to charge a no-show fee via Stripe?`,
                     </Text>
                   </Pressable>
                 )}
-                {/* Pay on Behalf of Client — native Stripe payment sheet */}
-                {isStripePlan && !!(state.settings as any).stripeConnectEnabled && (appointment.totalPrice ?? 0) > 0 && Platform.OS !== 'web' && (
+                {/* Pay on Behalf of Client — native Stripe payment sheet (visible for any unpaid appointment with a charge) */}
+                {(appointment.totalPrice ?? 0) > 0 && Platform.OS !== 'web' && (
                   <Pressable
                     onPress={handlePayOnBehalf}
                     disabled={payingOnBehalf}
