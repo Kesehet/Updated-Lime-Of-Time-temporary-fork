@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE appointments ADD COLUMN IF NOT EXISTS \"travelFee\" DECIMAL(10,2);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute ALTER TABLE appointments ADD COLUMN IF NOT EXISTS \"travelFee\" DECIMAL(10,2);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 1 column 61 near \"\"travelFee\" DECIMAL(10,2)\""
+  ]
+}

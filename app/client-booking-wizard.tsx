@@ -1624,7 +1624,7 @@ export default function ClientBookingWizardScreen() {
             <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Your Address</Text>
             <Text style={[s.stepSubtitle, { color: TEXT_MUTED }]}>This service is performed at your location. Please enter the address where you'd like the service.</Text>
             <View style={[s.card, { padding: 16, marginTop: 8 }]}>
-              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: TEXT_MUTED, marginBottom: 8 }}>
+              <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 8 }}>
                 Service Address <Text style={{ color: "#EF4444" }}>*</Text>
               </Text>
               {/* Pre-fill hint when a previous address is available */}
@@ -1643,8 +1643,8 @@ export default function ClientBookingWizardScreen() {
                     opacity: pressed ? 0.7 : 1,
                   })}
                 >
-                  <Text style={{ fontSize: fs.xs, color: "#8FBF6A", flex: 1 }}>📍 Use previous address: {lastUsedAddress}</Text>
-                  <Text style={{ fontSize: fs.xs, color: "#8FBF6A", fontWeight: "700", marginLeft: 8 }}>Use</Text>
+                  <Text style={{ fontSize: 11, color: "#8FBF6A", flex: 1 }}>📍 Use previous address: {lastUsedAddress}</Text>
+                  <Text style={{ fontSize: 11, color: "#8FBF6A", fontWeight: "700", marginLeft: 8 }}>Use</Text>
                 </Pressable>
               ) : null}
               <TextInput
@@ -1656,7 +1656,7 @@ export default function ClientBookingWizardScreen() {
                 numberOfLines={3}
                 style={{
                   color: TEXT_PRIMARY,
-                  fontSize: fs.sm,
+                  fontSize: 13,
                   borderWidth: 1,
                   borderColor: clientAddress.trim() ? "rgba(255,255,255,0.2)" : "#EF444480",
                   borderRadius: 10,
@@ -1667,7 +1667,7 @@ export default function ClientBookingWizardScreen() {
                 }}
                 returnKeyType="done"
               />
-              <Text style={{ fontSize: fs.xs, color: TEXT_MUTED, marginTop: 8 }}>
+              <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 8 }}>
                 We'll come to you at this address.
               </Text>
             </View>
@@ -1689,7 +1689,7 @@ export default function ClientBookingWizardScreen() {
                 opacity: pressed ? 0.85 : 1,
               })}
             >
-              <Text style={{ color: "#0D2318", fontSize: fs.md, fontWeight: "700" }}>Continue</Text>
+              <Text style={{ color: "#0D2318", fontSize: 15, fontWeight: "700" }}>Continue</Text>
             </Pressable>
           </View>
         )}

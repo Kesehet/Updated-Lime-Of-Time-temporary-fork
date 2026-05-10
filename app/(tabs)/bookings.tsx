@@ -616,6 +616,58 @@ export default function BookingsScreen() {
             const hasAppts = statuses && statuses.size > 0;
             const radius = Math.floor(cellW / 2);
 
+            return (
+              <Pressable
+                key={dateStr}
+                onPress={() => {
+                  setSelectedDateFilter(selectedDateFilter === dateStr ? null : dateStr);
+                }}
+                style={({ pressed }) => [{
+                  width: cellW,
+                  height: cellH,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: radius,
+                  backgroundColor: "transparent",
+                  borderWidth: isSelected ? 1.5 : 0,
+                  borderColor: isSelected ? colors.primary : "transparent",
+                  opacity: pressed ? 0.7 : 1,
+                }]}
+              >
+                <Text style={{
+                  fontSize: fs.xs,
+                  fontWeight: isToday || isSelected ? "700" : "400",
+                  color: isSelected || isToday ? colors.primary : colors.foreground,
+                }}>
+                  {day}
+                </Text>
+                {hasAppts && (
+                  <View style={{
+                    flexDirection: "row",
+                    gap: 2,
+                    position: "absolute",
+                    bottom: Math.max(2, Math.floor(cellH * 0.06)),
+                  }}>
+                    {Array.from(statuses).slice(0, 3).map((status, si) => {
+                      const dotColor =
+                        status === "confirmed" ? "#60A5FA"
+                        : status === "pending" ? "#9CA3AF"
+                        : status === "completed" ? colors.success
+                        : colors.error;
+                      return <View key={si} style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: dotColor }} />;
+                    })}
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
+
+
+
   const listContent = (
     <>
       {/* Header */}
@@ -1130,57 +1182,6 @@ export default function BookingsScreen() {
       </ScrollView>
     );
   };
-
-            return (
-              <Pressable
-                key={dateStr}
-                onPress={() => {
-                  setSelectedDateFilter(selectedDateFilter === dateStr ? null : dateStr);
-                }}
-                style={({ pressed }) => [{
-                  width: cellW,
-                  height: cellH,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: radius,
-                  backgroundColor: "transparent",
-                  borderWidth: isSelected ? 1.5 : 0,
-                  borderColor: isSelected ? colors.primary : "transparent",
-                  opacity: pressed ? 0.7 : 1,
-                }]}
-              >
-                <Text style={{
-                  fontSize: fs.xs,
-                  fontWeight: isToday || isSelected ? "700" : "400",
-                  color: isSelected || isToday ? colors.primary : colors.foreground,
-                }}>
-                  {day}
-                </Text>
-                {hasAppts && (
-                  <View style={{
-                    flexDirection: "row",
-                    gap: 2,
-                    position: "absolute",
-                    bottom: Math.max(2, Math.floor(cellH * 0.06)),
-                  }}>
-                    {Array.from(statuses).slice(0, 3).map((status, si) => {
-                      const dotColor =
-                        status === "confirmed" ? "#60A5FA"
-                        : status === "pending" ? "#9CA3AF"
-                        : status === "completed" ? colors.success
-                        : colors.error;
-                      return <View key={si} style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: dotColor }} />;
-                    })}
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-    );
-  };
-
   // ─── Render ───────────────────────────────────────────────────────────
 
   return (
