@@ -1,0 +1,184 @@
+{
+  "query": "SELECT configKey, CASE WHEN isSensitive=1 THEN '***HIDDEN***' ELSE configValue END as configValue FROM platform_config; SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, CASE WHEN isSensitive=1 THEN '***HIDDEN***' ELSE configValue END as configValue FROM platform_config; SHOW TABLES;",
+  "rows": [
+    {
+      "configKey": "TWILIO_ACCOUNT_SID",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "TWILIO_AUTH_TOKEN",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "TWILIO_FROM_NUMBER",
+      "configValue": "+18556074585"
+    },
+    {
+      "configKey": "TWILIO_TEST_MODE",
+      "configValue": "true"
+    },
+    {
+      "configKey": "STRIPE_PUBLISHABLE_KEY",
+      "configValue": "pk_test_51REIGbG6LQX4qfeVRXbxu8HGRslT0jbjhuQmiDZeai1QPBC0zukmY1xiXTch8bVDuNNEgH0N2TMbX7sq9ZJgFZwh00DOmiSfiB"
+    },
+    {
+      "configKey": "STRIPE_SECRET_KEY",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "STRIPE_WEBHOOK_SECRET",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "twilio_account_sid",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "twilio_auth_token",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "twilio_from_number",
+      "configValue": "+18556074585"
+    },
+    {
+      "configKey": "twilio_test_mode",
+      "configValue": ""
+    },
+    {
+      "configKey": "twilio_test_otp",
+      "configValue": "123456"
+    },
+    {
+      "configKey": "stripe_secret_key",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "stripe_publishable_key",
+      "configValue": ""
+    },
+    {
+      "configKey": "stripe_webhook_secret",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "stripe_test_mode",
+      "configValue": ""
+    },
+    {
+      "configKey": "TWILIO_PER_PHONE_OTP",
+      "configValue": "{}"
+    },
+    {
+      "configKey": "TWILIO_TEST_OTP",
+      "configValue": "123456"
+    },
+    {
+      "configKey": "STRIPE_TEST_MODE",
+      "configValue": "true"
+    },
+    {
+      "configKey": "TWILIO_VERIFY_SERVICE_SID",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "STRIPE_TEST_SECRET_KEY",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "STRIPE_TEST_PUBLISHABLE_KEY",
+      "configValue": "pk_test_51REIGbG6LQX4qfeVRXbxu8HGRslT0jbjhuQmiDZeai1QPBC0zukmY1xiXTch8bVDuNNEgH0N2TMbX7sq9ZJgFZwh00DOmiSfiB"
+    },
+    {
+      "configKey": "STRIPE_TEST_WEBHOOK_SECRET",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "STRIPE_LIVE_SECRET_KEY",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "STRIPE_LIVE_PUBLISHABLE_KEY",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "STRIPE_LIVE_WEBHOOK_SECRET",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "SERVER_URL",
+      "configValue": "https://lime-of-time.com"
+    },
+    {
+      "configKey": "STRIPE_CONNECT_TEST_WEBHOOK_SECRET",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "TWILIO_LIVE_ACCOUNT_SID",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "TWILIO_LIVE_AUTH_TOKEN",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "TWILIO_LIVE_VERIFY_SERVICE_SID",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "TWILIO_LIVE_FROM_NUMBER",
+      "configValue": "+18556074585"
+    },
+    {
+      "configKey": "TWILIO_TEST_ACCOUNT_SID",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "TWILIO_TEST_AUTH_TOKEN",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "TWILIO_TEST_VERIFY_SERVICE_SID",
+      "configValue": "***HIDDEN***"
+    },
+    {
+      "configKey": "TWILIO_TEST_FROM_NUMBER",
+      "configValue": ""
+    }
+  ],
+  "messages": [
+    "Tables_in_Dw4mhfnuurFcniLsqjLpWN",
+    "__drizzle_migrations",
+    "admin_audit_log",
+    "admin_expenses",
+    "appointments",
+    "business_owners",
+    "client_accounts",
+    "client_messages",
+    "client_packages",
+    "client_saved_businesses",
+    "clients",
+    "custom_schedule",
+    "data_deletion_requests",
+    "discounts",
+    "gift_cards",
+    "gift_certificate_recipients",
+    "locations",
+    "otp_send_log",
+    "platform_config",
+    "products",
+    "promo_codes",
+    "reviews",
+    "service_packages",
+    "service_photos",
+    "services",
+    "staff_members",
+    "subscription_plans",
+    "users",
+    "waitlist"
+  ],
+  "stdout": "configKey\tconfigValue\nTWILIO_ACCOUNT_SID\t***HIDDEN***\nTWILIO_AUTH_TOKEN\t***HIDDEN***\nTWILIO_FROM_NUMBER\t+18556074585\nTWILIO_TEST_MODE\ttrue\nSTRIPE_PUBLISHABLE_KEY\tpk_test_51REIGbG6LQX4qfeVRXbxu8HGRslT0jbjhuQmiDZeai1QPBC0zukmY1xiXTch8bVDuNNEgH0N2TMbX7sq9ZJgFZwh00DOmiSfiB\nSTRIPE_SECRET_KEY\t***HIDDEN***\nSTRIPE_WEBHOOK_SECRET\t***HIDDEN***\ntwilio_account_sid\t***HIDDEN***\ntwilio_auth_token\t***HIDDEN***\ntwilio_from_number\t+18556074585\ntwilio_test_mode\t\ntwilio_test_otp\t123456\nstripe_secret_key\t***HIDDEN***\nstripe_publishable_key\t\nstripe_webhook_secret\t***HIDDEN***\nstripe_test_mode\t\nTWILIO_PER_PHONE_OTP\t{}\nTWILIO_TEST_OTP\t123456\nSTRIPE_TEST_MODE\ttrue\nTWILIO_VERIFY_SERVICE_SID\t***HIDDEN***\nSTRIPE_TEST_SECRET_KEY\t***HIDDEN***\nSTRIPE_TEST_PUBLISHABLE_KEY\tpk_test_51REIGbG6LQX4qfeVRXbxu8HGRslT0jbjhuQmiDZeai1QPBC0zukmY1xiXTch8bVDuNNEgH0N2TMbX7sq9ZJgFZwh00DOmiSfiB\nSTRIPE_TEST_WEBHOOK_SECRET\t***HIDDEN***\nSTRIPE_LIVE_SECRET_KEY\t***HIDDEN***\nSTRIPE_LIVE_PUBLISHABLE_KEY\t***HIDDEN***\nSTRIPE_LIVE_WEBHOOK_SECRET\t***HIDDEN***\nSERVER_URL\thttps://lime-of-time.com\nSTRIPE_CONNECT_TEST_WEBHOOK_SECRET\t***HIDDEN***\nTWILIO_LIVE_ACCOUNT_SID\t***HIDDEN***\nTWILIO_LIVE_AUTH_TOKEN\t***HIDDEN***\nTWILIO_LIVE_VERIFY_SERVICE_SID\t***HIDDEN***\nTWILIO_LIVE_FROM_NUMBER\t+18556074585\nTWILIO_TEST_ACCOUNT_SID\t***HIDDEN***\nTWILIO_TEST_AUTH_TOKEN\t***HIDDEN***\nTWILIO_TEST_VERIFY_SERVICE_SID\t***HIDDEN***\nTWILIO_TEST_FROM_NUMBER\t\nTables_in_Dw4mhfnuurFcniLsqjLpWN\n__drizzle_migrations\nadmin_audit_log\nadmin_expenses\nappointments\nbusiness_owners\nclient_accounts\nclient_messages\nclient_packages\nclient_saved_businesses\nclients\ncustom_schedule\ndata_deletion_requests\ndiscounts\ngift_cards\ngift_certificate_recipients\nlocations\notp_send_log\nplatform_config\nproducts\npromo_codes\nreviews\nservice_packages\nservice_photos\nservices\nstaff_members\nsubscription_plans\nusers\nwaitlist\n",
+  "stderr": "",
+  "execution_time_ms": 598
+}

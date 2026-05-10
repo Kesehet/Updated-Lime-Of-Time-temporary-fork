@@ -108,7 +108,7 @@ const config: ExpoConfig = {
 
   plugins: [
     "expo-router",
-    "@stripe/stripe-react-native",
+    ["@stripe/stripe-react-native", { merchantIdentifier: "merchant.space.manus.manus.scheduler.t20260406102824", enableGooglePay: false }],
     [
       "expo-image-picker",
       {

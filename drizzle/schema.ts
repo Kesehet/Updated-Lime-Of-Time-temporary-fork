@@ -260,6 +260,8 @@ export const appointments = mysqlTable("appointments", {
   paymentMethod: mysqlEnum("paymentMethod", ["zelle", "venmo", "cashapp", "cash", "card", "unpaid", "free"]).default("unpaid"),
   /** Stripe Checkout Session ID when paid by card */
   stripeCheckoutSessionId: varchar("stripeCheckoutSessionId", { length: 255 }),
+  /** Stripe PaymentIntent ID when using native payment sheet */
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
   /** Payment status: unpaid | pending_cash | paid */
   paymentStatus: mysqlEnum("paymentStatus", ["unpaid", "pending_cash", "paid"]).default("unpaid"),
   /** Confirmation number provided by business owner after receiving digital payment */

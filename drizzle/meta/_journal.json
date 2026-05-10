@@ -491,6 +491,13 @@
       "when": 1778384378095,
       "tag": "0069_glorious_talisman",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "5",
+      "when": 1778426571680,
+      "tag": "0070_rapid_jean_grey",
+      "breakpoints": true
     }
   ]
 }

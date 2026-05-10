@@ -35,7 +35,7 @@ import * as Haptics from "expo-haptics";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { getCategoryDef, ALL_CATEGORY, SERVICE_CATEGORIES } from "@/constants/categories";
 import * as WebBrowser from "expo-web-browser";
-import { useStripe } from "@stripe/stripe-react-native";
+import { useStripe } from "@/lib/use-stripe";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
 const GREEN_DARK   = "#1A3A28";

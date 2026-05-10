@@ -41,7 +41,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { getCategoryDef, ALL_CATEGORY } from "@/constants/categories";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as WebBrowser from "expo-web-browser";
-import { useStripe } from "@stripe/stripe-react-native";
+import { useStripe } from "@/lib/use-stripe";
 
 const LIME_GREEN = "#4A7C59";
 // ─── Portal palette (same as business detail) ────────────────────────────────

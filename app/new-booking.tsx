@@ -24,7 +24,7 @@ import { trpc } from "@/lib/trpc";
 import { useActiveLocation } from "@/hooks/use-active-location";
 import { useResponsive } from "@/hooks/use-responsive";
 import { FuturisticBackground } from "@/components/futuristic-background";
-import { useStripe } from "@stripe/stripe-react-native";
+import { useStripe } from "@/lib/use-stripe";
 import { apiCall } from "@/lib/_core/api";
 
 
@@ -777,6 +777,7 @@ export default function NewBookingScreen() {
         const { error: initError } = await initPaymentSheet({
           merchantDisplayName: state.settings.businessName ?? 'Business',
           paymentIntentClientSecret: sheetData.paymentIntent,
+          stripeAccountId: sheetData.accountId,
           customerId: undefined,
           allowsDelayedPaymentMethods: false,
           defaultBillingDetails: selectedClient?.name ? { name: selectedClient.name } : undefined,

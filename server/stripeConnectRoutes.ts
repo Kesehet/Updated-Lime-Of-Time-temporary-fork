@@ -782,12 +782,75 @@ export function registerStripeConnectRoutes(app: Express): void {
           }
         }
       }
-
+      // ── payment_intent.succeeded — mark appointment paid when using native payment sheet ──
+      if (event.type === 'payment_intent.succeeded') {
+        const pi = event.data.object as Stripe.PaymentIntent;
+        const appointmentLocalId = pi.metadata?.appointmentLocalId;
+        const businessOwnerId = parseInt(pi.metadata?.businessOwnerId ?? '0', 10);
+        const giftCode = pi.metadata?.giftCode;
+        const sessionType = pi.metadata?.type;
+        // Handle gift card payment via native sheet
+        if (sessionType === 'gift_purchase' && giftCode && businessOwnerId) {
+          try {
+            const db = await getDb();
+            if (db) {
+              const { giftCards } = await import('../drizzle/schema');
+              await db
+                .update(giftCards)
+                .set({ paymentStatus: 'paid', paymentMethod: 'card' } as any)
+                .where(and(eq((giftCards as any).code, giftCode), eq((giftCards as any).businessOwnerId, businessOwnerId)));
+              console.log(`[StripeConnect] Gift ${giftCode} marked paid via native payment sheet (owner ${businessOwnerId})`);
+            }
+          } catch (dbErr) {
+            console.error('[StripeConnect] Gift DB update error (payment_intent.succeeded):', dbErr);
+          }
+        }
+        // Handle appointment payment via native sheet
+        if (appointmentLocalId && businessOwnerId) {
+          try {
+            const db = await getDb();
+            if (db) {
+              await db
+                .update(appointments)
+                .set({
+                  paymentStatus: 'paid',
+                  paymentMethod: 'card',
+                  stripePaymentIntentId: pi.id,
+                } as any)
+                .where(and(eq(appointments.localId, appointmentLocalId), eq(appointments.businessOwnerId, businessOwnerId)));
+              console.log(`[StripeConnect] Appointment ${appointmentLocalId} marked paid via native payment sheet`);
+              // Push notification to business owner
+              try {
+                const db2 = await getDb();
+                if (db2) {
+                  const ownerRows = await db2.select().from(businessOwners).where(eq(businessOwners.id, businessOwnerId)).limit(1);
+                  const owner = ownerRows[0];
+                  const pushToken = (owner as any)?.expoPushToken;
+                  if (pushToken) {
+                    const apptRows = await db2.select().from(appointments).where(and(eq(appointments.localId, appointmentLocalId), eq(appointments.businessOwnerId, businessOwnerId))).limit(1);
+                    const appt = apptRows[0];
+                    if (appt) {
+                      const clientRows = appt.clientLocalId ? await db2.select().from(clients).where(and(eq(clients.localId, appt.clientLocalId), eq(clients.businessOwnerId, businessOwnerId))).limit(1) : [];
+                      const svcRows = appt.serviceLocalId ? await db2.select().from(services).where(and(eq(services.localId, appt.serviceLocalId), eq(services.businessOwnerId, businessOwnerId))).limit(1) : [];
+                      const clientName = (clientRows[0] as any)?.name || 'Client';
+                      const serviceName = (svcRows[0] as any)?.name || 'Service';
+                      await notifyCardPayment(pushToken, owner.businessName || 'Your Business', clientName, serviceName, appt.date || '', appt.time || '00:00', appointmentLocalId, appt.totalPrice || 0, { duration: appt.duration || undefined });
+                    }
+                  }
+                }
+              } catch (notifErr) {
+                console.error('[StripeConnect] Card payment notification error (payment_intent.succeeded):', notifErr);
+              }
+            }
+          } catch (dbErr) {
+            console.error('[StripeConnect] DB update error (payment_intent.succeeded):', dbErr);
+          }
+        }
+      }
       res.json({ received: true });
     }
   );
-
-  // ── 8. Admin: list all connected accounts ────────────────────────────────
+  // ── 8. Admin: list all connected accounts ────────────────────────────────────────────────────
   // GET /api/admin/stripe-connect/accounts
   app.get("/api/admin/stripe-connect/accounts", async (req: Request, res: Response) => {
     try {
@@ -871,12 +934,16 @@ export function registerStripeConnectRoutes(app: Express): void {
       const appt = rows[0];
       if (!appt) { res.status(404).json({ error: "Appointment not found" }); return; }
 
+      // Support both native payment sheet (stripePaymentIntentId) and checkout session (stripeCheckoutSessionId)
+      const directPaymentIntentId = (appt as any).stripePaymentIntentId as string | null;
       const sessionId = (appt as any).stripeCheckoutSessionId as string | null;
-      if (!sessionId) { res.status(400).json({ error: "No Stripe checkout session found for this appointment" }); return; }
-
-      const session = await stripe.checkout.sessions.retrieve(sessionId, {}, { stripeAccount: accountId });
-      const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
-      if (!paymentIntentId) { res.status(400).json({ error: "No payment intent found for this session" }); return; }
+      let paymentIntentId: string | null = directPaymentIntentId;
+      if (!paymentIntentId && sessionId) {
+        // Fallback: look up payment intent from checkout session
+        const session = await stripe.checkout.sessions.retrieve(sessionId, {}, { stripeAccount: accountId });
+        paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+      }
+      if (!paymentIntentId) { res.status(400).json({ error: "No Stripe payment found for this appointment" }); return; }
 
       const refundParams: Stripe.RefundCreateParams = { payment_intent: paymentIntentId };
       if (amount && amount > 0) {
@@ -1325,6 +1392,7 @@ export function registerStripeConnectRoutes(app: Express): void {
         enabled_events: [
           "checkout.session.completed",
           "checkout.session.expired",
+          "payment_intent.succeeded",
           "payment_intent.payment_failed",
           "account.updated",
           "payout.created",

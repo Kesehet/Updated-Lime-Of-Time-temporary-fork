@@ -1,0 +1,254 @@
+{
+  "query": "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'business_owners' AND TABLE_SCHEMA = DATABASE() ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'business_owners' AND TABLE_SCHEMA = DATABASE() ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "userId",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "phone",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "businessName",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "ownerName",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "email",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "address",
+      "DATA_TYPE": "text"
+    },
+    {
+      "COLUMN_NAME": "website",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "description",
+      "DATA_TYPE": "text"
+    },
+    {
+      "COLUMN_NAME": "businessLogoUri",
+      "DATA_TYPE": "text"
+    },
+    {
+      "COLUMN_NAME": "defaultDuration",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "notificationsEnabled",
+      "DATA_TYPE": "tinyint"
+    },
+    {
+      "COLUMN_NAME": "themeMode",
+      "DATA_TYPE": "enum"
+    },
+    {
+      "COLUMN_NAME": "temporaryClosed",
+      "DATA_TYPE": "tinyint"
+    },
+    {
+      "COLUMN_NAME": "workingHours",
+      "DATA_TYPE": "json"
+    },
+    {
+      "COLUMN_NAME": "cancellationPolicy",
+      "DATA_TYPE": "json"
+    },
+    {
+      "COLUMN_NAME": "onboardingComplete",
+      "DATA_TYPE": "tinyint"
+    },
+    {
+      "COLUMN_NAME": "createdAt",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "COLUMN_NAME": "updatedAt",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "COLUMN_NAME": "scheduleMode",
+      "DATA_TYPE": "enum"
+    },
+    {
+      "COLUMN_NAME": "bufferTime",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "customSlug",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "businessHoursEndDate",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "expoPushToken",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "autoCompleteEnabled",
+      "DATA_TYPE": "tinyint"
+    },
+    {
+      "COLUMN_NAME": "autoCompleteDelayMinutes",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "notificationPreferences",
+      "DATA_TYPE": "json"
+    },
+    {
+      "COLUMN_NAME": "smsTemplates",
+      "DATA_TYPE": "json"
+    },
+    {
+      "COLUMN_NAME": "slotInterval",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "subscriptionPlan",
+      "DATA_TYPE": "enum"
+    },
+    {
+      "COLUMN_NAME": "subscriptionStatus",
+      "DATA_TYPE": "enum"
+    },
+    {
+      "COLUMN_NAME": "subscriptionPeriod",
+      "DATA_TYPE": "enum"
+    },
+    {
+      "COLUMN_NAME": "trialEndsAt",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "COLUMN_NAME": "stripeCustomerId",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "stripeSubscriptionId",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "adminOverride",
+      "DATA_TYPE": "tinyint"
+    },
+    {
+      "COLUMN_NAME": "adminOverrideNote",
+      "DATA_TYPE": "text"
+    },
+    {
+      "COLUMN_NAME": "zelleHandle",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "cashAppHandle",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "venmoHandle",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "paymentNotes",
+      "DATA_TYPE": "text"
+    },
+    {
+      "COLUMN_NAME": "stripeCurrentPeriodEnd",
+      "DATA_TYPE": "bigint"
+    },
+    {
+      "COLUMN_NAME": "instagramHandle",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "facebookHandle",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "tiktokHandle",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "stripeConnectAccountId",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "stripeConnectEnabled",
+      "DATA_TYPE": "tinyint"
+    },
+    {
+      "COLUMN_NAME": "stripeConnectOnboardingComplete",
+      "DATA_TYPE": "tinyint"
+    },
+    {
+      "COLUMN_NAME": "acceptCardPayments",
+      "DATA_TYPE": "tinyint"
+    },
+    {
+      "COLUMN_NAME": "requestResponseWindowHours",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "businessCategory",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "lat",
+      "DATA_TYPE": "decimal"
+    },
+    {
+      "COLUMN_NAME": "lng",
+      "DATA_TYPE": "decimal"
+    },
+    {
+      "COLUMN_NAME": "clientPortalVisible",
+      "DATA_TYPE": "tinyint"
+    },
+    {
+      "COLUMN_NAME": "appStoreUrl",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "playStoreUrl",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "scheduledPlanKey",
+      "DATA_TYPE": "enum"
+    },
+    {
+      "COLUMN_NAME": "scheduledPlanPeriod",
+      "DATA_TYPE": "enum"
+    },
+    {
+      "COLUMN_NAME": "cancelAtPeriodEnd",
+      "DATA_TYPE": "tinyint"
+    },
+    {
+      "COLUMN_NAME": "giftValidDays",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "coverPhotoUri",
+      "DATA_TYPE": "text"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\tDATA_TYPE\nid\tint\nuserId\tint\nphone\tvarchar\nbusinessName\tvarchar\nownerName\tvarchar\nemail\tvarchar\naddress\ttext\nwebsite\tvarchar\ndescription\ttext\nbusinessLogoUri\ttext\ndefaultDuration\tint\nnotificationsEnabled\ttinyint\nthemeMode\tenum\ntemporaryClosed\ttinyint\nworkingHours\tjson\ncancellationPolicy\tjson\nonboardingComplete\ttinyint\ncreatedAt\ttimestamp\nupdatedAt\ttimestamp\nscheduleMode\tenum\nbufferTime\tint\ncustomSlug\tvarchar\nbusinessHoursEndDate\tvarchar\nexpoPushToken\tvarchar\nautoCompleteEnabled\ttinyint\nautoCompleteDelayMinutes\tint\nnotificationPreferences\tjson\nsmsTemplates\tjson\nslotInterval\tint\nsubscriptionPlan\tenum\nsubscriptionStatus\tenum\nsubscriptionPeriod\tenum\ntrialEndsAt\ttimestamp\nstripeCustomerId\tvarchar\nstripeSubscriptionId\tvarchar\nadminOverride\ttinyint\nadminOverrideNote\ttext\nzelleHandle\tvarchar\ncashAppHandle\tvarchar\nvenmoHandle\tvarchar\npaymentNotes\ttext\nstripeCurrentPeriodEnd\tbigint\ninstagramHandle\tvarchar\nfacebookHandle\tvarchar\ntiktokHandle\tvarchar\nstripeConnectAccountId\tvarchar\nstripeConnectEnabled\ttinyint\nstripeConnectOnboardingComplete\ttinyint\nacceptCardPayments\ttinyint\nrequestResponseWindowHours\tint\nbusinessCategory\tvarchar\nlat\tdecimal\nlng\tdecimal\nclientPortalVisible\ttinyint\nappStoreUrl\tvarchar\nplayStoreUrl\tvarchar\nscheduledPlanKey\tenum\nscheduledPlanPeriod\tenum\ncancelAtPeriodEnd\ttinyint\ngiftValidDays\tint\ncoverPhotoUri\ttext\n",
+  "stderr": "",
+  "execution_time_ms": 550
+}

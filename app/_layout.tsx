@@ -25,7 +25,7 @@ import { ClientStoreProvider } from "@/lib/client-store";
 import { AppLockProvider, ClientAppLockProvider } from "@/lib/app-lock-provider";
 import { SplashDoneProvider } from "@/lib/splash-done-context";
 import { NotificationProvider } from "@/lib/notification-provider";
-import { StripeProvider } from "@stripe/stripe-react-native";
+import { StripeProvider } from "@/lib/stripe-provider";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { initSentry, withSentryWrapper } from "@/lib/sentry";
 import { AnimatedSplash } from "@/components/animated-splash";
@@ -395,7 +395,7 @@ function RootLayout() {
     </StripeProvider>
     </View>
   );
-  const shouldOverrideSafeAreaa = Platform.OS === "web";
+  const shouldOverrideSafeArea = Platform.OS === "web";
 
   if (shouldOverrideSafeArea) {
     return (

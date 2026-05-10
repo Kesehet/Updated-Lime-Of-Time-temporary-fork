@@ -1,0 +1,106 @@
+{
+  "query": "DESCRIBE platform_config; SELECT * FROM platform_config LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute DESCRIBE platform_config; SELECT * FROM platform_config LIMIT 5;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "configKey",
+      "Type": "varchar(100)",
+      "Null": "NO",
+      "Key": "UNI",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "configValue",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "isSensitive",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "description",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "id",
+      "Type": "configKey",
+      "Null": "configValue",
+      "Key": "isSensitive",
+      "Default": "description",
+      "Extra": "updatedAt"
+    },
+    {
+      "Field": "1",
+      "Type": "TWILIO_ACCOUNT_SID",
+      "Null": "VA7348fcb20a15c8ebd03d1f789d1b005b",
+      "Key": "1",
+      "Default": "Twilio Account SID from console.twilio.com",
+      "Extra": "2026-05-02 11:56:33"
+    },
+    {
+      "Field": "2",
+      "Type": "TWILIO_AUTH_TOKEN",
+      "Null": "7d157dfaa5f33ea090bdecbf8eb68130",
+      "Key": "1",
+      "Default": "Twilio Auth Token from console.twilio.com",
+      "Extra": "2026-05-02 11:56:33"
+    },
+    {
+      "Field": "3",
+      "Type": "TWILIO_FROM_NUMBER",
+      "Null": "+18556074585",
+      "Key": "0",
+      "Default": "Twilio phone number in E.164 format e.g. +14125551234",
+      "Extra": "2026-05-02 00:26:58"
+    },
+    {
+      "Field": "4",
+      "Type": "TWILIO_TEST_MODE",
+      "Null": "true",
+      "Key": "0",
+      "Default": "When true, OTP is always 123456 (disable before going live)",
+      "Extra": "2026-05-02 11:56:33"
+    },
+    {
+      "Field": "5",
+      "Type": "STRIPE_PUBLISHABLE_KEY",
+      "Null": "pk_test_51REIGbG6LQX4qfeVRXbxu8HGRslT0jbjhuQmiDZeai1QPBC0zukmY1xiXTch8bVDuNNEgH0N2TMbX7sq9ZJgFZwh00DOmiSfiB",
+      "Key": "0",
+      "Default": "Active Stripe publishable key (currently: live mode)",
+      "Extra": "2026-05-02 02:14:53"
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nconfigKey\tvarchar(100)\tNO\tUNI\tNULL\t\nconfigValue\ttext\tYES\t\tNULL\t\nisSensitive\ttinyint(1)\tNO\t\t0\t\ndescription\ttext\tYES\t\tNULL\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nid\tconfigKey\tconfigValue\tisSensitive\tdescription\tupdatedAt\n1\tTWILIO_ACCOUNT_SID\tVA7348fcb20a15c8ebd03d1f789d1b005b\t1\tTwilio Account SID from console.twilio.com\t2026-05-02 11:56:33\n2\tTWILIO_AUTH_TOKEN\t7d157dfaa5f33ea090bdecbf8eb68130\t1\tTwilio Auth Token from console.twilio.com\t2026-05-02 11:56:33\n3\tTWILIO_FROM_NUMBER\t+18556074585\t0\tTwilio phone number in E.164 format e.g. +14125551234\t2026-05-02 00:26:58\n4\tTWILIO_TEST_MODE\ttrue\t0\tWhen true, OTP is always 123456 (disable before going live)\t2026-05-02 11:56:33\n5\tSTRIPE_PUBLISHABLE_KEY\tpk_test_51REIGbG6LQX4qfeVRXbxu8HGRslT0jbjhuQmiDZeai1QPBC0zukmY1xiXTch8bVDuNNEgH0N2TMbX7sq9ZJgFZwh00DOmiSfiB\t0\tActive Stripe publishable key (currently: live mode)\t2026-05-02 02:14:53\n",
+  "stderr": "",
+  "execution_time_ms": 633
+}
