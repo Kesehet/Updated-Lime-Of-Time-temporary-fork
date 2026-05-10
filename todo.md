@@ -2034,3 +2034,4 @@
 - [x] Mobile service catalog: popular categories (Car Detailing, Mobile Massage, etc.)
 - [x] Pay on Behalf of Client button on appointment detail — opens native Stripe payment sheet, shows success confirmation, marks appointment as paid by card
 - [x] Show 'Pay on Behalf of Client' button for all unpaid appointments regardless of plan or Stripe connection status
+- [x] Booking wizard: Location always shown as step 2, Staff as step 3; staff list filtered by selected location

@@ -232,8 +232,8 @@ export default function ClientBookingWizardScreen() {
   // Tracks the month we last fetched availability for ("YYYY-MM")
   const lastAvailFetchKey = useRef<string>("");
 
-  // Whether to show the location step (only when >1 active location)
-  const showLocationStep = locations.length > 1;
+  // Location step is always shown when there is at least 1 location (step 2 after Service)
+  const showLocationStep = locations.length >= 1;
 
   // Build the step list dynamically — Date & Time are merged into one step
   // Products step is only shown when the business has products available
@@ -319,8 +319,8 @@ export default function ClientBookingWizardScreen() {
         if (locList.length === 1) {
           setSelectedLocation(locList[0]);
         }
-        // Compute the correct initial step: skip Location step if only 1 location (already auto-selected)
-        const initialStaffStep = locList.length > 1 ? 2 : 1;
+        // Location step is always shown (step 1 = Location, step 2 = Staff)
+        const initialStaffStep = 2;
         if (serviceLocalId) {
           const found = svcList.find((s) => s.localId === serviceLocalId);
           if (found) {
