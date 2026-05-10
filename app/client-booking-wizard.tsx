@@ -42,6 +42,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { getCategoryDef, ALL_CATEGORY } from "@/constants/categories";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as WebBrowser from "expo-web-browser";
+import * as Clipboard from "expo-clipboard";
 import { useStripe } from "@/lib/use-stripe";
 
 const LIME_GREEN = "#4A7C59";
@@ -195,6 +196,8 @@ export default function ClientBookingWizardScreen() {
   const [bizZelleHandle, setBizZelleHandle] = useState<string>("");
   const [bizVenmoHandle, setBizVenmoHandle] = useState<string>("");
   const [bizCashAppHandle, setBizCashAppHandle] = useState<string>("");
+  // Tracks which handle was just copied for brief "Copied!" feedback
+  const [copiedHandle, setCopiedHandle] = useState<string | null>(null);
   // Ref to hold card last4 after Stripe payment sheet succeeds (passed to confirmation screen)
   const cardLast4Ref = useRef<{ last4: string; brand: string } | null>(null);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
@@ -1835,15 +1838,36 @@ export default function ClientBookingWizardScreen() {
                   <Text style={{ fontSize: 22 }}>{method.icon}</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={[s.paymentMethodLabel, { color: TEXT_PRIMARY }]}>{method.label}</Text>
-                    <Text style={[s.paymentMethodHint, { color: TEXT_MUTED }]}>
-                      {method.id === "zelle" && bizZelleHandle
-                        ? `Send to: ${bizZelleHandle}`
-                        : method.id === "venmo" && bizVenmoHandle
-                        ? `Send to: ${bizVenmoHandle}`
-                        : method.id === "cashapp" && bizCashAppHandle
-                        ? `Send to: ${bizCashAppHandle}`
-                        : method.hint || (method.id === "zelle" ? "Send to business Zelle" : method.id === "venmo" ? "Send via @username" : method.id === "cashapp" ? "Send via $cashtag" : "")}
-                    </Text>
+                    {/* Show handle with copy button if available */}
+                    {(method.id === "zelle" && bizZelleHandle) ||
+                     (method.id === "venmo" && bizVenmoHandle) ||
+                     (method.id === "cashapp" && bizCashAppHandle) ? (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
+                        <Text style={[s.paymentMethodHint, { color: TEXT_MUTED, flex: 1 }]}>
+                          {method.id === "zelle" ? bizZelleHandle : method.id === "venmo" ? bizVenmoHandle : bizCashAppHandle}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            const handle = method.id === "zelle" ? bizZelleHandle : method.id === "venmo" ? bizVenmoHandle : bizCashAppHandle;
+                            Clipboard.setStringAsync(handle);
+                            setCopiedHandle(method.id);
+                            if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            setTimeout(() => setCopiedHandle(null), 2000);
+                          }}
+                          style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: copiedHandle === method.id ? LIME_GREEN + "40" : CARD_BORDER }}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Text style={{ fontSize: 11, color: copiedHandle === method.id ? LIME_GREEN : TEXT_MUTED, fontWeight: "600" }}>
+                            {copiedHandle === method.id ? "Copied!" : "Copy"}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <Text style={[s.paymentMethodHint, { color: TEXT_MUTED }]}>
+                        {method.hint || (method.id === "zelle" ? "Send to business Zelle" : method.id === "venmo" ? "Send via @username" : method.id === "cashapp" ? "Send via $cashtag" : "")}
+                      </Text>
+                    )}
                   </View>
                   {paymentMethod === method.id && (
                     <IconSymbol name="checkmark.circle.fill" size={22} color={LIME_GREEN} />

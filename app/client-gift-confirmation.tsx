@@ -49,6 +49,8 @@ export default function ClientGiftConfirmationScreen() {
     paymentMethod,
     bannerImageUri,
     businessOwnerId,
+    cardLast4,
+    cardBrand,
   } = useLocalSearchParams<{
     giftCode: string;
     shareLink: string;
@@ -59,6 +61,8 @@ export default function ClientGiftConfirmationScreen() {
     paymentMethod: string;
     bannerImageUri?: string;
     businessOwnerId?: string;
+    cardLast4?: string;
+    cardBrand?: string;
   }>();
 
    const [payingNow, setPayingNow] = useState(false);
@@ -169,6 +173,12 @@ export default function ClientGiftConfirmationScreen() {
       case "zelle": return "Zelle";
       case "venmo": return "Venmo";
       case "cashapp": return "Cash App";
+      case "card":
+        if (cardLast4) {
+          const brand = cardBrand ? cardBrand.charAt(0).toUpperCase() + cardBrand.slice(1) : "Card";
+          return `${brand} \u2022\u2022\u2022\u2022 ${cardLast4}`;
+        }
+        return "Card (Stripe)";
       default: return "Cash (in person)";
     }
   })();

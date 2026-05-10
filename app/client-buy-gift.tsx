@@ -172,6 +172,8 @@ export default function ClientBuyGiftScreen() {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const lastAvailFetchKey = useRef<string>("");
+  // Ref to hold card last4 after Stripe payment sheet succeeds (passed to gift confirmation screen)
+  const cardLast4Ref = useRef<{ last4: string; brand: string } | null>(null);
   // Staff
   const [selectedStaffId, setSelectedStaffId] = useState<string>("any");
   // Payment
@@ -448,6 +450,16 @@ export default function ClientBuyGiftScreen() {
               if (presentError.code !== "Canceled") Alert.alert("Payment Failed", presentError.message);
               return;
             }
+            // Payment succeeded — fetch card last4 for receipt display
+            try {
+              const last4Res = await fetch(
+                `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(result.code ?? "")}&businessOwnerId=${encodeURIComponent(String(bizOwnerId))}`,
+              );
+              if (last4Res.ok) {
+                const { last4, brand } = await last4Res.json();
+                if (last4) cardLast4Ref.current = { last4, brand: brand ?? "card" };
+              }
+            } catch { /* non-blocking */ }
           } else {
             // Web: open Stripe Checkout in browser
             const origin = apiBase.replace(/\/$/, "");
@@ -474,7 +486,7 @@ export default function ClientBuyGiftScreen() {
               Alert.alert("Payment Error", (errData as any)?.error ?? "Failed to start card payment.");
             }
           }
-          // Navigate to confirmation — gift is already created
+           // Navigate to confirmation — gift is already created
           // Payment status will be updated by Stripe webhook when payment completes
           router.replace({
             pathname: "/client-gift-confirmation",
@@ -487,6 +499,8 @@ export default function ClientBuyGiftScreen() {
               businessSlug: slug,
               paymentMethod,
               businessOwnerId: String(bizOwnerId ?? ""),
+              cardLast4: cardLast4Ref.current?.last4 ?? "",
+              cardBrand: cardLast4Ref.current?.brand ?? "",
             },
           } as any);
         } catch {
@@ -503,12 +517,13 @@ export default function ClientBuyGiftScreen() {
               businessSlug: slug,
               paymentMethod,
               businessOwnerId: String(bizOwnerId ?? ""),
+              cardLast4: "",
+              cardBrand: "",
             },
           } as any);
         }
         return;
       }
-
       // Navigate to confirmation
       router.replace({
         pathname: "/client-gift-confirmation",
@@ -520,6 +535,8 @@ export default function ClientBuyGiftScreen() {
           businessName,
           businessSlug: slug,
           paymentMethod,
+          cardLast4: "",
+          cardBrand: "",
         },
       } as any);
     } catch (err: any) {
