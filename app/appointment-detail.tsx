@@ -13,6 +13,7 @@ import { usePlanLimitCheck } from "@/hooks/use-plan-limit-check";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
+import { useStripe } from "@/lib/use-stripe";
 
 import {
   minutesToTime,
@@ -116,6 +117,10 @@ export default function AppointmentDetailScreen() {
   const [showGiftRedeemSheet, setShowGiftRedeemSheet] = useState(false);
   const [giftRedeemAmount, setGiftRedeemAmount] = useState('');
   const [savingGiftRedeem, setSavingGiftRedeem] = useState(false);
+  // Pay on behalf of client — native Stripe payment sheet
+  const [payingOnBehalf, setPayingOnBehalf] = useState(false);
+  const [showPayOnBehalfSuccess, setShowPayOnBehalfSuccess] = useState(false);
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
 
   // Derived variables — safe with optional chaining (appointment may be null during hydration)
@@ -426,6 +431,68 @@ export default function AppointmentDetailScreen() {
       setRequestingPayment(false);
     }
   }, [appointment, state.businessOwnerId, state.settings.twilioEnabled, client, service, biz.businessName, sendSmsMutation, openSms, dispatch]);
+
+  // ── Pay on behalf of client via native Stripe payment sheet ──────────────────
+  const handlePayOnBehalf = useCallback(async () => {
+    if (!appointment || !state.businessOwnerId || Platform.OS === 'web') return;
+    const totalAmount = appointment.totalPrice ?? 0;
+    if (totalAmount <= 0) {
+      Alert.alert('No Amount', 'This appointment has no charge amount.');
+      return;
+    }
+    setPayingOnBehalf(true);
+    try {
+      const apiBase = getApiBaseUrl();
+      const token = await getSessionToken();
+      const serviceName = service ? getServiceDisplayName(service) : 'Service';
+      const sheetRes = await fetch(`${apiBase}/api/stripe-connect/create-payment-sheet`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          businessOwnerId: state.businessOwnerId,
+          appointmentLocalId: appointment.id,
+          amount: totalAmount,
+          currency: 'usd',
+          description: `${serviceName} — ${appointment.date} at ${appointment.time}`,
+          clientEmail: client?.email ?? undefined,
+        }),
+      });
+      if (!sheetRes.ok) {
+        const err = await sheetRes.json().catch(() => ({}));
+        throw new Error(err?.error ?? 'Could not create payment session.');
+      }
+      const { publishableKey, paymentIntent, accountId } = await sheetRes.json();
+      const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: biz.businessName || 'Business',
+        paymentIntentClientSecret: paymentIntent,
+        style: 'alwaysDark',
+        stripeAccountId: accountId,
+      });
+      if (initError) {
+        throw new Error(initError.message ?? 'Could not initialize payment.');
+      }
+      const { error: presentError } = await presentPaymentSheet();
+      if (presentError) {
+        if (presentError.code !== 'Canceled') {
+          Alert.alert('Payment Failed', presentError.message ?? 'Please try again.');
+        }
+        return;
+      }
+      // Payment succeeded — mark appointment as paid by card
+      const updated = {
+        ...appointment,
+        paymentStatus: 'paid' as const,
+        paymentMethod: 'card' as any,
+      };
+      dispatch({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
+      syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
+      setShowPayOnBehalfSuccess(true);
+    } catch (err: any) {
+      Alert.alert('Payment Error', err?.message ?? 'Could not process payment. Please try again.');
+    } finally {
+      setPayingOnBehalf(false);
+    }
+  }, [appointment, state.businessOwnerId, service, client, biz.businessName, initPaymentSheet, presentPaymentSheet, dispatch, syncToDb]);
 
   // ── Payment status polling — check every 30s if appointment is unpaid ──────
   // ── Immediate payment status check on mount (for notification tap) ─────────
@@ -1282,6 +1349,28 @@ Would you also like to charge a no-show fee via Stripe?`,
                     </Text>
                   </Pressable>
                 )}
+                {/* Pay on Behalf of Client — native Stripe payment sheet */}
+                {isStripePlan && !!(state.settings as any).stripeConnectEnabled && (appointment.totalPrice ?? 0) > 0 && Platform.OS !== 'web' && (
+                  <Pressable
+                    onPress={handlePayOnBehalf}
+                    disabled={payingOnBehalf}
+                    style={({ pressed }) => [{
+                      backgroundColor: '#0F766E',
+                      borderRadius: 12,
+                      paddingVertical: 10,
+                      alignItems: 'center',
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      gap: 6,
+                      opacity: (pressed || payingOnBehalf) ? 0.7 : 1,
+                    }]}
+                  >
+                    <Text style={{ fontSize: fs.md }}>💳</Text>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: fs.sm }}>
+                      {payingOnBehalf ? 'Opening Payment…' : 'Pay on Behalf of Client'}
+                    </Text>
+                  </Pressable>
+                )}
               </View>
             )}
             {appointment.paymentStatus === 'paid' && appointment.paymentMethod === 'card' && !appointment.refundedAt && (
@@ -1824,6 +1913,30 @@ Would you also like to charge a no-show fee via Stripe?`,
         <View style={{ height: 40 }} />
       </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Pay on Behalf Success Modal */}
+      <Modal visible={showPayOnBehalfSuccess} transparent animationType="slide" onRequestClose={() => setShowPayOnBehalfSuccess(false)}>
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)' }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28, paddingBottom: 44, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center', alignItems: 'center' }}>
+            <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#0F766E20', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <Text style={{ fontSize: 36 }}>✅</Text>
+            </View>
+            <Text style={{ fontSize: fs.xl, fontWeight: '800', color: colors.foreground, marginBottom: 6, textAlign: 'center' }}>Payment Complete</Text>
+            <Text style={{ fontSize: fs.sm, color: colors.muted, textAlign: 'center', marginBottom: 4 }}>
+              {client?.name ?? 'Client'}’s appointment has been paid.
+            </Text>
+            <Text style={{ fontSize: fs.lg, fontWeight: '700', color: '#0F766E', marginBottom: 24 }}>
+              ${(appointment?.totalPrice ?? 0).toFixed(2)} — Card
+            </Text>
+            <Pressable
+              onPress={() => setShowPayOnBehalfSuccess(false)}
+              style={({ pressed }) => [{ backgroundColor: '#0F766E', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40, opacity: pressed ? 0.8 : 1 }]}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: fs.md }}>Done</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       {/* Payment Confirmation Modal */}
       <Modal visible={showPaymentModal} transparent animationType="slide">
