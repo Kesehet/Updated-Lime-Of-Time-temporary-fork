@@ -721,6 +721,8 @@ export const clientAccounts = mysqlTable("client_accounts", {
   preferredRadius: int("preferredRadius").default(25).notNull(),
   /** Theme mode preference */
   themeMode: mysqlEnum("themeMode", ["light", "dark", "system"]).default("system").notNull(),
+  /** Saved home/service address for mobile bookings */
+  savedAddress: varchar("savedAddress", { length: 512 }),
   /** Notification preferences JSON */
   notificationPreferences: json("notificationPreferences"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

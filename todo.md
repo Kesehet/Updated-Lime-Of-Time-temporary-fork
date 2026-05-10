@@ -2052,3 +2052,9 @@
 - [x] Booking wizard: Service thumbnail shown in header when service is pre-selected (steps > 0)
 - [x] Booking wizard: 'Change service' link added on Location step
 - [x] Booking wizard: Fix Address step Continue button hidden behind keyboard — moved bottomAction inside KeyboardAvoidingView
+- [ ] Booking wizard: Auto-dismiss keyboard on Continue (Keyboard.dismiss() in handleNext)
+- [ ] Booking wizard: Google Places address autocomplete on Address step
+- [ ] Booking wizard: Save address to client profile checkbox after booking
+- [x] Booking wizard: Auto-dismiss keyboard on Continue (Keyboard.dismiss in handleNext)
+- [x] Booking wizard: Address autocomplete using OpenStreetMap Nominatim API
+- [x] Booking wizard: Save address to profile checkbox on Confirm step

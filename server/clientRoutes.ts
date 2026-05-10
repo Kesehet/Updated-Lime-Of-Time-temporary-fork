@@ -150,7 +150,7 @@ export function registerClientRoutes(app: Express) {
   app.patch("/api/client/profile", async (req: Request, res: Response) => {
     try {
       const { clientAccount } = await getClientAccount(req);
-      const { name, phone, email, birthday, profilePhotoUri, expoPushToken, preferredRadius, themeMode, notificationPreferences } = req.body;
+      const { name, phone, email, birthday, profilePhotoUri, expoPushToken, preferredRadius, themeMode, notificationPreferences, savedAddress } = req.body;
 
       // If user is providing a real phone number, update the primary key
       if (phone && !phone.startsWith("oauth:")) {
@@ -182,6 +182,7 @@ export function registerClientRoutes(app: Express) {
         ...(preferredRadius !== undefined && { preferredRadius }),
         ...(themeMode !== undefined && { themeMode }),
         ...(notificationPreferences !== undefined && { notificationPreferences }),
+        ...(savedAddress !== undefined && { savedAddress }),
       });
       res.json({ clientAccount: await db.getClientAccountById(clientAccount!.id) });
     } catch (err: any) {

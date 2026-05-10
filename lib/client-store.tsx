@@ -21,6 +21,7 @@ export interface ClientAccount {
   profilePhotoUri: string | null;
   avatarUrl: string | null;
   expoPushToken: string | null;
+  savedAddress?: string | null;
   createdAt: string;
 }
 

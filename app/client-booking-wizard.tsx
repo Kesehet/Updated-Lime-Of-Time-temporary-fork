@@ -25,6 +25,7 @@ import {
   TouchableOpacity,
   Linking,
   KeyboardAvoidingView,
+  Keyboard,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -165,6 +166,12 @@ export default function ClientBookingWizardScreen() {
   const [addrState, setAddrState] = useState("");
   const [addrZip, setAddrZip] = useState("");
   const [zipLookupLoading, setZipLookupLoading] = useState(false);
+  // Address autocomplete state
+  const [addrSearchQuery, setAddrSearchQuery] = useState("");
+  const [addrSuggestions, setAddrSuggestions] = useState<{ display: string; street: string; city: string; state: string; zip: string }[]>([]);
+  const [addrSearchLoading, setAddrSearchLoading] = useState(false);
+  const addrSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [saveAddressToProfile, setSaveAddressToProfile] = useState(false);
   // Derived full address from sub-fields
   const fullClientAddress = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(", ");
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
@@ -242,12 +249,12 @@ export default function ClientBookingWizardScreen() {
   const isMobileService = selectedService?.serviceType === 'mobile';
   // Find the last client address used for this business (for pre-fill)
   const lastUsedAddress = useMemo(() => {
-    if (!effectiveSlug) return "";
+    if (!effectiveSlug) return (state.account as any)?.savedAddress ?? "";
     const past = state.appointments
       .filter((a) => a.businessSlug === effectiveSlug && a.clientAddress)
       .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
-    return past[0]?.clientAddress ?? "";
-  }, [state.appointments, effectiveSlug]);
+    return past[0]?.clientAddress ?? (state.account as any)?.savedAddress ?? "";
+  }, [state.appointments, effectiveSlug, state.account]);
   const eligibleStaff = useMemo(() => {
     let filtered = selectedService
       ? staff.filter((m) => !m.serviceIds?.length || m.serviceIds.includes(selectedService.localId))
@@ -571,6 +578,7 @@ export default function ClientBookingWizardScreen() {
   }, [selectedDate, selectedService, selectedStaffId, selectedLocation, effectiveSlug, apiBase, refreshCounter, slotStep]);
 
   const handleNext = () => {
+    Keyboard.dismiss();
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // When the step just before Payment is completed and the net amount due is $0
     // (gift fully covers the booking), skip the Payment step entirely and jump to Confirm.
@@ -822,6 +830,19 @@ export default function ClientBookingWizardScreen() {
         }
       }
 
+      // Save address to client profile if checkbox was checked
+      if (saveAddressToProfile && isMobileService && effectiveClientAddress.trim() && state.sessionToken) {
+        fetch(`${apiBase}/api/client/profile`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
+          body: JSON.stringify({ savedAddress: effectiveClientAddress.trim() }),
+        }).then(async (r) => {
+          if (r.ok) {
+            const data = await r.json().catch(() => ({}));
+            if (data.clientAccount) dispatch({ type: "SET_ACCOUNT", account: data.clientAccount });
+          }
+        }).catch(() => {});
+      }
       router.replace({
         pathname: "/client-booking-confirmation",
         params: {
@@ -1870,6 +1891,80 @@ export default function ClientBookingWizardScreen() {
                   <Text style={{ fontSize: 11, color: "#8FBF6A", fontWeight: "700", marginLeft: 8 }}>Use</Text>
                 </Pressable>
               ) : null}
+              {/* Address Search Autocomplete */}
+              <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 4 }}>Search Address</Text>
+              <View style={{ position: "relative", marginBottom: 14 }}>
+                <TextInput
+                  placeholder="Start typing your address…"
+                  placeholderTextColor={TEXT_MUTED}
+                  value={addrSearchQuery}
+                  onChangeText={(text) => {
+                    setAddrSearchQuery(text);
+                    if (addrSearchTimer.current) clearTimeout(addrSearchTimer.current);
+                    if (text.length < 4) { setAddrSuggestions([]); return; }
+                    addrSearchTimer.current = setTimeout(async () => {
+                      setAddrSearchLoading(true);
+                      try {
+                        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&addressdetails=1&limit=5&countrycodes=us`;
+                        const res = await fetch(url, { headers: { "Accept-Language": "en", "User-Agent": "LimeOfTime/1.0" } });
+                        const data = await res.json();
+                        const results = (data as any[]).map((item: any) => {
+                          const a = item.address ?? {};
+                          const street = [a.house_number, a.road].filter(Boolean).join(" ");
+                          const city = a.city ?? a.town ?? a.village ?? a.county ?? "";
+                          const state = a.state ?? "";
+                          const zip = a.postcode ?? "";
+                          return { display: item.display_name, street, city, state, zip };
+                        }).filter((r: any) => r.street);
+                        setAddrSuggestions(results);
+                      } catch { setAddrSuggestions([]); }
+                      finally { setAddrSearchLoading(false); }
+                    }, 500);
+                  }}
+                  style={{
+                    color: TEXT_PRIMARY,
+                    fontSize: 13,
+                    borderWidth: 1,
+                    borderColor: "rgba(143,191,106,0.5)",
+                    borderRadius: 10,
+                    padding: 12,
+                    paddingRight: 36,
+                    backgroundColor: "rgba(255,255,255,0.05)",
+                  }}
+                  returnKeyType="search"
+                  autoCorrect={false}
+                />
+                {addrSearchLoading && (
+                  <ActivityIndicator size="small" color={LIME_GREEN} style={{ position: "absolute", right: 10, top: 12 }} />
+                )}
+                {addrSuggestions.length > 0 && (
+                  <View style={{ borderWidth: 1, borderColor: CARD_BORDER, borderRadius: 10, backgroundColor: CARD_BG, marginTop: 4, overflow: "hidden" }}>
+                    {addrSuggestions.map((s, i) => (
+                      <Pressable
+                        key={i}
+                        onPress={() => {
+                          setAddrStreet(s.street);
+                          setAddrCity(s.city);
+                          setAddrState(s.state);
+                          setAddrZip(s.zip);
+                          setAddrSearchQuery(s.street + (s.city ? ", " + s.city : ""));
+                          setAddrSuggestions([]);
+                          Keyboard.dismiss();
+                        }}
+                        style={({ pressed }) => ({
+                          padding: 12,
+                          borderTopWidth: i > 0 ? 1 : 0,
+                          borderTopColor: CARD_BORDER,
+                          backgroundColor: pressed ? "rgba(143,191,106,0.12)" : "transparent",
+                        })}
+                      >
+                        <Text style={{ color: TEXT_PRIMARY, fontSize: 13 }} numberOfLines={1}>{s.street}{s.city ? ", " + s.city : ""}</Text>
+                        <Text style={{ color: TEXT_MUTED, fontSize: 11, marginTop: 2 }} numberOfLines={1}>{s.state}{s.zip ? " " + s.zip : ""}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
+              </View>
               {/* Street Address */}
               <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 4 }}>Street Address <Text style={{ color: "#EF4444" }}>*</Text></Text>
               <TextInput
@@ -2220,6 +2315,37 @@ export default function ClientBookingWizardScreen() {
                 textAlignVertical="top"
                 returnKeyType="done"
               />
+              {/* Save address to profile checkbox — only shown for mobile services */}
+              {isMobileService && fullClientAddress.trim() ? (
+                <Pressable
+                  onPress={() => setSaveAddressToProfile(v => !v)}
+                  style={({ pressed }) => ({
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 10,
+                    marginTop: 14,
+                    padding: 12,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: saveAddressToProfile ? `${LIME_GREEN}60` : CARD_BORDER,
+                    backgroundColor: saveAddressToProfile ? `${LIME_GREEN}12` : CARD_BG,
+                    opacity: pressed ? 0.75 : 1,
+                  })}
+                >
+                  <View style={{
+                    width: 22, height: 22, borderRadius: 6, borderWidth: 2,
+                    borderColor: saveAddressToProfile ? LIME_GREEN : TEXT_MUTED,
+                    backgroundColor: saveAddressToProfile ? LIME_GREEN : "transparent",
+                    alignItems: "center", justifyContent: "center",
+                  }}>
+                    {saveAddressToProfile && <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700", lineHeight: 16 }}>✓</Text>}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600" }}>Save address to my profile</Text>
+                    <Text style={{ color: TEXT_MUTED, fontSize: 11, marginTop: 2 }}>Pre-fill this address for future bookings</Text>
+                  </View>
+                </Pressable>
+              ) : null}
             </View>
           );
         })()}
