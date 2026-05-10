@@ -426,6 +426,15 @@ export default function DiscoverScreen() {
     AsyncStorage.getItem(PINNED_CATS_KEY).then((raw) => {
       if (raw) setPinnedCategories(JSON.parse(raw));
     }).catch(() => {});
+    // Load persisted service type filter
+    AsyncStorage.getItem(DISCOVER_PREFS_KEY).then((json) => {
+      if (json) {
+        const prefs = JSON.parse(json);
+        if (prefs.serviceTypeFilter && ["all", "instore", "mobile"].includes(prefs.serviceTypeFilter)) {
+          setServiceTypeFilter(prefs.serviceTypeFilter as 'all' | 'instore' | 'mobile');
+        }
+      }
+    }).catch(() => {});
     // Fetch all available categories from the server (includes custom ones)
     fetch(`${getApiBaseUrl()}/api/client/businesses/categories`)
       .then((r) => r.json())
@@ -791,6 +800,11 @@ export default function DiscoverScreen() {
               onPress={() => {
                 if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setServiceTypeFilter(type);
+                // Persist service type filter selection
+                AsyncStorage.getItem(DISCOVER_PREFS_KEY).then((json) => {
+                  const prev = json ? JSON.parse(json) : {};
+                  AsyncStorage.setItem(DISCOVER_PREFS_KEY, JSON.stringify({ ...prev, serviceTypeFilter: type })).catch(() => {});
+                }).catch(() => {});
               }}
               style={({ pressed }) => ({
                 paddingHorizontal: 14,
@@ -954,6 +968,33 @@ export default function DiscoverScreen() {
                   )}
                 </View>
               )}
+              {businesses.length > 0 && filteredBusinesses.length === 0 && (
+                <View style={s.emptyContainer}>
+                  <Text style={s.emptyIcon}>{serviceTypeFilter === 'mobile' ? '🚗' : '🏪'}</Text>
+                  <Text style={[s.emptyTitle, { color: TEXT_PRIMARY }]}>
+                    {serviceTypeFilter === 'mobile'
+                      ? 'No mobile businesses in your area yet'
+                      : 'No in-store businesses found'}
+                  </Text>
+                  <Text style={[s.emptySubtitle, { color: TEXT_MUTED }]}>
+                    {serviceTypeFilter === 'mobile'
+                      ? 'None of the businesses in your area currently offer mobile services. Tap "All" to see all available businesses.'
+                      : 'No businesses with in-store services found. Tap "All" to see all available businesses.'}
+                  </Text>
+                  <Pressable
+                    style={({ pressed }) => [s.expandBtn, pressed && { opacity: 0.7 }]}
+                    onPress={() => {
+                      setServiceTypeFilter('all');
+                      AsyncStorage.getItem(DISCOVER_PREFS_KEY).then((json) => {
+                        const prev = json ? JSON.parse(json) : {};
+                        AsyncStorage.setItem(DISCOVER_PREFS_KEY, JSON.stringify({ ...prev, serviceTypeFilter: 'all' })).catch(() => {});
+                      }).catch(() => {});
+                    }}
+                  >
+                    <Text style={{ color: GREEN_ACCENT, fontWeight: "600", fontSize: 14 }}>Show All Businesses</Text>
+                  </Pressable>
+                </View>
+              )}
             </>
           }
           renderItem={({ item, index }) => (
@@ -1111,6 +1152,13 @@ function BusinessCard({ item, router, index, onTap }: { item: DiscoverBusiness; 
               <Text style={[cardStyles.address, { color: TEXT_MUTED }]} numberOfLines={1}>
                 📍 {item.address}
               </Text>
+            )}
+            {item.hasMobileServices && (
+              <View style={{ flexDirection: "row", marginTop: 4 }}>
+                <View style={{ backgroundColor: "rgba(74,124,89,0.25)", borderColor: "rgba(74,124,89,0.5)", borderWidth: 1, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3, flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <Text style={{ fontSize: 11, color: "#8FBF6A", fontWeight: "600" }}>🚗 Comes to You</Text>
+                </View>
+              </View>
             )}
           </View>
         </View>

@@ -275,7 +275,7 @@ export default function ClientBusinessDetailScreen() {
   ];
 
   return (
-    <ScreenContainer containerClassName="bg-[#1A3A28]">
+    <ScreenContainer containerClassName="bg-[#0D2318]">
       <ClientPortalBackground />
       <ScrollView
         showsVerticalScrollIndicator={false}
