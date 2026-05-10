@@ -227,6 +227,14 @@ export default function ClientBookingWizardScreen() {
   const hasProducts = wizardProducts.length > 0;
   // Address step is shown when selected service is mobile type
   const isMobileService = selectedService?.serviceType === 'mobile';
+  // Find the last client address used for this business (for pre-fill)
+  const lastUsedAddress = useMemo(() => {
+    if (!effectiveSlug) return "";
+    const past = state.appointments
+      .filter((a) => a.businessSlug === effectiveSlug && a.clientAddress)
+      .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+    return past[0]?.clientAddress ?? "";
+  }, [state.appointments, effectiveSlug]);
   const STEPS = showLocationStep
     ? (hasProducts
         ? (isMobileService ? ["Service", "Staff", "Location", "Date & Time", "Address", "Products", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Location", "Date & Time", "Products", "Promo", "Payment", "Confirm"])
@@ -1619,6 +1627,26 @@ export default function ClientBookingWizardScreen() {
               <Text style={{ fontSize: fs.xs, fontWeight: "600", color: TEXT_MUTED, marginBottom: 8 }}>
                 Service Address <Text style={{ color: "#EF4444" }}>*</Text>
               </Text>
+              {/* Pre-fill hint when a previous address is available */}
+              {!clientAddress && lastUsedAddress ? (
+                <Pressable
+                  onPress={() => setClientAddress(lastUsedAddress)}
+                  style={({ pressed }) => ({
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: "rgba(143,191,106,0.10)",
+                    borderRadius: 8,
+                    padding: 10,
+                    marginBottom: 10,
+                    borderWidth: 1,
+                    borderColor: "rgba(143,191,106,0.25)",
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Text style={{ fontSize: fs.xs, color: "#8FBF6A", flex: 1 }}>📍 Use previous address: {lastUsedAddress}</Text>
+                  <Text style={{ fontSize: fs.xs, color: "#8FBF6A", fontWeight: "700", marginLeft: 8 }}>Use</Text>
+                </Pressable>
+              ) : null}
               <TextInput
                 placeholder="123 Main St, City, State ZIP"
                 placeholderTextColor={TEXT_MUTED}

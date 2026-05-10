@@ -73,6 +73,7 @@ export default function NewBookingScreen() {
   });
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
+  const [clientAddress, setClientAddress] = useState("");
   const [showTemplatesPicker, setShowTemplatesPicker] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
@@ -223,6 +224,9 @@ export default function NewBookingScreen() {
   }, [appliedDiscount, subtotal]);
 
   const totalPrice = subtotal - discountAmount;
+  const isMobileService = selectedService?.serviceType === 'mobile';
+  const travelFeeAmount = (isMobileService && clientAddress.trim() && selectedService?.travelFee) ? (selectedService.travelFee as unknown as number) : 0;
+  const grandTotal = totalPrice + travelFeeAmount;
 
   // Per-location time-slot availability: when a time is selected, check whether that specific
   // time slot is available at each location (within working hours + no conflicting appointments).
@@ -686,8 +690,10 @@ export default function NewBookingScreen() {
         discountPercent: appliedDiscount?.percentage,
         discountAmount: discountAmount > 0 ? discountAmount : undefined,
         discountName: appliedDiscount?.name,
-        paymentMethod: totalPrice <= 0 ? 'free' as any : ((selectedPaymentMethod as 'zelle' | 'venmo' | 'cashapp' | 'cash' | undefined) ?? undefined),
-        paymentStatus: totalPrice <= 0 ? 'paid' as const : (selectedPaymentMethod === 'cash' ? 'pending_cash' : (selectedPaymentMethod ? 'unpaid' : undefined)),
+        clientAddress: isMobileService && clientAddress.trim() ? clientAddress.trim() : undefined,
+        totalPrice: grandTotal,
+        paymentMethod: grandTotal <= 0 ? 'free' as any : ((selectedPaymentMethod as 'zelle' | 'venmo' | 'cashapp' | 'cash' | undefined) ?? undefined),
+        paymentStatus: grandTotal <= 0 ? 'paid' as const : (selectedPaymentMethod === 'cash' ? 'pending_cash' : (selectedPaymentMethod ? 'unpaid' : undefined)),
       };
       dispatch({ type: "ADD_APPOINTMENT", payload: appointment });
       syncToDb({ type: "ADD_APPOINTMENT", payload: appointment });
@@ -750,7 +756,7 @@ export default function NewBookingScreen() {
     } else {
       router.back();
     }
-  }, [selectedServiceId, selectedClientId, selectedDate, selectedTime, totalDuration, notes, cart, recurring, dispatch, router, appliedDiscount, discountAmount, totalPrice, subtotal, selectedStaffId, selectedLocationId, syncToDb, selectedService, selectedClient, state.settings, sendSmsMutation]);
+  }, [selectedServiceId, selectedClientId, selectedDate, selectedTime, totalDuration, notes, cart, recurring, dispatch, router, appliedDiscount, discountAmount, totalPrice, subtotal, grandTotal, clientAddress, isMobileService, travelFeeAmount, selectedStaffId, selectedLocationId, syncToDb, selectedService, selectedClient, state.settings, sendSmsMutation]);
 
   const getInitials = (name: string) => {
     const parts = name.split(" ");
@@ -1621,6 +1627,24 @@ export default function NewBookingScreen() {
             numberOfLines={2}
             style={{ color: colors.foreground, minHeight: 50, textAlignVertical: "top" }}
           />
+          {/* Client Address (mobile services only) */}
+          {isMobileService && (
+            <>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4, marginTop: 2 }}>
+                <Text className="text-xs font-medium text-muted ml-1">Client Address <Text style={{ color: colors.error }}>*</Text></Text>
+              </View>
+              <TextInput
+                className="bg-surface rounded-xl px-4 py-3 text-sm mb-4 border border-border"
+                placeholder="123 Main St, City, State ZIP"
+                placeholderTextColor={colors.muted}
+                value={clientAddress}
+                onChangeText={setClientAddress}
+                multiline
+                numberOfLines={2}
+                style={{ color: colors.foreground, minHeight: 50, textAlignVertical: "top" }}
+              />
+            </>
+          )}
 
           {/* Staff Selector — REMOVED from bottom of Step 3 (now at top) */}
           {false && activeStaff.length > 0 && (
@@ -1842,10 +1866,17 @@ export default function NewBookingScreen() {
                 <Text className="text-sm font-medium" style={{ color: colors.warning }}>-${discountAmount.toFixed(2)}</Text>
               </View>
             )}
+            {/* Travel Fee (mobile services) */}
+            {travelFeeAmount > 0 && (
+              <View style={[styles.cartItem]}>
+                <Text className="text-sm font-medium" style={{ color: "#0891b2" }}>🚗 Travel Fee</Text>
+                <Text className="text-sm font-medium" style={{ color: "#0891b2" }}>+${travelFeeAmount.toFixed(2)}</Text>
+              </View>
+            )}
             {/* Totals */}
             <View style={[styles.cartItem, { borderTopWidth: 2, borderTopColor: colors.border, marginTop: 4, paddingTop: 10 }]}>
               <Text className="text-sm font-bold text-foreground">Total ({totalDuration} min)</Text>
-              <Text className="text-base font-bold" style={{ color: colors.primary }}>${totalPrice.toFixed(2)}</Text>
+              <Text className="text-base font-bold" style={{ color: colors.primary }}>${grandTotal.toFixed(2)}</Text>
             </View>
           </View>
 
@@ -2170,12 +2201,12 @@ export default function NewBookingScreen() {
                   <Text style={{ fontSize: fs.xs, color: colors.warning }}>{appliedDiscount.name} ({appliedDiscount.percentage}% off)</Text>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                     <Text style={{ fontSize: fs.xs, color: colors.muted, textDecorationLine: "line-through" }}>${subtotal.toFixed(2)}</Text>
-                    <Text className="text-sm font-semibold" style={{ color: colors.primary }}>Total: ${totalPrice.toFixed(2)}</Text>
+                    <Text className="text-sm font-semibold" style={{ color: colors.primary }}>Total: ${grandTotal.toFixed(2)}</Text>
                   </View>
                 </View>
               ) : (
                 <Text className="text-sm font-semibold" style={{ color: colors.primary, marginTop: 2 }}>
-                  Total: ${totalPrice.toFixed(2)}
+                  Total: ${grandTotal.toFixed(2)}
                 </Text>
               )}
             </View>
@@ -2265,7 +2296,7 @@ export default function NewBookingScreen() {
           {/* Amount Due */}
           <View className="bg-surface rounded-2xl p-4 mb-4 border border-border">
             <Text className="text-xs font-medium text-muted mb-1">Amount Due</Text>
-            <Text className="text-2xl font-bold" style={{ color: colors.primary }}>${totalPrice.toFixed(2)}</Text>
+            <Text className="text-2xl font-bold" style={{ color: colors.primary }}>${grandTotal.toFixed(2)}</Text>
             {selectedService && <Text className="text-xs text-muted mt-1">{selectedService.name}{cart.length > 0 ? ` + ${cart.length} extra item${cart.length > 1 ? 's' : ''}` : ''}</Text>}
           </View>
 
