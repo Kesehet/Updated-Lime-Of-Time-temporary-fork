@@ -2043,3 +2043,4 @@
 - [x] Booking wizard Confirm step: Show '🎁 Fully covered by gift — No payment needed' green banner when gift covers 100% of total
 - [x] Client Bookings screen: Show '🎁 Gift — Fully Covered' green badge on appointment cards for $0 gift-covered bookings
 - [x] Booking wizard Payment step: Show prominent '🎁 Gift Applied — $X off / Remaining: $Y' banner at top when gift partially covers the total
+- [x] Client business detail: Convert from fullScreenModal to formSheet (slide-up bottom sheet) with drag handle and swipe-to-dismiss

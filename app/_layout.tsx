@@ -374,7 +374,7 @@ function RootLayout() {
               <Stack.Screen name="(client-tabs)" options={{ presentation: "fullScreenModal",
                 // Wrap client tabs in their own biometric lock provider
                 contentStyle: { flex: 1 } }} />
-              <Stack.Screen name="client-business-detail" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
+              <Stack.Screen name="client-business-detail" options={{ presentation: "formSheet", contentStyle: { backgroundColor: "#0D2318" }, gestureEnabled: true, headerShown: false, sheetAllowedDetents: [1.0], sheetLargestUndimmedDetentIndex: 0, sheetGrabberVisible: true, sheetCornerRadius: 24 }} />
               <Stack.Screen name="client-booking-wizard" options={{ presentation: "card", headerShown: false, contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
               <Stack.Screen name="client-appointment-detail" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
               <Stack.Screen name="client-booking-confirmation" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />

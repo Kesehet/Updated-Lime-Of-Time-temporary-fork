@@ -291,8 +291,12 @@ export default function ClientBusinessDetailScreen() {
   ];
 
   return (
-    <ScreenContainer containerClassName="bg-[#0D2318]">
+    <ScreenContainer containerClassName="bg-[#0D2318]" edges={["left", "right", "bottom"]}>
       <ClientPortalBackground />
+      {/* 🔘 Drag handle pill — visible on Android/web where native grabber may not show */}
+      <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 2 }}>
+        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" }} />
+      </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
