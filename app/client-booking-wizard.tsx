@@ -255,6 +255,28 @@ export default function ClientBookingWizardScreen() {
       .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
     return past[0]?.clientAddress ?? (state.account as any)?.savedAddress ?? "";
   }, [state.appointments, effectiveSlug, state.account]);
+  // Auto-populate address fields from saved/previous address when fields are empty
+  useEffect(() => {
+    if (!lastUsedAddress || addrStreet) return;
+    // Pre-fill the search box display
+    setAddrSearchQuery(lastUsedAddress);
+    const parts = lastUsedAddress.split(",").map((p: string) => p.trim());
+    if (parts.length >= 3) {
+      setAddrStreet(parts[0] ?? "");
+      setAddrCity(parts[1] ?? "");
+      const last = parts[parts.length - 1] ?? "";
+      const stateZip = last.split(" ").filter(Boolean);
+      if (stateZip.length >= 2) {
+        setAddrState(stateZip[0]);
+        setAddrZip(stateZip.slice(1).join(" "));
+      } else {
+        setAddrState(last);
+        if (parts.length >= 4) setAddrZip(parts[parts.length - 2] ?? "");
+      }
+    } else {
+      setAddrStreet(lastUsedAddress);
+    }
+  }, [lastUsedAddress]); // eslint-disable-line react-hooks/exhaustive-deps
   const eligibleStaff = useMemo(() => {
     let filtered = selectedService
       ? staff.filter((m) => !m.serviceIds?.length || m.serviceIds.includes(selectedService.localId))
@@ -1905,18 +1927,11 @@ export default function ClientBookingWizardScreen() {
                     addrSearchTimer.current = setTimeout(async () => {
                       setAddrSearchLoading(true);
                       try {
-                        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&addressdetails=1&limit=5&countrycodes=us`;
-                        const res = await fetch(url, { headers: { "Accept-Language": "en", "User-Agent": "LimeOfTime/1.0" } });
+                        const url = `${apiBase}/api/public/places-autocomplete?q=${encodeURIComponent(text)}`;
+                        const res = await fetch(url);
                         const data = await res.json();
-                        const results = (data as any[]).map((item: any) => {
-                          const a = item.address ?? {};
-                          const street = [a.house_number, a.road].filter(Boolean).join(" ");
-                          const city = a.city ?? a.town ?? a.village ?? a.county ?? "";
-                          const state = a.state ?? "";
-                          const zip = a.postcode ?? "";
-                          return { display: item.display_name, street, city, state, zip };
-                        }).filter((r: any) => r.street);
-                        setAddrSuggestions(results);
+                        const { results } = data as { results: { display: string; street: string; city: string; state: string; zip: string }[] };
+                        setAddrSuggestions(results ?? []);
                       } catch { setAddrSuggestions([]); }
                       finally { setAddrSearchLoading(false); }
                     }, 500);
@@ -1938,7 +1953,7 @@ export default function ClientBookingWizardScreen() {
                   <ActivityIndicator size="small" color={LIME_GREEN} style={{ position: "absolute", right: 10, top: 12 }} />
                 )}
                 {addrSuggestions.length > 0 && (
-                  <View style={{ borderWidth: 1, borderColor: CARD_BORDER, borderRadius: 10, backgroundColor: CARD_BG, marginTop: 4, overflow: "hidden" }}>
+                  <View style={{ borderWidth: 1, borderColor: CARD_BORDER, borderRadius: 10, backgroundColor: CARD_BG, marginTop: 4 }}>
                     {addrSuggestions.map((s, i) => (
                       <Pressable
                         key={i}

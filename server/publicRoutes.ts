@@ -2163,6 +2163,58 @@ export function registerPublicRoutes(app: Express) {
       res.json({ publishableKey: "" });
     }
   });
+
+  // GET /api/public/places-autocomplete?q=<query>
+  // Server-side proxy for address autocomplete — uses Google Places if GOOGLE_PLACES_API_KEY is set,
+  // otherwise falls back to Nominatim (OpenStreetMap). Keeps API keys off the client.
+  app.get("/api/public/places-autocomplete", async (req: Request, res: Response) => {
+    const q = ((req.query.q as string) ?? "").trim();
+    if (!q || q.length < 3) return res.json({ results: [] });
+    try {
+      const googleKey = await getPlatformConfig("GOOGLE_PLACES_API_KEY").catch(() => "");
+      if (googleKey) {
+        // Google Places Autocomplete + Details
+        const acUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(q)}&types=address&components=country:us&key=${googleKey}`;
+        const acRes = await fetch(acUrl);
+        const acData = await acRes.json() as any;
+        if (acData.status === "OK" && Array.isArray(acData.predictions)) {
+          const results = await Promise.all(
+            acData.predictions.slice(0, 5).map(async (pred: any) => {
+              try {
+                const dUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${pred.place_id}&fields=address_components&key=${googleKey}`;
+                const dRes = await fetch(dUrl);
+                const dData = await dRes.json() as any;
+                const comps: any[] = dData.result?.address_components ?? [];
+                const get = (type: string) => comps.find((c: any) => c.types.includes(type))?.long_name ?? "";
+                const getShort = (type: string) => comps.find((c: any) => c.types.includes(type))?.short_name ?? "";
+                const street = [get("street_number"), get("route")].filter(Boolean).join(" ");
+                const city = get("locality") || get("sublocality") || get("administrative_area_level_2");
+                const state = getShort("administrative_area_level_1");
+                const zip = get("postal_code");
+                return { display: pred.description, street, city, state, zip };
+              } catch { return null; }
+            })
+          );
+          return res.json({ results: results.filter(Boolean) });
+        }
+      }
+      // Fallback: Nominatim (OpenStreetMap) — no API key required
+      const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=5&countrycodes=us`;
+      const nomRes = await fetch(nomUrl, { headers: { "Accept-Language": "en", "User-Agent": "ManusScheduler/1.0" } });
+      const nomData = await nomRes.json() as any[];
+      const results = nomData.map((item: any) => {
+        const a = item.address ?? {};
+        const street = [a.house_number, a.road].filter(Boolean).join(" ");
+        const city = a.city ?? a.town ?? a.village ?? a.county ?? "";
+        const state = a.state ?? "";
+        const zip = a.postcode ?? "";
+        return { display: item.display_name, street, city, state, zip };
+      }).filter((r: any) => r.street);
+      return res.json({ results });
+    } catch {
+      return res.json({ results: [] });
+    }
+  });
 }
 
 // ─── HTML Templates ─────────────────────────────────────────────────

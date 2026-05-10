@@ -71,6 +71,7 @@ export default function ClientEditProfileScreen() {
   const [name, setName] = useState(account?.name ?? "");
   const [email, setEmail] = useState(account?.email ?? "");
   const [birthday, setBirthday] = useState(account?.birthday ?? "");
+  const [savedAddress, setSavedAddress] = useState((account as any)?.savedAddress ?? "");
   const [photoUri, setPhotoUri] = useState<string | null>(account?.profilePhotoUri ?? null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -162,6 +163,7 @@ export default function ClientEditProfileScreen() {
         email: email.trim() || null,
         birthday: birthday || null,
         profilePhotoUri: finalPhotoUri,
+        savedAddress: savedAddress.trim() || null,
       };
 
       const apiBase = getApiBaseUrl();
@@ -373,6 +375,33 @@ export default function ClientEditProfileScreen() {
               />
               <Text style={styles.fieldHint}>
                 Businesses may send you birthday discounts
+              </Text>
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Saved Address */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>
+                HOME / SERVICE ADDRESS <Text style={styles.optional}>(optional)</Text>
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  focusedField === "savedAddress" && styles.inputFocused,
+                ]}
+                placeholder="e.g. 410 S Main St, Pittsburgh, PA 15237"
+                placeholderTextColor={TEXT_MUTED}
+                value={savedAddress}
+                onChangeText={(t) => { setSavedAddress(t); setError(""); }}
+                onFocus={() => setFocusedField("savedAddress")}
+                onBlur={() => setFocusedField(null)}
+                returnKeyType="done"
+                autoCorrect={false}
+                autoCapitalize="words"
+              />
+              <Text style={styles.fieldHint}>
+                Pre-filled automatically on mobile service bookings
               </Text>
             </View>
           </View>
