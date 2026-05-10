@@ -1567,8 +1567,10 @@ export default function ClientBookingWizardScreen() {
             : 0;
           const _afterPromo = Math.max(0, _afterDiscount - _promoSaving);
           const _giftSaving = giftApplied ? Math.min(giftApplied.value, _afterPromo) : 0;
-          const _finalPrice = Math.max(0, _afterPromo - _giftSaving) + productCartTotal;
-          const _hasDiscounts = _discSaving > 0 || _promoSaving > 0 || _giftSaving > 0;
+          // Travel fee for mobile services
+          const _travelFee = (isMobileService && selectedService.travelFee && selectedService.travelFee > 0) ? selectedService.travelFee : 0;
+          const _finalPrice = Math.max(0, _afterPromo - _giftSaving) + productCartTotal + _travelFee;
+          const _hasDiscounts = _discSaving > 0 || _promoSaving > 0 || _giftSaving > 0 || _travelFee > 0;
           return (
           <View style={s.stepContent}>
             <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Payment</Text>
@@ -1601,6 +1603,12 @@ export default function ClientBookingWizardScreen() {
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                   <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>Gift ({giftApplied!.code})</Text>
                   <Text style={{ color: "#4ADE80", fontSize: 13 }}>-${_giftSaving.toFixed(2)}</Text>
+                </View>
+              )}
+              {_travelFee > 0 && (
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>🚗 Travel Fee</Text>
+                  <Text style={{ color: LIME_GREEN, fontSize: 13, fontWeight: "600" }}>+${_travelFee.toFixed(2)}</Text>
                 </View>
               )}
               {_hasDiscounts && <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.1)", marginVertical: 4 }} />}
@@ -1991,10 +1999,28 @@ export default function ClientBookingWizardScreen() {
             : 0;
           const afterPromo = Math.max(0, afterDiscount - promoSaving);
           const giftSaving = giftApplied ? Math.min(giftApplied.value, afterPromo) : 0;
-          const finalPrice = Math.max(0, afterPromo - giftSaving);
+          // Travel fee for mobile services
+          const confirmTravelFee = (isMobileService && selectedService.travelFee && selectedService.travelFee > 0) ? selectedService.travelFee : 0;
+          const finalPrice = Math.max(0, afterPromo - giftSaving) + confirmTravelFee;
+          const effectiveAddress = fullClientAddress || clientAddress;
           return (
             <View style={s.stepContent}>
               <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Confirm Booking</Text>
+              {/* 🚗 Comes to You banner — shown for mobile services */}
+              {isMobileService && effectiveAddress.trim() ? (
+                <View style={{ backgroundColor: "rgba(74,124,89,0.18)", borderRadius: 12, borderWidth: 1, borderColor: `${LIME_GREEN}50`, padding: 14, flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 4 }}>
+                  <Text style={{ fontSize: 20, lineHeight: 24 }}>🚗</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "700", marginBottom: 2 }}>We Come to You</Text>
+                    <Text style={{ color: TEXT_MUTED, fontSize: 13, lineHeight: 18 }}>{effectiveAddress}</Text>
+                  </View>
+                </View>
+              ) : isMobileService ? (
+                <View style={{ backgroundColor: "rgba(74,124,89,0.18)", borderRadius: 12, borderWidth: 1, borderColor: `${LIME_GREEN}50`, padding: 12, flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <Text style={{ fontSize: 18 }}>🚗</Text>
+                  <Text style={{ color: LIME_GREEN, fontSize: 13, fontWeight: "600" }}>Comes to You — Mobile Service</Text>
+                </View>
+              ) : null}
               <View style={[s.confirmCard, { backgroundColor: CARD_BG, borderColor: CARD_BORDER }]}>
                 <Row label="Service" value={selectedService.name} />
                 <Row label="Duration" value={`${selectedService.duration} min`} colors={colors} />
@@ -2012,7 +2038,15 @@ export default function ClientBookingWizardScreen() {
                 {giftSaving > 0 && (
                   <Row label={`Gift (${giftApplied!.code})`} value={`-$${giftSaving.toFixed(2)}`} colors={colors} />
                 )}
-                {(discSaving > 0 || promoSaving > 0 || giftSaving > 0) && (
+                {confirmTravelFee > 0 && (
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: DIVIDER }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                      <Text style={{ color: TEXT_MUTED, fontSize: 14 }}>🚗 Travel Fee</Text>
+                    </View>
+                    <Text style={{ color: LIME_GREEN, fontSize: 14, fontWeight: "600" }}>+${confirmTravelFee.toFixed(2)}</Text>
+                  </View>
+                )}
+                {(discSaving > 0 || promoSaving > 0 || giftSaving > 0 || confirmTravelFee > 0) && (
                   <Row label="Total" value={`$${finalPrice.toFixed(2)}`} colors={colors} />
                 )}
                 <Row label="Date" value={formatDateLabel(selectedDate)} />
