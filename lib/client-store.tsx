@@ -43,6 +43,7 @@ export interface ClientAppointment {
   staffAvatarUrl: string | null;
   locationName: string | null;
   locationAddress: string | null;
+  locationPhone?: string | null;
   clientAddress?: string | null;
   cancelRequest?: { status: "pending" | "approved" | "declined"; reason?: string } | null;
   rescheduleRequest?: { status: "pending" | "approved" | "declined"; requestedDate: string; requestedTime: string } | null;

@@ -498,6 +498,7 @@ export function registerClientRoutes(app: Express) {
             staffAvatarUrl: staff?.photoUri ?? null,
             locationName: location?.name ?? null,
             locationAddress: location?.address ?? null,
+            locationPhone: location?.phone ?? null,
             clientAddress: (appt as any).clientAddress ?? null,
             hasMobileServices,
           };

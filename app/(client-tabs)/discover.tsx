@@ -18,6 +18,7 @@ import {
   Platform,
   Image,
   KeyboardAvoidingView,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -781,22 +782,70 @@ export default function DiscoverScreen() {
         <View style={[s.apptBannerCard, { backgroundColor: "rgba(74,124,89,0.18)", borderColor: "rgba(143,191,106,0.25)" }]}>
           {nextUpcomingAppt ? (
             /* Next Upcoming Appointment */
-            <Pressable
-              style={({ pressed }) => [s.apptBannerInner, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push({ pathname: "/client-appointment-detail", params: { id: String(nextUpcomingAppt.id) } } as any)}
-            >
-              <View style={[s.apptBannerDot, { backgroundColor: "#8FBF6A" }]} />
-              <View style={s.apptBannerText}>
-                <Text style={{ color: TEXT_MUTED, fontSize: 10, fontWeight: "600", letterSpacing: 0.5, textTransform: "uppercase" }}>Next Appointment</Text>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700", marginTop: 1 }} numberOfLines={1}>
-                  {nextUpcomingAppt.serviceName} · {nextUpcomingAppt.businessName}
-                </Text>
-                <Text style={{ color: GREEN_ACCENT, fontSize: 11, marginTop: 1 }}>
-                  {new Date(nextUpcomingAppt.date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} at {nextUpcomingAppt.time}
-                </Text>
-              </View>
-              <IconSymbol name="chevron.right" size={14} color={TEXT_MUTED} />
-            </Pressable>
+            <View style={{ gap: 0 }}>
+              <Pressable
+                style={({ pressed }) => [s.apptBannerInner, pressed && { opacity: 0.85 }]}
+                onPress={() => router.push({ pathname: "/client-appointment-detail", params: { id: String(nextUpcomingAppt.id) } } as any)}
+              >
+                <View style={[s.apptBannerDot, { backgroundColor: "#8FBF6A" }]} />
+                <View style={s.apptBannerText}>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 10, fontWeight: "600", letterSpacing: 0.5, textTransform: "uppercase" }}>Next Appointment</Text>
+                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700", marginTop: 1 }} numberOfLines={1}>
+                    {nextUpcomingAppt.serviceName} · {nextUpcomingAppt.businessName}
+                  </Text>
+                  <Text style={{ color: GREEN_ACCENT, fontSize: 11, marginTop: 1 }}>
+                    {new Date(nextUpcomingAppt.date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} at {(() => {
+                      const [h, m] = (nextUpcomingAppt.time ?? "00:00").split(":").map(Number);
+                      const ampm = h >= 12 ? "PM" : "AM";
+                      const hour12 = h % 12 === 0 ? 12 : h % 12;
+                      return `${hour12}:${String(m).padStart(2, "0")} ${ampm}`;
+                    })()}
+                  </Text>
+                </View>
+                <IconSymbol name="chevron.right" size={14} color={TEXT_MUTED} />
+              </Pressable>
+              {/* Address + Phone row — only for in-store (locationAddress present, not a mobile-only booking) */}
+              {nextUpcomingAppt.locationAddress && !nextUpcomingAppt.clientAddress ? (
+                <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingBottom: 10, gap: 12, flexWrap: "wrap" }}>
+                  <Pressable
+                    onPress={() => {
+                      const addr = encodeURIComponent(nextUpcomingAppt.locationAddress!);
+                      const url = Platform.OS === "ios"
+                        ? `maps://?q=${addr}`
+                        : `https://www.google.com/maps/search/?api=1&query=${addr}`;
+                      Linking.openURL(url);
+                    }}
+                    style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 4, opacity: pressed ? 0.6 : 1, flex: 1, minWidth: 0 })}
+                  >
+                    <Text style={{ fontSize: 11 }}>📍</Text>
+                    <Text style={{ color: GREEN_ACCENT, fontSize: 11, textDecorationLine: "underline", flex: 1 }} numberOfLines={1}>
+                      {nextUpcomingAppt.locationAddress}
+                    </Text>
+                  </Pressable>
+                  {nextUpcomingAppt.locationPhone ? (
+                    <Pressable
+                      onPress={() => Linking.openURL(`tel:${nextUpcomingAppt.locationPhone!.replace(/\D/g, "")}`)}
+                      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 4, opacity: pressed ? 0.6 : 1, flexShrink: 0 })}
+                    >
+                      <Text style={{ fontSize: 11 }}>📞</Text>
+                      <Text style={{ color: GREEN_ACCENT, fontSize: 11, textDecorationLine: "underline" }}>
+                        {(() => {
+                          const d = (nextUpcomingAppt.locationPhone ?? "").replace(/\D/g, "");
+                          const n = d.length === 11 && d[0] === "1" ? d.slice(1) : d;
+                          return n.length === 10 ? `(${n.slice(0,3)}) ${n.slice(3,6)}-${n.slice(6)}` : nextUpcomingAppt.locationPhone;
+                        })()}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : nextUpcomingAppt.clientAddress ? (
+                /* Mobile service — show client's own address */
+                <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingBottom: 10, gap: 4 }}>
+                  <Text style={{ fontSize: 11 }}>🚗</Text>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 11 }} numberOfLines={1}>We come to you · {nextUpcomingAppt.clientAddress}</Text>
+                </View>
+              ) : null}
+            </View>
           ) : mostRecentCompleted ? (
             /* Book Again shortcut */
             <Pressable
