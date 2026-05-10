@@ -114,6 +114,8 @@ export default function BookingsScreen() {
     { key: "card", label: "Card", color: "#635BFF" },
   ];
   const [methodFilter, setMethodFilter] = useState<MethodFilterKey | null>(null);
+  // Service type filter: null = all, 'in_store' = in-store only, 'mobile' = mobile only
+  const [serviceTypeFilter, setServiceTypeFilter] = useState<'in_store' | 'mobile' | null>(null);
 
   const initialFilter = (params.filter as FilterKey) || "upcoming";
   const [activeFilter, setActiveFilter] = useState<FilterKey>(initialFilter);
@@ -422,8 +424,16 @@ export default function BookingsScreen() {
       result = locationAppointments.filter((a) => a.packageGroupId === packageGroupFilter)
         .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
     }
+    // Apply service type filter
+    if (serviceTypeFilter) {
+      result = result.filter((a) => {
+        const svc = getServiceById(a.serviceId);
+        const svcType = svc?.serviceType ?? 'in_store';
+        return svcType === serviceTypeFilter;
+      });
+    }
     return result;
-  }, [locationAppointments, activeFilter, methodFilter, todayStr, selectedDateFilter, packageGroupFilter]);
+  }, [locationAppointments, activeFilter, methodFilter, todayStr, selectedDateFilter, packageGroupFilter, serviceTypeFilter, getServiceById]);
 
   // ─── Grouped sections ─────────────────────────────────────────────────
 
@@ -777,6 +787,51 @@ export default function BookingsScreen() {
         </ScrollView>
       </View>
 
+      {/* Service Type filter toggle */}
+      <View style={{ paddingHorizontal: hp, marginBottom: 12, flexDirection: "row", gap: 8 }}>
+        <Pressable
+          onPress={() => setServiceTypeFilter(null)}
+          style={({ pressed }) => ({
+            paddingHorizontal: 14,
+            paddingVertical: 7,
+            borderRadius: 20,
+            borderWidth: 1,
+            backgroundColor: serviceTypeFilter === null ? colors.primary + "18" : colors.surface,
+            borderColor: serviceTypeFilter === null ? colors.primary : colors.border,
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text style={{ fontSize: fs.xs, fontWeight: serviceTypeFilter === null ? "700" : "500", color: serviceTypeFilter === null ? colors.primary : colors.muted }}>All Types</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setServiceTypeFilter(serviceTypeFilter === 'in_store' ? null : 'in_store')}
+          style={({ pressed }) => ({
+            paddingHorizontal: 14,
+            paddingVertical: 7,
+            borderRadius: 20,
+            borderWidth: 1,
+            backgroundColor: serviceTypeFilter === 'in_store' ? colors.primary + "18" : colors.surface,
+            borderColor: serviceTypeFilter === 'in_store' ? colors.primary : colors.border,
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text style={{ fontSize: fs.xs, fontWeight: serviceTypeFilter === 'in_store' ? "700" : "500", color: serviceTypeFilter === 'in_store' ? colors.primary : colors.muted }}>🏪 In-Store</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setServiceTypeFilter(serviceTypeFilter === 'mobile' ? null : 'mobile')}
+          style={({ pressed }) => ({
+            paddingHorizontal: 14,
+            paddingVertical: 7,
+            borderRadius: 20,
+            borderWidth: 1,
+            backgroundColor: serviceTypeFilter === 'mobile' ? "#0891b218" : colors.surface,
+            borderColor: serviceTypeFilter === 'mobile' ? "#0891b2" : colors.border,
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text style={{ fontSize: fs.xs, fontWeight: serviceTypeFilter === 'mobile' ? "700" : "500", color: serviceTypeFilter === 'mobile' ? "#0891b2" : colors.muted }}>🚗 Mobile</Text>
+        </Pressable>
+      </View>
       {/* Method sub-filter (only for Paid) */}
       {activeFilter === "paid" && (
         <View style={{ paddingHorizontal: hp, marginBottom: 12 }}>

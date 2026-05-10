@@ -177,6 +177,7 @@ export const services = mysqlTable("services", {
   /** Override global SMS reminder timing (hours before appointment, null = use global) */
   reminderHours: decimal("reminderHours", { precision: 5, scale: 2 }),
   serviceType: varchar("serviceType", { length: 20 }).default("in_store"),
+  travelFee: decimal("travelFee", { precision: 10, scale: 2 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

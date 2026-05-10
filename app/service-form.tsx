@@ -49,6 +49,9 @@ export default function ServiceFormScreen() {
     existing?.reminderHours != null ? String(existing.reminderHours) : ""
   );
   const [serviceType, setServiceType] = useState<'in_store' | 'mobile'>(existing?.serviceType ?? 'in_store');
+  const [travelFee, setTravelFee] = useState<string>(
+    existing?.travelFee != null ? String(existing.travelFee) : ""
+  );
   const uploadImageMut = trpc.files.uploadImage.useMutation();
   const isEdit = !!existing;
 
@@ -113,6 +116,7 @@ export default function ServiceFormScreen() {
       photoUri: photoUri || undefined,
       reminderHours: reminderHours.trim() !== "" ? (parseFloat(reminderHours) || null) : null,
       serviceType,
+      travelFee: travelFee.trim() !== "" ? (parseFloat(travelFee) || null) : null,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     if (isEdit) {
@@ -416,6 +420,29 @@ export default function ServiceFormScreen() {
             {serviceType === 'mobile' ? "Client's address will be collected at booking." : "Client comes to your location."}
           </Text>
         </View>
+        {/* ── Travel Fee (mobile only) ── */}
+        {serviceType === 'mobile' && (
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 8 }}>
+              Travel Fee (optional)
+            </Text>
+            <View style={[styles.inputRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={{ fontSize: fs.sm, color: colors.muted, marginRight: 4 }}>$</Text>
+              <TextInput
+                style={[styles.input, { color: colors.foreground, flex: 1 }]}
+                placeholder="0.00"
+                placeholderTextColor={colors.muted}
+                keyboardType="decimal-pad"
+                value={travelFee}
+                onChangeText={setTravelFee}
+                returnKeyType="done"
+              />
+            </View>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
+              Automatically added to the booking total when a client address is entered.
+            </Text>
+          </View>
+        )}
         {/* ── Delete ── */}
         {isEdit && (
           <Pressable

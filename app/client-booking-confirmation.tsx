@@ -60,6 +60,7 @@ export default function ClientBookingConfirmationScreen() {
     locationAddress,
     locationPhone,
     clientAddress,
+    travelFee,
   } = useLocalSearchParams<{
     serviceName: string;
     staffName?: string;
@@ -74,6 +75,7 @@ export default function ClientBookingConfirmationScreen() {
     locationAddress?: string;
     locationPhone?: string;
     clientAddress?: string;
+    travelFee?: string;
   }>();
 
   // Entrance animation
@@ -260,7 +262,10 @@ export default function ClientBookingConfirmationScreen() {
             <SummaryRow icon="calendar" label="Date" value={formatDateDisplay(date ?? "")} />
             <SummaryRow icon="clock" label="Time" value={formatTime12(time ?? "")} />
             {price ? (
-              <SummaryRow icon="creditcard" label="Price" value={price} />
+              <>
+                <SummaryRow icon="creditcard" label="Service Price" value={price} />
+                {!!travelFee && <SummaryRow icon="car.fill" label="Travel Fee" value={travelFee} />}
+              </>
             ) : null}
             <SummaryRow
               icon="building.2"

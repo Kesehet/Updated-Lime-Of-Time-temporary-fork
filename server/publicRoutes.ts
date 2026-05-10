@@ -259,6 +259,7 @@ export function registerPublicRoutes(app: Express) {
           ? JSON.parse(s.locationIds as unknown as string)
           : null,
         serviceType: (s as any).serviceType ?? 'in_store',
+        travelFee: (s as any).travelFee != null ? parseFloat(String((s as any).travelFee)) : null,
       })));
     } catch (err) {
       console.error("[Public API] Error fetching services:", err);
@@ -770,7 +771,7 @@ export function registerPublicRoutes(app: Express) {
         return;
       }
 
-      const { clientName, clientPhone, clientEmail, serviceLocalId, date, time, duration, notes, giftCode, totalPrice, extraItems, giftApplied, giftUsedAmount, discountName, discountPercentage, discountAmount, subtotal, locationId, paymentMethod, paymentConfirmationNumber, promoCode, promoLocalId, clientAddress } = req.body;
+      const { clientName, clientPhone, clientEmail, serviceLocalId, date, time, duration, notes, giftCode, totalPrice, extraItems, giftApplied, giftUsedAmount, discountName, discountPercentage, discountAmount, subtotal, locationId, paymentMethod, paymentConfirmationNumber, promoCode, promoLocalId, clientAddress, travelFee } = req.body;
 
       if (!clientName || !serviceLocalId || !date || !time) {
         res.status(400).json({ error: "Missing required fields: clientName, serviceLocalId, date, time" });

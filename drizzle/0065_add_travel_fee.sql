@@ -1,0 +1,1 @@
+ALTER TABLE `services` ADD `travelFee` decimal(10,2);

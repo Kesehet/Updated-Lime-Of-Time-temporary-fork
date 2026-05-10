@@ -1442,6 +1442,7 @@ Would you also like to charge a no-show fee via Stripe?`,
               label="Client Address"
               value={appointment.clientAddress}
               colors={colors}
+              onPress={() => Linking.openURL(getMapUrl(appointment.clientAddress!)).catch(() => {})}
             />
           ) : null}
         </View>

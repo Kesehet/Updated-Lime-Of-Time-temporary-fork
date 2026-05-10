@@ -456,6 +456,13 @@
       "when": 1778371150835,
       "tag": "0064_rare_bloodstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "5",
+      "when": 1778372199205,
+      "tag": "0065_add_travel_fee",
+      "breakpoints": true
     }
   ]
 }

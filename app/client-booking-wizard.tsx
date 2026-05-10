@@ -60,6 +60,7 @@ interface PublicService {
   category?: string | null;
   photoUri?: string | null;
   serviceType?: 'in_store' | 'mobile' | null;
+  travelFee?: number | null;
 }
 interface PublicPackage {
   localId: string;
@@ -561,6 +562,9 @@ export default function ClientBookingWizardScreen() {
         .filter(p => (productCart[p.localId] ?? 0) > 0)
         .map(p => ({ localId: p.localId, name: p.name, price: p.price, qty: productCart[p.localId] }));
       finalPrice += productCartTotal;
+      // Add travel fee for mobile services when client address is provided
+      const travelFeeAmount = (isMobileService && clientAddress.trim() && selectedService.travelFee) ? selectedService.travelFee : 0;
+      finalPrice += travelFeeAmount;
       const res = await fetch(`${apiBase}/api/public/business/${effectiveSlug}/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -592,6 +596,7 @@ export default function ClientBookingWizardScreen() {
           totalPrice: finalPrice,
           products: selectedProductItems.length > 0 ? selectedProductItems : undefined,
           clientAddress: isMobileService && clientAddress.trim() ? clientAddress.trim() : undefined,
+          travelFee: travelFeeAmount > 0 ? travelFeeAmount : undefined,
         }),
       });
       if (!res.ok) {
@@ -672,6 +677,7 @@ export default function ClientBookingWizardScreen() {
           paymentMethod: paymentMethod ?? "",
           paymentConfirmationNumber: paymentMethod !== "cash" ? paymentConfirmationNumber.trim() : "",
           clientAddress: isMobileService && clientAddress.trim() ? clientAddress.trim() : "",
+          travelFee: travelFeeAmount > 0 ? `$${travelFeeAmount.toFixed(2)}` : "",
         },
       } as any);
     } catch (err: any) {

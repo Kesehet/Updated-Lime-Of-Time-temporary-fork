@@ -673,6 +673,7 @@ export function dbServiceToLocal(s: any): Service {
     photoUri: s.photoUri ?? undefined,
     reminderHours: s.reminderHours != null ? parseFloat(s.reminderHours) : null,
     serviceType: (s.serviceType as 'in_store' | 'mobile') ?? 'in_store',
+    travelFee: s.travelFee != null ? parseFloat(s.travelFee) : null,
     createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : new Date().toISOString(),
   };
 }
@@ -1802,6 +1803,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               photoUri: svc.photoUri,
               reminderHours: svc.reminderHours != null ? svc.reminderHours : undefined,
               serviceType: svc.serviceType,
+              travelFee: svc.travelFee ?? undefined,
             });
             break;
           }
