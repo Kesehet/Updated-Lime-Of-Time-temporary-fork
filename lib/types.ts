@@ -12,6 +12,7 @@ export interface Service {
   serviceType?: 'in_store' | 'mobile'; // whether service is performed at client location
   travelFee?: number | null; // optional travel/surcharge fee added when clientAddress is provided
   maxTravelDistance?: number | null; // max travel distance in miles for mobile services (null = unlimited)
+  travelDuration?: number | null; // estimated one-way travel time in minutes (added to booking slot)
   createdAt: string;
 }
 

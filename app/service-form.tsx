@@ -55,6 +55,9 @@ export default function ServiceFormScreen() {
   const [maxTravelDistance, setMaxTravelDistance] = useState<string>(
     existing?.maxTravelDistance != null ? String(existing.maxTravelDistance) : ""
   );
+  const [travelDuration, setTravelDuration] = useState<string>(
+    existing?.travelDuration != null ? String(existing.travelDuration) : ""
+  );
   const uploadImageMut = trpc.files.uploadImage.useMutation();
   const isEdit = !!existing;
 
@@ -121,6 +124,7 @@ export default function ServiceFormScreen() {
       serviceType,
       travelFee: travelFee.trim() !== "" ? (parseFloat(travelFee) || null) : null,
       maxTravelDistance: maxTravelDistance.trim() !== "" ? (parseFloat(maxTravelDistance) || null) : null,
+      travelDuration: travelDuration.trim() !== "" ? (parseInt(travelDuration) || null) : null,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     if (isEdit) {
@@ -465,6 +469,25 @@ export default function ServiceFormScreen() {
             </View>
             <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
               Clients outside this radius will see a distance warning during booking.
+            </Text>
+            {/* Travel Duration */}
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginTop: 16, marginBottom: 8 }}>
+              Estimated Travel Time (optional)
+            </Text>
+            <View style={[styles.inputRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <TextInput
+                style={[styles.input, { color: colors.foreground, flex: 1 }]}
+                placeholder="e.g. 20"
+                placeholderTextColor={colors.muted}
+                keyboardType="number-pad"
+                value={travelDuration}
+                onChangeText={setTravelDuration}
+                returnKeyType="done"
+              />
+              <Text style={{ fontSize: fs.sm, color: colors.muted, marginLeft: 4 }}>min</Text>
+            </View>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
+              One-way travel time added to the booking slot so your calendar stays accurate.
             </Text>
           </View>
         )}

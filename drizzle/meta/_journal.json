@@ -470,6 +470,13 @@
       "when": 1778377844260,
       "tag": "0066_wakeful_wolf_cub",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "5",
+      "when": 1778380974759,
+      "tag": "0067_salty_the_twelve",
+      "breakpoints": true
     }
   ]
 }

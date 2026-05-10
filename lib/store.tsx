@@ -675,6 +675,7 @@ export function dbServiceToLocal(s: any): Service {
     serviceType: (s.serviceType as 'in_store' | 'mobile') ?? 'in_store',
     travelFee: s.travelFee != null ? parseFloat(s.travelFee) : null,
     maxTravelDistance: s.maxTravelDistance != null ? parseFloat(s.maxTravelDistance) : null,
+    travelDuration: s.travelDuration != null ? Number(s.travelDuration) : null,
     createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : new Date().toISOString(),
   };
 }
@@ -1806,6 +1807,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               serviceType: svc.serviceType,
               travelFee: svc.travelFee ?? undefined,
               maxTravelDistance: svc.maxTravelDistance ?? undefined,
+              travelDuration: svc.travelDuration ?? undefined,
             });
             break;
           }
@@ -1826,6 +1828,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               serviceType: svc.serviceType,
               travelFee: svc.travelFee ?? undefined,
               maxTravelDistance: svc.maxTravelDistance ?? undefined,
+              travelDuration: svc.travelDuration ?? undefined,
             });
             break;
           }

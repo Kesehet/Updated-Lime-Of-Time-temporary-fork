@@ -261,6 +261,7 @@ export function registerPublicRoutes(app: Express) {
         serviceType: (s as any).serviceType ?? 'in_store',
         travelFee: (s as any).travelFee != null ? parseFloat(String((s as any).travelFee)) : null,
         maxTravelDistance: (s as any).maxTravelDistance != null ? parseFloat(String((s as any).maxTravelDistance)) : null,
+        travelDuration: (s as any).travelDuration != null ? Number((s as any).travelDuration) : null,
       })));
     } catch (err) {
       console.error("[Public API] Error fetching services:", err);
@@ -5113,7 +5114,39 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       <div id="discountInfo" style="display:none;margin-top:12px;"></div>
       <div style="display:flex;gap:8px;margin-top:16px;">
         <button class="btn btn-secondary" onclick="goToStep(3)" style="flex:1">Back</button>
-        <button class="btn btn-primary" onclick="goToStep(5)" id="btnToConfirm" disabled style="flex:1">Continue</button>
+        <button class="btn btn-primary" onclick="goToStep(5, 4)" id="btnToConfirm" disabled style="flex:1">Continue</button>
+      </div>
+    </div>
+
+    <!-- Step 4b: Client Address (Mobile Services Only) -->
+    <div id="step-4b" class="card" style="display:none">
+      <h2>Your Service Address</h2>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">This service is performed at your location. Please enter the address where you'd like the service performed.</p>
+      <div id="mobileServiceInfo" style="background:var(--accent-bg);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--text);"></div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;display:block;">Street Address <span style="color:#ef4444;">*</span></label>
+          <input id="addrStreet" type="text" placeholder="e.g. 456 Oak Avenue" oninput="clientAddress.street=this.value" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border-input);border-radius:12px;font-size:14px;background:var(--bg-card);color:var(--text);outline:none;" />
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;display:block;">City <span style="color:#ef4444;">*</span></label>
+          <input id="addrCity" type="text" placeholder="Your city" oninput="clientAddress.city=this.value" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border-input);border-radius:12px;font-size:14px;background:var(--bg-card);color:var(--text);outline:none;" />
+        </div>
+        <div style="display:flex;gap:10px;">
+          <div style="flex:1;">
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;display:block;">State <span style="color:#ef4444;">*</span></label>
+            <input id="addrState" type="text" placeholder="e.g. PA" maxlength="2" oninput="clientAddress.state=this.value.toUpperCase();this.value=this.value.toUpperCase()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border-input);border-radius:12px;font-size:14px;background:var(--bg-card);color:var(--text);outline:none;" />
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;display:block;">ZIP Code <span style="color:#ef4444;">*</span></label>
+            <input id="addrZip" type="text" placeholder="e.g. 15222" maxlength="10" oninput="clientAddress.zip=this.value" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border-input);border-radius:12px;font-size:14px;background:var(--bg-card);color:var(--text);outline:none;" />
+          </div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;">We'll come to you at this address. Travel fee and travel time will be added to your appointment.</p>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn btn-secondary" onclick="goToStep(4)" style="flex:1">Back</button>
+        <button class="btn btn-primary" onclick="validateAndProceedFromAddress()" style="flex:1">Continue</button>
       </div>
     </div>
 
@@ -5145,7 +5178,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       </div>
       <div id="cartTotal" class="cart-total" style="display:none"></div>
       <div style="display:flex;gap:8px;margin-top:16px;">
-        <button class="btn btn-secondary" onclick="goToStep(4)" style="flex:1">Back</button>
+        <button class="btn btn-secondary" onclick="goToStep(4, 5)" style="flex:1">Back</button>
         <button class="btn btn-primary" onclick="goToStep(6)" style="flex:1">Continue to Payment</button>
       </div>
     </div>
@@ -5302,6 +5335,17 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     let calMonth, calYear;
     // Cart: extra items added via "Add More"
     let cart = []; // { type: 'service'|'product', id, name, price, duration }
+    // Mobile service address
+    let clientAddress = { street: '', city: '', state: '', zip: '' };
+    function isMobileService() { return selectedService && selectedService.serviceType === 'mobile'; }
+    function getClientAddressString() {
+      const p = clientAddress;
+      const parts = [p.street, p.city, p.state && p.zip ? p.state + ' ' + p.zip : (p.state || p.zip)].filter(Boolean);
+      return parts.join(', ');
+    }
+    function isAddressComplete() {
+      return clientAddress.street.trim() && clientAddress.city.trim() && clientAddress.state.trim() && clientAddress.zip.trim();
+    }
 
     // Init calendar to current month
     const nowDate = new Date();
@@ -5901,34 +5945,77 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       if (!selectedLocation) { alert("Please select a location"); return; }
       window.location.href = '/api/buy-gift/${slug}?location=' + encodeURIComponent(selectedLocation);
     }
-    function goToStep(step) {
+    function goToStep(step, fromStep) {
       if (step === 1 && !selectedLocation) { alert("Please select a location"); return; }
-      if (step === 2 && currentStep === 1) {
+      if (step === 2 && (fromStep === 1 || currentStep === 1)) {
         const name = document.getElementById("clientName").value.trim();
         if (!name) { alert("Please enter your name"); return; }
       }
       if (step === 3 && !selectedService) { alert("Please select a service"); return; }
       // step 3 = staff (optional, always allowed)
       if (step === 5 && (!selectedDate || !selectedTime)) { alert("Please select a date and time"); return; }
+      // For mobile services: intercept step 5 (Extras) to show address step first
+      if (step === 5 && isMobileService() && (fromStep === 4 || currentStep === 4)) {
+        // Go to address step instead
+        _showStep('4b');
+        return;
+      }
+      // For mobile services going back from step 5: go to address step
+      if (step === 4 && isMobileService() && (fromStep === 5 || currentStep === 5)) {
+        _showStep('4b');
+        return;
+      }
+      _showStep(step);
+    }
+    function _showStep(step) {
+      // Hide all steps (0-8 + 4b)
       for (let i = 0; i <= 8; i++) {
         const el = document.getElementById("step-" + i);
         if (el) el.style.display = "none";
       }
-      document.getElementById("step-" + step).style.display = "block";
+      const addrEl = document.getElementById("step-4b");
+      if (addrEl) addrEl.style.display = "none";
+      const stepEl = document.getElementById("step-" + step);
+      if (stepEl) stepEl.style.display = "block";
       currentStep = step;
+      // Update step indicators (treat 4b as between 4 and 5)
+      const stepNum = step === '4b' ? 4.5 : Number(step);
       for (let i = 0; i < 8; i++) {
         const dot = document.getElementById("dot-" + i);
-        if (dot) dot.className = "step-dot" + (i < step ? " done" : i === step ? " active" : "");
+        if (dot) dot.className = "step-dot" + (i < stepNum ? " done" : i === Math.floor(stepNum) ? " active" : "");
         const item = document.getElementById("step-item-" + i);
-        if (item) item.className = "step-item" + (i < step ? " done" : i === step ? " active" : "");
+        if (item) item.className = "step-item" + (i < stepNum ? " done" : i === Math.floor(stepNum) ? " active" : "");
       }
       updateSelectedLocBanner();
       if (step === 3) renderStaffStep();
       if (step === 4) renderCalendar();
+      if (step === '4b') renderMobileServiceInfo();
       if (step === 5) initAddMoreStep();
       if (step === 6) renderPaymentStep();
       if (step === 7) renderConfirmation();
       window.scrollTo(0, 0);
+    }
+    function validateAndProceedFromAddress() {
+      if (!isAddressComplete()) {
+        alert('Please fill in all address fields (Street, City, State, ZIP Code).');
+        return;
+      }
+      _showStep(5);
+    }
+    function renderMobileServiceInfo() {
+      const el = document.getElementById('mobileServiceInfo');
+      if (!el || !selectedService) return;
+      let html = '<div style="font-weight:600;margin-bottom:4px;">🚗 ' + esc(selectedService.name) + ' — Mobile Service</div>';
+      if (selectedService.travelDuration) {
+        html += '<div style="color:var(--text-secondary);font-size:12px;">Travel time: ~' + selectedService.travelDuration + ' min each way (added to your appointment slot)</div>';
+      }
+      if (selectedService.travelFee && parseFloat(selectedService.travelFee) > 0) {
+        html += '<div style="color:var(--text-secondary);font-size:12px;">Travel fee: $' + parseFloat(selectedService.travelFee).toFixed(2) + ' (included in total)</div>';
+      }
+      if (selectedService.maxTravelDistance) {
+        html += '<div style="color:var(--text-secondary);font-size:12px;">Service radius: up to ' + selectedService.maxTravelDistance + ' miles</div>';
+      }
+      el.innerHTML = html;
     }
     function renderPaymentStep() {
       const methods = PAYMENT_METHODS;
@@ -6689,12 +6776,25 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     function getTotalDuration() {
       let dur = selectedService ? selectedService.duration : 60;
       cart.forEach(c => { dur += (c.duration || 0); });
+      // For mobile services, add travel duration (one-way travel time, added twice for round trip)
+      if (isMobileService() && selectedService.travelDuration) {
+        dur += selectedService.travelDuration * 2;
+      }
+      return dur;
+    }
+    function getServiceOnlyDuration() {
+      let dur = selectedService ? selectedService.duration : 60;
+      cart.forEach(c => { dur += (c.duration || 0); });
       return dur;
     }
 
     function getTotalPrice() {
       let total = selectedService ? parseFloat(selectedService.price) : 0;
       cart.forEach(c => { total += c.price; });
+      // Add travel fee for mobile services
+      if (isMobileService() && selectedService.travelFee) {
+        total += parseFloat(selectedService.travelFee);
+      }
       return total;
     }
 
@@ -6839,7 +6939,21 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
 
       // Location row
       let locationHtml = '';
-      if (selectedLocation) {
+      if (isMobileService()) {
+        // Mobile service: show client address
+        const addrStr = getClientAddressString();
+        if (addrStr) {
+          const mapUrl = 'https://maps.google.com/?q=' + encodeURIComponent(addrStr);
+          locationHtml = '<div class="confirm-row"><span class="confirm-label">Service Type</span><span class="confirm-value">🚗 Mobile — We Come to You</span></div>' +
+            '<div class="confirm-row"><span class="confirm-label">Service Address</span><span class="confirm-value"><a href="' + mapUrl + '" target="_blank" style="color:var(--accent);text-decoration:underline;">' + esc(addrStr) + '</a></span></div>';
+        }
+        if (selectedService.travelFee && parseFloat(selectedService.travelFee) > 0) {
+          locationHtml += '<div class="confirm-row"><span class="confirm-label">Travel Fee</span><span class="confirm-value">$' + parseFloat(selectedService.travelFee).toFixed(2) + '</span></div>';
+        }
+        if (selectedService.travelDuration) {
+          locationHtml += '<div class="confirm-row"><span class="confirm-label">Travel Time</span><span class="confirm-value">~' + selectedService.travelDuration + ' min each way</span></div>';
+        }
+      } else if (selectedLocation) {
         const loc = locations.find(l => l.localId === selectedLocation);
         if (loc) {
           const fullLocAddr = buildFullAddress(loc.address, loc.city, loc.state, loc.zipCode) || loc.address || '';
@@ -6930,6 +7044,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
               paymentConfirmationNumber: paymentConfirmationNumber || null,
               promoCode: appliedPromo ? appliedPromo.code : null,
               promoLocalId: appliedPromo ? appliedPromo.localId : null,
+              clientAddress: isMobileService() ? getClientAddressString() : null,
+              travelFee: isMobileService() && selectedService.travelFee ? parseFloat(selectedService.travelFee) : null,
             }),
           });
           const bookData = await bookRes.json();
@@ -6996,6 +7112,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
             paymentConfirmationNumber: paymentConfirmationNumber || null,
             promoCode: appliedPromo ? appliedPromo.code : null,
             promoLocalId: appliedPromo ? appliedPromo.localId : null,
+            clientAddress: isMobileService() ? getClientAddressString() : null,
+            travelFee: isMobileService() && selectedService.travelFee ? parseFloat(selectedService.travelFee) : null,
           }),
         });
         const data = await res.json();

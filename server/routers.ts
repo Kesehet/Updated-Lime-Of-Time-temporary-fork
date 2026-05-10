@@ -74,6 +74,18 @@ const businessRouter = router({
         cancellationPolicy: input.cancellationPolicy ?? null,
         onboardingComplete: true,
       });
+      // Link userId so getBusinessOwnerByOpenId works immediately after onboarding
+      // (phone-based login uses openId = 'phone:<normalizedPhone>')
+      const openId = `phone:${normalizedPhone}`;
+      try {
+        await db.upsertUser({ openId, name: null, loginMethod: "otp", lastSignedIn: new Date() });
+        const userRecord = await db.getUserByOpenId(openId);
+        if (userRecord) {
+          await db.updateBusinessOwner(id, { userId: userRecord.id });
+        }
+      } catch (err) {
+        console.warn("[create] Failed to link userId to new business owner:", err);
+      }
       const owner = await db.getBusinessOwnerById(id);
       return owner!;
     }),
@@ -177,15 +189,17 @@ const servicesRouter = router({
         serviceType: z.enum(['in_store', 'mobile']).optional(),
         travelFee: z.number().optional().nullable(),
         maxTravelDistance: z.number().optional().nullable(),
+        travelDuration: z.number().int().optional().nullable(),
       })
     )
     .mutation(async ({ input }) => {
-      const { reminderHours, travelFee, maxTravelDistance, ...rest } = input;
+      const { reminderHours, travelFee, maxTravelDistance, travelDuration, ...rest } = input;
       const id = await db.createService({
         ...rest,
         reminderHours: reminderHours != null ? String(reminderHours) : null,
         travelFee: travelFee != null ? String(travelFee) : null,
         maxTravelDistance: maxTravelDistance != null ? String(maxTravelDistance) : null,
+        travelDuration: travelDuration ?? null,
       } as any);
       return { id, localId: input.localId };
     }),
@@ -207,10 +221,11 @@ const servicesRouter = router({
         serviceType: z.enum(['in_store', 'mobile']).optional(),
         travelFee: z.number().optional().nullable(),
         maxTravelDistance: z.number().optional().nullable(),
+        travelDuration: z.number().int().optional().nullable(),
       })
     )
     .mutation(async ({ input }) => {
-      const { localId, businessOwnerId, reminderHours, travelFee, maxTravelDistance, ...rest } = input;
+      const { localId, businessOwnerId, reminderHours, travelFee, maxTravelDistance, travelDuration, ...rest } = input;
       const svc = await db.getServiceByLocalId(localId, businessOwnerId);
       if (!svc) throw new Error(`Service not found: ${localId}`);
       await db.updateService(svc.id, businessOwnerId, {
@@ -218,6 +233,7 @@ const servicesRouter = router({
         reminderHours: reminderHours != null ? String(reminderHours) : null,
         travelFee: travelFee != null ? String(travelFee) : null,
         maxTravelDistance: maxTravelDistance != null ? String(maxTravelDistance) : null,
+        travelDuration: travelDuration ?? null,
       } as any);
       return { success: true };
     }),

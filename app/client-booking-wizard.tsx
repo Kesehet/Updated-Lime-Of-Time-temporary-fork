@@ -676,7 +676,7 @@ export default function ClientBookingWizardScreen() {
       }
       const selectedStaffMember = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
 
-      // ── Card payment: request Stripe payment link and open it ────────────
+      // ── Card payment: request Stripe payment link and open it in-app ──────
       if (paymentMethod === "card" && finalPrice > 0) {
         try {
           const stripeRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
@@ -694,9 +694,14 @@ export default function ClientBookingWizardScreen() {
             const { paymentUrl } = await stripeRes.json();
             if (paymentUrl) {
               if (Platform.OS === "web") {
-                window.open(paymentUrl, "_blank");
+                window.location.href = paymentUrl;
+                return; // Don't navigate to confirmation — Stripe will redirect back
               } else {
-                await WebBrowser.openBrowserAsync(paymentUrl);
+                // openAuthSessionAsync keeps the user in-app and handles redirect back
+                await WebBrowser.openAuthSessionAsync(paymentUrl, undefined, {
+                  showInRecents: false,
+                  preferEphemeralSession: false,
+                });
               }
             }
           }

@@ -180,6 +180,8 @@ export const services = mysqlTable("services", {
   travelFee: decimal("travelFee", { precision: 10, scale: 2 }),
   /** Max travel distance in miles for mobile services (null = unlimited) */
   maxTravelDistance: decimal("maxTravelDistance", { precision: 6, scale: 1 }),
+  /** Estimated one-way travel time in minutes for mobile services (added to booking slot) */
+  travelDuration: int("travelDuration"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
