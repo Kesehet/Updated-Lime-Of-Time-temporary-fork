@@ -20,6 +20,7 @@ import {
   KeyboardAvoidingView,
   Linking,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -461,7 +462,7 @@ export default function DiscoverScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { state, dispatch } = useClientStore();
+  const { state, dispatch, apiCall } = useClientStore();
 
   const [businesses, setBusinesses] = useState<DiscoverBusiness[]>([]);
   const [loading, setLoading] = useState(false);
@@ -471,6 +472,7 @@ export default function DiscoverScreen() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showRadiusPicker, setShowRadiusPicker] = useState(false);
   const [nearMeLoading, setNearMeLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [sortMode, setSortMode] = useState<"default" | "rating" | "reviews" | "distance">("default");
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedBusiness[]>([]);
   // Dynamic categories fetched from API (includes custom categories from all businesses)
@@ -574,6 +576,7 @@ export default function DiscoverScreen() {
     // On subsequent focuses, skip the initial load (GPS refresh below handles it)
     if (!initialLoadDone.current) {
       initialLoadDone.current = true;
+      // Fetch businesses and appointments in parallel for fast first load
       fetchBusinesses(
         persistedLat ?? undefined,
         persistedLng ?? undefined,
@@ -584,6 +587,15 @@ export default function DiscoverScreen() {
       if (persistedLat != null) {
         setUserLat(persistedLat);
         setUserLng(persistedLng);
+      }
+      // Also load appointments if not already loaded (so Next Appointment card appears immediately)
+      if (state.account && state.appointments.length === 0) {
+        apiCall<{ appointments: import("@/lib/client-store").ClientAppointment[] } | import("@/lib/client-store").ClientAppointment[]>("/api/client/appointments")
+          .then((raw) => {
+            const appts = Array.isArray(raw) ? raw : (raw as any).appointments ?? [];
+            dispatch({ type: "SET_APPOINTMENTS", payload: appts });
+          })
+          .catch(() => {});
       }
     }
 
@@ -875,7 +887,7 @@ export default function DiscoverScreen() {
                     style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 4, opacity: pressed ? 0.6 : 1, flex: 1, minWidth: 0 })}
                   >
                     <Text style={{ fontSize: 11 }}>📍</Text>
-                    <Text style={{ color: GREEN_ACCENT, fontSize: 11, textDecorationLine: "underline", flex: 1 }} numberOfLines={1}>
+                    <Text style={{ color: GREEN_ACCENT, fontSize: 11, textDecorationLine: "underline", flex: 1, flexWrap: "wrap" }}>
                       {nextUpcomingAppt.locationAddress}
                     </Text>
                   </Pressable>
@@ -899,7 +911,7 @@ export default function DiscoverScreen() {
                 /* Mobile service — show client's own address */
                 <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingBottom: 4, gap: 4 }}>
                   <Text style={{ fontSize: 11 }}>🚗</Text>
-                  <Text style={{ color: TEXT_MUTED, fontSize: 11 }} numberOfLines={1}>We come to you · {nextUpcomingAppt.clientAddress}</Text>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 11, flex: 1, flexWrap: "wrap" }}>We come to you · {nextUpcomingAppt.clientAddress}</Text>
                 </View>
               ) : null}
               {/* Add to Calendar button */}
@@ -1177,6 +1189,35 @@ export default function DiscoverScreen() {
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={async () => {
+                setRefreshing(true);
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                // Refresh GPS and businesses in parallel
+                try {
+                  const { status } = await Location.getForegroundPermissionsAsync();
+                  if (status === "granted") {
+                    const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                    const { latitude, longitude } = loc.coords;
+                    setUserLat(latitude);
+                    setUserLng(longitude);
+                    dispatch({ type: "SET_DISCOVER_COORDS", payload: { lat: latitude, lng: longitude } });
+                    await fetchBusinesses(latitude, longitude, searchQuery, state.discoverCategory, state.discoverRadius);
+                  } else {
+                    await fetchBusinesses(userLat ?? undefined, userLng ?? undefined, searchQuery, state.discoverCategory, state.discoverRadius);
+                  }
+                } catch {
+                  await fetchBusinesses(userLat ?? undefined, userLng ?? undefined, searchQuery, state.discoverCategory, state.discoverRadius);
+                } finally {
+                  setRefreshing(false);
+                }
+              }}
+              tintColor={GREEN_ACCENT}
+              colors={[GREEN_ACCENT]}
+            />
+          }
           ListHeaderComponent={
             <>
               {recentlyViewed.length > 0 && (
