@@ -110,6 +110,8 @@ const businessRouter = router({
         requestResponseWindowHours: z.number().optional(),
         notificationPreferences: z.any().optional(),
         smsTemplates: z.any().optional(),
+        // Gift card validity
+        giftValidDays: z.number().optional(),
         // Payment methods
         zelleHandle: z.string().optional(),
         cashAppHandle: z.string().optional(),
@@ -125,7 +127,11 @@ const businessRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      await db.updateBusinessOwner(id, data);
+      // Guard: skip DB call if no fields to update (prevents 'No values to set' error
+      // when client sends only fields unknown to this schema which Zod strips)
+      if (Object.keys(data).length > 0) {
+        await db.updateBusinessOwner(id, data);
+      }
       return db.getBusinessOwnerById(id);
     }),
 

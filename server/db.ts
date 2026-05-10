@@ -172,6 +172,9 @@ export async function updateBusinessOwner(
 ): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  // Guard: skip if no fields to update (prevents drizzle 'No values to set' error
+  // which can occur when the client sends fields that Zod strips from the schema)
+  if (Object.keys(data).length === 0) return;
   await db.update(businessOwners).set(data).where(eq(businessOwners.id, id));
 }
 
