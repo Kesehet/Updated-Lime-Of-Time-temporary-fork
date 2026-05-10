@@ -260,6 +260,7 @@ export function registerPublicRoutes(app: Express) {
           : null,
         serviceType: (s as any).serviceType ?? 'in_store',
         travelFee: (s as any).travelFee != null ? parseFloat(String((s as any).travelFee)) : null,
+        maxTravelDistance: (s as any).maxTravelDistance != null ? parseFloat(String((s as any).maxTravelDistance)) : null,
       })));
     } catch (err) {
       console.error("[Public API] Error fetching services:", err);

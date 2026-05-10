@@ -61,6 +61,7 @@ interface PublicService {
   photoUri?: string | null;
   serviceType?: 'in_store' | 'mobile' | null;
   travelFee?: number | null;
+  maxTravelDistance?: number | null;
 }
 interface PublicPackage {
   localId: string;
@@ -80,6 +81,7 @@ interface PublicStaff {
   role: string | null;
   photoUri: string | null;
   serviceIds: string[];
+  locationIds?: string[] | null;
 }
 interface PublicLocation {
   localId: string;
@@ -156,6 +158,13 @@ export default function ClientBookingWizardScreen() {
   const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
   const [notes, setNotes] = useState("");
   const [clientAddress, setClientAddress] = useState("");
+  // Split address sub-fields
+  const [addrStreet, setAddrStreet] = useState("");
+  const [addrCity, setAddrCity] = useState("");
+  const [addrState, setAddrState] = useState("");
+  const [addrZip, setAddrZip] = useState("");
+  // Derived full address from sub-fields
+  const fullClientAddress = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(", ");
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId | null>(null);
   const [paymentConfirmationNumber, setPaymentConfirmationNumber] = useState("");
@@ -237,15 +246,15 @@ export default function ClientBookingWizardScreen() {
   }, [state.appointments, effectiveSlug]);
   const STEPS = showLocationStep
     ? (hasProducts
-        ? (isMobileService ? ["Service", "Staff", "Location", "Date & Time", "Address", "Products", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Location", "Date & Time", "Products", "Promo", "Payment", "Confirm"])
-        : (isMobileService ? ["Service", "Staff", "Location", "Date & Time", "Address", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Location", "Date & Time", "Promo", "Payment", "Confirm"]))
+        ? (isMobileService ? ["Service", "Location", "Staff", "Date & Time", "Address", "Products", "Promo", "Payment", "Confirm"] : ["Service", "Location", "Staff", "Date & Time", "Products", "Promo", "Payment", "Confirm"])
+        : (isMobileService ? ["Service", "Location", "Staff", "Date & Time", "Address", "Promo", "Payment", "Confirm"] : ["Service", "Location", "Staff", "Date & Time", "Promo", "Payment", "Confirm"]))
     : (hasProducts
         ? (isMobileService ? ["Service", "Staff", "Date & Time", "Address", "Products", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Date & Time", "Products", "Promo", "Payment", "Confirm"])
         : (isMobileService ? ["Service", "Staff", "Date & Time", "Address", "Promo", "Payment", "Confirm"] : ["Service", "Staff", "Date & Time", "Promo", "Payment", "Confirm"]));
   // Step indices (dynamic)
   const STEP_SERVICE = 0;
-  const STEP_STAFF = 1;
-  const STEP_LOCATION = showLocationStep ? 2 : -1;
+  const STEP_LOCATION = showLocationStep ? 1 : -1;
+  const STEP_STAFF = showLocationStep ? 2 : 1;
   const STEP_DATE = showLocationStep ? 3 : 2;
   const STEP_TIME = STEP_DATE;
   const _addrOff = isMobileService ? 1 : 0;
@@ -571,7 +580,9 @@ export default function ClientBookingWizardScreen() {
         .map(p => ({ localId: p.localId, name: p.name, price: p.price, qty: productCart[p.localId] }));
       finalPrice += productCartTotal;
       // Add travel fee for mobile services when client address is provided
-      const travelFeeAmount = (isMobileService && clientAddress.trim() && selectedService.travelFee) ? selectedService.travelFee : 0;
+      // Sync fullClientAddress into clientAddress before submission
+      const effectiveClientAddress = isMobileService ? fullClientAddress || clientAddress : clientAddress;
+      const travelFeeAmount = (isMobileService && effectiveClientAddress.trim() && selectedService.travelFee) ? selectedService.travelFee : 0;
       finalPrice += travelFeeAmount;
       const res = await fetch(`${apiBase}/api/public/business/${effectiveSlug}/book`, {
         method: "POST",
@@ -603,7 +614,7 @@ export default function ClientBookingWizardScreen() {
           subtotal: servicePrice,
           totalPrice: finalPrice,
           products: selectedProductItems.length > 0 ? selectedProductItems : undefined,
-          clientAddress: isMobileService && clientAddress.trim() ? clientAddress.trim() : undefined,
+          clientAddress: isMobileService && effectiveClientAddress.trim() ? effectiveClientAddress.trim() : undefined,
           travelFee: travelFeeAmount > 0 ? travelFeeAmount : undefined,
         }),
       });
@@ -684,7 +695,7 @@ export default function ClientBookingWizardScreen() {
           giftSaving: giftApplied ? `$${Math.min(giftApplied.value, Math.max(0, (selectedService ? (parseFloat(selectedService.price ?? "0") || 0) : 0) - (discountAmount ?? 0) - (promoSaving ?? 0))).toFixed(2)}` : "",
           paymentMethod: paymentMethod ?? "",
           paymentConfirmationNumber: paymentMethod !== "cash" ? paymentConfirmationNumber.trim() : "",
-          clientAddress: isMobileService && clientAddress.trim() ? clientAddress.trim() : "",
+          clientAddress: isMobileService && effectiveClientAddress.trim() ? effectiveClientAddress.trim() : "",
           travelFee: travelFeeAmount > 0 ? `$${travelFeeAmount.toFixed(2)}` : "",
         },
       } as any);
@@ -712,9 +723,19 @@ export default function ClientBookingWizardScreen() {
 
   const calDays = getDaysInMonth(calYear, calMonth);
   const monthLabel = new Date(calYear, calMonth, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
-  const eligibleStaff = selectedService
-    ? staff.filter((m) => !m.serviceIds?.length || m.serviceIds.includes(selectedService.localId))
-    : staff;
+  const eligibleStaff = useMemo(() => {
+    let filtered = selectedService
+      ? staff.filter((m) => !m.serviceIds?.length || m.serviceIds.includes(selectedService.localId))
+      : staff;
+    // Further filter by selected location (only show staff assigned to that location)
+    if (selectedLocation) {
+      filtered = filtered.filter((m) => {
+        if (!m.locationIds || !m.locationIds.length) return true; // null/empty = all locations
+        return m.locationIds.includes(selectedLocation.localId);
+      });
+    }
+    return filtered;
+  }, [staff, selectedService, selectedLocation]);
 
   return (
     <ScreenContainer containerClassName="bg-[#0D2318]">
@@ -1628,9 +1649,28 @@ export default function ClientBookingWizardScreen() {
                 Service Address <Text style={{ color: "#EF4444" }}>*</Text>
               </Text>
               {/* Pre-fill hint when a previous address is available */}
-              {!clientAddress && lastUsedAddress ? (
+              {!addrStreet && lastUsedAddress ? (
                 <Pressable
-                  onPress={() => setClientAddress(lastUsedAddress)}
+                  onPress={() => {
+                    // Parse "Street, City, State ZIP" or "Street, City, State, ZIP"
+                    const parts = lastUsedAddress.split(",").map((p: string) => p.trim());
+                    if (parts.length >= 3) {
+                      setAddrStreet(parts[0] ?? "");
+                      setAddrCity(parts[1] ?? "");
+                      // Last part might be "State ZIP" or just "State"
+                      const last = parts[parts.length - 1] ?? "";
+                      const stateZip = last.split(" ").filter(Boolean);
+                      if (stateZip.length >= 2) {
+                        setAddrState(stateZip[0]);
+                        setAddrZip(stateZip.slice(1).join(" "));
+                      } else {
+                        setAddrState(last);
+                        if (parts.length >= 4) setAddrZip(parts[parts.length - 2] ?? "");
+                      }
+                    } else {
+                      setAddrStreet(lastUsedAddress);
+                    }
+                  }}
                   style={({ pressed }) => ({
                     flexDirection: "row",
                     alignItems: "center",
@@ -1647,26 +1687,89 @@ export default function ClientBookingWizardScreen() {
                   <Text style={{ fontSize: 11, color: "#8FBF6A", fontWeight: "700", marginLeft: 8 }}>Use</Text>
                 </Pressable>
               ) : null}
+              {/* Street Address */}
+              <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 4 }}>Street Address <Text style={{ color: "#EF4444" }}>*</Text></Text>
               <TextInput
-                placeholder="123 Main St, City, State ZIP"
+                placeholder="123 Main St"
                 placeholderTextColor={TEXT_MUTED}
-                value={clientAddress}
-                onChangeText={setClientAddress}
-                multiline
-                numberOfLines={3}
+                value={addrStreet}
+                onChangeText={setAddrStreet}
                 style={{
                   color: TEXT_PRIMARY,
                   fontSize: 13,
                   borderWidth: 1,
-                  borderColor: clientAddress.trim() ? "rgba(255,255,255,0.2)" : "#EF444480",
+                  borderColor: addrStreet.trim() ? "rgba(255,255,255,0.2)" : "#EF444480",
                   borderRadius: 10,
                   padding: 12,
                   backgroundColor: "rgba(255,255,255,0.05)",
-                  minHeight: 80,
-                  textAlignVertical: "top",
+                  marginBottom: 10,
                 }}
-                returnKeyType="done"
+                returnKeyType="next"
               />
+              {/* City */}
+              <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 4 }}>City <Text style={{ color: "#EF4444" }}>*</Text></Text>
+              <TextInput
+                placeholder="Austin"
+                placeholderTextColor={TEXT_MUTED}
+                value={addrCity}
+                onChangeText={setAddrCity}
+                style={{
+                  color: TEXT_PRIMARY,
+                  fontSize: 13,
+                  borderWidth: 1,
+                  borderColor: addrCity.trim() ? "rgba(255,255,255,0.2)" : "#EF444480",
+                  borderRadius: 10,
+                  padding: 12,
+                  backgroundColor: "rgba(255,255,255,0.05)",
+                  marginBottom: 10,
+                }}
+                returnKeyType="next"
+              />
+              {/* State & ZIP side by side */}
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 4 }}>State <Text style={{ color: "#EF4444" }}>*</Text></Text>
+                  <TextInput
+                    placeholder="TX"
+                    placeholderTextColor={TEXT_MUTED}
+                    value={addrState}
+                    onChangeText={setAddrState}
+                    autoCapitalize="characters"
+                    maxLength={2}
+                    style={{
+                      color: TEXT_PRIMARY,
+                      fontSize: 13,
+                      borderWidth: 1,
+                      borderColor: addrState.trim() ? "rgba(255,255,255,0.2)" : "#EF444480",
+                      borderRadius: 10,
+                      padding: 12,
+                      backgroundColor: "rgba(255,255,255,0.05)",
+                    }}
+                    returnKeyType="next"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: TEXT_MUTED, marginBottom: 4 }}>ZIP Code <Text style={{ color: "#EF4444" }}>*</Text></Text>
+                  <TextInput
+                    placeholder="78701"
+                    placeholderTextColor={TEXT_MUTED}
+                    value={addrZip}
+                    onChangeText={setAddrZip}
+                    keyboardType="number-pad"
+                    maxLength={10}
+                    style={{
+                      color: TEXT_PRIMARY,
+                      fontSize: 13,
+                      borderWidth: 1,
+                      borderColor: addrZip.trim() ? "rgba(255,255,255,0.2)" : "#EF444480",
+                      borderRadius: 10,
+                      padding: 12,
+                      backgroundColor: "rgba(255,255,255,0.05)",
+                    }}
+                    returnKeyType="done"
+                  />
+                </View>
+              </View>
               <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 8 }}>
                 We'll come to you at this address.
               </Text>
@@ -1674,10 +1777,30 @@ export default function ClientBookingWizardScreen() {
             <View style={{ flex: 1 }} />
             <Pressable
               onPress={() => {
-                if (!clientAddress.trim()) {
-                  Alert.alert("Address Required", "Please enter your address for this mobile service.");
+                if (!addrStreet.trim() || !addrCity.trim() || !addrState.trim() || !addrZip.trim()) {
+                  Alert.alert("Address Required", "Please fill in all address fields (Street, City, State, ZIP) for this mobile service.");
                   return;
                 }
+                // Travel zone guard: warn if maxTravelDistance is set
+                if (selectedService?.maxTravelDistance) {
+                  Alert.alert(
+                    "⚠️ Check Service Area",
+                    `This service has a maximum travel distance of ${selectedService.maxTravelDistance} miles. Please confirm your address is within the service area before continuing.`,
+                    [
+                      { text: "Go Back", style: "cancel" },
+                      {
+                        text: "I'm in Range",
+                        onPress: () => {
+                          setClientAddress(fullClientAddress);
+                          setStep(step + 1);
+                        },
+                      },
+                    ]
+                  );
+                  return;
+                }
+                // Sync fullClientAddress to clientAddress for downstream use
+                setClientAddress(fullClientAddress);
                 setStep(step + 1);
               }}
               style={({ pressed }) => ({

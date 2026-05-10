@@ -73,7 +73,11 @@ export default function NewBookingScreen() {
   });
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
-  const [clientAddress, setClientAddress] = useState("");
+  const [addrStreet, setAddrStreet] = useState("");
+  const [addrCity, setAddrCity] = useState("");
+  const [addrState, setAddrState] = useState("");
+  const [addrZip, setAddrZip] = useState("");
+  const clientAddress = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(", ");
   const [showTemplatesPicker, setShowTemplatesPicker] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
@@ -1627,23 +1631,64 @@ export default function NewBookingScreen() {
             numberOfLines={2}
             style={{ color: colors.foreground, minHeight: 50, textAlignVertical: "top" }}
           />
-          {/* Client Address (mobile services only) */}
+          {/* Client Address (mobile services only) — split into Street / City / State / ZIP */}
           {isMobileService && (
-            <>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4, marginTop: 2 }}>
-                <Text className="text-xs font-medium text-muted ml-1">Client Address <Text style={{ color: colors.error }}>*</Text></Text>
-              </View>
+            <View style={{ marginBottom: 4, marginTop: 2 }}>
+              <Text className="text-xs font-medium text-muted ml-1 mb-2">Client Address <Text style={{ color: colors.error }}>*</Text></Text>
+              {/* Street */}
+              <Text style={{ fontSize: 10, fontWeight: "600", color: colors.muted, marginBottom: 3, marginLeft: 2 }}>Street Address</Text>
               <TextInput
-                className="bg-surface rounded-xl px-4 py-3 text-sm mb-4 border border-border"
-                placeholder="123 Main St, City, State ZIP"
+                className="bg-surface rounded-xl px-4 py-3 text-sm mb-2 border border-border"
+                placeholder="123 Main St"
                 placeholderTextColor={colors.muted}
-                value={clientAddress}
-                onChangeText={setClientAddress}
-                multiline
-                numberOfLines={2}
-                style={{ color: colors.foreground, minHeight: 50, textAlignVertical: "top" }}
+                value={addrStreet}
+                onChangeText={setAddrStreet}
+                returnKeyType="next"
+                style={{ color: colors.foreground }}
               />
-            </>
+              {/* City */}
+              <Text style={{ fontSize: 10, fontWeight: "600", color: colors.muted, marginBottom: 3, marginLeft: 2 }}>City</Text>
+              <TextInput
+                className="bg-surface rounded-xl px-4 py-3 text-sm mb-2 border border-border"
+                placeholder="Austin"
+                placeholderTextColor={colors.muted}
+                value={addrCity}
+                onChangeText={setAddrCity}
+                returnKeyType="next"
+                style={{ color: colors.foreground }}
+              />
+              {/* State + ZIP side by side */}
+              <View style={{ flexDirection: "row", gap: 8, marginBottom: 4 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 10, fontWeight: "600", color: colors.muted, marginBottom: 3, marginLeft: 2 }}>State</Text>
+                  <TextInput
+                    className="bg-surface rounded-xl px-4 py-3 text-sm border border-border"
+                    placeholder="TX"
+                    placeholderTextColor={colors.muted}
+                    value={addrState}
+                    onChangeText={setAddrState}
+                    autoCapitalize="characters"
+                    maxLength={2}
+                    returnKeyType="next"
+                    style={{ color: colors.foreground }}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 10, fontWeight: "600", color: colors.muted, marginBottom: 3, marginLeft: 2 }}>ZIP Code</Text>
+                  <TextInput
+                    className="bg-surface rounded-xl px-4 py-3 text-sm border border-border"
+                    placeholder="78701"
+                    placeholderTextColor={colors.muted}
+                    value={addrZip}
+                    onChangeText={setAddrZip}
+                    keyboardType="number-pad"
+                    maxLength={10}
+                    returnKeyType="done"
+                    style={{ color: colors.foreground }}
+                  />
+                </View>
+              </View>
+            </View>
           )}
 
           {/* Staff Selector — REMOVED from bottom of Step 3 (now at top) */}

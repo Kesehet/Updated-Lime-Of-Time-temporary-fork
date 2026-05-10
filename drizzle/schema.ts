@@ -178,6 +178,8 @@ export const services = mysqlTable("services", {
   reminderHours: decimal("reminderHours", { precision: 5, scale: 2 }),
   serviceType: varchar("serviceType", { length: 20 }).default("in_store"),
   travelFee: decimal("travelFee", { precision: 10, scale: 2 }),
+  /** Max travel distance in miles for mobile services (null = unlimited) */
+  maxTravelDistance: decimal("maxTravelDistance", { precision: 6, scale: 1 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

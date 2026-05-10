@@ -2019,3 +2019,16 @@
 - [ ] Unread badge on Messages tab icon
 - [ ] Web booking page: add payment method selection step + confirmation number + itemized price breakdown
 - [ ] Gift purchase page: add confirmation number field with per-method format hints
+## Phase: Mobile Service Enhancements (May 2026)
+- [x] Split address fields: Street Address, City, State, ZIP (stored concatenated, displayed separately)
+- [x] Staff step moved after Location step in all booking flows
+- [x] Staff filtered by selected location (only show staff assigned to that location)
+- [x] Mobile service: staff selection step included in mobile booking flow
+- [x] Service form: category as scrollable chips (not grid), with mobile service categories
+- [x] Service form: In-Store/Mobile toggle at top, conditional fields per type
+- [x] Service form: maxTravelDistance field for mobile services
+- [x] Client booking wizard: split address fields (Street, City, State, ZIP)
+- [x] Client booking wizard: travel zone guard using Nominatim geocoding
+- [x] Confirmation page: show full formatted address for mobile bookings
+- [x] DB schema: add maxTravelDistance column to services table
+- [x] Mobile service catalog: popular categories (Car Detailing, Mobile Massage, etc.)

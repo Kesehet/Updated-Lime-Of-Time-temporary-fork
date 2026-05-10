@@ -11,6 +11,7 @@ export interface Service {
   reminderHours?: number | null; // override global SMS reminder timing for this service (null = use global)
   serviceType?: 'in_store' | 'mobile'; // whether service is performed at client location
   travelFee?: number | null; // optional travel/surcharge fee added when clientAddress is provided
+  maxTravelDistance?: number | null; // max travel distance in miles for mobile services (null = unlimited)
   createdAt: string;
 }
 

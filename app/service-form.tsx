@@ -17,7 +17,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { trpc } from "@/lib/trpc";
-import { SERVICE_CATEGORIES, getCategoryDef } from "@/constants/categories";
+import { SERVICE_CATEGORIES, MOBILE_SERVICE_CATEGORIES, getCategoryDef } from "@/constants/categories";
 
 export default function ServiceFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -51,6 +51,9 @@ export default function ServiceFormScreen() {
   const [serviceType, setServiceType] = useState<'in_store' | 'mobile'>(existing?.serviceType ?? 'in_store');
   const [travelFee, setTravelFee] = useState<string>(
     existing?.travelFee != null ? String(existing.travelFee) : ""
+  );
+  const [maxTravelDistance, setMaxTravelDistance] = useState<string>(
+    existing?.maxTravelDistance != null ? String(existing.maxTravelDistance) : ""
   );
   const uploadImageMut = trpc.files.uploadImage.useMutation();
   const isEdit = !!existing;
@@ -117,6 +120,7 @@ export default function ServiceFormScreen() {
       reminderHours: reminderHours.trim() !== "" ? (parseFloat(reminderHours) || null) : null,
       serviceType,
       travelFee: travelFee.trim() !== "" ? (parseFloat(travelFee) || null) : null,
+      maxTravelDistance: maxTravelDistance.trim() !== "" ? (parseFloat(maxTravelDistance) || null) : null,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     if (isEdit) {
@@ -174,6 +178,51 @@ export default function ServiceFormScreen() {
         contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 48, paddingTop: 8 }}
       >
 
+        {/* ── Service Type ── */}
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 8 }}>
+            Service Type
+          </Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <Pressable
+              onPress={() => setServiceType('in_store')}
+              style={({ pressed }) => ({
+                flex: 1,
+                paddingVertical: 10,
+                borderRadius: 10,
+                borderWidth: 1.5,
+                borderColor: serviceType === 'in_store' ? colors.primary : colors.border,
+                backgroundColor: serviceType === 'in_store' ? colors.primary + "18" : colors.surface,
+                alignItems: "center",
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: serviceType === 'in_store' ? colors.primary : colors.muted }}>
+                🏪 In-Store
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setServiceType('mobile')}
+              style={({ pressed }) => ({
+                flex: 1,
+                paddingVertical: 10,
+                borderRadius: 10,
+                borderWidth: 1.5,
+                borderColor: serviceType === 'mobile' ? colors.primary : colors.border,
+                backgroundColor: serviceType === 'mobile' ? colors.primary + "18" : colors.surface,
+                alignItems: "center",
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: serviceType === 'mobile' ? colors.primary : colors.muted }}>
+                🚗 Mobile / At-Home
+              </Text>
+            </Pressable>
+          </View>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
+            {serviceType === 'mobile' ? "Client's address will be collected at booking." : "Client comes to your location."}
+          </Text>
+        </View>
         {/* ── Hero Image Picker ── */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionLabel, { color: colors.muted }]}>SERVICE PHOTO</Text>
@@ -253,50 +302,51 @@ export default function ServiceFormScreen() {
           />
 
           <Text style={[styles.fieldLabel, { color: colors.muted, marginTop: 16 }]}>Category (optional)</Text>
-          {/* Standard category grid */}
-          <View style={styles.categoryGrid}>
-            {SERVICE_CATEGORIES.map((cat) => {
-              const isSelected = category === cat.label;
-              return (
-                <Pressable
-                  key={cat.label}
-                  onPress={() => setCategory(isSelected ? "" : cat.label)}
-                  style={({ pressed }) => [
-                    styles.categoryTile,
-                    {
-                      backgroundColor: isSelected ? cat.color + "22" : colors.surface,
-                      borderColor: isSelected ? cat.color : colors.border,
-                      opacity: pressed ? 0.75 : 1,
-                    },
-                  ]}
-                >
-                  <Text style={styles.categoryTileEmoji}>{cat.emoji}</Text>
-                  <Text
-                    style={[
-                      styles.categoryTileLabel,
-                      { color: isSelected ? cat.color : colors.foreground },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {cat.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          {/* Category dropdown */}
+          <View style={{ marginBottom: 4 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+              <View style={{ flexDirection: "row", gap: 8, paddingVertical: 4 }}>
+                {(serviceType === 'mobile' ? MOBILE_SERVICE_CATEGORIES : SERVICE_CATEGORIES).map((cat) => {
+                  const isSelected = category === cat.label;
+                  return (
+                    <Pressable
+                      key={cat.label}
+                      onPress={() => setCategory(isSelected ? "" : cat.label)}
+                      style={({ pressed }) => ({
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        borderRadius: 20,
+                        borderWidth: 1.5,
+                        borderColor: isSelected ? cat.color : colors.border,
+                        backgroundColor: isSelected ? cat.color + "22" : colors.surface,
+                        opacity: pressed ? 0.7 : 1,
+                        gap: 6,
+                      })}
+                    >
+                      <Text style={{ fontSize: 14 }}>{cat.emoji}</Text>
+                      <Text style={{ fontSize: 12, fontWeight: isSelected ? "700" : "500", color: isSelected ? cat.color : colors.muted }}>
+                        {cat.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ScrollView>
+            {/* Custom category input when "Other" is selected */}
+            {(category === "Other" || category === "Other Mobile" || (category && !SERVICE_CATEGORIES.find(c => c.label === category) && !MOBILE_SERVICE_CATEGORIES.find(c => c.label === category))) && (
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border, marginTop: 4 }]}
+                placeholder="Enter custom category name…"
+                placeholderTextColor={colors.muted}
+                value={(category === "Other" || category === "Other Mobile") ? "" : category}
+                onChangeText={(text) => setCategory(text || (serviceType === 'mobile' ? "Other Mobile" : "Other"))}
+                returnKeyType="done"
+              />
+            )}
           </View>
-          {/* Custom category input — shown when "Other" is selected or a non-standard value exists */}
-          {(category === "Other" || (category && !SERVICE_CATEGORIES.find(c => c.label === category))) && (
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border, marginTop: 8 }]}
-              placeholder="Enter custom category name…"
-              placeholderTextColor={colors.muted}
-              value={category === "Other" ? "" : category}
-              onChangeText={(text) => setCategory(text || "Other")}
-              returnKeyType="done"
-            />
-          )}
-
-          <Text style={[styles.fieldLabel, { color: colors.muted, marginTop: 16 }]}>Description (optional)</Text>
+                    <Text style={[styles.fieldLabel, { color: colors.muted, marginTop: 16 }]}>Description (optional)</Text>
           <TextInput
             style={[styles.input, styles.textArea, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
             placeholder="Brief description shown to clients on the booking page…"
@@ -375,51 +425,7 @@ export default function ServiceFormScreen() {
           </View>
         )}
 
-        {/* ── Service Type ── */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 8 }}>
-            Service Type
-          </Text>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <Pressable
-              onPress={() => setServiceType('in_store')}
-              style={({ pressed }) => ({
-                flex: 1,
-                paddingVertical: 10,
-                borderRadius: 10,
-                borderWidth: 1.5,
-                borderColor: serviceType === 'in_store' ? colors.primary : colors.border,
-                backgroundColor: serviceType === 'in_store' ? colors.primary + "18" : colors.surface,
-                alignItems: "center",
-                opacity: pressed ? 0.7 : 1,
-              })}
-            >
-              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: serviceType === 'in_store' ? colors.primary : colors.muted }}>
-                🏪 In-Store
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setServiceType('mobile')}
-              style={({ pressed }) => ({
-                flex: 1,
-                paddingVertical: 10,
-                borderRadius: 10,
-                borderWidth: 1.5,
-                borderColor: serviceType === 'mobile' ? colors.primary : colors.border,
-                backgroundColor: serviceType === 'mobile' ? colors.primary + "18" : colors.surface,
-                alignItems: "center",
-                opacity: pressed ? 0.7 : 1,
-              })}
-            >
-              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: serviceType === 'mobile' ? colors.primary : colors.muted }}>
-                🚗 Mobile / At-Home
-              </Text>
-            </Pressable>
-          </View>
-          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
-            {serviceType === 'mobile' ? "Client's address will be collected at booking." : "Client comes to your location."}
-          </Text>
-        </View>
+
         {/* ── Travel Fee (mobile only) ── */}
         {serviceType === 'mobile' && (
           <View style={{ marginBottom: 16 }}>
@@ -440,6 +446,25 @@ export default function ServiceFormScreen() {
             </View>
             <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
               Automatically added to the booking total when a client address is entered.
+            </Text>
+            {/* Max Travel Distance */}
+            <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginTop: 16, marginBottom: 8 }}>
+              Max Travel Distance (optional)
+            </Text>
+            <View style={[styles.inputRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <TextInput
+                style={[styles.input, { color: colors.foreground, flex: 1 }]}
+                placeholder="e.g. 25"
+                placeholderTextColor={colors.muted}
+                keyboardType="decimal-pad"
+                value={maxTravelDistance}
+                onChangeText={setMaxTravelDistance}
+                returnKeyType="done"
+              />
+              <Text style={{ fontSize: fs.sm, color: colors.muted, marginLeft: 4 }}>mi</Text>
+            </View>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
+              Clients outside this radius will see a distance warning during booking.
             </Text>
           </View>
         )}
@@ -743,6 +768,15 @@ const styles = StyleSheet.create({
   imageActionText: {
     fontSize: 11,
     fontWeight: "600",
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 6,
   },
   deleteBtn: {
     flexDirection: "row",

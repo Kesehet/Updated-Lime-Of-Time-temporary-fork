@@ -313,7 +313,10 @@ export default function ClientBookingConfirmationScreen() {
               </TouchableOpacity>
             ) : null}
             {clientAddress ? (
-              <SummaryRow icon="location" label="Your Address" value={clientAddress} last />
+              <>
+                <SummaryRow icon="car.fill" label="Service Type" value="🚗 Mobile — We Come to You" />
+                <SummaryRow icon="location" label="Service Address" value={clientAddress} last />
+              </>
             ) : null}
           </View>
 

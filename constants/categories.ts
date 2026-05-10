@@ -37,6 +37,23 @@ export const SERVICE_CATEGORIES: CategoryDef[] = [
   { label: "Other",             emoji: "✦",   icon: "ellipsis.circle.fill",        color: "#9CA3AF" },
 ];
 
+/** Popular mobile / traveling service categories */
+export const MOBILE_SERVICE_CATEGORIES: CategoryDef[] = [
+  { label: "Car Detailing",        emoji: "🚗",  icon: "car.fill",                    color: "#60A5FA" },
+  { label: "Mobile Massage",       emoji: "💆",  icon: "hand.raised.fill",            color: "#6EE7B7" },
+  { label: "Mobile Hair & Makeup", emoji: "💄",  icon: "paintpalette.fill",           color: "#FCA5A5" },
+  { label: "Mobile Nail Tech",     emoji: "💅",  icon: "paintbrush.fill",             color: "#F9A8D4" },
+  { label: "Mobile Pet Grooming",  emoji: "🐾",  icon: "pawprint.fill",               color: "#FDBA74" },
+  { label: "Mobile Personal Training", emoji: "🏋️", icon: "figure.strengthtraining.traditional", color: "#93C5FD" },
+  { label: "Mobile Barbering",     emoji: "💈",  icon: "comb.fill",                   color: "#86EFAC" },
+  { label: "Mobile Skincare",      emoji: "✨",  icon: "sparkles",                    color: "#FCD34D" },
+  { label: "Mobile Lashes",        emoji: "👁️",  icon: "eye.fill",                    color: "#C4B5FD" },
+  { label: "Mobile Waxing",        emoji: "🪮",  icon: "eyebrow",                     color: "#FDBA74" },
+  { label: "Mobile Spray Tan",     emoji: "☀️",  icon: "sun.max.fill",                color: "#FDE68A" },
+  { label: "Mobile Yoga",          emoji: "🧘",  icon: "figure.mind.and.body",        color: "#4ADE80" },
+  { label: "Other Mobile",         emoji: "🚐",  icon: "car.side.fill",               color: "#9CA3AF" },
+];
+
 /** The "All" chip shown at the start of the filter row. */
 export const ALL_CATEGORY: CategoryDef = {
   label: "All",

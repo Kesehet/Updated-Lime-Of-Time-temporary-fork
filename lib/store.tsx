@@ -674,6 +674,7 @@ export function dbServiceToLocal(s: any): Service {
     reminderHours: s.reminderHours != null ? parseFloat(s.reminderHours) : null,
     serviceType: (s.serviceType as 'in_store' | 'mobile') ?? 'in_store',
     travelFee: s.travelFee != null ? parseFloat(s.travelFee) : null,
+    maxTravelDistance: s.maxTravelDistance != null ? parseFloat(s.maxTravelDistance) : null,
     createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : new Date().toISOString(),
   };
 }
@@ -1804,6 +1805,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               reminderHours: svc.reminderHours != null ? svc.reminderHours : undefined,
               serviceType: svc.serviceType,
               travelFee: svc.travelFee ?? undefined,
+              maxTravelDistance: svc.maxTravelDistance ?? undefined,
             });
             break;
           }
@@ -1822,6 +1824,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               photoUri: svc.photoUri,
               reminderHours: svc.reminderHours != null ? svc.reminderHours : undefined,
               serviceType: svc.serviceType,
+              travelFee: svc.travelFee ?? undefined,
+              maxTravelDistance: svc.maxTravelDistance ?? undefined,
             });
             break;
           }

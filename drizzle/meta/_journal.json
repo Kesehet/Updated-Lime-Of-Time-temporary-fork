@@ -463,6 +463,13 @@
       "when": 1778372199205,
       "tag": "0065_add_travel_fee",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "5",
+      "when": 1778377844260,
+      "tag": "0066_wakeful_wolf_cub",
+      "breakpoints": true
     }
   ]
 }

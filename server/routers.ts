@@ -170,14 +170,16 @@ const servicesRouter = router({
         reminderHours: z.number().optional().nullable(),
         serviceType: z.enum(['in_store', 'mobile']).optional(),
         travelFee: z.number().optional().nullable(),
+        maxTravelDistance: z.number().optional().nullable(),
       })
     )
     .mutation(async ({ input }) => {
-      const { reminderHours, travelFee, ...rest } = input;
+      const { reminderHours, travelFee, maxTravelDistance, ...rest } = input;
       const id = await db.createService({
         ...rest,
         reminderHours: reminderHours != null ? String(reminderHours) : null,
         travelFee: travelFee != null ? String(travelFee) : null,
+        maxTravelDistance: maxTravelDistance != null ? String(maxTravelDistance) : null,
       } as any);
       return { id, localId: input.localId };
     }),
@@ -198,16 +200,18 @@ const servicesRouter = router({
         reminderHours: z.number().optional().nullable(),
         serviceType: z.enum(['in_store', 'mobile']).optional(),
         travelFee: z.number().optional().nullable(),
+        maxTravelDistance: z.number().optional().nullable(),
       })
     )
     .mutation(async ({ input }) => {
-      const { localId, businessOwnerId, reminderHours, travelFee, ...rest } = input;
+      const { localId, businessOwnerId, reminderHours, travelFee, maxTravelDistance, ...rest } = input;
       const svc = await db.getServiceByLocalId(localId, businessOwnerId);
       if (!svc) throw new Error(`Service not found: ${localId}`);
       await db.updateService(svc.id, businessOwnerId, {
         ...rest,
         reminderHours: reminderHours != null ? String(reminderHours) : null,
         travelFee: travelFee != null ? String(travelFee) : null,
+        maxTravelDistance: maxTravelDistance != null ? String(maxTravelDistance) : null,
       } as any);
       return { success: true };
     }),
