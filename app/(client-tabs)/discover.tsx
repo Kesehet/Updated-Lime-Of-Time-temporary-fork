@@ -19,6 +19,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Linking,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -38,9 +39,59 @@ import Animated, {
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
+import * as Calendar from "expo-calendar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { SERVICE_CATEGORIES, ALL_CATEGORY, CATEGORY_MAP, getCategoryDef } from "@/constants/categories";
+
+/** Convert "HH:MM" (24h) to "H:MM AM/PM" */
+function formatTime12(time: string): string {
+  const [h, m] = (time ?? "00:00").split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
+/** Add an appointment to the device calendar */
+async function addApptToCalendar(appt: { serviceName: string; businessName: string; date: string; time: string; duration: number | null; locationAddress?: string | null; clientAddress?: string | null }) {
+  if (Platform.OS === "web") {
+    Alert.alert("Not supported", "Calendar integration is not available on web.");
+    return;
+  }
+  const { status } = await Calendar.requestCalendarPermissionsAsync();
+  if (status !== "granted") {
+    Alert.alert("Permission needed", "Please allow calendar access to add this appointment.");
+    return;
+  }
+  const [year, month, day] = appt.date.split("-").map(Number);
+  const [h, m] = (appt.time ?? "00:00").split(":").map(Number);
+  const startDate = new Date(year, month - 1, day, h, m);
+  const endDate = new Date(startDate.getTime() + (appt.duration ?? 60) * 60 * 1000);
+  let calendarId: string;
+  try {
+    if (Platform.OS === "ios") {
+      const defaultCal = await Calendar.getDefaultCalendarAsync();
+      calendarId = defaultCal.id;
+    } else {
+      const cals = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+      const primary = cals.find(c => c.isPrimary) ?? cals.find(c => c.allowsModifications) ?? cals[0];
+      if (!primary) { Alert.alert("No calendar", "No calendar found on this device."); return; }
+      calendarId = primary.id;
+    }
+    const location = appt.clientAddress ?? appt.locationAddress ?? undefined;
+    await Calendar.createEventAsync(calendarId, {
+      title: `${appt.serviceName} @ ${appt.businessName}`,
+      startDate,
+      endDate,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      location,
+      alarms: [{ relativeOffset: -60 }, { relativeOffset: -1440 }],
+    });
+    Alert.alert("Added!", "Appointment added to your calendar.");
+  } catch {
+    Alert.alert("Error", "Could not add to calendar.");
+  }
+}
 
 const DISCOVER_PREFS_KEY = "client_discover_prefs";
 const PINNED_CATS_KEY = "client_pinned_categories";  // persisted list of pinned category labels
@@ -513,38 +564,49 @@ export default function DiscoverScreen() {
   // Track whether we've done the initial load so we don't double-fetch on focus
   const initialLoadDone = useRef(false);
 
-  // On first mount: load immediately (using persisted GPS if available),
+  // On every focus: load immediately (using persisted/current GPS if available),
   // then silently upgrade to fresh GPS-filtered results once permission is granted.
   useFocusEffect(useCallback(() => {
-    if (initialLoadDone.current) return; // only run once
-    initialLoadDone.current = true;
-
     const persistedLat = state.lastDiscoverLat;
     const persistedLng = state.lastDiscoverLng;
 
-    // Step 1: load immediately — use persisted GPS if available, otherwise no location filter
-    // This ensures the list appears right away without waiting for GPS permission
-    fetchBusinesses(
-      persistedLat ?? undefined,
-      persistedLng ?? undefined,
-      searchQuery,
-      state.discoverCategory,
-      state.discoverRadius
-    );
-    if (persistedLat != null) {
-      setUserLat(persistedLat);
-      setUserLng(persistedLng);
+    // Step 1: load immediately on first focus — use persisted GPS if available
+    // On subsequent focuses, skip the initial load (GPS refresh below handles it)
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true;
+      fetchBusinesses(
+        persistedLat ?? undefined,
+        persistedLng ?? undefined,
+        searchQuery,
+        state.discoverCategory,
+        state.discoverRadius
+      );
+      if (persistedLat != null) {
+        setUserLat(persistedLat);
+        setUserLng(persistedLng);
+      }
     }
 
-    // Step 2: request fresh GPS in the background and silently refresh with new coords
+    // Step 2: always request fresh GPS on every focus (silently) and refresh results
+    // This ensures nearby businesses appear automatically every time the tab is visited
+    let cancelled = false;
     (async () => {
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
+        // Check if permission is already granted without prompting
+        const { status: existingStatus } = await Location.getForegroundPermissionsAsync();
+        let status = existingStatus;
+        if (status !== "granted") {
+          // Only prompt on first visit
+          if (!initialLoadDone.current) return;
+          const result = await Location.requestForegroundPermissionsAsync();
+          status = result.status;
+        }
         if (status !== "granted") {
           setLocationError("Location access denied. Showing all businesses.");
-          return; // already loaded above, nothing more to do
+          return;
         }
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (cancelled) return;
         const { latitude, longitude } = loc.coords;
         setUserLat(latitude);
         setUserLng(longitude);
@@ -557,19 +619,19 @@ export default function DiscoverScreen() {
           lastLat: latitude,
           lastLng: longitude,
         })).catch(() => {});
-        // Only refresh if coords changed meaningfully (> ~0.5 miles)
+        // Refresh with fresh coords (always refresh so nearby list is current)
         const latDiff = Math.abs(latitude - (persistedLat ?? 0));
         const lngDiff = Math.abs(longitude - (persistedLng ?? 0));
-        if (persistedLat == null || latDiff > 0.007 || lngDiff > 0.007) {
+        if (persistedLat == null || latDiff > 0.001 || lngDiff > 0.001) {
           fetchBusinesses(latitude, longitude, searchQuery, state.discoverCategory, state.discoverRadius);
         }
       } catch {
         setLocationError("Could not get location. Showing all businesses.");
-        // Already loaded above, no further action needed
       }
     })();
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])); // intentionally empty — run once on first focus
+  }, [fetchBusinesses])); // re-run on every focus
 
 
   const handleSearch = () => {
@@ -794,12 +856,7 @@ export default function DiscoverScreen() {
                     {nextUpcomingAppt.serviceName} · {nextUpcomingAppt.businessName}
                   </Text>
                   <Text style={{ color: GREEN_ACCENT, fontSize: 11, marginTop: 1 }}>
-                    {new Date(nextUpcomingAppt.date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} at {(() => {
-                      const [h, m] = (nextUpcomingAppt.time ?? "00:00").split(":").map(Number);
-                      const ampm = h >= 12 ? "PM" : "AM";
-                      const hour12 = h % 12 === 0 ? 12 : h % 12;
-                      return `${hour12}:${String(m).padStart(2, "0")} ${ampm}`;
-                    })()}
+                    {new Date(nextUpcomingAppt.date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} at {formatTime12(nextUpcomingAppt.time)}
                   </Text>
                 </View>
                 <IconSymbol name="chevron.right" size={14} color={TEXT_MUTED} />
@@ -840,11 +897,32 @@ export default function DiscoverScreen() {
                 </View>
               ) : nextUpcomingAppt.clientAddress ? (
                 /* Mobile service — show client's own address */
-                <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingBottom: 10, gap: 4 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingBottom: 4, gap: 4 }}>
                   <Text style={{ fontSize: 11 }}>🚗</Text>
                   <Text style={{ color: TEXT_MUTED, fontSize: 11 }} numberOfLines={1}>We come to you · {nextUpcomingAppt.clientAddress}</Text>
                 </View>
               ) : null}
+              {/* Add to Calendar button */}
+              <Pressable
+                onPress={() => {
+                  if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  addApptToCalendar(nextUpcomingAppt);
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  marginTop: 2,
+                  borderTopWidth: 1,
+                  borderTopColor: "rgba(143,191,106,0.15)",
+                  opacity: pressed ? 0.7 : 1,
+                })}
+              >
+                <IconSymbol name="calendar.badge.plus" size={13} color={GREEN_ACCENT} />
+                <Text style={{ color: GREEN_ACCENT, fontSize: 12, fontWeight: "600" }}>Add to Calendar</Text>
+              </Pressable>
             </View>
           ) : mostRecentCompleted ? (
             /* Book Again shortcut */

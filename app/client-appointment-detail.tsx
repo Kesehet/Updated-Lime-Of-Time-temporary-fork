@@ -49,6 +49,12 @@ const STATUS_COLORS: Record<string, string> = {
   no_show: "#F87171",
 };
 
+function formatTime12(time: string): string {
+  const [h, m] = (time ?? "00:00").split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, "0")} ${ampm}`;
+}
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString(undefined, {
@@ -308,7 +314,7 @@ export default function ClientAppointmentDetailScreen() {
           <View style={styles.divider} />
 
           <InfoRow icon="calendar" label="Date" value={formatDate(appt.date)} />
-          <InfoRow icon="clock" label="Time" value={appt.time} />
+          <InfoRow icon="clock" label="Time" value={formatTime12(appt.time)} />
           {appt.duration ? (
             <InfoRow icon="hourglass" label="Duration" value={`${appt.duration} min`} />
           ) : null}

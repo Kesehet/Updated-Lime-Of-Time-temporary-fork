@@ -45,6 +45,12 @@ function formatDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 }
+function formatTime12(time: string): string {
+  const [h, m] = (time ?? "00:00").split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, "0")} ${ampm}`;
+}
 
 const GREEN_ACCENT = "#8FBF6A";
 const GREEN_DARK = "#1A3A28";
@@ -322,7 +328,7 @@ export default function BookingsScreen() {
                 </View>
                 <View style={s.metaItem}>
                   <IconSymbol name="clock" size={13} color={TEXT_MUTED} />
-                  <Text style={[s.metaText, { color: TEXT_MUTED }]}>{item.time}</Text>
+                  <Text style={[s.metaText, { color: TEXT_MUTED }]}>{formatTime12(item.time)}</Text>
                 </View>
                 {item.staffName && (
                   <View style={s.metaItem}>
