@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, \"stripeConnectAccountId\", \"stripeConnectEnabled\" FROM business_owners WHERE \"stripeConnectAccountId\" IS NOT NULL LIMIT 3;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, \"stripeConnectAccountId\", \"stripeConnectEnabled\" FROM business_owners WHERE \"stripeConnectAccountId\" IS NOT NULL LIMIT 3;",
+  "rows": [
+    {
+      "id": "1620003",
+      "stripeConnectAccountId": "stripeConnectAccountId",
+      "stripeConnectEnabled": "stripeConnectEnabled"
+    },
+    {
+      "id": "1650001",
+      "stripeConnectAccountId": "stripeConnectAccountId",
+      "stripeConnectEnabled": "stripeConnectEnabled"
+    },
+    {
+      "id": "1710001",
+      "stripeConnectAccountId": "stripeConnectAccountId",
+      "stripeConnectEnabled": "stripeConnectEnabled"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tstripeConnectAccountId\tstripeConnectEnabled\n1620003\tstripeConnectAccountId\tstripeConnectEnabled\n1650001\tstripeConnectAccountId\tstripeConnectEnabled\n1710001\tstripeConnectAccountId\tstripeConnectEnabled\n",
+  "stderr": "",
+  "execution_time_ms": 629
+}
