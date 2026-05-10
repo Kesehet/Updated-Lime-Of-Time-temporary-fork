@@ -39,6 +39,7 @@ interface NotificationPrefs {
   smsEnabled: boolean;
   reminder24h: boolean;
   reminder1h: boolean;
+  reminder30m: boolean;
   bookingConfirmation: boolean;
   cancellationAlerts: boolean;
 }
@@ -48,6 +49,7 @@ const DEFAULT_PREFS: NotificationPrefs = {
   smsEnabled: false,
   reminder24h: false,
   reminder1h: false,
+  reminder30m: false,
   bookingConfirmation: false,
   cancellationAlerts: false,
 };
@@ -182,6 +184,15 @@ export default function ClientNotificationsScreen() {
             subtitle="One hour before your appointment"
             value={prefs.reminder1h}
             onToggle={(v) => updatePref("reminder1h", v)}
+            disabled={!prefs.pushEnabled || pushPermission !== "granted"}
+          />
+          <View style={styles.divider} />
+          <ToggleRow
+            icon="timer"
+            label="30-Minute Reminder"
+            subtitle="30 minutes before your appointment"
+            value={prefs.reminder30m}
+            onToggle={(v) => updatePref("reminder30m", v)}
             disabled={!prefs.pushEnabled || pushPermission !== "granted"}
           />
         </View>

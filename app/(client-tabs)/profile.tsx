@@ -5,7 +5,7 @@
  * and sign out. Also allows switching back to Business profile.
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -30,6 +30,13 @@ import * as FileSystem from "expo-file-system/legacy";
 import { Image as ExpoImage } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppLockContextSafe } from "@/lib/app-lock-provider";
+import {
+  loadNotificationPrefs,
+  saveNotificationPrefs,
+  type NotificationPrefs,
+  DEFAULT_PREFS,
+} from "@/lib/notifications";
+import * as Notifications from "expo-notifications";
 
 const GREEN_ACCENT = "#8FBF6A";
 const GREEN_DARK = "#1A3A28";
@@ -82,7 +89,24 @@ export default function ClientProfileScreen() {
   const { state, signOut, dispatch } = useClientStore();
   const [signingOut, setSigningOut] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
+  const [pushPermission, setPushPermission] = useState<"granted" | "denied" | "undetermined">("undetermined");
   const { biometricEnabled, biometricAvailable, biometricType, toggleBiometric } = useAppLockContextSafe();
+
+  // Load notification prefs and push permission on mount
+  useEffect(() => {
+    loadNotificationPrefs().then(setNotifPrefs);
+    if (Platform.OS !== "web") {
+      Notifications.getPermissionsAsync().then((s) => setPushPermission(s.status as any));
+    }
+  }, []);
+
+  const updateNotifPref = async (key: keyof NotificationPrefs, value: boolean) => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const updated = { ...notifPrefs, [key]: value };
+    setNotifPrefs(updated);
+    await saveNotificationPrefs(updated);
+  };
 
   const handleToggleFaceId = async (value: boolean) => {
     if (!biometricAvailable) {
@@ -414,7 +438,82 @@ export default function ClientProfileScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>ACCOUNT</Text>
-          <MenuItem icon="bell.fill" label="Notification Preferences" subtitle="SMS, push reminders" onPress={() => router.push("/client-notifications" as any)} />
+          {/* Inline notification reminder toggles */}
+          <View>
+            <View style={[styles.menuItem, { paddingBottom: 4 }]}>
+              <View style={[styles.menuIconWrap, { backgroundColor: "rgba(143,191,106,0.12)" }]}>
+                <IconSymbol name="bell.fill" size={18} color={GREEN_ACCENT} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.menuLabel}>Appointment Reminders</Text>
+                <Text style={styles.menuSubtitle}>Push notifications before each visit</Text>
+              </View>
+            </View>
+            {/* 24h toggle */}
+            <View style={[styles.menuItem, { paddingLeft: 64, paddingTop: 4, paddingBottom: 4, opacity: pushPermission !== "granted" ? 0.45 : 1 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.menuLabel, { fontSize: 14 }]}>24-Hour Reminder</Text>
+                <Text style={styles.menuSubtitle}>Day before your appointment</Text>
+              </View>
+              <Switch
+                value={notifPrefs.pushEnabled && notifPrefs.reminder24h && pushPermission === "granted"}
+                onValueChange={(v) => updateNotifPref("reminder24h", v)}
+                trackColor={{ false: "rgba(255,255,255,0.15)", true: GREEN_ACCENT }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor="rgba(255,255,255,0.15)"
+                disabled={pushPermission !== "granted"}
+              />
+            </View>
+            <View style={styles.divider} />
+            {/* 1h toggle */}
+            <View style={[styles.menuItem, { paddingLeft: 64, paddingTop: 4, paddingBottom: 4, opacity: pushPermission !== "granted" ? 0.45 : 1 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.menuLabel, { fontSize: 14 }]}>1-Hour Reminder</Text>
+                <Text style={styles.menuSubtitle}>One hour before your appointment</Text>
+              </View>
+              <Switch
+                value={notifPrefs.pushEnabled && notifPrefs.reminder1h && pushPermission === "granted"}
+                onValueChange={(v) => updateNotifPref("reminder1h", v)}
+                trackColor={{ false: "rgba(255,255,255,0.15)", true: GREEN_ACCENT }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor="rgba(255,255,255,0.15)"
+                disabled={pushPermission !== "granted"}
+              />
+            </View>
+            <View style={styles.divider} />
+            {/* 30m toggle */}
+            <View style={[styles.menuItem, { paddingLeft: 64, paddingTop: 4, paddingBottom: 4, opacity: pushPermission !== "granted" ? 0.45 : 1 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.menuLabel, { fontSize: 14 }]}>30-Minute Reminder</Text>
+                <Text style={styles.menuSubtitle}>30 minutes before your appointment</Text>
+              </View>
+              <Switch
+                value={notifPrefs.pushEnabled && notifPrefs.reminder30m && pushPermission === "granted"}
+                onValueChange={(v) => updateNotifPref("reminder30m", v)}
+                trackColor={{ false: "rgba(255,255,255,0.15)", true: GREEN_ACCENT }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor="rgba(255,255,255,0.15)"
+                disabled={pushPermission !== "granted"}
+              />
+            </View>
+            {pushPermission !== "granted" && (
+              <Pressable
+                style={({ pressed }) => ({ paddingHorizontal: 64, paddingBottom: 12, paddingTop: 2, opacity: pressed ? 0.7 : 1 })}
+                onPress={() => router.push("/client-notifications" as any)}
+              >
+                <Text style={{ fontSize: 12, color: GREEN_ACCENT }}>Enable push notifications →</Text>
+              </Pressable>
+            )}
+            <View style={styles.divider} />
+            <Pressable
+              style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: "rgba(255,255,255,0.05)" }]}
+              onPress={() => router.push("/client-notifications" as any)}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.menuLabel, { fontSize: 13, color: GREEN_ACCENT }]}>All notification settings →</Text>
+              </View>
+            </Pressable>
+          </View>
           <View style={styles.divider} />
           {/* Face ID / Biometric lock toggle */}
           <Pressable

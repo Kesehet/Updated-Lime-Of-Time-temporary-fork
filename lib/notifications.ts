@@ -14,6 +14,7 @@ export interface NotificationPrefs {
   smsEnabled: boolean;
   reminder24h: boolean;
   reminder1h: boolean;
+  reminder30m: boolean;
   bookingConfirmation: boolean;
   cancellationAlerts: boolean;
 }
@@ -23,6 +24,7 @@ export const DEFAULT_PREFS: NotificationPrefs = {
   smsEnabled: true,
   reminder24h: true,
   reminder1h: true,
+  reminder30m: true,
   bookingConfirmation: true,
   cancellationAlerts: true,
 };
@@ -137,6 +139,23 @@ export async function scheduleAppointmentReminders(
           sound: true,
         },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: trigger1h },
+      });
+      scheduled.push(id);
+    }
+  }
+
+  // 30-minute reminder
+  if (prefs.pushEnabled && prefs.reminder30m) {
+    const trigger30m = new Date(apptDate.getTime() - 30 * 60 * 1000);
+    if (trigger30m.getTime() > now) {
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Appointment in 30 Minutes",
+          body: `${serviceName} at ${businessName} — ${formatTime(time)}`,
+          data: { appointmentId, type: "reminder_30m" },
+          sound: true,
+        },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: trigger30m },
       });
       scheduled.push(id);
     }
