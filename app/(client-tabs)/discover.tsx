@@ -780,6 +780,36 @@ export default function DiscoverScreen() {
         </View>
       )}
 
+      {/* Service type filter chips: All / In Store / Comes to You */}
+      <View style={{ flexDirection: "row", paddingHorizontal: 16, gap: 8, marginBottom: 6, marginTop: 2 }}>
+        {(["all", "instore", "mobile"] as const).map((type) => {
+          const labels = { all: "All", instore: "🏪 In Store", mobile: "🚗 Comes to You" };
+          const active = serviceTypeFilter === type;
+          return (
+            <Pressable
+              key={type}
+              onPress={() => {
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setServiceTypeFilter(type);
+              }}
+              style={({ pressed }) => ({
+                paddingHorizontal: 14,
+                paddingVertical: 7,
+                borderRadius: 20,
+                borderWidth: 1.5,
+                backgroundColor: active ? (type === "mobile" ? "rgba(59,130,246,0.18)" : "rgba(143,191,106,0.2)") : CARD_BG,
+                borderColor: active ? (type === "mobile" ? "#3B82F6" : GREEN_ACCENT) : CARD_BORDER,
+                opacity: pressed ? 0.75 : 1,
+              })}
+            >
+              <Text style={{ color: active ? (type === "mobile" ? "#3B82F6" : GREEN_ACCENT) : TEXT_MUTED, fontSize: 13, fontWeight: active ? "700" : "500" }}>
+                {labels[type]}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {/* Category chips — fixed height horizontal scroll */}
       <View style={s.categoryWrapper}>
         <ScrollView
@@ -836,36 +866,6 @@ export default function DiscoverScreen() {
             });
           })()}
         </ScrollView>
-      </View>
-
-      {/* Service type filter chips: All / In Store / Comes to You */}
-      <View style={{ flexDirection: "row", paddingHorizontal: 16, gap: 8, marginBottom: 4, marginTop: 2 }}>
-        {(["all", "instore", "mobile"] as const).map((type) => {
-          const labels = { all: "All", instore: "🏪 In Store", mobile: "🚗 Comes to You" };
-          const active = serviceTypeFilter === type;
-          return (
-            <Pressable
-              key={type}
-              onPress={() => {
-                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setServiceTypeFilter(type);
-              }}
-              style={({ pressed }) => ({
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 20,
-                borderWidth: 1.5,
-                backgroundColor: active ? (type === "mobile" ? "rgba(59,130,246,0.18)" : "rgba(143,191,106,0.2)") : CARD_BG,
-                borderColor: active ? (type === "mobile" ? "#3B82F6" : GREEN_ACCENT) : CARD_BORDER,
-                opacity: pressed ? 0.75 : 1,
-              })}
-            >
-              <Text style={{ color: active ? (type === "mobile" ? "#3B82F6" : GREEN_ACCENT) : TEXT_MUTED, fontSize: 13, fontWeight: active ? "700" : "500" }}>
-                {labels[type]}
-              </Text>
-            </Pressable>
-          );
-        })}
       </View>
 
       {/* Sort toggle row */}
