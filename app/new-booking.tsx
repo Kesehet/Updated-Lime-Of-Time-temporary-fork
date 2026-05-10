@@ -24,6 +24,8 @@ import { trpc } from "@/lib/trpc";
 import { useActiveLocation } from "@/hooks/use-active-location";
 import { useResponsive } from "@/hooks/use-responsive";
 import { FuturisticBackground } from "@/components/futuristic-background";
+import { useStripe } from "@stripe/stripe-react-native";
+import { apiCall } from "@/lib/_core/api";
 
 
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -55,8 +57,9 @@ export default function NewBookingScreen() {
   const { isTablet, hp, width: screenWidth, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const params = useLocalSearchParams<{ date?: string }>();
 
-  const sendSmsMutation = trpc.twilio.sendSms.useMutation();
-
+   const sendSmsMutation = trpc.twilio.sendSms.useMutation();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const [chargingCard, setChargingCard] = useState(false);
   const [step, setStep] = useState<Step>(1);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
@@ -631,7 +634,7 @@ export default function NewBookingScreen() {
     });
   }, [state.products]);
 
-  const handleBook = useCallback(() => {
+  const handleBook = useCallback(async () => {
     if (!selectedServiceId || !selectedClientId || !selectedTime) return;
     // Auto-select the only location if none is selected
     let effectiveLocationId = selectedLocationId;
@@ -696,8 +699,8 @@ export default function NewBookingScreen() {
         discountName: appliedDiscount?.name,
         clientAddress: isMobileService && clientAddress.trim() ? clientAddress.trim() : undefined,
         totalPrice: grandTotal,
-        paymentMethod: grandTotal <= 0 ? 'free' as any : ((selectedPaymentMethod as 'zelle' | 'venmo' | 'cashapp' | 'cash' | undefined) ?? undefined),
-        paymentStatus: grandTotal <= 0 ? 'paid' as const : (selectedPaymentMethod === 'cash' ? 'pending_cash' : (selectedPaymentMethod ? 'unpaid' : undefined)),
+        paymentMethod: grandTotal <= 0 ? 'free' as any : (selectedPaymentMethod === 'card' ? 'card' as any : ((selectedPaymentMethod as 'zelle' | 'venmo' | 'cashapp' | 'cash' | undefined) ?? undefined)),
+        paymentStatus: grandTotal <= 0 ? 'paid' as const : (selectedPaymentMethod === 'cash' ? 'pending_cash' : (selectedPaymentMethod === 'card' ? 'unpaid' : (selectedPaymentMethod ? 'unpaid' : undefined))),
       };
       dispatch({ type: "ADD_APPOINTMENT", payload: appointment });
       syncToDb({ type: "ADD_APPOINTMENT", payload: appointment });
@@ -754,13 +757,61 @@ export default function NewBookingScreen() {
       }
     }
 
+    // If card payment selected, present native Stripe payment sheet before navigating
+    if (selectedPaymentMethod === 'card' && firstAppointmentId && grandTotal > 0 && state.businessOwnerId) {
+      setChargingCard(true);
+      try {
+        const sheetData = await apiCall<{ publishableKey: string; paymentIntent: string; accountId: string }>(
+          '/api/stripe-connect/create-payment-sheet',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              businessOwnerId: state.businessOwnerId,
+              appointmentLocalId: firstAppointmentId,
+              amount: grandTotal,
+              description: selectedService ? `${getServiceDisplayName(selectedService)} - ${selectedClient?.name ?? 'Client'}` : 'Appointment',
+              clientEmail: (selectedClient as any)?.email ?? undefined,
+            }),
+          }
+        );
+        const { error: initError } = await initPaymentSheet({
+          merchantDisplayName: state.settings.businessName ?? 'Business',
+          paymentIntentClientSecret: sheetData.paymentIntent,
+          customerId: undefined,
+          allowsDelayedPaymentMethods: false,
+          defaultBillingDetails: selectedClient?.name ? { name: selectedClient.name } : undefined,
+        });
+        if (initError) {
+          Alert.alert('Payment Error', initError.message);
+          setChargingCard(false);
+          router.replace({ pathname: '/appointment-detail', params: { id: firstAppointmentId } });
+          return;
+        }
+        const { error: presentError } = await presentPaymentSheet();
+        if (presentError) {
+          if (presentError.code !== 'Canceled') {
+            Alert.alert('Payment Failed', presentError.message);
+          }
+          setChargingCard(false);
+          router.replace({ pathname: '/appointment-detail', params: { id: firstAppointmentId } });
+          return;
+        }
+        // Payment succeeded — update appointment payment status
+        dispatch({ type: 'UPDATE_APPOINTMENT', payload: { id: firstAppointmentId, paymentStatus: 'paid', paymentMethod: 'card' } });
+        syncToDb({ type: 'UPDATE_APPOINTMENT', payload: { id: firstAppointmentId, paymentStatus: 'paid', paymentMethod: 'card' } });
+        setChargingCard(false);
+      } catch (err: any) {
+        Alert.alert('Payment Error', err?.message ?? 'Failed to process card payment');
+        setChargingCard(false);
+      }
+    }
     // Navigate to the newly created appointment detail
     if (firstAppointmentId) {
       router.replace({ pathname: "/appointment-detail", params: { id: firstAppointmentId } });
     } else {
       router.back();
     }
-  }, [selectedServiceId, selectedClientId, selectedDate, selectedTime, totalDuration, notes, cart, recurring, dispatch, router, appliedDiscount, discountAmount, totalPrice, subtotal, grandTotal, clientAddress, isMobileService, travelFeeAmount, selectedStaffId, selectedLocationId, syncToDb, selectedService, selectedClient, state.settings, sendSmsMutation]);
+  }, [selectedServiceId, selectedClientId, selectedDate, selectedTime, totalDuration, notes, cart, recurring, dispatch, router, appliedDiscount, discountAmount, totalPrice, subtotal, grandTotal, clientAddress, isMobileService, travelFeeAmount, selectedStaffId, selectedLocationId, syncToDb, selectedService, selectedClient, state.settings, sendSmsMutation, selectedPaymentMethod, initPaymentSheet, presentPaymentSheet, state.businessOwnerId, chargingCard]);
 
   const getInitials = (name: string) => {
     const parts = name.split(" ");
@@ -2355,6 +2406,10 @@ export default function NewBookingScreen() {
               if (pm.cashAppHandle) opts.push({ id: 'cashapp', label: '💚 Cash App', sub: pm.cashAppHandle.startsWith('$') ? pm.cashAppHandle : '$' + pm.cashAppHandle, color: '#00d632' });
               if (pm.venmoHandle) opts.push({ id: 'venmo', label: '💙 Venmo', sub: pm.venmoHandle.startsWith('@') ? pm.venmoHandle : '@' + pm.venmoHandle, color: '#3d95ce' });
               opts.push({ id: 'cash', label: '💵 Cash', sub: 'Collect in person', color: '#888' });
+              // Add card option if Stripe is connected
+              if ((state.settings as any).stripeConnectEnabled) {
+                opts.unshift({ id: 'card', label: '💳 Charge Card Now', sub: 'Enter client card details via Stripe', color: '#635BFF' });
+              }
               return opts.map((opt) => (
                 <Pressable
                   key={opt.id}
@@ -2391,10 +2446,11 @@ export default function NewBookingScreen() {
               }
               handleBook();
             }}
-            style={({ pressed }) => [styles.bookButton, { backgroundColor: selectedPaymentMethod ? colors.primary : colors.muted, opacity: pressed ? 0.8 : 1 }]}
+            disabled={chargingCard}
+            style={({ pressed }) => [styles.bookButton, { backgroundColor: selectedPaymentMethod ? (selectedPaymentMethod === 'card' ? '#635BFF' : colors.primary) : colors.muted, opacity: (pressed || chargingCard) ? 0.8 : 1 }]}
           >
             <Text className="text-base font-semibold text-white">
-              {recurring !== 'none' ? `Book ${recurring === 'weekly' ? 8 : recurring === 'biweekly' ? 6 : 4} Appointments` : 'Confirm Booking'}
+              {chargingCard ? 'Processing Payment…' : selectedPaymentMethod === 'card' ? '💳 Book & Charge Card' : (recurring !== 'none' ? `Book ${recurring === 'weekly' ? 8 : recurring === 'biweekly' ? 6 : 4} Appointments` : 'Confirm Booking')}
             </Text>
           </Pressable>
 
