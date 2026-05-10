@@ -2038,3 +2038,4 @@
 - [x] Booking wizard: Auto-advance past Location step for single-location businesses (300ms delay then jump to Staff)
 - [x] Booking wizard: Show location address below location name on Location step cards (already present, confirmed)
 - [x] Booking wizard: Filter time slots by selected location (cache invalidated on location change; API already location-aware)
+- [x] Booking wizard: Redeem Gift now lands on Location step (step 1) instead of jumping to Staff step, so client picks branch first before proceeding

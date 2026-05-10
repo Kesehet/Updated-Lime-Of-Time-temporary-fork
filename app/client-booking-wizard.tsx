@@ -320,21 +320,23 @@ export default function ClientBookingWizardScreen() {
           setSelectedLocation(locList[0]);
         }
         // Location step is always shown (step 1 = Location, step 2 = Staff)
-        const initialStaffStep = 2;
+        // When arriving from "Redeem Gift" (preGiftCode present), land on the Location step
+        // so the client picks their branch first. For all other deep-links (service card,
+        // Book Again, etc.) jump straight to the Staff step as before.
+        const isGiftRedeem = !!preGiftCode;
+        const initialStep = isGiftRedeem ? 1 : 2; // 1 = Location, 2 = Staff
         if (serviceLocalId) {
           const found = svcList.find((s) => s.localId === serviceLocalId);
           if (found) {
             setSelectedService(found);
-            // Jump directly to Staff step — skip Location step if only 1 location
-            setStep(initialStaffStep);
+            setStep(initialStep);
           }
         } else if (preServiceName) {
-          // Book Again: pre-select service by name (case-insensitive match)
+          // Book Again / Redeem Gift by name: pre-select service by name (case-insensitive match)
           const found = svcList.find((s) => s.name.toLowerCase() === String(preServiceName).toLowerCase());
           if (found) {
             setSelectedService(found);
-            // Jump to Staff step for Book Again flow as well
-            setStep(initialStaffStep);
+            setStep(initialStep);
           }
         }
         // Pre-select staff from "Book with [Name]" on business detail
