@@ -1,0 +1,90 @@
+{
+  "query": "SELECT localId, businessOwnerId, date, time, paymentStatus, stripePaymentIntentId FROM appointments WHERE businessOwnerId = 1620003 AND date = '2026-05-11' ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT localId, businessOwnerId, date, time, paymentStatus, stripePaymentIntentId FROM appointments WHERE businessOwnerId = 1620003 AND date = '2026-05-11' ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "localId": "mp0gduiui1xvjnp",
+      "businessOwnerId": "1620003",
+      "date": "2026-05-11",
+      "time": "14:15",
+      "paymentStatus": "unpaid",
+      "stripePaymentIntentId": "pi_3TVhY276eWmScMb304O3IaiG"
+    },
+    {
+      "localId": "mp0e7cvemtkv39z",
+      "businessOwnerId": "1620003",
+      "date": "2026-05-11",
+      "time": "13:00",
+      "paymentStatus": "unpaid",
+      "stripePaymentIntentId": "NULL"
+    },
+    {
+      "localId": "mp0dxktc1lor1vv",
+      "businessOwnerId": "1620003",
+      "date": "2026-05-11",
+      "time": "15:30",
+      "paymentStatus": "unpaid",
+      "stripePaymentIntentId": "NULL"
+    },
+    {
+      "localId": "mp0dtwb1y5bycxs",
+      "businessOwnerId": "1620003",
+      "date": "2026-05-11",
+      "time": "11:45",
+      "paymentStatus": "unpaid",
+      "stripePaymentIntentId": "NULL"
+    },
+    {
+      "localId": "mp0dsdj1rlu4y5u",
+      "businessOwnerId": "1620003",
+      "date": "2026-05-11",
+      "time": "14:15",
+      "paymentStatus": "unpaid",
+      "stripePaymentIntentId": "NULL"
+    },
+    {
+      "localId": "web-1778378747428-o2g6ip",
+      "businessOwnerId": "1620003",
+      "date": "2026-05-11",
+      "time": "13:00",
+      "paymentStatus": "unpaid",
+      "stripePaymentIntentId": "NULL"
+    },
+    {
+      "localId": "web-1778378639483-wn1m3v",
+      "businessOwnerId": "1620003",
+      "date": "2026-05-11",
+      "time": "11:30",
+      "paymentStatus": "paid",
+      "stripePaymentIntentId": "NULL"
+    },
+    {
+      "localId": "web-1778281981205-0r3ouz",
+      "businessOwnerId": "1620003",
+      "date": "2026-05-11",
+      "time": "09:00",
+      "paymentStatus": "unpaid",
+      "stripePaymentIntentId": "pi_3TVcy876eWmScMb30Vkn9qY4"
+    },
+    {
+      "localId": "web-1778209315692-aqhjrc",
+      "businessOwnerId": "1620003",
+      "date": "2026-05-11",
+      "time": "10:30",
+      "paymentStatus": "pending_cash",
+      "stripePaymentIntentId": "NULL"
+    },
+    {
+      "localId": "web-1778207894283-sisfly",
+      "businessOwnerId": "1620003",
+      "date": "2026-05-11",
+      "time": "10:00",
+      "paymentStatus": "pending_cash",
+      "stripePaymentIntentId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "localId\tbusinessOwnerId\tdate\ttime\tpaymentStatus\tstripePaymentIntentId\nmp0gduiui1xvjnp\t1620003\t2026-05-11\t14:15\tunpaid\tpi_3TVhY276eWmScMb304O3IaiG\nmp0e7cvemtkv39z\t1620003\t2026-05-11\t13:00\tunpaid\tNULL\nmp0dxktc1lor1vv\t1620003\t2026-05-11\t15:30\tunpaid\tNULL\nmp0dtwb1y5bycxs\t1620003\t2026-05-11\t11:45\tunpaid\tNULL\nmp0dsdj1rlu4y5u\t1620003\t2026-05-11\t14:15\tunpaid\tNULL\nweb-1778378747428-o2g6ip\t1620003\t2026-05-11\t13:00\tunpaid\tNULL\nweb-1778378639483-wn1m3v\t1620003\t2026-05-11\t11:30\tpaid\tNULL\nweb-1778281981205-0r3ouz\t1620003\t2026-05-11\t09:00\tunpaid\tpi_3TVcy876eWmScMb30Vkn9qY4\nweb-1778209315692-aqhjrc\t1620003\t2026-05-11\t10:30\tpending_cash\tNULL\nweb-1778207894283-sisfly\t1620003\t2026-05-11\t10:00\tpending_cash\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 575
+}

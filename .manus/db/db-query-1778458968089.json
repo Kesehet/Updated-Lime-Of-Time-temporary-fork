@@ -1,0 +1,22 @@
+{
+  "query": "SELECT localId, date, time, paymentStatus FROM appointments WHERE businessOwnerId = 1620003 AND date = '2026-05-11' AND time = '14:15';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT localId, date, time, paymentStatus FROM appointments WHERE businessOwnerId = 1620003 AND date = '2026-05-11' AND time = '14:15';",
+  "rows": [
+    {
+      "localId": "mp0dsdj1rlu4y5u",
+      "date": "2026-05-11",
+      "time": "14:15",
+      "paymentStatus": "unpaid"
+    },
+    {
+      "localId": "mp0gduiui1xvjnp",
+      "date": "2026-05-11",
+      "time": "14:15",
+      "paymentStatus": "unpaid"
+    }
+  ],
+  "messages": [],
+  "stdout": "localId\tdate\ttime\tpaymentStatus\nmp0dsdj1rlu4y5u\t2026-05-11\t14:15\tunpaid\nmp0gduiui1xvjnp\t2026-05-11\t14:15\tunpaid\n",
+  "stderr": "",
+  "execution_time_ms": 558
+}

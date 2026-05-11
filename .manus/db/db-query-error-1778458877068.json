@@ -1,0 +1,8 @@
+{
+  "query": "SELECT a.localId, a.businessOwnerId, a.date, a.time, a.paymentStatus, a.stripePaymentIntentId, c.firstName, c.lastName FROM appointments a LEFT JOIN clients c ON a.clientId = c.id WHERE a.businessOwnerId = 1620003 AND a.date = '2026-05-11' ORDER BY a.createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT a.localId, a.businessOwnerId, a.date, a.time, a.paymentStatus, a.stripePaymentIntentId, c.firstName, c.lastName FROM appointments a LEFT JOIN clients c ON a.clientId = c.id WHERE a.businessOwnerId = 1620003 AND a.date = '2026-05-11' ORDER BY a.createdAt DESC LIMIT 10;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'a.clientid' in 'on clause'"
+  ]
+}
