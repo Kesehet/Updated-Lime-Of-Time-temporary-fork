@@ -5654,7 +5654,6 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         var shadow = isSelected ? '0 0 0 3px rgba(74,140,63,0.12)' : 'none';
         // Build full address: street, city, state zip
         var fullAddr = buildFullAddress(loc.address, loc.city, loc.state, loc.zipCode);
-        var mapUrl = fullAddr ? 'https://maps.google.com/?q=' + encodeURIComponent(fullAddr) : '';
         var checkmark = isSelected ? '<span style="color:var(--accent);font-size:18px;font-weight:700;line-height:1;">&#10003;</span>' : '';
         html += '<div onclick="selectLocation(' + Q + loc.localId + Q + ')" style="padding:14px 16px;border:1.5px solid ' + borderColor + ';border-radius:14px;margin-bottom:8px;cursor:pointer;background:' + bgColor + ';transition:all 0.2s;box-shadow:' + shadow + ';">';
         html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">';
