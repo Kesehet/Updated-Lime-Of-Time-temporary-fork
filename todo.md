@@ -2083,3 +2083,8 @@
 - [x] Each filter shows targeted action buttons (Send Reminder, Send Payment Link, Send Review Request, Come Back Soon)
 - [x] Fix "Selected time slot is no longer available" error on booking confirmation (interval mismatch + missing clientToday/nowMinutes in POST body)
 - [x] Fix multi-service selection on public booking page (checkboxes, multi-toggle, updated totals, extraItems in POST)
+- [x] Fix Packages auto-delete bug (syncToDb not called in packages.tsx)
+- [x] Add 3 Packages to Lime Cut & Wellness DB (Hair + Nails + Wellness bundles)
+- [x] Step 3: Category-grouped selected services panel with remove button and total time/price
+- [x] Step 5 (Extras): Products only, skip step if no products available
+- [x] Step 8 (Confirm): Each service/product as separate line item with name, category, duration, price

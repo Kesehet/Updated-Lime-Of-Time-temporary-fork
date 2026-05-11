@@ -5151,7 +5151,12 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       <!-- Search results -->
       <div id="svcSearchResults" style="display:none;"></div>
       <!-- Selected service summary -->
-      <div id="svcSelectedSummary" style="display:none;margin-top:12px;padding:10px 14px;background:var(--accent-bg-light);border:1.5px solid var(--accent);border-radius:10px;font-size:14px;color:var(--accent);font-weight:600;"></div>
+      <!-- Selected services panel (category-grouped) -->
+      <div id="svcSelectedPanel" style="display:none;margin-top:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Selected Services</div>
+        <div id="svcSelectedList"></div>
+        <div id="svcSelectedTotals" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--accent-bg-light);border:1.5px solid var(--accent);border-radius:10px;margin-top:8px;font-size:14px;font-weight:700;color:var(--accent);"></div>
+      </div>
       <div style="display:flex;gap:8px;margin-top:16px;">
         <button class="btn btn-secondary" onclick="goToStep(1)" style="flex:1">Back</button>
         <button class="btn btn-primary" onclick="goToStep(3)" id="btnToStaff" disabled style="flex:1">Continue</button>
@@ -5245,13 +5250,9 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
 
     <!-- Step 5: Add More Services/Products -->
     <div id="step-5" class="card" style="display:none">
-      <h2>Add More (Optional)</h2>
-      <p style="font-size:13px;color:#888;margin-bottom:12px;">Add extra services or products to your booking.</p>
+      <h2>Add Products (Optional)</h2>
+      <p style="font-size:13px;color:#888;margin-bottom:12px;">Add products to your booking, or continue to payment.</p>
       <div id="cartSummary" class="cart-items"></div>
-      <div class="seg-control" id="addMoreSeg">
-        <div class="seg-btn active" onclick="switchAddTab('services')">Services</div>
-        <div class="seg-btn" onclick="switchAddTab('products')">Products</div>
-      </div>
       <!-- Search bar -->
       <div style="position:relative;margin-bottom:12px;">
         <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;color:#aaa;">&#128269;</span>
@@ -5289,7 +5290,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       <p style="font-size:13px;color:#888;margin-bottom:16px;">Choose how you'd like to pay, or skip and decide later.</p>
       <div id="paymentMethodList"></div>
       <div style="display:flex;gap:8px;margin-top:20px;">
-        <button class="btn btn-secondary" onclick="goToStep(5)" style="flex:1">Back</button>
+        <button class="btn btn-secondary" onclick="products.length === 0 ? goToStep(4) : goToStep(5)" style="flex:1">Back</button>
         <button class="btn btn-primary" onclick="goToPaymentConfirm()" style="flex:1">Continue to Confirm</button>
       </div>
     </div>
@@ -5899,7 +5900,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       selectedServices = [];
       selectedService = null;
       document.getElementById('btnToStaff').disabled = true;
-      document.getElementById('svcSelectedSummary').style.display = 'none';
+      document.getElementById('svcSelectedPanel').style.display = 'none';
     }
 
     function onSvcSearch(query) {
@@ -5993,19 +5994,50 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       if (popCard) popCard.style.borderColor = isSelected ? 'var(--accent)' : 'var(--bdi)';
     }
     function updateSvcSelectionSummary() {
-      var summaryEl = document.getElementById('svcSelectedSummary');
+      var panelEl = document.getElementById('svcSelectedPanel');
+      var listEl = document.getElementById('svcSelectedList');
+      var totalsEl = document.getElementById('svcSelectedTotals');
+      if (!panelEl || !listEl || !totalsEl) return;
       if (selectedServices.length === 0) {
-        summaryEl.style.display = 'none';
+        panelEl.style.display = 'none';
         return;
       }
+      // Group by category
+      var catMap = {};
+      var catOrder = [];
+      selectedServices.forEach(function(s) {
+        var cat = s.category || 'Other';
+        if (!catMap[cat]) { catMap[cat] = []; catOrder.push(cat); }
+        catMap[cat].push(s);
+      });
+      var html = '';
+      catOrder.forEach(function(cat) {
+        var svcs = catMap[cat];
+        if (catOrder.length > 1) {
+          html += '<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px;">' + esc(cat) + '</div>';
+        }
+        svcs.forEach(function(s) {
+          var dur = (s.duration || 0) >= 60
+            ? ((s.duration / 60).toFixed(1).replace(/\.0$/, '') + ' hr')
+            : (s.duration + ' min');
+          html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--bg-card);border:1.5px solid var(--accent);border-radius:10px;margin-bottom:6px;gap:8px;">' +
+            '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(s.name) + '</div>' +
+            '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">' + esc(cat) + ' &middot; ' + dur + ' &middot; $' + parseFloat(s.price || 0).toFixed(2) + '</div>' +
+            '</div>' +
+            '<button onclick="toggleServiceSelection(\'' + s.localId + '\')" style="flex-shrink:0;background:transparent;border:none;cursor:pointer;padding:4px;color:var(--text-secondary);font-size:18px;line-height:1;" title="Remove">&#10005;</button>' +
+            '</div>';
+        });
+      });
+      listEl.innerHTML = html;
+      // Totals row
       var totalDurSel = selectedServices.reduce(function(a, s) { return a + (s.duration || 0); }, 0);
       var totalPriceSel = selectedServices.reduce(function(a, s) { return a + parseFloat(s.price || 0); }, 0);
-      var names = selectedServices.map(function(s) { return esc(s.name); }).join(', ');
       var durStr = totalDurSel >= 60
         ? (totalDurSel / 60).toFixed(1).replace(/\.0$/, '') + ' hr'
         : totalDurSel + ' min';
-      summaryEl.innerHTML = '&#10003; ' + names + ' &mdash; $' + totalPriceSel.toFixed(2) + ' &middot; ' + durStr;
-      summaryEl.style.display = 'block';
+      totalsEl.innerHTML = '<span>&#128337; ' + durStr + '</span><span>$' + totalPriceSel.toFixed(2) + ' total</span>';
+      panelEl.style.display = 'block';
     }
 
     function renderStaffStep() {
@@ -6145,6 +6177,11 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       if (step === 3 && !selectedService) { alert("Please select a service"); return; }
       // step 3 = staff (optional, always allowed)
       if (step === 5 && (!selectedDate || !selectedTime)) { alert("Please select a date and time"); return; }
+      // Skip step 5 (Add Products) if no products available
+      if (step === 5 && products.length === 0 && (fromStep === 4 || fromStep === '4b' || currentStep === 4 || currentStep === '4b')) {
+        _showStep(6);
+        return;
+      }
       // For mobile services: intercept step 5 (Extras) to show address step first
       if (step === 5 && isMobileService() && (fromStep === 4 || currentStep === 4)) {
         // Go to address step instead
@@ -6803,21 +6840,17 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     let addMoreSearchQuery = ''; // live search query
 
     function initAddMoreStep() {
-      // Reset drill-down state each time step 3 is entered
-      addTab = 'services';
+      // Step 5 is products-only: always default to products tab
+      addTab = 'products';
       selectedAddCat = null;
       selectedAddBrand = null;
       addMoreSearchQuery = '';
       const searchEl = document.getElementById("addMoreSearch");
       if (searchEl) searchEl.value = '';
       document.getElementById("addMoreSearchResults").style.display = 'none';
-      // Show services panel, hide products panel
-      document.getElementById("addServicePanel").style.display = 'block';
-      document.getElementById("addProductPanel").style.display = 'none';
-      // Reset seg control
-      document.querySelectorAll("#addMoreSeg .seg-btn").forEach((el,i) => {
-        el.classList.toggle("active", i === 0);
-      });
+      // Hide services panel, show products panel
+      document.getElementById("addServicePanel").style.display = 'none';
+      document.getElementById("addProductPanel").style.display = 'block';
       renderAddMore();
     }
 
@@ -7314,17 +7347,43 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       if (selectedStaff) {
         staffHtml = '<div class="confirm-row"><span class="confirm-label">Staff</span><span class="confirm-value"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (selectedStaff.color || '#6366f1') + ';margin-right:6px;"></span>' + esc(selectedStaff.name) + '</span></div>';
       }
-      // Build items list
+      // Build items list — each service and product as a separate line item
       let itemsHtml = '';
-      selectedServices.forEach(function(sv, si) {
-        itemsHtml += '<div class="confirm-row"><span class="confirm-label">' + (si === 0 ? 'Service' : '+ Service') + '</span><span class="confirm-value">' + esc(sv.name) + ' \u2014 $' + parseFloat(sv.price).toFixed(2) + '</span></div>';
+      var svcsToShow = selectedServices.length > 0 ? selectedServices : (selectedService ? [selectedService] : []);
+      svcsToShow.forEach(function(sv, si) {
+        var svDur = (sv.duration || 0) >= 60
+          ? ((sv.duration / 60).toFixed(1).replace(/\.0$/, '') + ' hr')
+          : (sv.duration + ' min');
+        var svMeta = (sv.category ? esc(sv.category) + ' \u00b7 ' : '') + svDur;
+        itemsHtml += '<div class="confirm-row" style="align-items:flex-start;">' +
+          '<div style="display:flex;flex-direction:column;flex:1;">' +
+          '<span class="confirm-label" style="font-weight:600;color:var(--text);">' + esc(sv.name) + '</span>' +
+          '<span style="font-size:11px;color:var(--text-secondary);margin-top:1px;">' + svMeta + '</span>' +
+          '</div>' +
+          '<span class="confirm-value" style="font-weight:600;">$' + parseFloat(sv.price).toFixed(2) + '</span>' +
+          '</div>';
       });
-      if (selectedServices.length === 0 && selectedService) {
-        itemsHtml += '<div class="confirm-row"><span class="confirm-label">Service</span><span class="confirm-value">' + esc(selectedService.name) + ' \u2014 $' + parseFloat(selectedService.price).toFixed(2) + '</span></div>';
-      }
       cart.forEach(c => {
-        const label = c.type === 'product' ? 'Product' : 'Service';
-        itemsHtml += '<div class="confirm-row"><span class="confirm-label">' + label + '</span><span class="confirm-value">' + esc(c.name) + ' \u2014 $' + c.price.toFixed(2) + '</span></div>';
+        if (c.type === 'product') {
+          itemsHtml += '<div class="confirm-row" style="align-items:flex-start;">' +
+            '<div style="display:flex;flex-direction:column;flex:1;">' +
+            '<span class="confirm-label" style="font-weight:600;color:var(--text);">' + esc(c.name) + '</span>' +
+            '<span style="font-size:11px;color:var(--text-secondary);margin-top:1px;">Product</span>' +
+            '</div>' +
+            '<span class="confirm-value" style="font-weight:600;">$' + c.price.toFixed(2) + '</span>' +
+            '</div>';
+        } else {
+          var cDur = (c.duration || 0) >= 60
+            ? ((c.duration / 60).toFixed(1).replace(/\.0$/, '') + ' hr')
+            : ((c.duration || 0) + ' min');
+          itemsHtml += '<div class="confirm-row" style="align-items:flex-start;">' +
+            '<div style="display:flex;flex-direction:column;flex:1;">' +
+            '<span class="confirm-label" style="font-weight:600;color:var(--text);">' + esc(c.name) + '</span>' +
+            '<span style="font-size:11px;color:var(--text-secondary);margin-top:1px;">Add-on \u00b7 ' + cDur + '</span>' +
+            '</div>' +
+            '<span class="confirm-value" style="font-weight:600;">$' + c.price.toFixed(2) + '</span>' +
+            '</div>';
+        }
       });
       // Travel fee line item (mobile services only) — use dynamic fee when available
       var effectiveTravelFee = isMobileService() ? (dynamicTravelFee != null ? dynamicTravelFee : (selectedService.travelFee ? parseFloat(selectedService.travelFee) : 0)) : 0;

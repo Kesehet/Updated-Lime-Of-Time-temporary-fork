@@ -1,0 +1,9 @@
+{
+  "query": "SELECT bo.id, bo.phone, sp.localId, sp.name, sp.packagePrice, sp.isActive, sp.createdAt FROM business_owners bo LEFT JOIN service_packages sp ON sp.businessOwnerId = bo.id WHERE bo.phone = '4124827733' OR bo.phone = '+14124827733' ORDER BY sp.createdAt DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT bo.id, bo.phone, sp.localId, sp.name, sp.packagePrice, sp.isActive, sp.createdAt FROM business_owners bo LEFT JOIN service_packages sp ON sp.businessOwnerId = bo.id WHERE bo.phone = '4124827733' OR bo.phone = '+14124827733' ORDER BY sp.createdAt DESC LIMIT 20;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 572
+}

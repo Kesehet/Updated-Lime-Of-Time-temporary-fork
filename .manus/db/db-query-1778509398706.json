@@ -1,0 +1,150 @@
+{
+  "query": "SELECT localId, name, price, duration, category FROM services WHERE businessOwnerId = 1620003 ORDER BY category, name LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT localId, name, price, duration, category FROM services WHERE businessOwnerId = 1620003 ORDER BY category, name LIMIT 20;",
+  "rows": [
+    {
+      "localId": "seed-1777610087445-9",
+      "name": "Balayage",
+      "price": "185.00",
+      "duration": "180",
+      "category": "Hair"
+    },
+    {
+      "localId": "seed-1777610087428-7",
+      "name": "Blowout & Style",
+      "price": "55.00",
+      "duration": "45",
+      "category": "Hair"
+    },
+    {
+      "localId": "seed-1777610087419-6",
+      "name": "Children's Haircut",
+      "price": "25.00",
+      "duration": "30",
+      "category": "Hair"
+    },
+    {
+      "localId": "seed-1777610087489-14",
+      "name": "Deep Conditioning Treatment",
+      "price": "45.00",
+      "duration": "30",
+      "category": "Hair"
+    },
+    {
+      "localId": "seed-1777610087454-10",
+      "name": "Full Color",
+      "price": "120.00",
+      "duration": "120",
+      "category": "Hair"
+    },
+    {
+      "localId": "seed-1777610087471-12",
+      "name": "Gloss & Toner",
+      "price": "65.00",
+      "duration": "45",
+      "category": "Hair"
+    },
+    {
+      "localId": "seed-1777610087463-11",
+      "name": "Highlights",
+      "price": "155.00",
+      "duration": "150",
+      "category": "Hair"
+    },
+    {
+      "localId": "seed-1777610087479-13",
+      "name": "Keratin Treatment",
+      "price": "250.00",
+      "duration": "180",
+      "category": "Hair"
+    },
+    {
+      "localId": "seed-1777610087410-5",
+      "name": "Men's Haircut",
+      "price": "35.00",
+      "duration": "30",
+      "category": "Hair"
+    },
+    {
+      "localId": "seed-1777610087505-15",
+      "name": "Scalp Treatment",
+      "price": "40.00",
+      "duration": "30",
+      "category": "Hair"
+    },
+    {
+      "localId": "seed-1777610087437-8",
+      "name": "Updo & Special Occasion",
+      "price": "95.00",
+      "duration": "90",
+      "category": "Hair"
+    },
+    {
+      "localId": "seed-1777610087401-4",
+      "name": "Women's Haircut & Style",
+      "price": "65.00",
+      "duration": "60",
+      "category": "Hair"
+    },
+    {
+      "localId": "seed-1777610087678-35",
+      "name": "Aromatherapy Massage",
+      "price": "95.00",
+      "duration": "60",
+      "category": "Massage"
+    },
+    {
+      "localId": "seed-1777610087688-36",
+      "name": "Couples Massage",
+      "price": "175.00",
+      "duration": "60",
+      "category": "Massage"
+    },
+    {
+      "localId": "seed-1777610087662-33",
+      "name": "Deep Tissue Massage",
+      "price": "100.00",
+      "duration": "60",
+      "category": "Massage"
+    },
+    {
+      "localId": "seed-1777610087671-34",
+      "name": "Hot Stone Massage",
+      "price": "145.00",
+      "duration": "90",
+      "category": "Massage"
+    },
+    {
+      "localId": "seed-1777610087697-37",
+      "name": "Prenatal Massage",
+      "price": "95.00",
+      "duration": "60",
+      "category": "Massage"
+    },
+    {
+      "localId": "seed-1777610087645-31",
+      "name": "Swedish Massage (60 min)",
+      "price": "90.00",
+      "duration": "60",
+      "category": "Massage"
+    },
+    {
+      "localId": "seed-1777610087654-32",
+      "name": "Swedish Massage (90 min)",
+      "price": "130.00",
+      "duration": "90",
+      "category": "Massage"
+    },
+    {
+      "localId": "seed-1777610087567-22",
+      "name": "Acrylic Fill",
+      "price": "40.00",
+      "duration": "60",
+      "category": "Nails"
+    }
+  ],
+  "messages": [],
+  "stdout": "localId\tname\tprice\tduration\tcategory\nseed-1777610087445-9\tBalayage\t185.00\t180\tHair\nseed-1777610087428-7\tBlowout & Style\t55.00\t45\tHair\nseed-1777610087419-6\tChildren's Haircut\t25.00\t30\tHair\nseed-1777610087489-14\tDeep Conditioning Treatment\t45.00\t30\tHair\nseed-1777610087454-10\tFull Color\t120.00\t120\tHair\nseed-1777610087471-12\tGloss & Toner\t65.00\t45\tHair\nseed-1777610087463-11\tHighlights\t155.00\t150\tHair\nseed-1777610087479-13\tKeratin Treatment\t250.00\t180\tHair\nseed-1777610087410-5\tMen's Haircut\t35.00\t30\tHair\nseed-1777610087505-15\tScalp Treatment\t40.00\t30\tHair\nseed-1777610087437-8\tUpdo & Special Occasion\t95.00\t90\tHair\nseed-1777610087401-4\tWomen's Haircut & Style\t65.00\t60\tHair\nseed-1777610087678-35\tAromatherapy Massage\t95.00\t60\tMassage\nseed-1777610087688-36\tCouples Massage\t175.00\t60\tMassage\nseed-1777610087662-33\tDeep Tissue Massage\t100.00\t60\tMassage\nseed-1777610087671-34\tHot Stone Massage\t145.00\t90\tMassage\nseed-1777610087697-37\tPrenatal Massage\t95.00\t60\tMassage\nseed-1777610087645-31\tSwedish Massage (60 min)\t90.00\t60\tMassage\nseed-1777610087654-32\tSwedish Massage (90 min)\t130.00\t90\tMassage\nseed-1777610087567-22\tAcrylic Fill\t40.00\t60\tNails\n",
+  "stderr": "",
+  "execution_time_ms": 690
+}

@@ -39,7 +39,7 @@ const EMPTY_FORM = {
 };
 
 export default function PackagesScreen() {
-  const { state, dispatch } = useStore();
+  const { state, dispatch, syncToDb } = useStore();
   const colors = useColors();
   const router = useRouter();
   const { isTablet, hp, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
@@ -114,6 +114,7 @@ export default function PackagesScreen() {
         photoUri: form.photoUri,
       };
       dispatch({ type: "UPDATE_PACKAGE", payload: updated });
+      syncToDb({ type: "UPDATE_PACKAGE", payload: updated });
     } else {
       const newPkg: ServicePackage = {
         id: generateId(),
@@ -130,6 +131,7 @@ export default function PackagesScreen() {
         createdAt: new Date().toISOString(),
       };
       dispatch({ type: "ADD_PACKAGE", payload: newPkg });
+      syncToDb({ type: "ADD_PACKAGE", payload: newPkg });
     }
     setShowForm(false);
   }, [form, editingId, validate, dispatch, state.packages]);
@@ -143,7 +145,7 @@ export default function PackagesScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => dispatch({ type: "DELETE_PACKAGE", payload: pkg.id }),
+          onPress: () => { dispatch({ type: "DELETE_PACKAGE", payload: pkg.id }); syncToDb({ type: "DELETE_PACKAGE", payload: pkg.id }); },
         },
       ]
     );
