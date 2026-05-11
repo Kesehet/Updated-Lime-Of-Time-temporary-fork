@@ -5126,7 +5126,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
 
     <!-- Step 1: Select Service -->
     <div id="step-2" class="card" style="display:none">
-      <h2>Select a Service</h2>
+      <h2>Select Services</h2>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">Tap to select one or more services for your appointment.</p>
       <!-- Search bar -->
       <div style="margin-bottom:12px;">
         <input id="svcSearch" type="text" placeholder="&#128269; Search services..." oninput="onSvcSearch(this.value)"
@@ -5415,7 +5416,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     let locations = [];
     let customDays = {};
     let apiWeeklyDays = null; // weeklyDays from last loadWorkingDays() call (location-scoped)
-    let selectedService = null;
+    let selectedService = null; // primary service (first selected) — kept for backward compat
+    let selectedServices = []; // all selected services (array of service objects)
     let selectedStaff = null;
     let selectedLocation = ${preselectedLocationId ? `"${preselectedLocationId}"` : 'null'};
     let selectedDate = null;
@@ -5763,7 +5765,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       popularList.innerHTML = html;
       popularList.querySelectorAll('.popular-card[data-svc-id]').forEach(function(card) {
         card.addEventListener('click', function() {
-          openSvcDetail(card.getAttribute('data-svc-id'));
+          toggleServiceSelection(card.getAttribute('data-svc-id'));
         });
       });
       popularRow.style.display = 'block';
@@ -5837,15 +5839,17 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       html += '<div class="service-list">';
       filtered.forEach(function(s) {
         var dur = s.duration >= 60 ? (s.duration / 60) + ' hr' + (s.duration > 60 ? 's' : '') : s.duration + ' min';
+        var isChecked = selectedServices.some(function(x) { return x.localId === s.localId; });
         var svcThumb = s.photoUri
           ? '<div class="service-dot"><img src="' + esc(s.photoUri) + '" /></div>'
           : '<div class="service-dot" style="background:' + (s.color || '#4a8c3f') + '20;color:' + (s.color || '#4a8c3f') + ';">' + esc((s.name||'?')[0].toUpperCase()) + '</div>';
-        html += '<div class="service-item" data-svc-id="' + esc(s.localId) + '">' +
+        var checkHtml = '<div class="svc-multi-check" style="width:22px;height:22px;border-radius:6px;border:2px solid ' + (isChecked ? 'var(--accent)' : 'var(--border)') + ';background:' + (isChecked ? 'var(--accent)' : 'transparent') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;">' + (isChecked ? '<span style="color:#fff;font-size:11px;">&#10003;</span>' : '') + '</div>';
+        html += '<div class="service-item" data-svc-id="' + esc(s.localId) + '" style="cursor:pointer;' + (isChecked ? 'background:var(--accent-bg-light);' : '') + '">' +
           svcThumb +
           '<div class="service-info"><div class="service-name">' + esc(s.name) +
           mobileBadgeHtml(s) + '</div>' +
-          '<div class="service-meta">' + dur + '</div></div>' +
-          '<div class="service-price">$' + parseFloat(s.price).toFixed(2) + '</div></div>';
+          '<div class="service-meta">' + dur + ' &middot; $' + parseFloat(s.price).toFixed(2) + '</div></div>' +
+          checkHtml + '</div>';
       });
       html += '</div>';
       listEl.innerHTML = html;
@@ -5853,7 +5857,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       document.getElementById('svcCatGrid').style.display = 'none';
       listEl.querySelectorAll('.service-item[data-svc-id]').forEach(function(item) {
         item.addEventListener('click', function() {
-          openSvcDetail(item.getAttribute('data-svc-id'));
+          toggleServiceSelection(item.getAttribute('data-svc-id'));
         });
       });
     }
@@ -5868,7 +5872,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       var s = services.find(function(x) { return x.localId === id; });
       if (!s) return;
       var dur = s.duration >= 60 ? (s.duration / 60) + ' hr' + (s.duration > 60 ? 's' : '') : s.duration + ' min';
-      var isSelected = selectedService && selectedService.localId === id;
+      var isSelected = selectedServices.some(function(x) { return x.localId === id; });
       var html = '';
       if (s.photoUri) html += '<img src="' + esc(s.photoUri) + '" style="width:100%;height:180px;object-fit:cover;border-radius:12px;margin-bottom:14px;">';
       html += '<div style="display:inline-block;background:var(--accent-bg-light);color:var(--accent);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;">' + esc((s.category || 'General').trim() || 'General') + '</div>' +
@@ -5892,6 +5896,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     }
 
     function deselectSvc() {
+      selectedServices = [];
       selectedService = null;
       document.getElementById('btnToStaff').disabled = true;
       document.getElementById('svcSelectedSummary').style.display = 'none';
@@ -5925,44 +5930,82 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         var html = '<div class="service-list">';
         matches.forEach(function(s) {
           var dur = s.duration >= 60 ? (s.duration / 60) + ' hr' + (s.duration > 60 ? 's' : '') : s.duration + ' min';
+          var isChecked = selectedServices.some(function(x) { return x.localId === s.localId; });
           var svcThumbS = s.photoUri
             ? '<div class="service-dot"><img src="' + esc(s.photoUri) + '" /></div>'
             : '<div class="service-dot" style="background:' + (s.color || '#4a8c3f') + '20;color:' + (s.color || '#4a8c3f') + ';">' + esc((s.name||'?')[0].toUpperCase()) + '</div>';
-          html += '<div class="service-item" data-svc-id="' + esc(s.localId) + '">' +
+          var checkHtmlS = '<div class="svc-multi-check" style="width:22px;height:22px;border-radius:6px;border:2px solid ' + (isChecked ? 'var(--accent)' : 'var(--border)') + ';background:' + (isChecked ? 'var(--accent)' : 'transparent') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;">' + (isChecked ? '<span style="color:#fff;font-size:11px;">&#10003;</span>' : '') + '</div>';
+          html += '<div class="service-item" data-svc-id="' + esc(s.localId) + '" style="cursor:pointer;' + (isChecked ? 'background:var(--accent-bg-light);' : '') + '">' +
             svcThumbS +
             '<div class="service-info"><div class="service-name">' + esc(s.name) +
             mobileBadgeHtml(s) + '</div>' +
-            '<div class="service-meta">' + dur + (s.category ? ' · ' + esc(s.category) : '') + '</div></div>' +
-            '<div class="service-price">$' + parseFloat(s.price).toFixed(2) + '</div></div>';
+            '<div class="service-meta">' + dur + (s.category ? ' · ' + esc(s.category) : '') + ' &middot; $' + parseFloat(s.price).toFixed(2) + '</div></div>' +
+            checkHtmlS + '</div>';
         });
         html += '</div>';
         resultsEl.innerHTML = html;
         resultsEl.querySelectorAll('.service-item[data-svc-id]').forEach(function(item) {
           item.addEventListener('click', function() {
-            openSvcDetail(item.getAttribute('data-svc-id'));
+            toggleServiceSelection(item.getAttribute('data-svc-id'));
           });
         });
       }
       resultsEl.style.display = 'block';
     }
 
-    function selectService(id) {
-      selectedService = services.find(function(s) { return s.localId === id; });
-      selectedStaff = null;
-      document.getElementById('btnToStaff').disabled = false;
-      // Show selected service summary banner
-      var summaryEl = document.getElementById('svcSelectedSummary');
-      if (selectedService) {
-        var dur = selectedService.duration >= 60
-          ? (selectedService.duration / 60) + ' hr' + (selectedService.duration > 60 ? 's' : '')
-          : selectedService.duration + ' min';
-        summaryEl.innerHTML = '&#10003; ' + esc(selectedService.name) + ' &mdash; $' + parseFloat(selectedService.price).toFixed(2) + ' &middot; ' + dur;
-        summaryEl.style.display = 'block';
+    function toggleServiceSelection(id) {
+      var svc = services.find(function(s) { return s.localId === id; });
+      if (!svc) return;
+      var idx = selectedServices.findIndex(function(s) { return s.localId === id; });
+      if (idx >= 0) {
+        selectedServices.splice(idx, 1);
       } else {
-        summaryEl.style.display = 'none';
+        selectedServices.push(svc);
       }
-      // Show staff selection for this service
-      renderStaffForService(id);
+      // Keep selectedService as the first selected for backward compat
+      selectedService = selectedServices.length > 0 ? selectedServices[0] : null;
+      // Update visual state of all matching rows
+      updateSvcRowVisual(id);
+      updateSvcSelectionSummary();
+      // Enable/disable Continue button
+      document.getElementById('btnToStaff').disabled = selectedServices.length === 0;
+      // Update staff list for the primary service
+      if (selectedService) renderStaffForService(selectedService.localId);
+    }
+    function selectService(id) {
+      // Legacy single-select: called from detail sheet. Now delegates to toggle.
+      toggleServiceSelection(id);
+    }
+    function updateSvcRowVisual(id) {
+      var isSelected = selectedServices.some(function(s) { return s.localId === id; });
+      // Update list rows
+      document.querySelectorAll('[data-svc-id="' + id + '"]').forEach(function(item) {
+        var chk = item.querySelector('.svc-multi-check');
+        if (chk) {
+          chk.style.background = isSelected ? 'var(--accent)' : 'transparent';
+          chk.style.borderColor = isSelected ? 'var(--accent)' : 'var(--border)';
+          chk.innerHTML = isSelected ? '<span style="color:#fff;font-size:11px;">&#10003;</span>' : '';
+        }
+        item.style.background = isSelected ? 'var(--accent-bg-light)' : '';
+      });
+      // Update popular card border
+      var popCard = document.getElementById('pop_' + id);
+      if (popCard) popCard.style.borderColor = isSelected ? 'var(--accent)' : 'var(--bdi)';
+    }
+    function updateSvcSelectionSummary() {
+      var summaryEl = document.getElementById('svcSelectedSummary');
+      if (selectedServices.length === 0) {
+        summaryEl.style.display = 'none';
+        return;
+      }
+      var totalDurSel = selectedServices.reduce(function(a, s) { return a + (s.duration || 0); }, 0);
+      var totalPriceSel = selectedServices.reduce(function(a, s) { return a + parseFloat(s.price || 0); }, 0);
+      var names = selectedServices.map(function(s) { return esc(s.name); }).join(', ');
+      var durStr = totalDurSel >= 60
+        ? (totalDurSel / 60).toFixed(1).replace(/\.0$/, '') + ' hr'
+        : totalDurSel + ' min';
+      summaryEl.innerHTML = '&#10003; ' + names + ' &mdash; $' + totalPriceSel.toFixed(2) + ' &middot; ' + durStr;
+      summaryEl.style.display = 'block';
     }
 
     function renderStaffStep() {
@@ -6737,12 +6780,12 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         const end = parseInt(d.endTime.split(":")[0]) * 60 + parseInt(d.endTime.split(":")[1]);
         if (timeMin < start || timeMin >= end) return false;
         if (d.dates && d.dates.length > 0 && !d.dates.includes(selectedDate)) return false;
-        if (d.serviceIds && d.serviceIds.length > 0 && !d.serviceIds.includes(selectedService.localId)) return false;
+        if (d.serviceIds && d.serviceIds.length > 0 && !selectedServices.some(function(sv) { return d.serviceIds.includes(sv.localId); })) return false;
         return true;
       });
       if (match) {
         appliedDiscount = { name: match.name, percentage: match.percentage };
-        const orig = parseFloat(selectedService.price);
+        const orig = selectedServices.reduce(function(a, sv) { return a + parseFloat(sv.price || 0); }, 0);
         const disc = orig * (1 - match.percentage / 100);
           info.innerHTML = '<div style="background:var(--accent-bg);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;">🎉 <strong>' + match.name + '</strong> — ' + match.percentage + '% off! <span style="text-decoration:line-through;color:var(--text-muted);">$' + orig.toFixed(2) + '</span> → <strong style="color:var(--accent-dark);">$' + disc.toFixed(2) + '</strong></div>';
         info.style.display = "block";
@@ -6798,7 +6841,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       const cartSvcIds = cart.filter(c => c.type === 'service').map(c => c.id);
       const cartProdIds = cart.filter(c => c.type === 'product').map(c => c.id);
       const matchedSvcs = services.filter(s =>
-        s.localId !== selectedService.localId &&
+        !selectedServices.some(function(sv) { return sv.localId === s.localId; }) &&
         !cartSvcIds.includes(s.localId) &&
         (s.name || '').toLowerCase().includes(addMoreSearchQuery)
       );
@@ -6861,13 +6904,16 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
 
     function renderCartSummary() {
       const el = document.getElementById("cartSummary");
-      // Primary service always in cart
-      let items = [{type:'service', name: selectedService.name, price: parseFloat(selectedService.price), duration: selectedService.duration}];
-      items = items.concat(cart);
+      // All selected primary services + cart add-ons
+      let primaryItems = selectedServices.length > 0
+        ? selectedServices.map(function(sv) { return {type:'service', name: sv.name, price: parseFloat(sv.price), duration: sv.duration}; })
+        : (selectedService ? [{type:'service', name: selectedService.name, price: parseFloat(selectedService.price), duration: selectedService.duration}] : []);
+      let items = primaryItems.concat(cart);
       el.innerHTML = items.map((item, i) => {
         const priceStr = "$" + item.price.toFixed(2);
         const durStr = item.duration ? " (" + item.duration + " min)" : "";
-        const removeBtn = i > 0 ? '<span class="cart-remove" onclick="removeCartItem(' + (i-1) + ')">&times;</span>' : '<span style="font-size:11px;color:#4a8c3f;font-weight:600;">PRIMARY</span>';
+        const isPrimary = i < primaryItems.length;
+        const removeBtn = isPrimary ? '<span style="font-size:11px;color:#4a8c3f;font-weight:600;">PRIMARY</span>' : '<span class="cart-remove" onclick="removeCartItem(' + (i - primaryItems.length) + ')">&times;</span>';
         return '<div class="cart-item"><span>' + esc(item.name) + durStr + '</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-weight:600;">' + priceStr + '</span>' + removeBtn + '</span></div>';
       }).join("");
 
@@ -6888,7 +6934,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     // ── Services drill-down ───────────────────────────────────────────────────
     function renderServiceDrillDown() {
       const cartSvcIds = cart.filter(c => c.type === 'service').map(c => c.id);
-      const available = services.filter(s => s.localId !== selectedService.localId && !cartSvcIds.includes(s.localId));
+      const available = services.filter(s => !selectedServices.some(function(sv) { return sv.localId === s.localId; }) && !cartSvcIds.includes(s.localId));
 
       // Build category map
       const catMap = {};
@@ -7168,7 +7214,9 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     }
 
     function getTotalDuration() {
-      let dur = selectedService ? selectedService.duration : 60;
+      let dur = selectedServices.length > 0
+        ? selectedServices.reduce(function(a, s) { return a + (s.duration || 0); }, 0)
+        : 60;
       cart.forEach(c => { dur += (c.duration || 0); });
       // For mobile services, add travel duration (one-way travel time, added twice for round trip)
       if (isMobileService() && selectedService.travelDuration) {
@@ -7177,13 +7225,17 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       return dur;
     }
     function getServiceOnlyDuration() {
-      let dur = selectedService ? selectedService.duration : 60;
+      let dur = selectedServices.length > 0
+        ? selectedServices.reduce(function(a, s) { return a + (s.duration || 0); }, 0)
+        : 60;
       cart.forEach(c => { dur += (c.duration || 0); });
       return dur;
     }
 
     function getTotalPrice() {
-      let total = selectedService ? parseFloat(selectedService.price) : 0;
+      let total = selectedServices.length > 0
+        ? selectedServices.reduce(function(a, s) { return a + parseFloat(s.price || 0); }, 0)
+        : 0;
       cart.forEach(c => { total += c.price; });
       // Add travel fee for mobile services — use dynamic fee (distance-based) if available, else fixed
       if (isMobileService()) {
@@ -7263,7 +7315,13 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         staffHtml = '<div class="confirm-row"><span class="confirm-label">Staff</span><span class="confirm-value"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (selectedStaff.color || '#6366f1') + ';margin-right:6px;"></span>' + esc(selectedStaff.name) + '</span></div>';
       }
       // Build items list
-      let itemsHtml = '<div class="confirm-row"><span class="confirm-label">Service</span><span class="confirm-value">' + esc(selectedService.name) + ' \u2014 $' + parseFloat(selectedService.price).toFixed(2) + '</span></div>';
+      let itemsHtml = '';
+      selectedServices.forEach(function(sv, si) {
+        itemsHtml += '<div class="confirm-row"><span class="confirm-label">' + (si === 0 ? 'Service' : '+ Service') + '</span><span class="confirm-value">' + esc(sv.name) + ' \u2014 $' + parseFloat(sv.price).toFixed(2) + '</span></div>';
+      });
+      if (selectedServices.length === 0 && selectedService) {
+        itemsHtml += '<div class="confirm-row"><span class="confirm-label">Service</span><span class="confirm-value">' + esc(selectedService.name) + ' \u2014 $' + parseFloat(selectedService.price).toFixed(2) + '</span></div>';
+      }
       cart.forEach(c => {
         const label = c.type === 'product' ? 'Product' : 'Service';
         itemsHtml += '<div class="confirm-row"><span class="confirm-label">' + label + '</span><span class="confirm-value">' + esc(c.name) + ' \u2014 $' + c.price.toFixed(2) + '</span></div>';
@@ -7422,13 +7480,21 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         if (selectedStaff) {
           notesText = (notesText ? notesText + String.fromCharCode(10) : '') + 'Preferred staff: ' + selectedStaff.name;
         }
+        if (selectedServices.length > 1) {
+          const extraSvcs = selectedServices.slice(1).map(function(sv) { return sv.name + ' ($' + parseFloat(sv.price).toFixed(2) + ')'; }).join(', ');
+          notesText = (notesText ? notesText + String.fromCharCode(10) : '') + 'Additional services: ' + extraSvcs;
+        }
         if (cart.length > 0) {
           const extras = cart.map(c => c.name + ' ($' + c.price.toFixed(2) + ')').join(', ');
           notesText = (notesText ? notesText + String.fromCharCode(10) : '') + 'Additional items: ' + extras;
         }
 
         const chargedPrice = getChargedPrice();
-        const extraItems = cart.map(c => ({ name: c.name, price: c.price, type: c.type }));
+        // Build extraItems: selectedServices[1+] (additional primary services) + cart add-ons
+        const extraItems = [
+          ...selectedServices.slice(1).map(function(sv) { return { name: sv.name, price: parseFloat(sv.price), duration: sv.duration, type: 'service', id: sv.localId }; }),
+          ...cart.map(c => ({ name: c.name, price: c.price, duration: c.duration, type: c.type, id: c.id }))
+        ];
 
         // ── Card payment: book first, then redirect to Stripe Checkout ──────
         if (selectedPaymentMethod === 'card' && PAYMENT_METHODS.stripeEnabled && chargedPrice > 0) {
@@ -7485,7 +7551,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
               businessOwnerId: PAYMENT_METHODS.businessOwnerId,
               appointmentLocalId: bookData.appointmentId || bookData.localId || '',
               clientName: document.getElementById('clientName').value.trim(),
-              serviceName: selectedService.name,
+              serviceName: selectedServices.length > 0 ? selectedServices.map(function(sv){return sv.name;}).join(', ') : (selectedService ? selectedService.name : 'Service'),
               amount: chargedPrice,
               successUrl: successUrl,
               cancelUrl: cancelUrl,
@@ -7587,7 +7653,10 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
 
       // Items list
       html += '<div style="margin-bottom:12px;">';
-      html += '<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span>\u2022 ' + esc(selectedService.name) + ' (' + selectedService.duration + ' min)</span><span style="font-weight:600;">$' + parseFloat(selectedService.price).toFixed(2) + '</span></div>';
+      var svcsToShow = selectedServices.length > 0 ? selectedServices : (selectedService ? [selectedService] : []);
+      svcsToShow.forEach(function(sv) {
+        html += '<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span>\u2022 ' + esc(sv.name) + ' (' + sv.duration + ' min)</span><span style="font-weight:600;">$' + parseFloat(sv.price).toFixed(2) + '</span></div>';
+      });
       cart.forEach(c => {
         const durLabel = c.duration > 0 ? ' (' + c.duration + ' min)' : '';
         const typeLabel = c.type === 'product' ? ' [Product]' : '';
@@ -7792,8 +7861,9 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       const chargedPriceC = getChargedPrice();
       const clientNameVal = (document.getElementById("clientName") || {}).value || "";
       const clientPhoneVal = (document.getElementById("clientPhone") || {}).value || "";
-      let desc = selectedService.name + " (" + selectedService.duration + " min) - $" + parseFloat(selectedService.price).toFixed(2);
-      cart.forEach(c => { desc += "\\n" + c.name + " - $" + c.price.toFixed(2); });
+      var svcsForCal = selectedServices.length > 0 ? selectedServices : (selectedService ? [selectedService] : []);
+      let desc = svcsForCal.map(function(sv) { return sv.name + ' (' + sv.duration + ' min) - $' + parseFloat(sv.price).toFixed(2); }).join('\n');
+      cart.forEach(c => { desc += "\n" + c.name + " - $" + c.price.toFixed(2); });
       desc += "\\nTotal: $" + chargedPriceC.toFixed(2);
       if (clientNameVal) desc += "\\nClient: " + clientNameVal;
       if (clientPhoneVal) desc += " - " + clientPhoneVal;
