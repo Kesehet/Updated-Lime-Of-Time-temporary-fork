@@ -24,9 +24,16 @@ export default function BookingPoliciesScreen() {
   const autoCompleteDelay = settings.autoCompleteDelayMinutes ?? 5;
   const responseWindow = settings.requestResponseWindowHours ?? 48;
   const giftValidDays = settings.giftValidDays ?? 90;
+  const giftMinBalance = settings.giftMinBalance ?? 10;
 
   const setGiftValidDays = useCallback((days: number) => {
     const action = { type: "UPDATE_SETTINGS" as const, payload: { giftValidDays: days } };
+    dispatch(action);
+    syncToDb(action);
+  }, [dispatch, syncToDb]);
+
+  const setGiftMinBalance = useCallback((amount: number) => {
+    const action = { type: "UPDATE_SETTINGS" as const, payload: { giftMinBalance: amount } };
     dispatch(action);
     syncToDb(action);
   }, [dispatch, syncToDb]);
@@ -277,6 +284,34 @@ export default function BookingPoliciesScreen() {
               >
                 <Text style={{ fontSize: fs.xs, fontWeight: "600", color: giftValidDays === d ? "#fff" : colors.foreground }}>
                   {d === 365 ? "1 year" : `${d} days`}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+        {/* Gift Card Minimum Balance */}
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.switchRow}>
+            <View style={styles.switchLabel}>
+              <IconSymbol name="dollarsign.circle.fill" size={20} color="#E91E63" />
+              <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.foreground, marginLeft: 12 }}>Min. Balance Gift Amount</Text>
+            </View>
+          </View>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 10, marginTop: 4 }}>
+            Minimum dollar amount clients can purchase as a balance gift card
+          </Text>
+          <View style={styles.chipRow}>
+            {[5, 10, 15, 20, 25, 50].map((amt) => (
+              <Pressable
+                key={amt}
+                onPress={() => setGiftMinBalance(amt)}
+                style={[styles.chip, {
+                  backgroundColor: giftMinBalance === amt ? "#E91E63" : colors.background,
+                  borderColor: giftMinBalance === amt ? "#E91E63" : colors.border,
+                }]}
+              >
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: giftMinBalance === amt ? "#fff" : colors.foreground }}>
+                  ${amt}
                 </Text>
               </Pressable>
             ))}

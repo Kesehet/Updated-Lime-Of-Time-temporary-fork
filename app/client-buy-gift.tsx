@@ -145,7 +145,7 @@ export default function ClientBuyGiftScreen() {
   const [packages, setPackages] = useState<GiftPackage[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [giftTab, setGiftTab] = useState<"services" | "packages">("services");
-  const [giftMode, setGiftMode] = useState<"specific" | "balance">("specific");
+  const [giftMode, setGiftMode] = useState<"specific" | "balance" | "package">("specific");
   const [balanceAmount, setBalanceAmount] = useState<string>("");
   const [giftCategoryFilter, setGiftCategoryFilter] = useState<string | null>(null);
   const [previewItem, setPreviewItem] = useState<GiftItem | null>(null);
@@ -314,8 +314,8 @@ export default function ClientBuyGiftScreen() {
   const selectedPackage = packages.find(p => p.localId === selectedPackageId) ?? null;
   const totalValue = giftMode === "balance"
     ? (parseFloat(balanceAmount) || 0)
-    : selectedPackage
-      ? selectedPackage.packagePrice
+    : (giftMode === "package" || selectedPackage)
+      ? (selectedPackage?.packagePrice ?? 0)
       : selectedItemsList.reduce((sum, i) => sum + i.price, 0) + productCartTotal;
 
   const toggleItem = useCallback((id: string) => {
@@ -331,8 +331,8 @@ export default function ClientBuyGiftScreen() {
   const handleBack = () => {
     if (step === 0) { router.back(); return; }
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (giftMode === "balance") {
-      // Balance mode: skip steps 3 (Date) and 4 (Staff)
+    if (giftMode === "balance" || giftMode === "package") {
+      // Balance/Package mode: skip steps 3 (Date) and 4 (Staff)
       // Steps: 0=Items, 1=Products, 2=Details, 3=Date, 4=Staff, 5=Payment
       if (step === 5) { setStep(2); return; }
     }
@@ -341,8 +341,8 @@ export default function ClientBuyGiftScreen() {
 
   const handleNext = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (giftMode === "balance") {
-      // Balance mode: skip steps 3 (Date) and 4 (Staff) — go directly from 2 to 5
+    if (giftMode === "balance" || giftMode === "package") {
+      // Balance/Package mode: skip steps 3 (Date) and 4 (Staff) — go directly from 2 to 5
       // Steps: 0=Items, 1=Products, 2=Details, 3=Date, 4=Staff, 5=Payment
       if (step === 2) { setStep(5); return; }
     }
@@ -352,6 +352,7 @@ export default function ClientBuyGiftScreen() {
   const canProceed = (): boolean => {
     if (step === 0) {
       if (giftMode === "balance") return parseFloat(balanceAmount) > 0;
+      if (giftMode === "package") return !!selectedPackageId;
       return selectedItems.size > 0 || !!selectedPackageId;
     }
     // step 1 = Products: always can proceed (products are optional add-ons)
@@ -371,8 +372,8 @@ export default function ClientBuyGiftScreen() {
     setSubmitting(true);
     if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     try {
-      const serviceIds = giftMode === "balance" ? [] : selectedItemsList.filter(i => i.type === "service").map(i => i.localId);
-      const productIds = giftMode === "balance" ? [] : selectedItemsList.filter(i => i.type === "product").map(i => i.localId);
+      const serviceIds = (giftMode === "balance" || giftMode === "package") ? [] : selectedItemsList.filter(i => i.type === "service").map(i => i.localId);
+      const productIds = (giftMode === "balance" || giftMode === "package") ? [] : selectedItemsList.filter(i => i.type === "product").map(i => i.localId);
       // Include product cart items (from Products step)
       const addedProductItems = products
         .filter(p => (productCart[p.localId] ?? 0) > 0)
@@ -391,15 +392,15 @@ export default function ClientBuyGiftScreen() {
         addedProductItems: addedProductItems.length > 0 ? addedProductItems : undefined,
         addedProductTotal: addedProductTotal > 0 ? addedProductTotal : undefined,
         packageLocalId: selectedPackageId || undefined,
-        giftType: giftMode === "balance" ? "balance" : "service",
+        giftType: giftMode === "balance" ? "balance" : giftMode === "package" ? "package" : "service",
         balanceAmount: giftMode === "balance" ? parseFloat(balanceAmount) : undefined,
         paymentMethod,
         paymentConfirmationNumber: ["zelle","venmo","cashapp"].includes(paymentMethod) ? paymentConfirmationNumber.trim() : undefined,
-        recipientChoosesDate: giftMode === "balance" ? true : recipientChoosesDate,
-        preselectedDate: !recipientChoosesDate && giftMode !== "balance" ? preselectedDate : undefined,
-        preselectedTime: !recipientChoosesDate && selectedSlot && giftMode !== "balance" ? selectedSlot : undefined,
-        staffId: giftMode !== "balance" && selectedStaffId !== "any" ? selectedStaffId : undefined,
-        locationId: giftMode !== "balance" ? (selectedLocation?.localId ?? undefined) : undefined,
+        recipientChoosesDate: (giftMode === "balance" || giftMode === "package") ? true : recipientChoosesDate,
+        preselectedDate: !recipientChoosesDate && giftMode !== "balance" && giftMode !== "package" ? preselectedDate : undefined,
+        preselectedTime: !recipientChoosesDate && selectedSlot && giftMode !== "balance" && giftMode !== "package" ? selectedSlot : undefined,
+        staffId: giftMode !== "balance" && giftMode !== "package" && selectedStaffId !== "any" ? selectedStaffId : undefined,
+        locationId: giftMode !== "balance" && giftMode !== "package" ? (selectedLocation?.localId ?? undefined) : undefined,
       };
       const res = await fetch(`${apiBase}/api/public/business/${slug}/buy-gift`, {
         method: "POST",
@@ -628,9 +629,9 @@ export default function ClientBuyGiftScreen() {
             <Text style={s.stepTitle}>Choose Gift Items</Text>
             <Text style={s.stepSub}>Select one or more services or products to include in the gift.</Text>
             {/* Gift Type Selector */}
-            <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
+            <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
               <Pressable
-                onPress={() => setGiftMode("specific")}
+                onPress={() => { setGiftMode("specific"); setSelectedPackageId(null); }}
                 style={({ pressed }) => [{
                   flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center",
                   backgroundColor: giftMode === "specific" ? GREEN_ACCENT : "rgba(255,255,255,0.07)",
@@ -639,11 +640,26 @@ export default function ClientBuyGiftScreen() {
                 }]}
               >
                 <Text style={{ fontSize: 18, marginBottom: 2 }}>{"\uD83C\uDF81"}</Text>
-                <Text style={{ color: giftMode === "specific" ? "#1A3A28" : TEXT_PRIMARY, fontWeight: "700", fontSize: 13 }}>Specific Service</Text>
-                <Text style={{ color: giftMode === "specific" ? "#1A3A28" : TEXT_MUTED, fontSize: 11, textAlign: "center", marginTop: 2 }}>Gift a specific service or product</Text>
+                <Text style={{ color: giftMode === "specific" ? "#1A3A28" : TEXT_PRIMARY, fontWeight: "700", fontSize: 12 }}>Service</Text>
+                <Text style={{ color: giftMode === "specific" ? "#1A3A28" : TEXT_MUTED, fontSize: 10, textAlign: "center", marginTop: 2 }}>Gift a service</Text>
               </Pressable>
+              {packages.length > 0 && (
+                <Pressable
+                  onPress={() => { setGiftMode("package"); setSelectedItems(new Set()); }}
+                  style={({ pressed }) => [{
+                    flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center",
+                    backgroundColor: giftMode === "package" ? GREEN_ACCENT : "rgba(255,255,255,0.07)",
+                    borderWidth: 1.5, borderColor: giftMode === "package" ? GREEN_ACCENT : "rgba(255,255,255,0.15)",
+                    opacity: pressed ? 0.85 : 1,
+                  }]}
+                >
+                  <Text style={{ fontSize: 18, marginBottom: 2 }}>{"\uD83D\uDCE6"}</Text>
+                  <Text style={{ color: giftMode === "package" ? "#1A3A28" : TEXT_PRIMARY, fontWeight: "700", fontSize: 12 }}>Package</Text>
+                  <Text style={{ color: giftMode === "package" ? "#1A3A28" : TEXT_MUTED, fontSize: 10, textAlign: "center", marginTop: 2 }}>Gift a bundle</Text>
+                </Pressable>
+              )}
               <Pressable
-                onPress={() => setGiftMode("balance")}
+                onPress={() => { setGiftMode("balance"); setSelectedPackageId(null); }}
                 style={({ pressed }) => [{
                   flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center",
                   backgroundColor: giftMode === "balance" ? GREEN_ACCENT : "rgba(255,255,255,0.07)",
@@ -652,8 +668,8 @@ export default function ClientBuyGiftScreen() {
                 }]}
               >
                 <Text style={{ fontSize: 18, marginBottom: 2 }}>{"\uD83D\uDCB5"}</Text>
-                <Text style={{ color: giftMode === "balance" ? "#1A3A28" : TEXT_PRIMARY, fontWeight: "700", fontSize: 13 }}>Balance Credit</Text>
-                <Text style={{ color: giftMode === "balance" ? "#1A3A28" : TEXT_MUTED, fontSize: 11, textAlign: "center", marginTop: 2 }}>Gift a dollar amount to spend</Text>
+                <Text style={{ color: giftMode === "balance" ? "#1A3A28" : TEXT_PRIMARY, fontWeight: "700", fontSize: 12 }}>Balance</Text>
+                <Text style={{ color: giftMode === "balance" ? "#1A3A28" : TEXT_MUTED, fontSize: 10, textAlign: "center", marginTop: 2 }}>Gift credit</Text>
               </Pressable>
             </View>
             {giftMode === "balance" && (
@@ -813,6 +829,60 @@ export default function ClientBuyGiftScreen() {
                     </View>
                   </Pressable>
                 ))}
+              </>
+            )}
+
+            {/* ── Package mode: show packages list ── */}
+            {giftMode === "package" && (
+              <>
+                {packages.length === 0 ? (
+                  <View style={s.emptyState}>
+                    <Text style={{ fontSize: 32 }}>📦</Text>
+                    <Text style={{ color: TEXT_MUTED, textAlign: "center" }}>No packages available yet.</Text>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={s.sectionHeader}>Available Packages</Text>
+                    {packages.map(pkg => (
+                      <Pressable
+                        key={pkg.localId}
+                        style={({ pressed }) => [
+                          s.itemCard,
+                          selectedPackageId === pkg.localId && { borderColor: GREEN_ACCENT, borderWidth: 2 },
+                          pressed && { opacity: 0.85 },
+                        ]}
+                        onPress={() => {
+                          if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setSelectedPackageId(prev => prev === pkg.localId ? null : pkg.localId);
+                        }}
+                      >
+                        <View style={{ width: 60, height: 60, borderRadius: 10, overflow: "hidden", backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" }}>
+                          {pkg.photoUri ? (
+                            <Image source={{ uri: pkg.photoUri }} style={{ width: 60, height: 60 }} contentFit="cover" />
+                          ) : (
+                            <Text style={{ fontSize: 28 }}>📦</Text>
+                          )}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={s.itemName}>{pkg.name}</Text>
+                          {pkg.description ? <Text style={s.itemDesc} numberOfLines={2}>{pkg.description}</Text> : null}
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 }}>
+                            <Text style={{ color: TEXT_MUTED, fontSize: 12, textDecorationLine: "line-through" }}>${pkg.originalPrice.toFixed(2)}</Text>
+                            <Text style={s.itemPrice}>${pkg.packagePrice.toFixed(2)}</Text>
+                            <Text style={{ color: GREEN_ACCENT, fontSize: 11, fontWeight: "700" }}>{Math.round((1 - pkg.packagePrice / pkg.originalPrice) * 100)}% OFF</Text>
+                          </View>
+                          <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }}>{pkg.totalSessions} session{pkg.totalSessions > 1 ? "s" : ""} · {pkg.packageItems.length} service{pkg.packageItems.length > 1 ? "s" : ""}</Text>
+                        </View>
+                        <View style={[s.checkBox, selectedPackageId === pkg.localId && { backgroundColor: GREEN_ACCENT, borderColor: GREEN_ACCENT }]}>
+                          {selectedPackageId === pkg.localId && <IconSymbol name="checkmark" size={14} color="#fff" />}
+                        </View>
+                      </Pressable>
+                    ))}
+                    <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18, marginTop: 4 }}>
+                      The recipient will choose their own session dates when they redeem the gift.
+                    </Text>
+                  </>
+                )}
               </>
             )}
 

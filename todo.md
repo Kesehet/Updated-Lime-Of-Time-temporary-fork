@@ -2107,3 +2107,6 @@
 - [x] Add "Balance" tab to Buy a Gift page items step (preset amounts + custom input)
 - [x] Wire balance gift type into gift data for downstream Details → Payment steps
 - [x] Enforce $10 minimum balance amount on Buy a Gift Balance tab (front-end + server-side)
+- [x] Add Package gift type to mobile app Buy a Gift screen (show package list, skip Date/Staff, recipient chooses sessions)
+- [x] Add configurable minimum gift card balance amount to business settings page (default $10)
+- [x] Wire configurable minimum from DB into server-side validation and front-end Buy a Gift Balance tab

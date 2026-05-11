@@ -526,6 +526,8 @@ export interface BusinessSettings {
   requestResponseWindowHours?: number; // hours before a pending cancel/reschedule request auto-expires (default: 48)
   /** Number of days a publicly-purchased gift card is valid for. Default 90. */
   giftValidDays?: number;
+  /** Minimum dollar amount for a balance-type gift card purchase. Default 10. */
+  giftMinBalance?: number;
   /** Custom emoji per category name. Key = category name, value = emoji string. */
   categoryEmojis?: Record<string, string>;
   /** Whether this business is visible in the client portal Discover tab */

@@ -1,0 +1,1 @@
+ALTER TABLE `business_owners` ADD `giftMinBalance` int DEFAULT 10 NOT NULL;

@@ -124,6 +124,7 @@ const businessRouter = router({
         smsTemplates: z.any().optional(),
         // Gift card validity
         giftValidDays: z.number().optional(),
+        giftMinBalance: z.number().optional(),
         // Payment methods
         zelleHandle: z.string().optional(),
         cashAppHandle: z.string().optional(),

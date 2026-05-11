@@ -2077,6 +2077,8 @@ export function registerPublicRoutes(app: Express) {
         recipientChoosesDate = true, preselectedDate, preselectedTime } = req.body;
       // Use business-configured validity (default 90 days) instead of client-supplied value
       const expiresInDays = (owner as any).giftValidDays ?? 90;
+      // Use business-configured minimum balance (default $10)
+      const giftMinBalance = (owner as any).giftMinBalance ?? 10;
       if (!purchaserName || !purchaserEmail || !recipientName) {
         res.status(400).json({ error: "purchaserName, purchaserEmail, and recipientName are required" }); return;
       }
@@ -2086,8 +2088,8 @@ export function registerPublicRoutes(app: Express) {
         if (!amt || amt <= 0) {
           res.status(400).json({ error: "A positive balance amount is required for balance-type gifts" }); return;
         }
-        if (amt < 10) {
-          res.status(400).json({ error: "Minimum gift card balance amount is $10.00" }); return;
+        if (amt < giftMinBalance) {
+          res.status(400).json({ error: `Minimum gift card balance amount is $${giftMinBalance.toFixed(2)}` }); return;
         }
       } else if (!giftPackageLocalId) {
         if (!serviceIds.length && !productIds.length) {
@@ -3125,12 +3127,12 @@ function buyGiftPage(slug: string, owner: any): string {
         <button onclick="selectBalancePreset(150)" data-amt="150" class="bal-preset" style="flex:1;min-width:70px;padding:12px 8px;border-radius:12px;border:2px solid var(--bdi);background:var(--bg-card);font-size:15px;font-weight:700;color:var(--text1);cursor:pointer;transition:all .15s;">$150</button>
         <button onclick="selectBalancePreset(200)" data-amt="200" class="bal-preset" style="flex:1;min-width:70px;padding:12px 8px;border-radius:12px;border:2px solid var(--bdi);background:var(--bg-card);font-size:15px;font-weight:700;color:var(--text1);cursor:pointer;transition:all .15s;">$200</button>
       </div>
-      <div style="font-size:12px;font-weight:700;color:var(--textm);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Or Enter Custom Amount <span style="font-weight:400;text-transform:none;font-size:11px;">(min $10)</span></div>
+      <div style="font-size:12px;font-weight:700;color:var(--textm);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Or Enter Custom Amount <span style="font-weight:400;text-transform:none;font-size:11px;">(min $${(owner as any).giftMinBalance ?? 10})</span></div>
       <div style="display:flex;align-items:center;gap:8px;border:2px solid var(--bdi);border-radius:12px;padding:10px 14px;background:var(--bg-card);" id="balCustomWrap">
         <span style="font-size:18px;font-weight:700;color:var(--textm);">$</span>
-        <input type="number" id="balCustomInput" min="10" max="9999" step="1" placeholder="e.g. 75" oninput="onBalCustomInput(this.value)" style="flex:1;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;color:var(--text1);width:100%;">
+        <input type="number" id="balCustomInput" min="${(owner as any).giftMinBalance ?? 10}" max="9999" step="1" placeholder="e.g. 75" oninput="onBalCustomInput(this.value)" style="flex:1;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;color:var(--text1);width:100%;">
       </div>
-      <div id="balMinError" style="display:none;font-size:12px;color:var(--err);margin-top:6px;padding-left:4px;">Minimum gift card amount is $10.00</div>
+      <div id="balMinError" style="display:none;font-size:12px;color:var(--err);margin-top:6px;padding-left:4px;">Minimum gift card amount is $${(owner as any).giftMinBalance ?? 10}.00</div>
       <div id="balSelectedDisplay" style="display:none;margin-top:14px;padding:12px 16px;border-radius:12px;background:rgba(233,30,140,0.08);border:2px solid var(--gift);text-align:center;">
         <div style="font-size:13px;color:var(--textm);margin-bottom:2px;">Gift Card Value</div>
         <div id="balSelectedAmt" style="font-size:24px;font-weight:800;color:var(--gift);"></div>
@@ -3241,6 +3243,7 @@ const SLUG = '${slug.replace(/&/g, '\\u0026')}';
 const SLUG_ENC = encodeURIComponent(SLUG);
 const BIZ_NAME = '${bizName}';
 const OWNER_ID = ${owner.id};
+const GIFT_MIN_BALANCE = ${(owner as any).giftMinBalance ?? 10};
 let allServices = [], allProducts = [], allPackages = [], paymentMethods = {};
 let giftSelectedLocationId = null; // for staff filtering
 let selectedServiceIds = new Set(), selectedProductIds = new Set();
@@ -3486,7 +3489,7 @@ function selectBalancePreset(amt) {
   document.getElementById('balSelectedAmt').textContent = '$' + amt.toFixed(2);
   updateFooterBtn();
 }
-const BAL_MIN = 10;
+const BAL_MIN = GIFT_MIN_BALANCE;
 function onBalCustomInput(val) {
   var amt = parseFloat(val);
   var minErr = document.getElementById('balMinError');

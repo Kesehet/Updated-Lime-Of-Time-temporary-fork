@@ -82,6 +82,8 @@ export const businessOwners = mysqlTable("business_owners", {
   requestResponseWindowHours: int("requestResponseWindowHours").default(48).notNull(),
   /** Number of days a publicly-purchased gift card is valid for. Default 90. */
   giftValidDays: int("giftValidDays").default(90).notNull(),
+  /** Minimum dollar amount for a balance-type gift card purchase. Default 10. */
+  giftMinBalance: int("giftMinBalance").default(10).notNull(),
   /** Notification preferences JSON: per-event push/email toggles */
   notificationPreferences: json("notificationPreferences"),
   /** SMS message templates JSON: per-event custom message bodies */
