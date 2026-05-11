@@ -2096,3 +2096,8 @@
 - [x] Add state to handleSelectReminderTemplate useCallback dependency array
 - [x] Add search bar to Messages tab in Clients screen (filter by client name or message content)
 - [x] Unread message badge already on Clients tab via useBusinessUnreadCount hook (confirmed working)
+- [x] Add public API endpoint for packages: GET /api/public/business/:slug/packages
+- [x] Add Packages & Bundles section to public booking page service selection step
+- [x] Package selection sets duration = sessionDurationMinutes * totalSessions for calendar slot blocking
+- [x] Package booking POSTs with package name in notes, correct duration, and price
+- [x] Package booking receipt shows savings badge and original price

@@ -635,6 +635,30 @@ export function registerPublicRoutes(app: Express) {
     }
   });
 
+  /** Get packages & bundles for a business */
+  app.get("/api/public/business/:slug/packages", async (req: Request, res: Response) => {
+    try {
+      const owner = await db.getBusinessOwnerBySlug(req.params.slug);
+      if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
+      const pkgList = await db.getServicePackagesByOwner(owner.id);
+      res.json(pkgList.filter((p) => p.isActive).map((p) => ({
+        localId: p.localId,
+        name: p.name,
+        description: p.description || null,
+        packagePrice: p.packagePrice,
+        originalPrice: p.originalPrice,
+        totalSessions: p.totalSessions,
+        sessionDurationMinutes: p.sessionDurationMinutes,
+        photoUri: p.photoUri || null,
+        category: p.category || null,
+        packageItems: p.packageItems,
+      })));
+    } catch (err) {
+      console.error("[Public API] Error fetching packages:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   /** Get working days info for calendar */
   app.get("/api/public/business/:slug/working-days", async (req: Request, res: Response) => {
     try {
@@ -5144,6 +5168,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         <div style="font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">&#11088; Most Popular</div>
         <div id="svcPopularList" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;"></div>
       </div>
+      <!-- Packages & Bundles section -->
+      <div id="pkgSection" style="display:none;margin-bottom:4px;"></div>
       <!-- Category tiles -->
       <div id="svcCatGrid" class="tile-grid"></div>
       <!-- Service list (after drilling into a category) -->
@@ -5412,6 +5438,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     const CATEGORY_EMOJIS_MAP = ${JSON.stringify((owner as any).categoryEmojis || {})};
     let services = [];
     let products = [];
+    let packages = [];
     let discounts = [];
     let staffMembers = [];
     let locations = [];
@@ -5419,6 +5446,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     let apiWeeklyDays = null; // weeklyDays from last loadWorkingDays() call (location-scoped)
     let selectedService = null; // primary service (first selected) — kept for backward compat
     let selectedServices = []; // all selected services (array of service objects)
+    let selectedPackage = null; // package/bundle selected (overrides selectedServices when set)
     let selectedStaff = null;
     let selectedLocation = ${preselectedLocationId ? `"${preselectedLocationId}"` : 'null'};
     let selectedDate = null;
@@ -5479,6 +5507,88 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         const res = await fetch(API + "/products");
         products = await res.json();
       } catch(e) { products = []; }
+    }
+
+    // Load packages & bundles
+    async function loadPackages() {
+      try {
+        const res = await fetch(API + "/packages");
+        packages = await res.json();
+        renderPackagesSection();
+      } catch(e) { packages = []; }
+    }
+
+    // Render packages section in step 2
+    function renderPackagesSection() {
+      var container = document.getElementById('pkgSection');
+      if (!container) return;
+      var activePkgs = packages.filter(function(p) { return p.isActive !== false; });
+      if (activePkgs.length === 0) { container.style.display = 'none'; return; }
+      container.style.display = 'block';
+      var html = '<div style="font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">&#127800; Packages &amp; Bundles</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:10px;">';
+      activePkgs.forEach(function(pkg) {
+        var isSelected = selectedPackage && selectedPackage.localId === pkg.localId;
+        var savings = parseFloat(pkg.originalPrice) - parseFloat(pkg.packagePrice);
+        var totalDurMin = (pkg.sessionDurationMinutes || 60) * (pkg.totalSessions || 1);
+        var durStr = totalDurMin >= 60 ? (totalDurMin / 60).toFixed(1).replace(/\.0$/, '') + ' hr' + (totalDurMin > 60 ? 's' : '') : totalDurMin + ' min';
+        var savingsHtml = savings > 0 ? '<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px;">Save $' + savings.toFixed(0) + '</span>' : '';
+        var photoHtml = pkg.photoUri ? '<img src="' + esc(pkg.photoUri) + '" style="width:60px;height:60px;object-fit:cover;border-radius:10px;flex-shrink:0;" />' : '<div style="width:60px;height:60px;border-radius:10px;background:var(--accent-bg-light);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">&#127800;</div>';
+        html += '<div class="pkg-card" data-pkg-id="' + esc(pkg.localId) + '" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;border:2px solid ' + (isSelected ? 'var(--accent)' : 'var(--border)') + ';background:' + (isSelected ? 'var(--accent-bg-light)' : 'var(--bg-card)') + ';cursor:pointer;transition:all .15s;">' +
+          photoHtml +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;">' + esc(pkg.name) + savingsHtml + '</div>' +
+            (pkg.description ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(pkg.description) + '</div>' : '') +
+            '<div style="font-size:12px;color:#888;">' + durStr + (pkg.totalSessions > 1 ? ' &middot; ' + pkg.totalSessions + ' sessions' : '') + '</div>' +
+          '</div>' +
+          '<div style="text-align:right;flex-shrink:0;">' +
+            (savings > 0 ? '<div style="font-size:11px;color:#9ca3af;text-decoration:line-through;">$' + parseFloat(pkg.originalPrice).toFixed(2) + '</div>' : '') +
+            '<div style="font-size:16px;font-weight:700;color:var(--accent);">$' + parseFloat(pkg.packagePrice).toFixed(2) + '</div>' +
+            '<div style="width:22px;height:22px;border-radius:6px;border:2px solid ' + (isSelected ? 'var(--accent)' : 'var(--border)') + ';background:' + (isSelected ? 'var(--accent)' : 'transparent') + ';display:flex;align-items:center;justify-content:center;margin-top:4px;margin-left:auto;">' + (isSelected ? '<span style="color:#fff;font-size:11px;">&#10003;</span>' : '') + '</div>' +
+          '</div>' +
+        '</div>';
+      });
+      html += '</div><div style="height:1px;background:var(--border);margin:14px 0;"></div>';
+      container.innerHTML = html;
+      container.querySelectorAll('.pkg-card[data-pkg-id]').forEach(function(card) {
+        card.addEventListener('click', function() {
+          togglePackageSelection(card.getAttribute('data-pkg-id'));
+        });
+      });
+    }
+
+    function togglePackageSelection(pkgId) {
+      var pkg = packages.find(function(p) { return p.localId === pkgId; });
+      if (!pkg) return;
+      if (selectedPackage && selectedPackage.localId === pkgId) {
+        // Deselect
+        selectedPackage = null;
+        selectedService = null;
+        selectedServices = [];
+      } else {
+        // Select package — clear any individual service selections
+        selectedPackage = pkg;
+        selectedServices = [];
+        var totalDurMin = (pkg.sessionDurationMinutes || 60) * (pkg.totalSessions || 1);
+        // Create a synthetic service object so the rest of the booking flow works unchanged
+        selectedService = {
+          localId: pkg.localId,
+          name: pkg.name,
+          price: pkg.packagePrice,
+          duration: totalDurMin,
+          category: 'Package',
+          description: pkg.description || '',
+          serviceType: 'in_store',
+          travelFee: 0,
+          travelDuration: 0,
+        };
+        selectedServices = [selectedService];
+      }
+      // Re-render packages section to update checkmarks
+      renderPackagesSection();
+      // Update selected panel and continue button
+      updateSvcSelectionSummary();
+      document.getElementById('btnToStaff').disabled = (selectedServices.length === 0 && !selectedPackage);
     }
 
     // Load discounts
@@ -5712,6 +5822,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       svcTypeFilter = 'all';
       document.getElementById('svcItemList').style.display = 'none';
       document.getElementById('svcSearchResults').style.display = 'none';
+      renderPackagesSection();
       // Show filter chips only when both in-store and mobile services exist
       var hasMobile = services.some(function(s) { return s.serviceType === 'mobile'; });
       var hasInStore = services.some(function(s) { return s.serviceType !== 'mobile'; });
@@ -5899,8 +6010,10 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     function deselectSvc() {
       selectedServices = [];
       selectedService = null;
+      selectedPackage = null;
       document.getElementById('btnToStaff').disabled = true;
       document.getElementById('svcSelectedPanel').style.display = 'none';
+      renderPackagesSection();
     }
 
     function onSvcSearch(query) {
@@ -5957,6 +6070,11 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     function toggleServiceSelection(id) {
       var svc = services.find(function(s) { return s.localId === id; });
       if (!svc) return;
+      // Clear any package selection when individual service is chosen
+      if (selectedPackage) {
+        selectedPackage = null;
+        renderPackagesSection();
+      }
       var idx = selectedServices.findIndex(function(s) { return s.localId === id; });
       if (idx >= 0) {
         selectedServices.splice(idx, 1);
@@ -7536,6 +7654,12 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         const totalDur = getTotalDuration();
         // Build notes with extra items and staff
         let notesText = document.getElementById("bookingNotes").value.trim();
+        // Add package info to notes
+        if (selectedPackage) {
+          const pkgSavings = parseFloat(selectedPackage.originalPrice) - parseFloat(selectedPackage.packagePrice);
+          const pkgNote = '📦 Package: ' + selectedPackage.name + ' ($' + parseFloat(selectedPackage.packagePrice).toFixed(2) + (pkgSavings > 0 ? ', saves $' + pkgSavings.toFixed(2) : '') + ')';
+          notesText = (notesText ? notesText + String.fromCharCode(10) : '') + pkgNote;
+        }
         if (selectedStaff) {
           notesText = (notesText ? notesText + String.fromCharCode(10) : '') + 'Preferred staff: ' + selectedStaff.name;
         }
@@ -7712,10 +7836,21 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
 
       // Items list
       html += '<div style="margin-bottom:12px;">';
-      var svcsToShow = selectedServices.length > 0 ? selectedServices : (selectedService ? [selectedService] : []);
-      svcsToShow.forEach(function(sv) {
-        html += '<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span>\u2022 ' + esc(sv.name) + ' (' + sv.duration + ' min)</span><span style="font-weight:600;">$' + parseFloat(sv.price).toFixed(2) + '</span></div>';
-      });
+      if (selectedPackage) {
+        // Show package as a single line with savings badge
+        var pkgSavingsR = parseFloat(selectedPackage.originalPrice) - parseFloat(selectedPackage.packagePrice);
+        var pkgSavingsBadge = pkgSavingsR > 0 ? ' <span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;">Save $' + pkgSavingsR.toFixed(2) + '</span>' : '';
+        var pkgDurMin = (selectedPackage.sessionDurationMinutes || 60) * (selectedPackage.totalSessions || 1);
+        html += '<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span>&#127800; ' + esc(selectedPackage.name) + pkgSavingsBadge + ' (' + pkgDurMin + ' min)</span><span style="font-weight:600;">$' + parseFloat(selectedPackage.packagePrice).toFixed(2) + '</span></div>';
+        if (pkgSavingsR > 0) {
+          html += '<div style="padding:2px 0 4px;font-size:11px;color:#9ca3af;text-decoration:line-through;">Original: $' + parseFloat(selectedPackage.originalPrice).toFixed(2) + '</div>';
+        }
+      } else {
+        var svcsToShow = selectedServices.length > 0 ? selectedServices : (selectedService ? [selectedService] : []);
+        svcsToShow.forEach(function(sv) {
+          html += '<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span>\u2022 ' + esc(sv.name) + ' (' + sv.duration + ' min)</span><span style="font-weight:600;">$' + parseFloat(sv.price).toFixed(2) + '</span></div>';
+        });
+      }
       cart.forEach(c => {
         const durLabel = c.duration > 0 ? ' (' + c.duration + ' min)' : '';
         const typeLabel = c.type === 'product' ? ' [Product]' : '';
@@ -8255,6 +8390,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       }
     }
     loadProducts();
+    loadPackages();
     loadDiscounts();
     loadStaff();
     autoFillGift();

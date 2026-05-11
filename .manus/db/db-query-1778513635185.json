@@ -1,0 +1,43 @@
+{
+  "query": "SELECT sp.localId, sp.name, sp.description, sp.packagePrice, sp.originalPrice, sp.sessionDurationMinutes, sp.totalSessions, sp.isActive, sp.category FROM service_packages sp JOIN business_owners bo ON sp.businessOwnerId = bo.id WHERE bo.businessName LIKE '%Lime%' LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT sp.localId, sp.name, sp.description, sp.packagePrice, sp.originalPrice, sp.sessionDurationMinutes, sp.totalSessions, sp.isActive, sp.category FROM service_packages sp JOIN business_owners bo ON sp.businessOwnerId = bo.id WHERE bo.businessName LIKE '%Lime%' LIMIT 20;",
+  "rows": [
+    {
+      "localId": "pkg-lime-glow-bundle",
+      "name": "Glow & Go Bundle",
+      "description": "Perfect combo for a full hair refresh — Women's Haircut & Style plus a Blowout & Style for a polished finish. Save $15 vs booking separately.",
+      "packagePrice": "105.00",
+      "originalPrice": "120.00",
+      "sessionDurationMinutes": "105",
+      "totalSessions": "1",
+      "isActive": "1",
+      "category": "NULL"
+    },
+    {
+      "localId": "pkg-lime-color-treatment",
+      "name": "Color & Care Package",
+      "description": "Full Color treatment paired with a Deep Conditioning Treatment to keep your color vibrant and hair healthy. Save $20 vs booking separately.",
+      "packagePrice": "145.00",
+      "originalPrice": "165.00",
+      "sessionDurationMinutes": "150",
+      "totalSessions": "1",
+      "isActive": "1",
+      "category": "NULL"
+    },
+    {
+      "localId": "pkg-lime-wellness-escape",
+      "name": "Wellness Escape Package",
+      "description": "Unwind with a Swedish Massage (60 min) followed by a soothing Aromatherapy Massage. The ultimate relaxation duo. Save $25 vs booking separately.",
+      "packagePrice": "160.00",
+      "originalPrice": "185.00",
+      "sessionDurationMinutes": "120",
+      "totalSessions": "1",
+      "isActive": "1",
+      "category": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "localId\tname\tdescription\tpackagePrice\toriginalPrice\tsessionDurationMinutes\ttotalSessions\tisActive\tcategory\npkg-lime-glow-bundle\tGlow & Go Bundle\tPerfect combo for a full hair refresh — Women's Haircut & Style plus a Blowout & Style for a polished finish. Save $15 vs booking separately.\t105.00\t120.00\t105\t1\t1\tNULL\npkg-lime-color-treatment\tColor & Care Package\tFull Color treatment paired with a Deep Conditioning Treatment to keep your color vibrant and hair healthy. Save $20 vs booking separately.\t145.00\t165.00\t150\t1\t1\tNULL\npkg-lime-wellness-escape\tWellness Escape Package\tUnwind with a Swedish Massage (60 min) followed by a soothing Aromatherapy Massage. The ultimate relaxation duo. Save $25 vs booking separately.\t160.00\t185.00\t120\t1\t1\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 564
+}
