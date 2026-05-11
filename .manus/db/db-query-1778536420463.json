@@ -1,0 +1,31 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'gift_cards' AND ORDINAL_POSITION > 20 ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'gift_cards' AND ORDINAL_POSITION > 20 ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "purchasedPublicly"
+    },
+    {
+      "COLUMN_NAME": "preselectedDate"
+    },
+    {
+      "COLUMN_NAME": "preselectedTime"
+    },
+    {
+      "COLUMN_NAME": "pendingRedemptionAppointmentId"
+    },
+    {
+      "COLUMN_NAME": "pendingRedemptionAt"
+    },
+    {
+      "COLUMN_NAME": "appliedValue"
+    },
+    {
+      "COLUMN_NAME": "packageLocalId"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\npurchasedPublicly\npreselectedDate\npreselectedTime\npendingRedemptionAppointmentId\npendingRedemptionAt\nappliedValue\npackageLocalId\n",
+  "stderr": "",
+  "execution_time_ms": 609
+}

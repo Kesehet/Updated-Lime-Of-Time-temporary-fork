@@ -51,6 +51,25 @@ export interface ClientAppointment {
   hasMobileServices?: boolean;
   giftCode?: string | null;
   paymentMethod?: string | null;
+  // Package session fields
+  packageGroupId?: string | null;
+  packageName?: string | null;
+  sessionIndex?: number | null;
+  sessionTotal?: number | null;
+  /** Sibling sessions in the same package group, sorted by sessionIndex */
+  packageSiblings?: PackageSessionSibling[] | null;
+}
+
+export interface PackageSessionSibling {
+  id: number;
+  date: string;
+  time: string;
+  duration: number;
+  status: "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
+  sessionIndex?: number | null;
+  sessionTotal?: number | null;
+  locationName?: string | null;
+  staffName?: string | null;
 }
 
 export interface ClientMessage {

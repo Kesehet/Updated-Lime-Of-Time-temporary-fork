@@ -121,6 +121,8 @@ export default function AppointmentDetailScreen() {
   const [payingOnBehalf, setPayingOnBehalf] = useState(false);
   const [showPayOnBehalfSuccess, setShowPayOnBehalfSuccess] = useState(false);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  // Package sessions accordion
+  const [showSessionsAccordion, setShowSessionsAccordion] = useState(false);
 
 
   // Derived variables — safe with optional chaining (appointment may be null during hydration)
@@ -129,6 +131,13 @@ export default function AppointmentDetailScreen() {
   const assignedStaff = appointment?.staffId ? getStaffById(appointment.staffId) : null;
   const assignedLocation = appointment?.locationId ? getLocationById(appointment.locationId) : null;
   const endTimeStr = appointment ? formatTime(minutesToTime(timeToMinutes(appointment.time) + appointment.duration)) : "";
+  // All sibling sessions in the same package group, sorted by sessionIndex
+  const packageSiblings = useMemo(() => {
+    if (!appointment?.packageGroupId) return [];
+    return state.appointments
+      .filter(a => a.packageGroupId === appointment.packageGroupId)
+      .sort((a, b) => (a.sessionIndex ?? 0) - (b.sessionIndex ?? 0));
+  }, [state.appointments, appointment?.packageGroupId]);
   const policy = state.settings.cancellationPolicy;
   const biz = state.settings;
   const profile = biz.profile;
@@ -1013,11 +1022,17 @@ Would you also like to charge a no-show fee via Stripe?`,
         {(() => {
           const extras = appointment.extraItems ?? [];
           const extraServices = extras.filter(e => e.type === 'service');
+          // For package sessions, service lookup may fail — fall back to appointment.duration and packageName
+          const primaryService = service
+            ? { id: appointment.serviceId, name: getServiceDisplayName(service), duration: service.duration, color: service.color ?? colors.primary }
+            : appointment.packageGroupId
+              ? { id: appointment.serviceId, name: appointment.packageName ?? 'Package Session', duration: appointment.duration ?? 0, color: colors.primary }
+              : null;
           const allServices = [
-            ...(service ? [{ id: appointment.serviceId, name: getServiceDisplayName(service), duration: service.duration, color: service.color ?? colors.primary }] : []),
+            ...(primaryService ? [primaryService] : []),
             ...extraServices.map(e => ({ id: e.id, name: e.name, duration: e.duration, color: colors.primary })),
           ];
-          const totalDuration = allServices.reduce((s, sv) => s + sv.duration, 0);
+          const totalDuration = allServices.reduce((s, sv) => s + sv.duration, 0) || appointment.duration || 0;
           const startMin = timeToMinutes(appointment.time);
           return (
             <View className="rounded-2xl p-4 mb-4" style={{ backgroundColor: (service?.color ?? colors.primary) + '12' }}>
@@ -1048,29 +1063,111 @@ Would you also like to charge a no-show fee via Stripe?`,
           );
         })()}
 
-        {/* Part of Package Banner */}
-        {appointment.packageGroupId && (
-          <View style={{ borderRadius: 14, borderWidth: 1.5, borderColor: '#0891b2', backgroundColor: '#0891b215', paddingVertical: 12, paddingHorizontal: 14, marginBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#0891b2', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: fs.md }}>📦</Text>
+        {/* Part of Package Banner — inline accordion */}
+        {appointment.packageGroupId && (() => {
+          const completedCount = packageSiblings.filter(s => s.status === 'completed').length;
+          const remainingCount = packageSiblings.length - completedCount;
+          return (
+            <View style={{ borderRadius: 14, borderWidth: 1.5, borderColor: '#0891b2', backgroundColor: '#0891b215', marginBottom: 16, overflow: 'hidden' }}>
+              {/* Header row */}
+              <Pressable
+                onPress={() => setShowSessionsAccordion(v => !v)}
+                style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1, paddingVertical: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 })}
+              >
+                <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#0891b2', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: fs.md }}>📦</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: '700', color: '#0891b2' }}>Part of a Package</Text>
+                  {appointment.packageName ? (
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>{appointment.packageName}</Text>
+                  ) : null}
+                  {appointment.sessionIndex != null && appointment.sessionTotal != null ? (
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>Session {appointment.sessionIndex + 1} of {appointment.sessionTotal}</Text>
+                  ) : null}
+                </View>
+                {/* Progress pill */}
+                {packageSiblings.length > 0 && (
+                  <View style={{ backgroundColor: completedCount > 0 ? '#22c55e20' : '#0891b220', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3, marginRight: 4 }}>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: completedCount > 0 ? '#16a34a' : '#0891b2' }}>
+                      {completedCount > 0 ? `${completedCount} done · ${remainingCount} left` : `${remainingCount} upcoming`}
+                    </Text>
+                  </View>
+                )}
+                <Text style={{ fontSize: fs.sm, color: '#0891b2', fontWeight: '700' }}>{showSessionsAccordion ? '▲' : '▼'}</Text>
+              </Pressable>
+
+              {/* Expanded sessions list */}
+              {showSessionsAccordion && packageSiblings.length > 0 && (
+                <View style={{ borderTopWidth: 1, borderTopColor: '#0891b230' }}>
+                  {packageSiblings.map((sess, idx) => {
+                    const isThis = sess.id === appointment.id;
+                    const isDone = sess.status === 'completed';
+                    const isCancelled = sess.status === 'cancelled';
+                    const sessLocation = sess.locationId ? getLocationById(sess.locationId) : null;
+                    const sessStaff = sess.staffId ? getStaffById(sess.staffId) : null;
+                    const sessEndTime = formatTime(minutesToTime(timeToMinutes(sess.time) + sess.duration));
+                    return (
+                      <View
+                        key={sess.id}
+                        style={{
+                          paddingVertical: 10,
+                          paddingHorizontal: 14,
+                          borderTopWidth: idx === 0 ? 0 : StyleSheet.hairlineWidth,
+                          borderTopColor: '#0891b220',
+                          backgroundColor: isThis ? '#0891b210' : 'transparent',
+                          flexDirection: 'row',
+                          alignItems: 'flex-start',
+                          gap: 10,
+                        }}
+                      >
+                        {/* Status icon */}
+                        <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: isDone ? '#22c55e' : isCancelled ? '#ef444430' : '#0891b220', alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
+                          <Text style={{ fontSize: 11 }}>{isDone ? '✓' : isCancelled ? '✕' : `${idx + 1}`}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          {/* Session label */}
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text style={{ fontSize: fs.xs, fontWeight: '700', color: isDone ? '#16a34a' : isCancelled ? colors.muted : colors.foreground }}>
+                              Session {(sess.sessionIndex ?? idx) + 1} of {sess.sessionTotal ?? packageSiblings.length}
+                            </Text>
+                            {isThis && (
+                              <View style={{ backgroundColor: '#0891b2', borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 }}>
+                                <Text style={{ fontSize: 9, fontWeight: '700', color: '#fff' }}>THIS</Text>
+                              </View>
+                            )}
+                            {isDone && (
+                              <View style={{ backgroundColor: '#22c55e20', borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 }}>
+                                <Text style={{ fontSize: 9, fontWeight: '700', color: '#16a34a' }}>COMPLETED</Text>
+                              </View>
+                            )}
+                            {isCancelled && (
+                              <View style={{ backgroundColor: '#ef444420', borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 }}>
+                                <Text style={{ fontSize: 9, fontWeight: '700', color: '#ef4444' }}>CANCELLED</Text>
+                              </View>
+                            )}
+                          </View>
+                          {/* Date & Time */}
+                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
+                            {formatDateDisplay(sess.date)} · {formatTime(sess.time)} – {sessEndTime}
+                          </Text>
+                          {/* Location */}
+                          {sessLocation && (
+                            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>📍 {sessLocation.name}</Text>
+                          )}
+                          {/* Staff */}
+                          {sessStaff && (
+                            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>👤 {sessStaff.name}</Text>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fs.xs, fontWeight: '700', color: '#0891b2' }}>Part of a Package</Text>
-              {appointment.packageName ? (
-                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>{appointment.packageName}</Text>
-              ) : null}
-              {appointment.sessionIndex != null && appointment.sessionTotal != null ? (
-                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1 }}>Session {appointment.sessionIndex} of {appointment.sessionTotal}</Text>
-              ) : null}
-            </View>
-            <Pressable
-              onPress={() => router.push({ pathname: '/(tabs)/bookings' as any, params: { packageGroupId: appointment.packageGroupId } })}
-              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#0891b220' })}
-            >
-              <Text style={{ fontSize: fs.xs, fontWeight: '700', color: '#0891b2' }}>View all</Text>
-            </Pressable>
-          </View>
-        )}
+          );
+        })()}
 
         {/* Itemized Charges */}
         {(() => {

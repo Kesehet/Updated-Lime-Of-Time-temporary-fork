@@ -544,6 +544,31 @@ export function registerClientRoutes(app: Express) {
       const service = svcList.find((s) => s.localId === appt.serviceLocalId);
       const staff = staffList.find((st) => st.localId === appt.staffId);
       const location = locList.find((l) => l.localId === appt.locationId);
+
+      // Build packageSiblings if this is a package session
+      let packageSiblings: any[] = [];
+      const pgId = (appt as any).packageGroupId;
+      if (pgId) {
+        packageSiblings = rawAppts
+          .filter((a: any) => a.packageGroupId === pgId)
+          .sort((a: any, b: any) => (a.sessionIndex ?? 0) - (b.sessionIndex ?? 0))
+          .map((a: any) => {
+            const aLoc = locList.find((l) => l.localId === a.locationId);
+            const aStaff = staffList.find((s) => s.localId === a.staffId);
+            return {
+              id: a.id,
+              date: a.date,
+              time: a.time,
+              duration: a.duration,
+              status: a.status,
+              sessionIndex: a.sessionIndex ?? null,
+              sessionTotal: a.sessionTotal ?? null,
+              locationName: aLoc?.name ?? null,
+              staffName: aStaff?.name ?? null,
+            };
+          });
+      }
+
       res.json({
         ...appt,
         businessName: owner?.businessName ?? "Unknown",
@@ -551,7 +576,8 @@ export function registerClientRoutes(app: Express) {
         businessLogoUri: owner?.businessLogoUri ?? null,
         coverPhotoUri: (owner as any)?.coverPhotoUri ?? null,
         businessCategory: owner?.businessCategory ?? null,
-        serviceName: service?.name ?? appt.serviceLocalId,
+        serviceName: service?.name ?? (appt as any).packageName ?? appt.serviceLocalId,
+        duration: appt.duration || (appt as any).packageDuration || service?.duration || 60,
         price: service?.price ?? null,
         staffName: staff?.name ?? null,
         staffAvatarUrl: staff?.photoUri ?? null,
@@ -564,6 +590,7 @@ export function registerClientRoutes(app: Express) {
         ].filter(Boolean).join(", ") : null,
         locationPhone: location?.phone ?? null,
         clientAddress: (appt as any).clientAddress ?? null,
+        packageSiblings: packageSiblings.length > 0 ? packageSiblings : null,
       });
     } catch (err: any) {
       res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });

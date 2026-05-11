@@ -2110,3 +2110,13 @@
 - [x] Add Package gift type to mobile app Buy a Gift screen (show package list, skip Date/Staff, recipient chooses sessions)
 - [x] Add configurable minimum gift card balance amount to business settings page (default $10)
 - [x] Wire configurable minimum from DB into server-side validation and front-end Buy a Gift Balance tab
+- [ ] Fix package appointment: "0 min total" should show correct duration
+- [ ] Fix package appointment: "Session 0 of 3" should start at 1
+- [ ] Add inline expandable sessions accordion on appointment detail (business + client portal)
+- [ ] Sessions accordion shows each session's date, time, location, staff, and status (completed/upcoming)
+- [ ] Sessions accordion shows progress summary: "1 completed · 2 to go"
+- [x] Fix package appointment: "0 min total" → correct duration using appointment.duration fallback
+- [x] Fix package appointment: "Session 0 of 3" → "Session 1 of 3" (1-based counter)
+- [x] Add inline expandable sessions accordion to business portal appointment detail
+- [x] Add inline expandable sessions accordion to client portal appointment detail
+- [x] Server: include packageSiblings in GET /api/client/appointments/:id response

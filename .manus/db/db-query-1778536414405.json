@@ -1,0 +1,91 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'gift_cards' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'gift_cards' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "businessOwnerId"
+    },
+    {
+      "COLUMN_NAME": "localId"
+    },
+    {
+      "COLUMN_NAME": "code"
+    },
+    {
+      "COLUMN_NAME": "serviceLocalId"
+    },
+    {
+      "COLUMN_NAME": "recipientName"
+    },
+    {
+      "COLUMN_NAME": "recipientPhone"
+    },
+    {
+      "COLUMN_NAME": "message"
+    },
+    {
+      "COLUMN_NAME": "redeemed"
+    },
+    {
+      "COLUMN_NAME": "redeemedAt"
+    },
+    {
+      "COLUMN_NAME": "expiresAt"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "purchaserName"
+    },
+    {
+      "COLUMN_NAME": "purchaserEmail"
+    },
+    {
+      "COLUMN_NAME": "recipientEmail"
+    },
+    {
+      "COLUMN_NAME": "recipientChoosesDate"
+    },
+    {
+      "COLUMN_NAME": "paymentMethod"
+    },
+    {
+      "COLUMN_NAME": "paymentStatus"
+    },
+    {
+      "COLUMN_NAME": "totalValue"
+    },
+    {
+      "COLUMN_NAME": "purchasedPublicly"
+    },
+    {
+      "COLUMN_NAME": "preselectedDate"
+    },
+    {
+      "COLUMN_NAME": "preselectedTime"
+    },
+    {
+      "COLUMN_NAME": "pendingRedemptionAppointmentId"
+    },
+    {
+      "COLUMN_NAME": "pendingRedemptionAt"
+    },
+    {
+      "COLUMN_NAME": "appliedValue"
+    },
+    {
+      "COLUMN_NAME": "packageLocalId"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nbusinessOwnerId\nlocalId\ncode\nserviceLocalId\nrecipientName\nrecipientPhone\nmessage\nredeemed\nredeemedAt\nexpiresAt\ncreatedAt\nupdatedAt\npurchaserName\npurchaserEmail\nrecipientEmail\nrecipientChoosesDate\npaymentMethod\npaymentStatus\ntotalValue\npurchasedPublicly\npreselectedDate\npreselectedTime\npendingRedemptionAppointmentId\npendingRedemptionAt\nappliedValue\npackageLocalId\n",
+  "stderr": "",
+  "execution_time_ms": 609
+}

@@ -1,0 +1,54 @@
+{
+  "query": "SELECT id, code, recipientName, purchaserName, totalValue, redeemed, paymentStatus, createdAt, updatedAt FROM gift_cards WHERE businessOwnerId = 1650001 ORDER BY updatedAt DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, code, recipientName, purchaserName, totalValue, redeemed, paymentStatus, createdAt, updatedAt FROM gift_cards WHERE businessOwnerId = 1650001 ORDER BY updatedAt DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "1140003",
+      "code": "GIFT-PEFMZU6E",
+      "recipientName": "Mj",
+      "purchaserName": "Iryna",
+      "totalValue": "150.00",
+      "redeemed": "0",
+      "paymentStatus": "unpaid",
+      "createdAt": "2026-05-11 20:48:14",
+      "updatedAt": "2026-05-11 20:48:14"
+    },
+    {
+      "id": "1050002",
+      "code": "GIFT-VUK3RBYL",
+      "recipientName": "Eva Piatrova",
+      "purchaserName": "Brandon Fowler",
+      "totalValue": "85.00",
+      "redeemed": "0",
+      "paymentStatus": "unpaid",
+      "createdAt": "2026-05-10 13:59:13",
+      "updatedAt": "2026-05-10 13:59:13"
+    },
+    {
+      "id": "990001",
+      "code": "GIFT-6AHEZSRJ",
+      "recipientName": "Anastasia",
+      "purchaserName": "Alina+Sam",
+      "totalValue": "85.00",
+      "redeemed": "0",
+      "paymentStatus": "unpaid",
+      "createdAt": "2026-05-09 00:53:42",
+      "updatedAt": "2026-05-09 00:53:42"
+    },
+    {
+      "id": "960001",
+      "code": "GIFT-CDCU6YSQ",
+      "recipientName": "Anastasiia Mashtalet",
+      "purchaserName": "NULL",
+      "totalValue": "NULL",
+      "redeemed": "0",
+      "paymentStatus": "unpaid",
+      "createdAt": "2026-05-08 16:16:22",
+      "updatedAt": "2026-05-08 16:16:22"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcode\trecipientName\tpurchaserName\ttotalValue\tredeemed\tpaymentStatus\tcreatedAt\tupdatedAt\n1140003\tGIFT-PEFMZU6E\tMj\tIryna\t150.00\t0\tunpaid\t2026-05-11 20:48:14\t2026-05-11 20:48:14\n1050002\tGIFT-VUK3RBYL\tEva Piatrova\tBrandon Fowler\t85.00\t0\tunpaid\t2026-05-10 13:59:13\t2026-05-10 13:59:13\n990001\tGIFT-6AHEZSRJ\tAnastasia\tAlina+Sam\t85.00\t0\tunpaid\t2026-05-09 00:53:42\t2026-05-09 00:53:42\n960001\tGIFT-CDCU6YSQ\tAnastasiia Mashtalet\tNULL\tNULL\t0\tunpaid\t2026-05-08 16:16:22\t2026-05-08 16:16:22\n",
+  "stderr": "",
+  "execution_time_ms": 600
+}

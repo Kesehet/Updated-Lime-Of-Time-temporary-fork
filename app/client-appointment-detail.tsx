@@ -92,6 +92,7 @@ export default function ClientAppointmentDetailScreen() {
   const [reviewComment, setReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [showSessionsAccordion, setShowSessionsAccordion] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -367,6 +368,104 @@ export default function ClientAppointmentDetailScreen() {
           ) : null}
         </View>
 
+        {/* ── Package Sessions Accordion ──────────────────────────────── */}
+        {(appt as any).packageGroupId && (appt as any).packageSiblings && (
+          <View style={{ backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.12)", marginBottom: 12, overflow: "hidden" }}>
+            {/* Header row */}
+            <Pressable
+              style={({ pressed }) => [{ flexDirection: "row", alignItems: "center", padding: 16, gap: 12 }, pressed && { opacity: 0.7 }]}
+              onPress={() => setShowSessionsAccordion(v => !v)}
+            >
+              <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: "rgba(143,191,106,0.18)", alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontSize: 18 }}>📦</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: "700", color: "#8FBF6A" }}>Part of a Package</Text>
+                <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>
+                  {(appt as any).packageName ?? "Package"} · {
+                    (() => {
+                      const sibs: any[] = (appt as any).packageSiblings ?? [];
+                      const done = sibs.filter((s: any) => s.status === "completed").length;
+                      const total = sibs.length;
+                      const remaining = total - done;
+                      if (done === 0) return `Session ${((appt as any).sessionIndex ?? 0) + 1} of ${total}`;
+                      if (remaining === 0) return `All ${total} sessions completed`;
+                      return `${done} completed · ${remaining} to go`;
+                    })()
+                  }
+                </Text>
+              </View>
+              <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", fontWeight: "600" }}>
+                {showSessionsAccordion ? "Hide" : "View all"}
+              </Text>
+            </Pressable>
+            {/* Expanded sessions list */}
+            {showSessionsAccordion && (
+              <View style={{ borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }}>
+                {((appt as any).packageSiblings as any[]).map((sib: any, idx: number) => {
+                  const isCurrentSession = sib.id === appt.id;
+                  const isDone = sib.status === "completed";
+                  const isCancelled = sib.status === "cancelled";
+                  const sessionNum = (sib.sessionIndex ?? idx) + 1;
+                  return (
+                    <View
+                      key={sib.id}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "flex-start",
+                        padding: 14,
+                        paddingLeft: 16,
+                        borderBottomWidth: idx < ((appt as any).packageSiblings as any[]).length - 1 ? 1 : 0,
+                        borderBottomColor: "rgba(255,255,255,0.07)",
+                        backgroundColor: isCurrentSession ? "rgba(143,191,106,0.07)" : "transparent",
+                      }}
+                    >
+                      {/* Status icon */}
+                      <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: isDone ? "rgba(74,222,128,0.2)" : isCancelled ? "rgba(248,113,113,0.2)" : "rgba(255,255,255,0.1)", alignItems: "center", justifyContent: "center", marginRight: 12, marginTop: 2 }}>
+                        <Text style={{ fontSize: 13 }}>{isDone ? "✅" : isCancelled ? "❌" : isCurrentSession ? "📍" : "🕐"}</Text>
+                      </View>
+                      {/* Session info */}
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                          <Text style={{ fontSize: 13, fontWeight: "700", color: isCurrentSession ? "#8FBF6A" : "#FFFFFF" }}>
+                            Session {sessionNum}
+                          </Text>
+                          {isCurrentSession && (
+                            <View style={{ backgroundColor: "rgba(143,191,106,0.25)", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                              <Text style={{ fontSize: 10, fontWeight: "700", color: "#8FBF6A" }}>THIS SESSION</Text>
+                            </View>
+                          )}
+                          {isDone && (
+                            <View style={{ backgroundColor: "rgba(74,222,128,0.2)", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                              <Text style={{ fontSize: 10, fontWeight: "700", color: "#4ADE80" }}>COMPLETED</Text>
+                            </View>
+                          )}
+                          {isCancelled && (
+                            <View style={{ backgroundColor: "rgba(248,113,113,0.2)", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                              <Text style={{ fontSize: 10, fontWeight: "700", color: "#F87171" }}>CANCELLED</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 1 }}>
+                          {(() => { const d = new Date(sib.date + "T00:00:00"); return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }); })()} · {formatTime12(sib.time)}
+                        </Text>
+                        {sib.duration ? (
+                          <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>{sib.duration} min</Text>
+                        ) : null}
+                        {sib.locationName ? (
+                          <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>📍 {sib.locationName}</Text>
+                        ) : null}
+                        {sib.staffName ? (
+                          <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 1 }}>👤 {sib.staffName}</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        )}
         {/* ── Review Prompt (completed only) ───────────────────────────── */}
         {isCompleted && !alreadyReviewed && (
           <View style={styles.reviewPromptCard}>
