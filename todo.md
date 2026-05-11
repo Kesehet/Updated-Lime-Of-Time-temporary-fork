@@ -2064,3 +2064,4 @@
 - [x] Lock Stripe card payment option behind subscription tier with upgrade prompt (already implemented)
 - [x] Fix Stripe payment sheet using wrong key — STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY updated to test values in DB; create-payment-sheet endpoint now returns pk_test_51TVjfG9... (business sandbox key)
 - [x] Fix staff members not showing on public booking page for non-seed services — renderStaffForService() now checks if any staff member is assigned to the service; if none are, all staff are shown (no over-filtering)
+- [x] Fix review notification spam — "How was your visit?" push sent for every past appointment at once when auto-complete fires on app launch. Added reviewNotifSentAt column to appointments table; routers.ts now checks this flag before sending the push/in-app message. Backfilled all 733 existing completed appointments so they won't re-trigger.

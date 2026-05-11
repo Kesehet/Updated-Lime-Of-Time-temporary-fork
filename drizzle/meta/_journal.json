@@ -505,6 +505,13 @@
       "when": 1778446392654,
       "tag": "0071_last_nick_fury",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "5",
+      "when": 1778481099121,
+      "tag": "0072_simple_beast",
+      "breakpoints": true
     }
   ]
 }

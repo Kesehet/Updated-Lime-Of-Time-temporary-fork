@@ -551,13 +551,21 @@ const appointmentsRouter = router({
                   sound: "default",
                 });
               } else if (data.status === "completed") {
-                await sendExpoPush(clientAcc.expoPushToken, {
-                  title: `\u2b50 How was your visit?`,
-                  body: `Your ${sName} with ${bName} is complete. Tap to leave a review!`,
-                  data: { type: "appointment_completed" as any, appointmentId: localId, businessOwnerId },
-                  channelId: "appointments",
-                  sound: "default",
-                });
+                // Dedup: only send the review push once per appointment.
+                // Re-fetching the appointment row here is safe because updateAppointment
+                // already ran above, so we get the latest state.
+                const apptRow = await db.getAppointmentByLocalId(localId, businessOwnerId);
+                if (!apptRow?.reviewNotifSentAt) {
+                  await sendExpoPush(clientAcc.expoPushToken, {
+                    title: `\u2b50 How was your visit?`,
+                    body: `Your ${sName} with ${bName} is complete. Tap to leave a review!`,
+                    data: { type: "appointment_completed" as any, appointmentId: localId, businessOwnerId },
+                    channelId: "appointments",
+                    sound: "default",
+                  });
+                  // Mark as sent so future auto-complete runs don't re-send
+                  await db.updateAppointment(localId, businessOwnerId, { reviewNotifSentAt: new Date() } as any);
+                }
               }
             }
           }
@@ -594,7 +602,13 @@ const appointmentsRouter = router({
               } else if (data.status === "cancelled") {
                 autoMsg = `\u274c Your ${sName2} appointment on ${dateStr2} has been cancelled. We\u2019re sorry for any inconvenience.\n\nPlease reply or call us to reschedule. \u2014 ${bName2}`;
               } else if (data.status === "completed") {
-                autoMsg = `\u2b50 Thank you for your visit! We hope you enjoyed your ${sName2}.\n\nWe\u2019d love to hear your feedback \u2014 feel free to leave a review. See you next time! \u2014 ${bName2}`;
+                // Dedup: only send the "thank you" in-app message once per appointment.
+                // reviewNotifSentAt is set when the push is sent; if it's already set,
+                // the message was already sent in a previous auto-complete run.
+                const apptRow2 = await db.getAppointmentByLocalId(localId, businessOwnerId);
+                if (!apptRow2?.reviewNotifSentAt) {
+                  autoMsg = `\u2b50 Thank you for your visit! We hope you enjoyed your ${sName2}.\n\nWe\u2019d love to hear your feedback \u2014 feel free to leave a review. See you next time! \u2014 ${bName2}`;
+                }
               } else if (data.status === "no_show") {
                 autoMsg = `We missed you today for your ${sName2} appointment on ${dateStr2}. We hope everything is okay!\n\nPlease reply to reschedule at your convenience. \u2014 ${bName2}`;
               }

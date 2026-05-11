@@ -298,6 +298,11 @@ export const appointments = mysqlTable("appointments", {
    * JSON: { sent24h?: boolean, sent1h?: boolean, sent30m?: boolean }
    */
   clientReminderFlags: json("clientReminderFlags"),
+  /**
+   * Timestamp when the "How was your visit?" review push notification was sent to the client.
+   * Used to prevent duplicate review notifications when auto-complete fires multiple times.
+   */
+  reviewNotifSentAt: timestamp("reviewNotifSentAt"),
   clientAddress: text("clientAddress"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
