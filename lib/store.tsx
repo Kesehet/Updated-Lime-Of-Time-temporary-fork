@@ -561,12 +561,10 @@ function reducer(state: AppState, action: Action): AppState {
     case "CLEAR_INBOX":
       return { ...state, inboxNotifications: [] };
     case "DISMISS_INBOX_NOTIFICATION":
-      // Dismissing moves it to read immediately
+      // Dismissing removes the notification from the list entirely
       return {
         ...state,
-        inboxNotifications: (state.inboxNotifications ?? []).map((n) =>
-          n.id === action.payload ? { ...n, read: true } : n
-        ),
+        inboxNotifications: (state.inboxNotifications ?? []).filter((n) => n.id !== action.payload),
       };
     case "CLEAR_OLD_INBOX_NOTIFICATIONS": {
       // Keep only items from the last 30 days

@@ -310,10 +310,32 @@ export default function ClientDetailScreen() {
     [client, generateMessage, openSMS]
   );
 
-  const handleQuickMessage = useCallback(() => {
+  const handleQuickMessage = useCallback(async () => {
     if (!client?.phone) {
       Alert.alert("No Phone", "This client doesn't have a phone number.");
       return;
+    }
+    // Try to find the client's portal account and open in-app messaging thread
+    try {
+      const rawPhone = stripPhoneFormat(client.phone);
+      const { apiCall } = await import("@/lib/_core/api");
+      const data = await apiCall<{ found: boolean; clientAccountId?: number; clientName?: string; clientAvatarUrl?: string }>(
+        `/api/business/client-account-by-phone?phone=${encodeURIComponent(rawPhone)}`
+      );
+      if (data.found && data.clientAccountId) {
+        router.push({
+          pathname: "/client-message-thread-business",
+          params: {
+            clientAccountId: String(data.clientAccountId),
+            clientName: client.name,
+            clientAvatarUrl: data.clientAvatarUrl ?? "",
+            clientId: client.id,
+          },
+        });
+        return;
+      }
+    } catch {
+      // Fall through to SMS
     }
     // Use the active location's full address if available, else fall back to profile address
     const recentAppt = state.appointments
@@ -394,7 +416,7 @@ export default function ClientDetailScreen() {
 
   const tabs: { key: TabKey; label: string; count?: number }[] = [
     { key: "appointments", label: "Appointments", count: appointments.length },
-    { key: "messages", label: "Messages" },
+    { key: "messages", label: "Remind" },
     { key: "reviews", label: "Reviews", count: reviews.length },
     { key: "photos", label: "Photos", count: photos.length > 0 ? photos.length : undefined },
   ];
@@ -552,7 +574,7 @@ export default function ClientDetailScreen() {
                 </View>
               </View>
             ) : null}
-{/* ── Quick-action trifecta ─────────────────────────────────────────── */}
+{/* ── Quick-action pair ─────────────────────────────────────────── */}
             <View style={{
               flexDirection: "row",
               gap: 8,
@@ -560,26 +582,6 @@ export default function ClientDetailScreen() {
               marginHorizontal: -20, // bleed to card edges (card padding is 20)
               paddingHorizontal: 20,
             }}>
-              {/* Book Appt */}
-              <Pressable
-                onPress={() => router.push({ pathname: "/calendar-booking", params: { clientId: client.id } } as any)}
-                onPressIn={() => { if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                style={({ pressed }) => [{
-                  flex: 1,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: 46,
-                  borderRadius: 14,
-                  backgroundColor: colors.success,
-                  opacity: pressed ? 0.82 : 1,
-                  gap: 6,
-                }]}
-              >
-                <IconSymbol name="calendar" size={17} color="#FFF" />
-                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Book</Text>
-              </Pressable>
-
               {/* Call — only shown when phone exists */}
               {client.phone ? (
                 <Pressable
@@ -620,7 +622,7 @@ export default function ClientDetailScreen() {
                   }]}
                 >
                   <IconSymbol name="paperplane.fill" size={17} color="#FFF" />
-                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Message</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Remind</Text>
                 </Pressable>
               ) : null}
             </View>

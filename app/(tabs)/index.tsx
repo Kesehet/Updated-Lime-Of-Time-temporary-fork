@@ -1593,9 +1593,8 @@ export default function HomeScreen() {
               >
                 <Ionicons name="notifications-outline" size={22} color={colors.primary} />
                 {(() => {
-                  const pendingCount = state.appointments.filter((a) => a.status === "pending").length;
-                  const unreadCount = (state.inboxNotifications ?? []).filter((n) => !n.read).length;
-                  const total = Math.min(pendingCount + unreadCount, 99);
+                  // Badge shows only inbox notification count; pending appointments are shown in the banner below
+                  const total = Math.min((state.inboxNotifications ?? []).length, 99);
                   if (total === 0) return null;
                   return (
                     <View style={{

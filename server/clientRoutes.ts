@@ -881,6 +881,24 @@ export function registerClientRoutes(app: Express) {
     }
   });
 
+  // ── Business: look up client portal account by phone ───────────────────────────
+
+  /** GET /api/business/client-account-by-phone?phone=... — look up a client portal account ID by phone */
+  app.get("/api/business/client-account-by-phone", async (req: Request, res: Response) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      const owner = await db.getBusinessOwnerByOpenId(user.openId);
+      if (!owner) { res.status(404).json({ error: "Business owner not found" }); return; }
+      const rawPhone = String(req.query.phone ?? "").replace(/\D/g, "").slice(-10);
+      if (!rawPhone) { res.status(400).json({ error: "phone required" }); return; }
+      const clientAcc = await db.getClientAccountByPhone(rawPhone);
+      if (!clientAcc) { res.json({ found: false }); return; }
+      res.json({ found: true, clientAccountId: clientAcc.id, clientName: clientAcc.name ?? "Client", clientAvatarUrl: (clientAcc as any)?.profilePhotoUri ?? null });
+    } catch (err: any) {
+      res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });
+    }
+  });
+
   // ── Saved Businesses ──────────────────────────────────────────────────────
 
   /** GET /api/client/saved — list saved business IDs (legacy) */

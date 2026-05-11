@@ -41,11 +41,12 @@ function formatDate(date: string): string {
   });
 }
 
-/** Reminder windows: [key, minutes before appointment, label] */
+/** Reminder windows: [key, minutes before appointment, label]
+ *  windowMinutes = ±15 min (cron runs every 30 min, so we fire within 15 min of the exact time)
+ */
 const REMINDER_WINDOWS = [
-  { key: "sent24h", minutesBefore: 24 * 60, label: "24 hours", windowMinutes: 60 },
+  { key: "sent24h", minutesBefore: 24 * 60, label: "24 hours", windowMinutes: 30 },
   { key: "sent1h",  minutesBefore: 60,       label: "1 hour",   windowMinutes: 30 },
-  { key: "sent30m", minutesBefore: 30,        label: "30 minutes", windowMinutes: 30 },
 ] as const;
 
 async function sendClientReminders() {
@@ -128,13 +129,22 @@ async function sendClientReminders() {
       const apptDateTime = new Date(`${appt.date}T${appt.time}:00`);
       const minutesUntil = (apptDateTime.getTime() - now.getTime()) / (1000 * 60);
 
-      // Build location line
+      // Build location line (full address + zip for in-store services)
       const locName = location?.name ?? "";
-      const locAddrParts = [location?.address, location?.city, location?.state].filter(Boolean);
+      const locAddrParts = [location?.address, location?.city, location?.state, location?.zipCode].filter(Boolean);
       const locAddr = locAddrParts.join(", ");
+      const ownerAddrParts = [(owner as any).address, (owner as any).city, (owner as any).state].filter(Boolean);
+      const ownerAddr = ownerAddrParts.join(", ");
       const locLine = locName || locAddr
         ? `\n📍 ${locName}${locAddr ? (locName ? " — " : "") + locAddr : ""}`
-        : (owner.address ? `\n📍 ${owner.address}` : "");
+        : (ownerAddr ? `\n📍 ${ownerAddr}` : "");
+      // Build phone line
+      const locPhone = (location as any)?.phone || (owner as any)?.phone || "";
+      const phoneDigits = locPhone.replace(/\D/g, "");
+      const phoneFormatted = phoneDigits.length === 10
+        ? `(${phoneDigits.slice(0,3)}) ${phoneDigits.slice(3,6)}-${phoneDigits.slice(6)}`
+        : locPhone;
+      const phoneLine = phoneFormatted ? `\n📞 ${phoneFormatted}` : "";
 
       const serviceName = service?.name ?? "appointment";
       const dateStr = formatDate(appt.date);
@@ -153,11 +163,9 @@ async function sendClientReminders() {
           // Build the message
           let msgBody = "";
           if (window.key === "sent24h") {
-            msgBody = `⏰ Reminder: Your ${serviceName} appointment is tomorrow!\n📅 ${dateStr} at ${timeStr}${locLine}\n\nSee you soon! Reply here if you need to make any changes. — ${bName}`;
+            msgBody = `⏰ Gentle Reminder: Your ${serviceName} appointment is tomorrow!\n\n📅 ${dateStr}\n🕐 ${timeStr}${locLine}${phoneLine}\n\nPlease reply here if you need to make any changes. We look forward to seeing you! — ${bName}`;
           } else if (window.key === "sent1h") {
-            msgBody = `⏰ Your ${serviceName} appointment is in 1 hour!\n🕐 Today at ${timeStr}${locLine}\n\nWe're looking forward to seeing you! — ${bName}`;
-          } else if (window.key === "sent30m") {
-            msgBody = `🔔 Your ${serviceName} appointment starts in 30 minutes!\n🕐 Today at ${timeStr}${locLine}\n\nSee you soon! — ${bName}`;
+            msgBody = `⏰ Your ${serviceName} appointment is in 1 hour!\n\n📅 Today, ${timeStr}${locLine}${phoneLine}\n\nWe're looking forward to seeing you! — ${bName}`;
           }
 
           if (msgBody) {

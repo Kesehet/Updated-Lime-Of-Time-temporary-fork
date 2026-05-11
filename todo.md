@@ -2065,3 +2065,9 @@
 - [x] Fix Stripe payment sheet using wrong key — STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY updated to test values in DB; create-payment-sheet endpoint now returns pk_test_51TVjfG9... (business sandbox key)
 - [x] Fix staff members not showing on public booking page for non-seed services — renderStaffForService() now checks if any staff member is assigned to the service; if none are, all staff are shown (no over-filtering)
 - [x] Fix review notification spam — "How was your visit?" push sent for every past appointment at once when auto-complete fires on app launch. Added reviewNotifSentAt column to appointments table; routers.ts now checks this flag before sending the push/in-app message. Backfilled all 733 existing completed appointments so they won't re-trigger.
+- [x] Fix notification bell: tapping removes notification from list, badge count updates
+- [x] Remove Book button from client detail page
+- [x] Rename Messages tab/button to Remind on client detail page
+- [x] Upgrade ⚡ template picker: use reminder templates with appointment selector and auto-fill
+- [x] Fix clientReminderCron: exact ±15min window for 24h and 1h reminders with full location/phone details
+- [x] Make message content clickable: phone→call, address→maps, date→native calendar
