@@ -2071,3 +2071,5 @@
 - [x] Upgrade ⚡ template picker: use reminder templates with appointment selector and auto-fill
 - [x] Fix clientReminderCron: exact ±15min window for 24h and 1h reminders with full location/phone details
 - [x] Make message content clickable: phone→call, address→maps, date→native calendar
+- [x] Fix send button hidden by keyboard on iOS and Android in messaging thread
+- [x] Add portal delivery status indicator (✓ In-App / SMS only) on Remind button

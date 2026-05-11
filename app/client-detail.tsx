@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
   Text,
   View,
@@ -85,6 +85,25 @@ export default function ClientDetailScreen() {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
+
+  // Portal delivery status: null=checking, true=has portal account, false=SMS only
+  const [portalStatus, setPortalStatus] = useState<boolean | null>(null);
+  const portalCheckRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!client?.phone) { setPortalStatus(false); return; }
+    const rawPhone = stripPhoneFormat(client.phone);
+    if (portalCheckRef.current === rawPhone) return;
+    portalCheckRef.current = rawPhone;
+    setPortalStatus(null);
+    import("@/lib/_core/api").then(({ apiCall }) => {
+      apiCall<{ found: boolean; clientAccountId?: number }>(
+        `/api/business/client-account-by-phone?phone=${encodeURIComponent(rawPhone)}`
+      ).then((data) => {
+        setPortalStatus(!!(data.found && data.clientAccountId));
+      }).catch(() => setPortalStatus(false));
+    });
+  }, [client?.phone]);
 
   const handlePhoneChange = (text: string) => {
     setEditPhone(formatPhoneNumber(text));
@@ -604,25 +623,35 @@ export default function ClientDetailScreen() {
                 </Pressable>
               ) : null}
 
-              {/* Message */}
+              {/* Remind */}
               {client.phone ? (
                 <Pressable
                   onPress={handleQuickMessage}
                   onPressIn={() => { if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                   style={({ pressed }) => [{
                     flex: 1,
-                    flexDirection: "row",
+                    flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
-                    height: 46,
+                    height: 54,
                     borderRadius: 14,
                     backgroundColor: colors.primary,
                     opacity: pressed ? 0.82 : 1,
-                    gap: 6,
+                    gap: 2,
+                    paddingVertical: 6,
                   }]}
                 >
-                  <IconSymbol name="paperplane.fill" size={17} color="#FFF" />
-                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }} numberOfLines={1}>Remind</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                    <IconSymbol name="paperplane.fill" size={15} color="#FFF" />
+                    <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#FFF", letterSpacing: 0.1 }}>Remind</Text>
+                  </View>
+                  {portalStatus === null ? (
+                    <Text style={{ fontSize: 9, color: "rgba(255,255,255,0.6)", fontWeight: "500" }}>checking...</Text>
+                  ) : portalStatus ? (
+                    <Text style={{ fontSize: 9, color: "rgba(255,255,255,0.9)", fontWeight: "700", letterSpacing: 0.2 }}>✓ In-App</Text>
+                  ) : (
+                    <Text style={{ fontSize: 9, color: "rgba(255,255,255,0.65)", fontWeight: "500" }}>SMS only</Text>
+                  )}
                 </Pressable>
               ) : null}
             </View>

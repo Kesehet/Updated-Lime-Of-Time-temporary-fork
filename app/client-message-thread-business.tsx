@@ -30,6 +30,7 @@ import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
 import * as Calendar from "expo-calendar";
 import { ScreenContainer } from "@/components/screen-container";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/use-colors";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { apiCall } from "@/lib/_core/api";
@@ -308,6 +309,7 @@ function RichMessageBody({ body, textColor, linkColor, msgTitle }: { body: strin
 // ─── Main screen ────────────────────────────────────────────────────────────────
 export default function ClientMessageThreadBusinessScreen() {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, getServiceById, getLocationById } = useStore();
   const { clientAccountId, clientName, clientAvatarUrl: paramAvatarUrl, clientId } = useLocalSearchParams<{
@@ -575,6 +577,11 @@ export default function ClientMessageThreadBusinessScreen() {
   return (
     <ScreenContainer edges={["top", "left", "right"]} containerClassName="bg-background">
       <StatusBar style="auto" />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
+      >
       <View style={[s.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         <Pressable
           style={({ pressed }) => [s.backBtn, { backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 }]}
@@ -603,7 +610,7 @@ export default function ClientMessageThreadBusinessScreen() {
         </Pressable>
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
+      <View style={{ flex: 1 }}>
         {loading ? (
           <View style={s.loadingContainer}><ActivityIndicator size="large" color={colors.primary} /></View>
         ) : error ? (
@@ -667,7 +674,7 @@ export default function ClientMessageThreadBusinessScreen() {
             }}
           />
         )}
-        <View style={[s.inputBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+        <View style={[s.inputBar, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 8) }]}>
           <Pressable
             style={({ pressed }) => [s.templateIconBtn, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
             onPress={() => { setShowTemplates(true); if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
@@ -692,6 +699,8 @@ export default function ClientMessageThreadBusinessScreen() {
             {sending ? <ActivityIndicator size="small" color="#FFFFFF" /> : <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />}
           </Pressable>
         </View>
+      </View>
+
       </KeyboardAvoidingView>
 
       {/* ── Template Picker Modal ─────────────────────────────────────────── */}
