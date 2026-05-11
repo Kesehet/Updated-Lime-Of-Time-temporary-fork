@@ -19,6 +19,7 @@ import {
   Platform,
   ActivityIndicator,
   Image,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -134,6 +135,32 @@ export default function ClientMessageThreadScreen() {
     }
   };
 
+  const handleDeleteMessage = (msg: Message) => {
+    Alert.alert(
+      "Delete Message",
+      "This message will be removed from your view only.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+            try {
+              await apiCall(`/api/client/messages/${businessOwnerId}/${msg.id}`, { method: "DELETE" });
+            } catch {
+              setMessages((prev) => {
+                const idx = prev.findIndex((m) => m.createdAt > msg.createdAt);
+                const copy = [...prev];
+                if (idx === -1) copy.push(msg); else copy.splice(idx, 0, msg);
+                return copy;
+              });
+            }
+          },
+        },
+      ]
+    );
+  };
   // Build grouped items (date separators + messages)
   const items: ({ type: "date"; key: string; label: string } | (Message & { type: "message" }))[] = [];
   let lastDay = "";
@@ -248,23 +275,50 @@ export default function ClientMessageThreadScreen() {
                       )}
                     </View>
                   )}
-                  <View style={[
-                    styles.msgBubble,
-                    isClient ? styles.msgBubbleClient : styles.msgBubbleBusiness,
-                  ]}>
-                    <Text style={[
-                      styles.msgBody,
-                      { color: isClient ? CLIENT_BUBBLE_TEXT : TEXT_PRIMARY },
+                  <Pressable
+                    onLongPress={() => {
+                      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      Alert.alert(
+                        "Message Options",
+                        undefined,
+                        [
+                          {
+                            text: "📋 Copy Text",
+                            onPress: () => {
+                              const RN = require("react-native");
+                              RN.Clipboard?.setString?.(msg.body);
+                            },
+                          },
+                          {
+                            text: "🗑 Delete",
+                            style: "destructive",
+                            onPress: () => handleDeleteMessage(msg),
+                          },
+                          { text: "Cancel", style: "cancel" },
+                        ]
+                      );
+                    }}
+                    delayLongPress={400}
+                    style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
+                  >
+                    <View style={[
+                      styles.msgBubble,
+                      isClient ? styles.msgBubbleClient : styles.msgBubbleBusiness,
                     ]}>
-                      {msg.body}
-                    </Text>
-                    <Text style={[
-                      styles.msgTime,
-                      { color: isClient ? "rgba(26,58,40,0.6)" : TEXT_MUTED },
-                    ]}>
-                      {formatTime(msg.createdAt)}
-                    </Text>
-                  </View>
+                      <Text style={[
+                        styles.msgBody,
+                        { color: isClient ? CLIENT_BUBBLE_TEXT : TEXT_PRIMARY },
+                      ]}>
+                        {msg.body}
+                      </Text>
+                      <Text style={[
+                        styles.msgTime,
+                        { color: isClient ? "rgba(26,58,40,0.6)" : TEXT_MUTED },
+                      ]}>
+                        {formatTime(msg.createdAt)}
+                      </Text>
+                    </View>
+                  </Pressable>
                 </View>
               );
             }}

@@ -748,6 +748,10 @@ export const clientMessages = mysqlTable("client_messages", {
   body: text("body").notNull(),
   /** When the recipient read this message (null = unread) */
   readAt: timestamp("readAt"),
+  /** Soft-delete: business deleted this message for themselves */
+  deletedByBusiness: boolean("deletedByBusiness").default(false),
+  /** Soft-delete: client deleted this message for themselves */
+  deletedByClient: boolean("deletedByClient").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type ClientMessage = typeof clientMessages.$inferSelect;

@@ -594,6 +594,35 @@ export default function ClientMessageThreadBusinessScreen() {
     }
   }, [draft, sending, clientAccountId, loadMessages]);
 
+  // ── Delete message ───────────────────────────────────────────────────────
+  const handleDeleteMessage = useCallback((msg: Message) => {
+    Alert.alert(
+      "Delete Message",
+      "This message will be removed from your view only. The client will still see it.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            // Optimistically remove from UI
+            setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+            try {
+              await apiCall(`/api/business/messages/${clientAccountId}/${msg.id}`, { method: "DELETE" });
+            } catch {
+              // Restore on failure
+              setMessages((prev) => {
+                const idx = prev.findIndex((m) => m.createdAt > msg.createdAt);
+                const copy = [...prev];
+                if (idx === -1) copy.push(msg); else copy.splice(idx, 0, msg);
+                return copy;
+              });
+            }
+          },
+        },
+      ]
+    );
+  }, [clientAccountId]);
   // ── Template selection ────────────────────────────────────────────────────
   const handleSelectReminderTemplate = useCallback((tpl: ReminderTemplate) => {
     if (!tpl.customMessage) return;
@@ -719,19 +748,47 @@ export default function ClientMessageThreadBusinessScreen() {
                       )}
                     </View>
                   )}
-                  <View style={[s.msgBubble, isBusiness ? { backgroundColor: colors.primary, borderBottomRightRadius: 4 } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderBottomLeftRadius: 4 }]}>
-                    <RichMessageBody body={msg.body} textColor={isBusiness ? "#FFFFFF" : colors.foreground} linkColor={isBusiness ? "rgba(255,255,255,0.9)" : colors.primary} msgTitle={clientName ?? "Appointment"} />
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                      <Text style={[s.msgTime, { color: isBusiness ? "rgba(255,255,255,0.6)" : colors.muted }]}>
-                        {formatTime(msg.createdAt)}
-                      </Text>
-                      {isBusiness && (
-                        <Text style={{ fontSize: 11, fontWeight: "700", letterSpacing: -1.5, color: msg.readAt ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.4)" }}>
-                          {msg.readAt ? "✓✓" : "✓"}
+                  <Pressable
+                    onLongPress={() => {
+                      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      Alert.alert(
+                        "Message Options",
+                        undefined,
+                        [
+                          {
+                            text: "📋 Copy Text",
+                            onPress: () => {
+                              const { Clipboard } = require("@react-native-clipboard/clipboard") as any;
+                              if (Clipboard?.setString) { Clipboard.setString(msg.body); }
+                              else { require("react-native").Clipboard?.setString?.(msg.body); }
+                            },
+                          },
+                          {
+                            text: "🗑 Delete",
+                            style: "destructive",
+                            onPress: () => handleDeleteMessage(msg),
+                          },
+                          { text: "Cancel", style: "cancel" },
+                        ]
+                      );
+                    }}
+                    delayLongPress={400}
+                    style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
+                  >
+                    <View style={[s.msgBubble, isBusiness ? { backgroundColor: colors.primary, borderBottomRightRadius: 4 } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderBottomLeftRadius: 4 }]}>
+                      <RichMessageBody body={msg.body} textColor={isBusiness ? "#FFFFFF" : colors.foreground} linkColor={isBusiness ? "rgba(255,255,255,0.9)" : colors.primary} msgTitle={clientName ?? "Appointment"} />
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <Text style={[s.msgTime, { color: isBusiness ? "rgba(255,255,255,0.6)" : colors.muted }]}>
+                          {formatTime(msg.createdAt)}
                         </Text>
-                      )}
+                        {isBusiness && (
+                          <Text style={{ fontSize: 11, fontWeight: "700", letterSpacing: -1.5, color: msg.readAt ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.4)" }}>
+                            {msg.readAt ? "✓✓" : "✓"}
+                          </Text>
+                        )}
+                      </View>
                     </View>
-                  </View>
+                  </Pressable>
                 </View>
               );
             }}

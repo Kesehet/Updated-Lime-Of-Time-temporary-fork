@@ -713,7 +713,7 @@ export function registerClientRoutes(app: Express) {
     try {
       const { clientAccount } = await getClientAccount(req);
       const businessOwnerId = parseInt(req.params.businessOwnerId);
-      const messages = await db.getClientMessages(businessOwnerId, clientAccount!.id);
+      const messages = await db.getClientMessages(businessOwnerId, clientAccount!.id, "client");
       // Mark business messages as read
       await db.markClientMessagesRead(businessOwnerId, clientAccount!.id, "business");
       res.json({ messages });
@@ -722,6 +722,18 @@ export function registerClientRoutes(app: Express) {
     }
   });
 
+  /** DELETE /api/client/messages/:businessOwnerId/:messageId — client soft-deletes a message for themselves */
+  app.delete("/api/client/messages/:businessOwnerId/:messageId", async (req: Request, res: Response) => {
+    try {
+      const { clientAccount } = await getClientAccount(req);
+      const messageId = parseInt(req.params.messageId);
+      if (isNaN(messageId)) { res.status(400).json({ error: "Invalid message id" }); return; }
+      await db.deleteClientMessageForSide(messageId, "client");
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });
+    }
+  });
   /** POST /api/client/messages/:businessOwnerId — send a message to a business */
   app.post("/api/client/messages/:businessOwnerId", async (req: Request, res: Response) => {
     try {
@@ -828,7 +840,7 @@ export function registerClientRoutes(app: Express) {
         return;
       }
       const clientAccountId = parseInt(req.params.clientAccountId);
-      const messages = await db.getClientMessages(owner.id, clientAccountId);
+      const messages = await db.getClientMessages(owner.id, clientAccountId, "business");
       // Mark client messages as read
       await db.markClientMessagesRead(owner.id, clientAccountId, "client");
       // Include client profile info
@@ -843,6 +855,20 @@ export function registerClientRoutes(app: Express) {
     }
   });
 
+  /** DELETE /api/business/messages/:clientAccountId/:messageId — business soft-deletes a message for themselves */
+  app.delete("/api/business/messages/:clientAccountId/:messageId", async (req: Request, res: Response) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      const owner = await db.getBusinessOwnerByOpenId(user.openId);
+      if (!owner) { res.status(404).json({ error: "Business owner not found" }); return; }
+      const messageId = parseInt(req.params.messageId);
+      if (isNaN(messageId)) { res.status(400).json({ error: "Invalid message id" }); return; }
+      await db.deleteClientMessageForSide(messageId, "business");
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });
+    }
+  });
   /** POST /api/business/messages/:clientAccountId — business sends a message to client */
   app.post("/api/business/messages/:clientAccountId", async (req: Request, res: Response) => {
     try {

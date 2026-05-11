@@ -2090,3 +2090,4 @@
 - [x] Step 8 (Confirm): Each service/product as separate line item with name, category, duration, price
 - [x] Gift and Book an Appointment flows now slide up from bottom (modal presentation with swipe-down-to-dismiss)
 - [x] Added drag handle indicator to both client-buy-gift and client-booking-wizard screens
+- [x] Add delete-for-me message feature for both Business and Client portals

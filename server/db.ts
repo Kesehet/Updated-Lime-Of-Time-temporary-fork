@@ -1158,13 +1158,24 @@ export async function updateClientAccount(id: number, data: Partial<InsertClient
 
 // ─── Client Messages ──────────────────────────────────────────────────
 
-export async function getClientMessages(businessOwnerId: number, clientAccountId: number): Promise<ClientMessage[]> {
+export async function getClientMessages(
+  businessOwnerId: number,
+  clientAccountId: number,
+  viewerSide: "business" | "client" = "business"
+): Promise<ClientMessage[]> {
   const db = await getDb();
   if (!db) return [];
+  const deletedFilter = viewerSide === "business"
+    ? eq(clientMessages.deletedByBusiness, false)
+    : eq(clientMessages.deletedByClient, false);
   return db
     .select()
     .from(clientMessages)
-    .where(and(eq(clientMessages.businessOwnerId, businessOwnerId), eq(clientMessages.clientAccountId, clientAccountId)))
+    .where(and(
+      eq(clientMessages.businessOwnerId, businessOwnerId),
+      eq(clientMessages.clientAccountId, clientAccountId),
+      deletedFilter
+    ))
     .orderBy(clientMessages.createdAt);
 }
 
@@ -1206,6 +1217,18 @@ export async function markAllClientMessagesRead(businessOwnerId: number): Promis
         isNull(clientMessages.readAt)
       )
     );
+}
+/** Soft-delete a message for one side only (business or client) */
+export async function deleteClientMessageForSide(
+  messageId: number,
+  side: "business" | "client"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const update = side === "business"
+    ? { deletedByBusiness: true }
+    : { deletedByClient: true };
+  await db.update(clientMessages).set(update).where(eq(clientMessages.id, messageId));
 }
 export async function getClientMessageInbox(clientAccountId: number): Promise<{ businessOwnerId: number; lastMessage: string; lastAt: Date; unreadCount: number }[]> {
   const db = await getDb();
