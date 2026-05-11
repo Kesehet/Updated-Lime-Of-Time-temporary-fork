@@ -2120,3 +2120,6 @@
 - [x] Add inline expandable sessions accordion to business portal appointment detail
 - [x] Add inline expandable sessions accordion to client portal appointment detail
 - [x] Server: include packageSiblings in GET /api/client/appointments/:id response
+
+- [x] Package progress pill ("2/3") on appointment cards in the calendar/list view (business portal)
+- [x] Auto-SMS via Messaging system when business owner marks a package session as "Completed" — pre-generated message like "Session 1 of 3 complete — 2 sessions remaining on your Glow & Go Bundle."

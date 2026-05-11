@@ -497,6 +497,24 @@ export default function BookingsScreen() {
           <View style={[styles.statusBadge, { backgroundColor: statusColor + "18" }]}>
             <Text style={{ fontSize: fs.xs, fontWeight: "600", color: statusColor, textTransform: "capitalize" }}>{appt.status}</Text>
           </View>
+          {appt.packageGroupId && appt.sessionTotal != null && appt.sessionIndex != null && (
+            <View style={{
+              backgroundColor: "#16a34a18",
+              borderRadius: 6,
+              paddingHorizontal: 7,
+              paddingVertical: 3,
+              borderWidth: 1,
+              borderColor: "#16a34a40",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 3,
+            }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#16a34a" }}>
+                {appt.sessionIndex + 1}/{appt.sessionTotal}
+              </Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "500", color: "#16a34a" }}>pkg</Text>
+            </View>
+          )}
           {appt.paymentMethod === "card" && appt.paymentStatus === "paid" && (
             <View style={{ backgroundColor: "#635BFF18", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
               <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#635BFF" }}>💳 Card</Text>

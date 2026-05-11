@@ -1472,3 +1472,17 @@ export async function deleteServicePackage(localId: string, businessOwnerId: num
     .delete(servicePackages)
     .where(and(eq(servicePackages.localId, localId), eq(servicePackages.businessOwnerId, businessOwnerId)));
 }
+
+// ─── Package Session Helpers ──────────────────────────────────────────────────
+/**
+ * Get all appointments belonging to the same package booking group.
+ * Used to count completed sessions and build progress messages.
+ */
+export async function getAppointmentsByPackageBookingId(packageBookingId: string, businessOwnerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(appointments)
+    .where(and(eq(appointments.packageBookingId, packageBookingId), eq(appointments.businessOwnerId, businessOwnerId)));
+}

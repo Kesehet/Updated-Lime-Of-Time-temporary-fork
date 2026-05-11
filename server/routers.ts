@@ -622,6 +622,42 @@ const appointmentsRouter = router({
           console.error("[InAppMsg] Failed to send auto in-app message:", inAppErr);
         }
       }
+      // ── Package session completion: send progress message to client ──────────
+      if (data.status === "completed") {
+        try {
+          const apptRowPkg = await db.getAppointmentByLocalId(localId, businessOwnerId);
+          const pkgBookingId = apptRowPkg?.packageBookingId;
+          const sessionNumber = apptRowPkg?.sessionNumber; // 1-based
+          const sessionTotal = apptRowPkg?.sessionTotal;
+          const packageName = apptRowPkg?.packageName;
+          if (pkgBookingId && sessionNumber != null && sessionTotal != null && sessionTotal > 1) {
+            // Count how many sessions are now completed (including this one)
+            const allSessions = await db.getAppointmentsByPackageBookingId(pkgBookingId, businessOwnerId);
+            const completedCount = allSessions.filter((s) => s.status === "completed").length;
+            const remainingCount = sessionTotal - completedCount;
+            const pkgDisplayName = packageName ?? "your package";
+            const progressMsg = remainingCount > 0
+              ? `✅ Session ${sessionNumber} of ${sessionTotal} complete — ${remainingCount} session${remainingCount === 1 ? "" : "s"} remaining on your ${pkgDisplayName}.`
+              : `🎉 All ${sessionTotal} sessions of your ${pkgDisplayName} are complete! Thank you for choosing us — we hope to see you again soon.`;
+            // Find the client account to insert the message into the conversation thread
+            const enrichedPkg = await db.getEnrichedAppointment(localId, businessOwnerId);
+            if (enrichedPkg?.clientPhone) {
+              const rawDigitsPkg = enrichedPkg.clientPhone.replace(/\D/g, "");
+              const normPhonePkg = rawDigitsPkg.length === 11 && rawDigitsPkg.startsWith("1") ? rawDigitsPkg.slice(1) : rawDigitsPkg;
+              const clientAccPkg = await db.getClientAccountByPhone(normPhonePkg)
+                ?? await db.getClientAccountByPhone(enrichedPkg.clientPhone);
+              if (clientAccPkg) {
+                // Insert into messaging conversation thread (pre-generated, visible in Messages tab)
+                await db.insertClientMessage({ businessOwnerId, clientAccountId: clientAccPkg.id, senderType: "business", body: progressMsg }).catch(() => {});
+                // Also send via SMS if Twilio is enabled
+                await sendStatusSms(enrichedPkg.clientPhone, progressMsg, "confirmation").catch(() => {});
+              }
+            }
+          }
+        } catch (pkgErr) {
+          console.error("[PkgProgress] Failed to send package session progress message:", pkgErr);
+        }
+      }
       // ── Notify client when owner declines a reschedule request ─────────────
       if (data.rescheduleRequest && (data.rescheduleRequest as any).status === "declined") {
         try {
