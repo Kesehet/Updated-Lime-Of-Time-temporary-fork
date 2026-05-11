@@ -2078,3 +2078,6 @@
 - [x] buildTplVars no longer returns null - uses clientName from route params as fallback
 - [x] Fix messaging thread input bar: restore send button and ⚡ button (single-row iMessage-style layout)
 - [x] Fix keyboard covering input bar on iOS and Android
+- [x] Fix ⚡ template picker: deduplicate templates and organize by category (Upcoming, Confirmed, Completed, Follow-up, etc.)
+- [x] Add smart client filter chips to Clients screen: All, Upcoming, Pending, Payment Required, Completed
+- [x] Each filter shows targeted action buttons (Send Reminder, Send Payment Link, Send Review Request, Come Back Soon)

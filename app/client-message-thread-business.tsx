@@ -377,13 +377,24 @@ export default function ClientMessageThreadBusinessScreen() {
     }
   }, [showTemplates, clientAppointments, selectedApptId]);
 
-  // ── Reminder templates from store ─────────────────────────────────────────
+  // ── Reminder templates from store — deduplicated, grouped by category ──────
   const allReminderTemplates: ReminderTemplate[] = useMemo(() => {
     const stored = state.reminderTemplates ?? [];
-    // Merge stored + library, deduplicate by id
-    const all = [...stored, ...TEMPLATE_LIBRARY];
+    // Priority: user-saved templates first, then library templates
+    // Deduplicate: if a user saved a library template (same id), skip the library copy
+    // Also deduplicate by customMessage content to avoid near-identical entries
     const seen = new Set<string>();
-    return all.filter((t) => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
+    const seenContent = new Set<string>();
+    const result: ReminderTemplate[] = [];
+    for (const t of [...stored, ...TEMPLATE_LIBRARY]) {
+      if (seen.has(t.id)) continue;
+      const contentKey = (t.customMessage ?? "").trim().slice(0, 80);
+      if (contentKey && seenContent.has(contentKey)) continue;
+      seen.add(t.id);
+      if (contentKey) seenContent.add(contentKey);
+      result.push(t);
+    }
+    return result;
   }, [state.reminderTemplates]);
 
   // Filter reminder templates by selected appointment status
@@ -397,6 +408,48 @@ export default function ClientMessageThreadBusinessScreen() {
       (t) => !t.category || allowedCategories.includes(t.category as TemplateCategory)
     );
   }, [allReminderTemplates, clientAppointments, selectedApptId]);
+
+  // Group reminder templates by category for the picker
+  const REMINDER_CATEGORY_ORDER: TemplateCategory[] = ["upcoming", "confirmed", "pending", "completed", "cancelled", "no_show", "reschedule"];
+  const REMINDER_CATEGORY_ICONS: Record<TemplateCategory, string> = {
+    upcoming:  "⏰",
+    confirmed: "✅",
+    pending:   "🕐",
+    completed: "⭐",
+    cancelled: "❌",
+    no_show:   "🚫",
+    reschedule:"🔄",
+  };
+  const REMINDER_CATEGORY_LABELS: Record<TemplateCategory, string> = {
+    upcoming:   "Upcoming Reminders",
+    confirmed:  "Booking Confirmations",
+    pending:    "Pending / Awaiting",
+    completed:  "Follow-up & Reviews",
+    cancelled:  "Cancellations",
+    no_show:    "No-Show",
+    reschedule: "Reschedule",
+  };
+  const groupedReminderTemplates = useMemo(() => {
+    const groups: { cat: TemplateCategory; label: string; icon: string; templates: ReminderTemplate[] }[] = [];
+    const uncategorized: ReminderTemplate[] = [];
+    const byCategory: Partial<Record<TemplateCategory, ReminderTemplate[]>> = {};
+    for (const t of reminderTemplates) {
+      const cat = t.category as TemplateCategory | undefined;
+      if (!cat) { uncategorized.push(t); continue; }
+      if (!byCategory[cat]) byCategory[cat] = [];
+      byCategory[cat]!.push(t);
+    }
+    for (const cat of REMINDER_CATEGORY_ORDER) {
+      const templates = byCategory[cat];
+      if (templates && templates.length > 0) {
+        groups.push({ cat, label: REMINDER_CATEGORY_LABELS[cat], icon: REMINDER_CATEGORY_ICONS[cat], templates });
+      }
+    }
+    if (uncategorized.length > 0) {
+      groups.push({ cat: "upcoming" as TemplateCategory, label: "Custom Templates", icon: "✏️", templates: uncategorized });
+    }
+    return groups;
+  }, [reminderTemplates]);
 
   // ── Build template variables for the selected appointment ─────────────────
   const buildTplVars = useCallback((appt: Appointment): Record<string, string> => {
@@ -791,13 +844,22 @@ export default function ClientMessageThreadBusinessScreen() {
                   <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center" }}>No appointments found for this client. Templates will use client name only.</Text>
                 </View>
               )}
-
-              {/* Reminder templates */}
-              <Text style={[s.sectionLabel, { color: colors.muted, marginTop: 4 }]}>Choose a template:</Text>
-              {reminderTemplates.length === 0 ? (
+              {/* Reminder templates — grouped by category */}
+              {groupedReminderTemplates.length === 0 ? (
                 <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center", paddingVertical: 20 }}>No templates available. Add templates in Settings → Reminder Templates.</Text>
               ) : (
-                reminderTemplates.map((tpl) => (
+                groupedReminderTemplates.map((group) => (
+                  <View key={group.cat + group.label} style={{ gap: 8 }}>
+                    {/* Category header */}
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 }}>
+                      <Text style={{ fontSize: 15 }}>{group.icon}</Text>
+                      <Text style={{ fontSize: 12, fontWeight: "700", color: colors.foreground, textTransform: "uppercase", letterSpacing: 0.6, flex: 1 }}>{group.label}</Text>
+                      <View style={{ backgroundColor: colors.primary + "20", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 }}>
+                        <Text style={{ fontSize: 11, fontWeight: "700", color: colors.primary }}>{group.templates.length}</Text>
+                      </View>
+                    </View>
+                    <View style={{ width: "100%", height: 1, backgroundColor: colors.border, marginBottom: 4 }} />
+                    {group.templates.map((tpl) => (
                   <Pressable
                     key={tpl.id}
                     style={({ pressed }) => [s.templateCard, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.85 : 1 }]}
@@ -813,6 +875,8 @@ export default function ClientMessageThreadBusinessScreen() {
                       {(tpl.customMessage ?? "").slice(0, 120)}{(tpl.customMessage ?? "").length > 120 ? "…" : ""}
                     </Text>
                   </Pressable>
+                    ))}
+                  </View>
                 ))
               )}
             </ScrollView>

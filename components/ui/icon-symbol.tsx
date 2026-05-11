@@ -101,6 +101,8 @@ const MAPPING = {
   "location.north.fill": "navigation",
   "arrow.triangle.2.circlepath": "refresh",
   "exclamationmark.triangle.fill": "warning",
+  "exclamationmark.circle": "error-outline",
+  "exclamationmark.circle.fill": "error",
   "info.circle.fill": "info",
   "lock.fill": "lock",
   "lock.open.fill": "lock-open",
