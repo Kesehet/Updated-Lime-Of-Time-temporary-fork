@@ -2104,3 +2104,5 @@
 - [x] Fix multi-service selection on public booking page (currently only allows single service selection via modal)
 - [x] Remove clickable address/phone links from location selection cards (keep only on top business info card)
 - [ ] Add /book/:slug route (without /api prefix) so lime-of-time.com/book/business-name works directly
+- [x] Add "Balance" tab to Buy a Gift page items step (preset amounts + custom input)
+- [x] Wire balance gift type into gift data for downstream Details → Payment steps

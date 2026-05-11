@@ -3079,9 +3079,10 @@ function buyGiftPage(slug: string, owner: any): string {
     </div>
     <!-- Tab switcher -->
     <div style="display:flex;background:var(--bg-input);border-radius:12px;padding:3px;border:1.5px solid var(--bdi);margin-bottom:14px;">
-      <button onclick="switchItemTab('services')" id="tabSvc" style="flex:1;padding:9px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:var(--gift);color:#fff;transition:all .15s;">Services</button>
-      <button onclick="switchItemTab('products')" id="tabProd" style="flex:1;padding:9px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--textm);transition:all .15s;">Products</button>
-      <button onclick="switchItemTab('packages')" id="tabPkg" style="flex:1;padding:9px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--textm);transition:all .15s;">Packages</button>
+      <button onclick="switchItemTab('services')" id="tabSvc" style="flex:1;padding:9px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:var(--gift);color:#fff;transition:all .15s;">Services</button>
+      <button onclick="switchItemTab('products')" id="tabProd" style="flex:1;padding:9px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--textm);transition:all .15s;">Products</button>
+      <button onclick="switchItemTab('packages')" id="tabPkg" style="flex:1;padding:9px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--textm);transition:all .15s;">Packages</button>
+      <button onclick="switchItemTab('balance')" id="tabBal" style="flex:1;padding:9px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--textm);transition:all .15s;">Balance</button>
     </div>
     <!-- Search -->
     <div class="search-wrap" id="searchWrap">
@@ -3109,6 +3110,27 @@ function buyGiftPage(slug: string, owner: any): string {
     <div id="prodPanel" style="display:none;">
       <div id="prodList"></div>
       <div id="prodSearchList" style="display:none;"></div>
+    </div>
+    <!-- Balance panel -->
+    <div id="balPanel" style="display:none;">
+      <div style="font-size:14px;color:var(--textm);margin-bottom:16px;line-height:1.5;">Give the recipient a gift card they can use toward any service or product at <strong>${bizName}</strong>.</div>
+      <div style="font-size:12px;font-weight:700;color:var(--textm);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Select Amount</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;" id="balPresets">
+        <button onclick="selectBalancePreset(25)" data-amt="25" class="bal-preset" style="flex:1;min-width:70px;padding:12px 8px;border-radius:12px;border:2px solid var(--bdi);background:var(--bg-card);font-size:15px;font-weight:700;color:var(--text1);cursor:pointer;transition:all .15s;">$25</button>
+        <button onclick="selectBalancePreset(50)" data-amt="50" class="bal-preset" style="flex:1;min-width:70px;padding:12px 8px;border-radius:12px;border:2px solid var(--bdi);background:var(--bg-card);font-size:15px;font-weight:700;color:var(--text1);cursor:pointer;transition:all .15s;">$50</button>
+        <button onclick="selectBalancePreset(100)" data-amt="100" class="bal-preset" style="flex:1;min-width:70px;padding:12px 8px;border-radius:12px;border:2px solid var(--bdi);background:var(--bg-card);font-size:15px;font-weight:700;color:var(--text1);cursor:pointer;transition:all .15s;">$100</button>
+        <button onclick="selectBalancePreset(150)" data-amt="150" class="bal-preset" style="flex:1;min-width:70px;padding:12px 8px;border-radius:12px;border:2px solid var(--bdi);background:var(--bg-card);font-size:15px;font-weight:700;color:var(--text1);cursor:pointer;transition:all .15s;">$150</button>
+        <button onclick="selectBalancePreset(200)" data-amt="200" class="bal-preset" style="flex:1;min-width:70px;padding:12px 8px;border-radius:12px;border:2px solid var(--bdi);background:var(--bg-card);font-size:15px;font-weight:700;color:var(--text1);cursor:pointer;transition:all .15s;">$200</button>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--textm);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Or Enter Custom Amount</div>
+      <div style="display:flex;align-items:center;gap:8px;border:2px solid var(--bdi);border-radius:12px;padding:10px 14px;background:var(--bg-card);" id="balCustomWrap">
+        <span style="font-size:18px;font-weight:700;color:var(--textm);">$</span>
+        <input type="number" id="balCustomInput" min="1" max="9999" step="1" placeholder="e.g. 75" oninput="onBalCustomInput(this.value)" style="flex:1;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;color:var(--text1);width:100%;">
+      </div>
+      <div id="balSelectedDisplay" style="display:none;margin-top:14px;padding:12px 16px;border-radius:12px;background:rgba(233,30,140,0.08);border:2px solid var(--gift);text-align:center;">
+        <div style="font-size:13px;color:var(--textm);margin-bottom:2px;">Gift Card Value</div>
+        <div id="balSelectedAmt" style="font-size:24px;font-weight:800;color:var(--gift);"></div>
+      </div>
     </div>
     <!-- Selected summary -->
     <div class="selected-items-bar" id="selectedBar"></div>
@@ -3219,6 +3241,7 @@ let allServices = [], allProducts = [], allPackages = [], paymentMethods = {};
 let giftSelectedLocationId = null; // for staff filtering
 let selectedServiceIds = new Set(), selectedProductIds = new Set();
 let selectedPackageId = null; // package gift (mutually exclusive with services/products)
+let selectedBalanceAmount = null; // balance gift amount (mutually exclusive with services/products/packages)
 let currentStep = 0;
 let dateMode = 'recipient'; // 'recipient' | 'me'
 let selectedDate = null, selectedTime = null;
@@ -3417,17 +3440,71 @@ function switchItemTab(tab) {
   document.getElementById('svcPanel').style.display = tab === 'services' ? 'block' : 'none';
   document.getElementById('prodPanel').style.display = tab === 'products' ? 'block' : 'none';
   document.getElementById('pkgPanel').style.display = tab === 'packages' ? 'block' : 'none';
+  document.getElementById('balPanel').style.display = tab === 'balance' ? 'block' : 'none';
   document.getElementById('tabSvc').style.background = tab === 'services' ? 'var(--gift)' : 'transparent';
   document.getElementById('tabSvc').style.color = tab === 'services' ? '#fff' : 'var(--textm)';
   document.getElementById('tabProd').style.background = tab === 'products' ? 'var(--gift)' : 'transparent';
   document.getElementById('tabProd').style.color = tab === 'products' ? '#fff' : 'var(--textm)';
   document.getElementById('tabPkg').style.background = tab === 'packages' ? 'var(--gift)' : 'transparent';
   document.getElementById('tabPkg').style.color = tab === 'packages' ? '#fff' : 'var(--textm)';
+  document.getElementById('tabBal').style.background = tab === 'balance' ? 'var(--gift)' : 'transparent';
+  document.getElementById('tabBal').style.color = tab === 'balance' ? '#fff' : 'var(--textm)';
   var searchWrap = document.getElementById('searchWrap');
-  if (searchWrap) searchWrap.style.display = tab === 'packages' ? 'none' : 'flex';
+  if (searchWrap) searchWrap.style.display = (tab === 'packages' || tab === 'balance') ? 'none' : 'flex';
+  // Hide popular section on balance tab
+  var popularSection = document.getElementById('popularSection');
+  if (popularSection) popularSection.style.display = (tab === 'balance') ? 'none' : '';
+  // Hide location selector on balance tab
+  var locWrap = document.getElementById('locationSelectorWrap');
+  if (locWrap) locWrap.style.display = (tab === 'balance') ? 'none' : '';
   if (tab === 'packages' && allPackages.length === 0) loadPackages();
-  document.getElementById('itemSearch').value = '';
-  onItemSearch('');
+  if (tab !== 'balance') { document.getElementById('itemSearch').value = ''; onItemSearch(''); }
+  updateFooterBtn();
+}
+function selectBalancePreset(amt) {
+  selectedBalanceAmount = amt;
+  // Clear other selections
+  selectedServiceIds.clear();
+  selectedProductIds.clear();
+  selectedPackageId = null;
+  // Update preset button styles
+  document.querySelectorAll('.bal-preset').forEach(function(btn) {
+    var isSelected = parseInt(btn.dataset.amt) === amt;
+    btn.style.background = isSelected ? 'var(--gift)' : 'var(--bg-card)';
+    btn.style.color = isSelected ? '#fff' : 'var(--text1)';
+    btn.style.borderColor = isSelected ? 'var(--gift)' : 'var(--bdi)';
+  });
+  // Clear custom input
+  document.getElementById('balCustomInput').value = '';
+  document.getElementById('balCustomWrap').style.borderColor = 'var(--bdi)';
+  // Show selected display
+  document.getElementById('balSelectedDisplay').style.display = 'block';
+  document.getElementById('balSelectedAmt').textContent = '$' + amt.toFixed(2);
+  updateFooterBtn();
+}
+function onBalCustomInput(val) {
+  var amt = parseFloat(val);
+  if (!isNaN(amt) && amt > 0) {
+    selectedBalanceAmount = amt;
+    // Clear preset selections
+    document.querySelectorAll('.bal-preset').forEach(function(btn) {
+      btn.style.background = 'var(--bg-card)';
+      btn.style.color = 'var(--text1)';
+      btn.style.borderColor = 'var(--bdi)';
+    });
+    document.getElementById('balCustomWrap').style.borderColor = 'var(--gift)';
+    document.getElementById('balSelectedDisplay').style.display = 'block';
+    document.getElementById('balSelectedAmt').textContent = '$' + amt.toFixed(2);
+    // Clear other selections
+    selectedServiceIds.clear();
+    selectedProductIds.clear();
+    selectedPackageId = null;
+  } else {
+    selectedBalanceAmount = null;
+    document.getElementById('balCustomWrap').style.borderColor = 'var(--bdi)';
+    document.getElementById('balSelectedDisplay').style.display = 'none';
+  }
+  updateFooterBtn();
 }
 async function loadPackages() {
   try {
@@ -3818,7 +3895,7 @@ function goToStep(n) {
 function updateFooterBtn() {
   const btn = document.getElementById('mainBtn');
   if (currentStep === 0) {
-    const hasItems = selectedServiceIds.size > 0 || selectedProductIds.size > 0 || !!selectedPackageId;
+    const hasItems = selectedServiceIds.size > 0 || selectedProductIds.size > 0 || !!selectedPackageId || (selectedBalanceAmount && selectedBalanceAmount > 0);
     btn.disabled = !hasItems;
     btn.textContent = hasItems ? 'Continue →' : 'Select Items to Continue';
   } else if (currentStep === 1) {
@@ -3843,7 +3920,7 @@ function updateFooterBtn() {
 }
 function handleMainBtn() {
   if (currentStep === 0) {
-    if (selectedServiceIds.size === 0 && selectedProductIds.size === 0 && !selectedPackageId) { alert('Please select at least one item.'); return; }
+    if (selectedServiceIds.size === 0 && selectedProductIds.size === 0 && !selectedPackageId && !selectedBalanceAmount) { alert('Please select at least one item.'); return; }
     goToStep(1);
   } else if (currentStep === 1) {
     const rName = document.getElementById('recipientName').value.trim();
@@ -3878,10 +3955,13 @@ async function submitGift() {
   if (isSubmitting) return;
   isSubmitting = true;
   updateFooterBtn();
+  const isBalanceGift = !!(selectedBalanceAmount && selectedBalanceAmount > 0);
   const payload = {
-    serviceIds: Array.from(selectedServiceIds),
-    productIds: Array.from(selectedProductIds),
-    packageLocalId: selectedPackageId || undefined,
+    giftType: isBalanceGift ? 'balance' : (selectedPackageId ? 'package' : 'service'),
+    balanceAmount: isBalanceGift ? selectedBalanceAmount : undefined,
+    serviceIds: isBalanceGift ? [] : Array.from(selectedServiceIds),
+    productIds: isBalanceGift ? [] : Array.from(selectedProductIds),
+    packageLocalId: isBalanceGift ? undefined : (selectedPackageId || undefined),
     recipientName: document.getElementById('recipientName').value.trim(),
     recipientEmail: document.getElementById('recipientEmail').value.trim(),
     recipientPhone: document.getElementById('recipientPhone').value.trim(),
@@ -3889,10 +3969,10 @@ async function submitGift() {
     purchaserEmail: document.getElementById('purchaserEmail').value.trim(),
     message: document.getElementById('giftMessage').value.trim(),
     paymentMethod: selectedPaymentMethod,
-    recipientChoosesDate: dateMode === 'recipient',
-    preselectedDate: dateMode === 'me' ? selectedDate : null,
-    preselectedTime: dateMode === 'me' ? selectedTime : null,
-    preselectedStaffId: giftSelectedStaff ? giftSelectedStaff.localId : null,
+    recipientChoosesDate: isBalanceGift ? true : (dateMode === 'recipient'),
+    preselectedDate: (!isBalanceGift && dateMode === 'me') ? selectedDate : null,
+    preselectedTime: (!isBalanceGift && dateMode === 'me') ? selectedTime : null,
+    preselectedStaffId: (!isBalanceGift && giftSelectedStaff) ? giftSelectedStaff.localId : null,
   };
   try {
     // Step 1: Create the gift record in the database
