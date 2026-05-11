@@ -584,7 +584,8 @@ export function registerPublicRoutes(app: Express) {
       remainingValue = gcMeta.remainingBalance ?? gcMeta.originalValue ?? totalValue;
       if (remainingValue <= 0) { res.status(400).json({ error: "This gift certificate has no remaining value" }); return; }
       const giftType = gcMeta.giftType ?? (card.serviceLocalId ? "service" : "balance");
-      res.json({ code: card.code, value: remainingValue, totalValue, expiresAt: card.expiresAt, giftType, serviceLocalId: card.serviceLocalId || null });
+      const giftPackageLocalId = (card as any).packageLocalId || gcMeta.packageLocalId || null;
+      res.json({ code: card.code, value: remainingValue, totalValue, expiresAt: card.expiresAt, giftType, serviceLocalId: card.serviceLocalId || null, packageLocalId: giftPackageLocalId });
     } catch (err) {
       console.error("[Public API] Error validating gift certificate:", err);
       res.status(500).json({ error: "Internal server error" });
@@ -652,6 +653,8 @@ export function registerPublicRoutes(app: Express) {
         photoUri: p.photoUri || null,
         category: p.category || null,
         packageItems: p.packageItems,
+        bufferDays: p.bufferDays ?? 0,
+        isActive: p.isActive,
       })));
     } catch (err) {
       console.error("[Public API] Error fetching packages:", err);
@@ -761,16 +764,26 @@ export function registerPublicRoutes(app: Express) {
         if (p) giftItems.push({ localId: p.localId, name: p.name, price: parseFloat(String(p.price)), type: "product" });
       }
 
+      // Look up package name if this is a package gift
+      const cardPkgLocalId = (card as any).packageLocalId || null;
+      let packageName: string | null = null;
+      if (cardPkgLocalId) {
+        const pkgList = await db.getServicePackagesByOwner(card.businessOwnerId);
+        const pkg = (pkgList as any[]).find((p: any) => p.localId === cardPkgLocalId);
+        packageName = pkg?.name || null;
+      }
       res.json({
         code: card.code,
         redeemed: card.redeemed,
         expiresAt: card.expiresAt,
         recipientName: card.recipientName,
         message: cleanMessage,
-        serviceName: svc?.name || "Service",
+        serviceName: packageName || svc?.name || "Service",
         servicePrice: svc?.price || "0",
         serviceDuration: svc?.duration || 60,
         serviceLocalId: card.serviceLocalId,
+        packageLocalId: cardPkgLocalId,
+        packageName,
         businessName: owner?.businessName || "Business",
         businessSlug: owner?.businessName.toLowerCase().replace(/\s+/g, "-") || "",
         // Balance-based gift card fields
@@ -1088,6 +1101,140 @@ export function registerPublicRoutes(app: Express) {
     }
   });
 
+  /** Submit a package booking — creates N linked appointments, charged once */
+  app.post("/api/public/business/:slug/book-package", async (req: Request, res: Response) => {
+    try {
+      const owner = await db.getBusinessOwnerBySlug(req.params.slug);
+      if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
+      const {
+        clientName, clientPhone, clientEmail,
+        packageLocalId, sessions, // sessions: [{date, time}]
+        notes, totalPrice, locationId, paymentMethod, paymentConfirmationNumber,
+        promoCode, promoLocalId,
+        giftCode, giftApplied, giftUsedAmount, discountName, discountPercentage, discountAmount,
+      } = req.body;
+      if (!clientName || !packageLocalId || !Array.isArray(sessions) || sessions.length === 0) {
+        res.status(400).json({ error: "Missing required fields" }); return;
+      }
+      // Resolve or create client
+      let clientLocalId: string;
+      const rawDigits = (clientPhone || "").replace(/\D/g, "");
+      const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
+      if (normalizedPhone.length >= 10) {
+        const existingClient = await db.getClientByPhone(normalizedPhone, owner.id);
+        if (existingClient) {
+          clientLocalId = existingClient.localId;
+          if (existingClient.name !== clientName) {
+            await db.updateClient(existingClient.localId, owner.id, { name: clientName, email: clientEmail || undefined });
+          }
+        } else {
+          clientLocalId = `web-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          await db.createClient({ businessOwnerId: owner.id, localId: clientLocalId, name: clientName, phone: normalizedPhone, email: clientEmail || null, notes: "Added via web booking" });
+        }
+      } else {
+        clientLocalId = `web-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        await db.createClient({ businessOwnerId: owner.id, localId: clientLocalId, name: clientName, phone: normalizedPhone || null, email: clientEmail || null, notes: "Added via web booking" });
+      }
+      // Fetch package info
+      const pkgList = await db.getServicePackagesByOwner(owner.id);
+      const pkg = pkgList.find((p: any) => p.localId === packageLocalId);
+      if (!pkg) { res.status(400).json({ error: "Package not found" }); return; }
+      const sessionDur = pkg.sessionDurationMinutes || 60;
+      const packageGroupId = `pkg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const finalTotal = totalPrice != null ? parseFloat(String(totalPrice)) : parseFloat(String(pkg.packagePrice));
+      const appointmentIds: string[] = [];
+      // Helper: convert "10:00 AM" / "2:00 PM" to "10:00" / "14:00" (24-hour HH:MM for DB)
+      const to24h = (t: string): string => {
+        if (!t) return '00:00';
+        const trimmed = t.trim();
+        // Already 24-hour format (no AM/PM suffix)
+        if (trimmed.indexOf('M') === -1) return trimmed.slice(0, 5);
+        const parts = trimmed.split(' ');
+        const [rawH, rawM] = parts[0].split(':');
+        let h = parseInt(rawH, 10);
+        const m = rawM ? rawM.padStart(2, '0') : '00';
+        const period = (parts[1] || '').toUpperCase();
+        if (period === 'AM') { if (h === 12) h = 0; }
+        else if (period === 'PM') { if (h !== 12) h += 12; }
+        return String(h).padStart(2, '0') + ':' + m;
+      };
+      // Create one appointment per session
+      for (let i = 0; i < sessions.length; i++) {
+        const sess = sessions[i];
+        const apptLocalId = `web-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`;
+        const isFirst = i === 0;
+        const sessionNotes = `Package: ${pkg.name} \u2014 Session ${i + 1} of ${sessions.length}${notes ? '\n' + notes : ''}`;
+        await db.createAppointment({
+          businessOwnerId: owner.id,
+          localId: apptLocalId,
+          serviceLocalId: packageLocalId,
+          clientLocalId,
+          date: sess.date,
+          time: to24h(sess.time),
+          duration: sessionDur,
+          status: "pending",
+          notes: sessionNotes,
+          totalPrice: isFirst ? String(finalTotal) : "0",
+          locationId: locationId || null,
+          paymentMethod: isFirst ? ((paymentMethod && paymentMethod !== 'later') ? paymentMethod : null) : null,
+          paymentStatus: isFirst ? (paymentMethod === 'cash' ? 'pending_cash' : ((paymentMethod && paymentMethod !== 'later') ? 'unpaid' : null)) : null,
+          paymentConfirmationNumber: isFirst ? (paymentConfirmationNumber || null) : null,
+          packageBookingId: packageGroupId,
+          packageLocalId: packageLocalId,
+          sessionNumber: i + 1,
+          sessionTotal: sessions.length,
+          packageName: pkg.name,
+          // Gift card — only apply on first session row
+          giftApplied: isFirst ? !!giftApplied : false,
+          giftCode: isFirst ? (giftCode || null) : null,
+          giftUsedAmount: isFirst && giftUsedAmount ? String(parseFloat(String(giftUsedAmount))) : null,
+          discountName: isFirst ? (discountName || null) : null,
+          discountPercent: isFirst && discountPercentage ? String(discountPercentage) : null,
+          discountAmount: isFirst && discountAmount ? String(parseFloat(String(discountAmount))) : null,
+        } as any);
+        appointmentIds.push(apptLocalId);
+      }
+      // Increment promo code usage if applied
+      if (promoCode && promoLocalId) {
+        try { await db.incrementPromoCodeUsage(promoLocalId, owner.id); } catch {}
+      }
+      // Atomically deduct from gift card balance (prevents double-spend race conditions)
+      if (giftApplied && giftCode) {
+        try {
+          const usedAmt = giftUsedAmount ? parseFloat(String(giftUsedAmount)) : finalTotal;
+          const deductResult = await db.atomicDeductGiftCardBalance(giftCode, owner.id, usedAmt);
+          if (!deductResult.success) {
+            console.warn(`[GiftCard/pkg] Atomic deduction failed for ${giftCode}: ${deductResult.reason}`);
+          }
+        } catch (gcErr) { console.error('[book-package] Failed to deduct gift card:', gcErr); }
+      }
+      // Send push notification
+      try {
+        const ownerNotifPrefs = (owner as any).notificationPreferences ?? {};
+        const masterNotifEnabled = (owner as any).notificationsEnabled !== false;
+        const pushOnNewBookingEnabled = masterNotifEnabled && ownerNotifPrefs.pushOnNewBooking !== false;
+        if (pushOnNewBookingEnabled) {
+          const ownerPushToken = (owner as any).expoPushToken as string | null | undefined;
+          const firstSess = sessions[0];
+          if (ownerPushToken) {
+            await notifyNewBooking(ownerPushToken, owner.businessName, clientName, `${pkg.name} (${sessions.length}-session package)`, firstSess.date, firstSess.time, appointmentIds[0], { duration: sessionDur });
+          } else {
+            await throttledNotifyOwner({ title: `\uD83D\uDCC5 New Package Booking \u2014 ${owner.businessName}`, content: `${clientName} booked ${pkg.name} (${sessions.length} sessions)\nFirst session: ${firstSess.date} at ${firstSess.time}\nTotal: $${finalTotal.toFixed(2)}` });
+          }
+        }
+      } catch {}
+      res.json({
+        success: true,
+        packageGroupId,
+        appointmentIds,
+        manageUrl: `${req.headers.origin || 'https://lime-of-time.com'}/manage/${req.params.slug}/${appointmentIds[0]}`,
+        message: `Package booking submitted! ${sessions.length} sessions scheduled. The business will confirm your booking.`,
+      });
+    } catch (err) {
+      console.error("[Public API] Error creating package booking:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
   /** Submit a review */
   app.post("/api/public/business/:slug/review", async (req: Request, res: Response) => {
     try {
@@ -1925,7 +2072,7 @@ export function registerPublicRoutes(app: Express) {
       if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
       const { purchaserName, purchaserEmail, recipientName, recipientEmail, recipientPhone,
         serviceIds = [], productIds = [], personalMessage,
-        giftType = "service", balanceAmount,
+        giftType = "service", balanceAmount, packageLocalId: giftPackageLocalId,
         paymentMethod = "unpaid", paymentConfirmationNumber,
         recipientChoosesDate = true, preselectedDate, preselectedTime } = req.body;
       // Use business-configured validity (default 90 days) instead of client-supplied value
@@ -1939,7 +2086,7 @@ export function registerPublicRoutes(app: Express) {
         if (!amt || amt <= 0) {
           res.status(400).json({ error: "A positive balance amount is required for balance-type gifts" }); return;
         }
-      } else {
+      } else if (!giftPackageLocalId) {
         if (!serviceIds.length && !productIds.length) {
           res.status(400).json({ error: "At least one service or product must be selected" }); return;
         }
@@ -1952,6 +2099,14 @@ export function registerPublicRoutes(app: Express) {
       if (giftType === "balance") {
         totalValue = parseFloat(String(balanceAmount));
         items = [{ name: "Balance Credit", price: totalValue, type: "balance" }];
+      } else if (giftPackageLocalId) {
+        // Package gift: look up the package and use its price
+        const pkgList = await db.getServicePackagesByOwner(owner.id) as any[];
+        const pkg = pkgList.find((p: any) => p.localId === giftPackageLocalId);
+        if (!pkg) { res.status(400).json({ error: "Package not found" }); return; }
+        totalValue = parseFloat(String(pkg.packagePrice ?? pkg.originalPrice ?? 0));
+        primaryServiceLocalId = null;
+        items = [{ name: pkg.name, price: totalValue, type: "package" }];
       } else {
         const allServices = await db.getServicesByOwner(owner.id) as any[];
         const allProducts = await db.getProductsByOwner(owner.id) as any[];
@@ -1974,7 +2129,7 @@ export function registerPublicRoutes(app: Express) {
       const expiry = new Date();
       expiry.setDate(expiry.getDate() + (parseInt(String(expiresInDays)) || 365));
       const expiresAt = expiry.toISOString().split("T")[0];
-      const giftData = JSON.stringify({ giftType, serviceIds, productIds, originalValue: totalValue, remainingBalance: totalValue, purchasedPublicly: true });
+      const giftData = JSON.stringify({ giftType, serviceIds, productIds, packageLocalId: giftPackageLocalId ?? null, originalValue: totalValue, remainingBalance: totalValue, purchasedPublicly: true });
       const messageWithData = (personalMessage || "") + "\n---GIFT_DATA---\n" + giftData + (paymentConfirmationNumber ? "\n---PAYMENT_REF---\n" + paymentConfirmationNumber : "");
       const dbase = await db.getDb();
       if (!dbase) { res.status(500).json({ error: "Database not available" }); return; }
@@ -1989,6 +2144,7 @@ export function registerPublicRoutes(app: Express) {
         totalValue: String(totalValue.toFixed(2)), purchasedPublicly: true,
         preselectedDate: giftType !== "balance" ? (preselectedDate || null) : null,
         preselectedTime: giftType !== "balance" ? (preselectedTime || null) : null,
+        packageLocalId: giftPackageLocalId ?? null,
       } as any);
       const o = owner as any;
       const slug = o.customSlug || owner.businessName.toLowerCase().replace(/\s+/g, "-");
@@ -2925,6 +3081,7 @@ function buyGiftPage(slug: string, owner: any): string {
     <div style="display:flex;background:var(--bg-input);border-radius:12px;padding:3px;border:1.5px solid var(--bdi);margin-bottom:14px;">
       <button onclick="switchItemTab('services')" id="tabSvc" style="flex:1;padding:9px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:var(--gift);color:#fff;transition:all .15s;">Services</button>
       <button onclick="switchItemTab('products')" id="tabProd" style="flex:1;padding:9px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--textm);transition:all .15s;">Products</button>
+      <button onclick="switchItemTab('packages')" id="tabPkg" style="flex:1;padding:9px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--textm);transition:all .15s;">Packages</button>
     </div>
     <!-- Search -->
     <div class="search-wrap" id="searchWrap">
@@ -2943,6 +3100,10 @@ function buyGiftPage(slug: string, owner: any): string {
       <div id="svcSearchView" style="display:none;">
         <div id="svcSearchList"></div>
       </div>
+    </div>
+    <!-- Packages panel -->
+    <div id="pkgPanel" style="display:none;">
+      <div id="pkgList"></div>
     </div>
     <!-- Products panel -->
     <div id="prodPanel" style="display:none;">
@@ -3054,9 +3215,10 @@ const SLUG = '${slug.replace(/&/g, '\\u0026')}';
 const SLUG_ENC = encodeURIComponent(SLUG);
 const BIZ_NAME = '${bizName}';
 const OWNER_ID = ${owner.id};
-let allServices = [], allProducts = [], paymentMethods = {};
+let allServices = [], allProducts = [], allPackages = [], paymentMethods = {};
 let giftSelectedLocationId = null; // for staff filtering
 let selectedServiceIds = new Set(), selectedProductIds = new Set();
+let selectedPackageId = null; // package gift (mutually exclusive with services/products)
 let currentStep = 0;
 let dateMode = 'recipient'; // 'recipient' | 'me'
 let selectedDate = null, selectedTime = null;
@@ -3254,12 +3416,65 @@ function switchItemTab(tab) {
   currentItemTab = tab;
   document.getElementById('svcPanel').style.display = tab === 'services' ? 'block' : 'none';
   document.getElementById('prodPanel').style.display = tab === 'products' ? 'block' : 'none';
+  document.getElementById('pkgPanel').style.display = tab === 'packages' ? 'block' : 'none';
   document.getElementById('tabSvc').style.background = tab === 'services' ? 'var(--gift)' : 'transparent';
   document.getElementById('tabSvc').style.color = tab === 'services' ? '#fff' : 'var(--textm)';
   document.getElementById('tabProd').style.background = tab === 'products' ? 'var(--gift)' : 'transparent';
   document.getElementById('tabProd').style.color = tab === 'products' ? '#fff' : 'var(--textm)';
+  document.getElementById('tabPkg').style.background = tab === 'packages' ? 'var(--gift)' : 'transparent';
+  document.getElementById('tabPkg').style.color = tab === 'packages' ? '#fff' : 'var(--textm)';
+  var searchWrap = document.getElementById('searchWrap');
+  if (searchWrap) searchWrap.style.display = tab === 'packages' ? 'none' : 'flex';
+  if (tab === 'packages' && allPackages.length === 0) loadPackages();
   document.getElementById('itemSearch').value = '';
   onItemSearch('');
+}
+async function loadPackages() {
+  try {
+    var r = await fetch('/api/client/packages/' + SLUG_ENC);
+    if (!r.ok) throw new Error('Failed to load packages');
+    allPackages = await r.json();
+    renderPackages();
+  } catch(e) {
+    document.getElementById('pkgList').innerHTML = '<p style="color:var(--err);font-size:13px;">Failed to load packages. Please refresh.</p>';
+  }
+}
+function renderPackages() {
+  var el = document.getElementById('pkgList');
+  var active = allPackages.filter(function(p) { return p.isActive !== false; });
+  if (!active.length) { el.innerHTML = '<p style="color:var(--textm);font-size:13px;text-align:center;padding:20px 0;">No packages available.</p>'; return; }
+  var html = '';
+  active.forEach(function(pkg) {
+    var isSelected = selectedPackageId === pkg.localId;
+    var savings = parseFloat(pkg.originalPrice || 0) - parseFloat(pkg.packagePrice || 0);
+    var savingsPct = pkg.originalPrice && parseFloat(pkg.originalPrice) > 0 ? Math.round(savings / parseFloat(pkg.originalPrice) * 100) : 0;
+    html += '<div data-pkgid="' + escH(pkg.localId) + '" onclick="toggleGiftPackage(this.dataset.pkgid)" style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;border:2px solid ' + (isSelected ? 'var(--gift)' : 'var(--bdi)') + ';background:' + (isSelected ? 'rgba(233,30,140,0.07)' : 'var(--bg-card)') + ';cursor:pointer;margin-bottom:10px;transition:all .15s;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
+    html += '<div style="font-size:15px;font-weight:700;color:var(--text1);">' + escH(pkg.name) + '</div>';
+    if (isSelected) html += '<div style="font-size:18px;">✅</div>';
+    html += '</div>';
+    if (pkg.description) html += '<div style="font-size:13px;color:var(--textm);line-height:1.4;">' + escH(pkg.description) + '</div>';
+    html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
+    if (pkg.originalPrice && savings > 0) html += '<span style="font-size:13px;color:var(--textm);text-decoration:line-through;">$' + parseFloat(pkg.originalPrice).toFixed(2) + '</span>';
+    html += '<span style="font-size:16px;font-weight:700;color:var(--gift);">$' + parseFloat(pkg.packagePrice).toFixed(2) + '</span>';
+    if (savingsPct > 0) html += '<span style="font-size:11px;font-weight:700;background:rgba(233,30,140,0.12);color:var(--gift);padding:2px 7px;border-radius:20px;">' + savingsPct + '% OFF</span>';
+    if (pkg.totalSessions > 1) html += '<span style="font-size:11px;color:var(--textm);">' + pkg.totalSessions + ' sessions</span>';
+    html += '</div>';
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+function toggleGiftPackage(pkgId) {
+  if (selectedPackageId === pkgId) {
+    selectedPackageId = null;
+  } else {
+    selectedPackageId = pkgId;
+    selectedServiceIds.clear();
+    selectedProductIds.clear();
+    updateSelectedBar();
+  }
+  renderPackages();
+  updateFooterBtn();
 }
 
 // ── Service categories ─────────────────────────────────────────────────
@@ -3603,7 +3818,7 @@ function goToStep(n) {
 function updateFooterBtn() {
   const btn = document.getElementById('mainBtn');
   if (currentStep === 0) {
-    const hasItems = selectedServiceIds.size > 0 || selectedProductIds.size > 0;
+    const hasItems = selectedServiceIds.size > 0 || selectedProductIds.size > 0 || !!selectedPackageId;
     btn.disabled = !hasItems;
     btn.textContent = hasItems ? 'Continue →' : 'Select Items to Continue';
   } else if (currentStep === 1) {
@@ -3628,7 +3843,7 @@ function updateFooterBtn() {
 }
 function handleMainBtn() {
   if (currentStep === 0) {
-    if (selectedServiceIds.size === 0 && selectedProductIds.size === 0) { alert('Please select at least one item.'); return; }
+    if (selectedServiceIds.size === 0 && selectedProductIds.size === 0 && !selectedPackageId) { alert('Please select at least one item.'); return; }
     goToStep(1);
   } else if (currentStep === 1) {
     const rName = document.getElementById('recipientName').value.trim();
@@ -3666,6 +3881,7 @@ async function submitGift() {
   const payload = {
     serviceIds: Array.from(selectedServiceIds),
     productIds: Array.from(selectedProductIds),
+    packageLocalId: selectedPackageId || undefined,
     recipientName: document.getElementById('recipientName').value.trim(),
     recipientEmail: document.getElementById('recipientEmail').value.trim(),
     recipientPhone: document.getElementById('recipientPhone').value.trim(),
@@ -5212,7 +5428,12 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
 
     <!-- Step 4: Select Date & Time (Monthly Calendar) -->
     <div id="step-4" class="card" style="display:none">
-      <h2>Select Date & Time</h2>
+      <h2 id="step4Title">Select Date &amp; Time</h2>
+      <!-- Package session progress bar (shown only for packages) -->
+      <div id="pkgSessionHeader" style="display:none;margin-bottom:14px;">
+        <div id="pkgSessionProgress" style="display:flex;gap:6px;margin-bottom:10px;"></div>
+        <div id="pkgSessionSummary" style="font-size:12px;color:var(--text-secondary);background:var(--accent-bg);border:1px solid var(--border);border-radius:10px;padding:8px 12px;"></div>
+      </div>
       <div id="locClosedBanner" class="loc-closed-banner">
         <div class="lc-title">&#9888;&#65039; Location Temporarily Closed</div>
         <div class="lc-msg" id="locClosedMsg"></div>
@@ -5236,7 +5457,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       <div id="discountInfo" style="display:none;margin-top:12px;"></div>
       <div style="display:flex;gap:8px;margin-top:16px;">
         <button class="btn btn-secondary" onclick="goToStep(3)" style="flex:1">Back</button>
-        <button class="btn btn-primary" onclick="goToStep(5, 4)" id="btnToConfirm" disabled style="flex:1">Continue</button>
+        <button class="btn btn-primary" onclick="packageSessionContinue()" id="btnToConfirm" disabled style="flex:1">Continue</button>
       </div>
     </div>
 
@@ -5453,6 +5674,9 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     let selectedService = null; // primary service (first selected) — kept for backward compat
     let selectedServices = []; // all selected services (array of service objects)
     let selectedPackage = null; // package/bundle selected (overrides selectedServices when set)
+    // Multi-session package scheduling
+    let packageSessions = []; // [{date, time}] — one entry per session
+    let packageSessionCurrentIdx = 0; // which session is currently being scheduled
     let selectedStaff = null;
     let selectedLocation = ${preselectedLocationId ? `"${preselectedLocationId}"` : 'null'};
     let selectedDate = null;
@@ -5521,6 +5745,12 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         const res = await fetch(API + "/packages");
         packages = await res.json();
         renderPackagesSection();
+        // Auto-select package from URL ?pkg= param (e.g. when coming from gift card page)
+        const _pkgParam = new URLSearchParams(window.location.search).get('pkg');
+        if (_pkgParam && !selectedPackage) {
+          const _pkg = packages.find(function(p) { return p.localId === _pkgParam; });
+          if (_pkg) { togglePackageSelection(_pkg.localId); }
+        }
       } catch(e) { packages = []; }
     }
 
@@ -5554,7 +5784,12 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           '</div>' +
         '</div>';
       });
-      html += '</div><div style="height:1px;background:var(--border);margin:14px 0;"></div>';
+      html += '</div>';
+      // Show lock banner when a package is selected
+      if (selectedPackage) {
+        html += '<div style="margin-top:10px;padding:10px 14px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:8px;">&#128274; <span><strong>Package locked.</strong> Remove the package to add individual services.</span></div>';
+      }
+      html += '<div style="height:1px;background:var(--border);margin:14px 0;"></div>';
       container.innerHTML = html;
       container.querySelectorAll('.pkg-card[data-pkg-id]').forEach(function(card) {
         card.addEventListener('click', function() {
@@ -5571,17 +5806,23 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         selectedPackage = null;
         selectedService = null;
         selectedServices = [];
+        packageSessions = [];
+        packageSessionCurrentIdx = 0;
       } else {
         // Select package — clear any individual service selections
         selectedPackage = pkg;
         selectedServices = [];
-        var totalDurMin = (pkg.sessionDurationMinutes || 60) * (pkg.totalSessions || 1);
+        var totalSess = pkg.totalSessions || 1;
+        // Initialize packageSessions array with empty slots
+        packageSessions = [];
+        for (var si = 0; si < totalSess; si++) packageSessions.push({ date: null, time: null });
+        packageSessionCurrentIdx = 0;
         // Create a synthetic service object so the rest of the booking flow works unchanged
         selectedService = {
           localId: pkg.localId,
           name: pkg.name,
           price: pkg.packagePrice,
-          duration: totalDurMin,
+          duration: pkg.sessionDurationMinutes || 60,
           category: 'Package',
           description: pkg.description || '',
           serviceType: 'in_store',
@@ -5641,7 +5882,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     var Q = "'"; // single-quote helper for onclick attribute strings
     function formatPhoneNumber(phone) {
       if (!phone) return phone;
-      var digits = phone.replace(/\D/g, '');
+      var digits = phone.replace(/\\D/g, '');
       if (digits.length === 11 && digits.charAt(0) === '1') return '+1 (' + digits.slice(1,4) + ') ' + digits.slice(4,7) + '-' + digits.slice(7);
       if (digits.length === 10) return '(' + digits.slice(0,3) + ') ' + digits.slice(3,6) + '-' + digits.slice(6);
       return phone;
@@ -6072,10 +6313,10 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     function toggleServiceSelection(id) {
       var svc = services.find(function(s) { return s.localId === id; });
       if (!svc) return;
-      // Clear any package selection when individual service is chosen
+      // Block individual service selection when a package is locked in
       if (selectedPackage) {
-        selectedPackage = null;
-        renderPackagesSection();
+        alert('A package is already selected. Please remove the package first to add individual services.');
+        return;
       }
       var idx = selectedServices.findIndex(function(s) { return s.localId === id; });
       if (idx >= 0) {
@@ -6281,13 +6522,118 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     // Navigate to the normal booking flow with the selected location pre-filled
     function bookForMyself() {
       if (!selectedLocation) { alert("Please select a location"); return; }
-      window.location.href = '/api/book/${slug}?location=' + encodeURIComponent(selectedLocation) + '&intent=book';
+      var url = '/api/book/${slug}?location=' + encodeURIComponent(selectedLocation) + '&intent=book';
+      var params = new URLSearchParams(window.location.search);
+      var giftParam = params.get('gift');
+      var pkgParam = params.get('pkg');
+      if (giftParam) url += '&gift=' + encodeURIComponent(giftParam);
+      if (pkgParam) url += '&pkg=' + encodeURIComponent(pkgParam);
+      window.location.href = url;
     }
     // Navigate to the gift purchase page with the selected location
     function buyGiftIntent() {
       if (!selectedLocation) { alert("Please select a location"); return; }
       window.location.href = '/api/buy-gift/${slug}?location=' + encodeURIComponent(selectedLocation);
     }
+    // ===== PACKAGE SESSION HELPERS =====
+    function renderPackageSessionHeader() {
+      var headerEl = document.getElementById('pkgSessionHeader');
+      var progressEl = document.getElementById('pkgSessionProgress');
+      var titleEl = document.getElementById('step4Title');
+      if (!selectedPackage) {
+        if (headerEl) headerEl.style.display = 'none';
+        if (titleEl) titleEl.textContent = 'Select Date & Time';
+        return;
+      }
+      var totalSess = selectedPackage.totalSessions || 1;
+      if (headerEl) headerEl.style.display = 'block';
+      if (titleEl) titleEl.textContent = 'Session ' + (packageSessionCurrentIdx + 1) + ' of ' + totalSess + ' — Select Date & Time';
+      // Build progress dots
+      if (progressEl) {
+        var ph = '';
+        for (var si = 0; si < totalSess; si++) {
+          var sess = packageSessions[si];
+          var isDone = sess && sess.date && sess.time;
+          var isCurrent = si === packageSessionCurrentIdx;
+          var color = isDone ? 'var(--accent)' : (isCurrent ? 'var(--accent)' : 'var(--border)');
+          var opacity = isCurrent ? '1' : (isDone ? '1' : '0.4');
+          ph += '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;opacity:' + opacity + ';">' +
+            '<div style="width:28px;height:28px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;">' +
+            (isDone ? '&#10003;' : (si + 1)) + '</div>' +
+            '<div style="font-size:10px;color:var(--text-secondary);">Sess ' + (si + 1) + '</div>' +
+            '</div>';
+          if (si < totalSess - 1) ph += '<div style="flex:1;height:2px;background:' + (isDone ? 'var(--accent)' : 'var(--border)') + ';margin-top:14px;"></div>';
+        }
+        progressEl.innerHTML = ph;
+      }
+      updatePackageSessionSummary();
+    }
+    function updatePackageSessionSummary() {
+      var summaryEl = document.getElementById('pkgSessionSummary');
+      if (!summaryEl || !selectedPackage) return;
+      var lines = [];
+      for (var si = 0; si < packageSessions.length; si++) {
+        var sess = packageSessions[si];
+        if (sess && sess.date && sess.time) {
+          var d = new Date(sess.date + 'T00:00:00');
+          var dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          lines.push('<span style="color:var(--accent);font-weight:600;">Session ' + (si + 1) + ':</span> ' + dateStr + ' at ' + formatTime12(sess.time));
+        } else if (si === packageSessionCurrentIdx) {
+          lines.push('<span style="color:var(--text-secondary);">Session ' + (si + 1) + ':</span> <em>selecting...</em>');
+        } else if (si > packageSessionCurrentIdx) {
+          lines.push('<span style="color:var(--text-secondary);opacity:0.5;">Session ' + (si + 1) + ':</span> <span style="opacity:0.5;">pending</span>');
+        }
+      }
+      summaryEl.innerHTML = lines.join('<br>');
+    }
+    function formatTime12(t) {
+      if (!t) return '';
+      var parts = t.split(':');
+      var h = parseInt(parts[0], 10);
+      var m = parts[1] || '00';
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return h + ':' + m + ' ' + ampm;
+    }
+    function packageSessionContinue() {
+      // For non-package bookings, just go to step 5 as before
+      if (!selectedPackage) { goToStep(5, 4); return; }
+      // Validate current session has date and time
+      var curSess = packageSessions[packageSessionCurrentIdx];
+      if (!curSess || !curSess.date || !curSess.time) {
+        alert('Please select a date and time for Session ' + (packageSessionCurrentIdx + 1));
+        return;
+      }
+      var totalSess = selectedPackage.totalSessions || 1;
+      if (packageSessionCurrentIdx < totalSess - 1) {
+        // Advance to next session
+        packageSessionCurrentIdx++;
+        // Reset selectedDate/selectedTime for the new session
+        selectedDate = null;
+        selectedTime = null;
+        // Advance calendar to the month of the minimum allowed date
+        var bufDays = (selectedPackage.bufferDays || 0) + 1;
+        var prevDate = packageSessions[packageSessionCurrentIdx - 1].date;
+        var minD = new Date(prevDate + 'T00:00:00');
+        minD.setDate(minD.getDate() + bufDays);
+        calMonth = minD.getMonth();
+        calYear = minD.getFullYear();
+        renderPackageSessionHeader();
+        renderCalendar();
+        // Hide time section until date is selected
+        var timeSection = document.getElementById('timeSection');
+        if (timeSection) timeSection.style.display = 'none';
+        document.getElementById('btnToConfirm').disabled = true;
+      } else {
+        // All sessions scheduled — proceed to step 5 (or 6 if no products)
+        // Set selectedDate/selectedTime to session 1 for backward compat
+        selectedDate = packageSessions[0].date;
+        selectedTime = packageSessions[0].time;
+        goToStep(5, 4);
+      }
+    }
+    // ===== END PACKAGE SESSION HELPERS =====
+
     function goToStep(step, fromStep) {
       if (step === 1 && !selectedLocation) { alert("Please select a location"); return; }
       if (step === 2 && (fromStep === 1 || currentStep === 1)) {
@@ -6336,7 +6682,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       }
       updateSelectedLocBanner();
       if (step === 3) renderStaffStep();
-      if (step === 4) renderCalendar();
+      if (step === 4) { renderPackageSessionHeader(); renderCalendar(); }
       if (step === '4b') {
         renderMobileServiceInfo();
         // Reset fee preview state so it shows fresh on each visit
@@ -6366,7 +6712,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     }
     async function getZipCoords(zip) {
       try {
-        var r = await fetch('https://api.zippopotam.us/us/' + encodeURIComponent(zip.replace(/\s/g, '')));
+        var r = await fetch('https://api.zippopotam.us/us/' + encodeURIComponent(zip.replace(/\\s/g, '')));
         if (!r.ok) return null;
         var d = await r.json();
         if (d && d.places && d.places.length > 0) {
@@ -6396,11 +6742,11 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     // Bolds portions of text that match any word in query
     function highlightMatch(text, query) {
       if (!text || !query) return esc(text);
-      var words = query.trim().split(/\s+/).filter(function(w) { return w.length >= 2; });
+      var words = query.trim().split(/\\s+/).filter(function(w) { return w.length >= 2; });
       if (!words.length) return esc(text);
       var result = esc(text);
       words.forEach(function(word) {
-        var safeWord = word.replace(/[-.*+?^$()|\\]/g, '\\$&');
+        var safeWord = word.replace(/[\\-.*+?^$()|]/g, '\\$&');
         var re = new RegExp('(' + safeWord + ')', 'gi');
         result = result.replace(re, '<strong style="color:var(--text);">$1</strong>');
       });
@@ -6469,7 +6815,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       el.style.display = msg ? 'block' : 'none';
     }
     async function autoFillStateFromZip(zip) {
-      var clean = zip.replace(/\D/g, '');
+      var clean = zip.replace(/\\D/g, '');
       if (clean.length !== 5) return;
       var spinner = document.getElementById('zipLookupSpinner');
       if (spinner) spinner.style.display = 'inline';
@@ -6694,8 +7040,18 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       const grid = document.getElementById("calGrid");
       const firstDay = new Date(calYear, calMonth, 1).getDay();
       const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-      const todayStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
-
+       const todayStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
+      // For package sessions: compute the minimum allowed date (previous session date + bufferDays)
+      var pkgMinDate = null;
+      if (selectedPackage && packageSessionCurrentIdx > 0) {
+        var prevSess = packageSessions[packageSessionCurrentIdx - 1];
+        if (prevSess && prevSess.date) {
+          var bufDays = (selectedPackage.bufferDays || 0) + 1; // +1 so it must be at least the next day
+          var minD = new Date(prevSess.date + 'T00:00:00');
+          minD.setDate(minD.getDate() + bufDays);
+          pkgMinDate = minD.getFullYear() + '-' + String(minD.getMonth()+1).padStart(2,'0') + '-' + String(minD.getDate()).padStart(2,'0');
+        }
+      }
       // Check if selected location is temporarily closed
       const selLoc = selectedLocation ? locations.find(l => l.localId === selectedLocation) : null;
       const locTempClosed = selLoc ? !!selLoc.temporarilyClosed : false;
@@ -6729,9 +7085,12 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       }
       for (let day = 1; day <= daysInMonth; day++) {
         const ds = calYear + "-" + String(calMonth+1).padStart(2,"0") + "-" + String(day).padStart(2,"0");
-        const isPast = ds < todayStr;
+        const isPast = ds < todayStr || (pkgMinDate && ds < pkgMinDate);
         const isWorking = isWorkingDay(ds);
-        const isSelected = ds === selectedDate;
+        // For package sessions, highlight the current session's already-selected date
+        const isSelected = selectedPackage
+          ? (packageSessions[packageSessionCurrentIdx] && packageSessions[packageSessionCurrentIdx].date === ds)
+          : ds === selectedDate;
         const isToday = ds === todayStr;
         // If location is temporarily closed, all future days are red and unclickable
         if (locTempClosed && !isPast) {
@@ -6811,6 +7170,11 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     async function selectDate(date) {
       selectedDate = date;
       selectedTime = null;
+      if (selectedPackage) {
+        packageSessions[packageSessionCurrentIdx].date = date;
+        packageSessions[packageSessionCurrentIdx].time = null;
+        updatePackageSessionSummary();
+      }
       document.getElementById("btnToConfirm").disabled = true;
       document.querySelectorAll(".cal-day").forEach(el => {
         el.classList.toggle("selected", el.dataset.date === date);
@@ -6885,6 +7249,10 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
 
     function selectTime(time) {
       selectedTime = time;
+      if (selectedPackage) {
+        packageSessions[packageSessionCurrentIdx].time = time;
+        updatePackageSessionSummary();
+      }
       document.querySelectorAll(".time-slot").forEach(el => {
         el.classList.toggle("selected", el.dataset.time === time);
       });
@@ -7596,7 +7964,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           locationHtml = '<div class="confirm-row" style="background:linear-gradient(135deg,#f0fdf4,#eff6ff);border:1.5px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-bottom:4px;">' +
             '<span style="font-size:18px;margin-right:8px;">🚗</span>' +
             '<span style="font-size:13px;font-weight:600;color:#15803d;">' +
-            'We\'ll come to you at <a href="' + mapUrl + '" target="_blank" style="color:#0369a1;text-decoration:underline;font-weight:700;">' + esc(addrStr) + '</a>' +
+            'We\u2019ll come to you at <a href="' + mapUrl + '" target="_blank" style="color:#0369a1;text-decoration:underline;font-weight:700;">' + esc(addrStr) + '</a>' +
             '</span></div>';
         }
         if (selectedService.travelFee && parseFloat(selectedService.travelFee) > 0) {
@@ -7616,11 +7984,36 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         }
       }
 
+      // Build multi-session schedule HTML (for packages with multiple sessions)
+      let sessionScheduleHtml = '';
+      if (selectedPackage && packageSessions && packageSessions.length > 1) {
+        var sessRows = packageSessions.map(function(s, idx) {
+          if (!s.date || !s.time) return '';
+          var sd = new Date(s.date + 'T12:00:00');
+          var sdStr = sd.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+          var sh = parseInt(s.time.split(':')[0]);
+          var sm = s.time.split(':')[1];
+          var sampm = sh >= 12 ? 'PM' : 'AM';
+          var sh12 = sh === 0 ? 12 : sh > 12 ? sh - 12 : sh;
+          var stStr = sh12 + ':' + sm + ' ' + sampm;
+          return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">' +
+            '<span style="min-width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">' + (idx+1) + '</span>' +
+            '<span style="font-size:13px;color:var(--text);">' + sdStr + ' <strong>at ' + stStr + '</strong></span>' +
+            '</div>';
+        }).join('');
+        sessionScheduleHtml = '<div style="margin:10px 0;padding:12px 14px;background:var(--accent-bg);border:1.5px solid var(--border);border-radius:12px;">' +
+          '<div style="font-size:12px;font-weight:700;color:var(--accent-dark);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Session Schedule</div>' +
+          sessRows +
+          '</div>';
+      }
+
       details.innerHTML = itemsHtml +
         staffHtml +
-        '<div class="confirm-row"><span class="confirm-label">Date</span><span class="confirm-value">' + dateStr + '</span></div>' +
-        '<div class="confirm-row"><span class="confirm-label">Time</span><span class="confirm-value">' + timeStr + ' \u2014 ' + endStr + '</span></div>' +
-        '<div class="confirm-row"><span class="confirm-label">Duration</span><span class="confirm-value">' + totalDur + ' min</span></div>' +
+        (selectedPackage && packageSessions && packageSessions.length > 1
+          ? sessionScheduleHtml
+          : ('<div class="confirm-row"><span class="confirm-label">Date</span><span class="confirm-value">' + dateStr + '</span></div>' +
+             '<div class="confirm-row"><span class="confirm-label">Time</span><span class="confirm-value">' + timeStr + ' \u2014 ' + endStr + '</span></div>' +
+             '<div class="confirm-row"><span class="confirm-label">Duration</span><span class="confirm-value">' + totalDur + ' min</span></div>')) +
         locationHtml +
         breakdownHtml +
         cardFeeHtml +
@@ -7753,7 +8146,62 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           window.location.href = checkoutData.url;
           return;
         }
-
+        // ── Package booking: use /book-package endpoint ──────────────────────
+        if (selectedPackage && packageSessions.length > 0) {
+          const pkgRes = await fetch(API + '/book-package', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clientName: document.getElementById('clientName').value.trim(),
+              clientPhone: document.getElementById('clientPhone').value.replace(/\\D/g, ''),
+              clientEmail: document.getElementById('clientEmail').value.trim(),
+              packageLocalId: selectedPackage.localId,
+              sessions: packageSessions.map(function(s) { return { date: s.date, time: s.time }; }),
+              notes: document.getElementById('bookingNotes').value.trim(),
+              totalPrice: getChargedPrice(),
+              locationId: selectedLocation || null,
+              staffLocalId: selectedStaff ? selectedStaff.localId : null,
+              paymentMethod: (selectedPaymentMethod && selectedPaymentMethod !== 'later') ? selectedPaymentMethod : 'later',
+              paymentConfirmationNumber: paymentConfirmationNumber || null,
+              promoCode: appliedPromo ? appliedPromo.code : null,
+              promoLocalId: appliedPromo ? appliedPromo.localId : null,
+              giftCode: appliedGift ? document.getElementById('giftCode').value.trim() : null,
+              giftApplied: !!appliedGift,
+              giftUsedAmount: appliedGift ? getGiftUsedAmount() : 0,
+              discountName: appliedPromo ? (appliedDiscount ? appliedDiscount.name + ' + ' + appliedPromo.label : appliedPromo.label) : (appliedDiscount ? appliedDiscount.name : null),
+              discountPercentage: (appliedDiscount ? appliedDiscount.percentage : 0) + (appliedPromo && appliedPromo.percentage > 0 ? appliedPromo.percentage : 0),
+              discountAmount: getDiscountAmount(),
+            }),
+          });
+          const pkgData = await pkgRes.json();
+          if (!pkgRes.ok) {
+            errEl.textContent = pkgData.error || 'Failed to submit package booking';
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Confirm Booking';
+            return;
+          }
+          // Show success
+          _showStep(8);
+          var receipt = document.getElementById('successReceipt');
+          if (receipt) {
+            var sessLines = packageSessions.map(function(s, i) {
+              var d = new Date(s.date + 'T00:00:00');
+              var ds = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+              return '<div style="margin-bottom:4px;"><strong>Session ' + (i+1) + ':</strong> ' + ds + ' at ' + formatTime12(s.time) + '</div>';
+            }).join('');
+            receipt.innerHTML = '<div style="font-weight:700;font-size:15px;margin-bottom:8px;">&#128230; ' + esc(selectedPackage.name) + '</div>' +
+              sessLines +
+              '<div style="margin-top:8px;font-size:13px;color:#666;">Total charged: <strong>$' + getChargedPrice().toFixed(2) + '</strong></div>';
+          }
+          var manageLink = document.getElementById('manageLink');
+          var manageLinkHref = document.getElementById('manageLinkHref');
+          if (manageLink && manageLinkHref && pkgData.manageUrl) {
+            manageLinkHref.href = pkgData.manageUrl;
+            manageLink.style.display = 'block';
+          }
+          return;
+        }
         const res = await fetch(API + "/book", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -8058,8 +8506,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       const clientNameVal = (document.getElementById("clientName") || {}).value || "";
       const clientPhoneVal = (document.getElementById("clientPhone") || {}).value || "";
       var svcsForCal = selectedServices.length > 0 ? selectedServices : (selectedService ? [selectedService] : []);
-      let desc = svcsForCal.map(function(sv) { return sv.name + ' (' + sv.duration + ' min) - $' + parseFloat(sv.price).toFixed(2); }).join('\n');
-      cart.forEach(c => { desc += "\n" + c.name + " - $" + c.price.toFixed(2); });
+      let desc = svcsForCal.map(function(sv) { return sv.name + ' (' + sv.duration + ' min) - $' + parseFloat(sv.price).toFixed(2); }).join('\\n');
+      cart.forEach(c => { desc += "\\n" + c.name + " - $" + c.price.toFixed(2); });
       desc += "\\nTotal: $" + chargedPriceC.toFixed(2);
       if (clientNameVal) desc += "\\nClient: " + clientNameVal;
       if (clientPhoneVal) desc += " - " + clientPhoneVal;
@@ -8285,13 +8733,19 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     function autoFillGift() {
       const params = new URLSearchParams(window.location.search);
       const giftParam = params.get("gift");
+      const pkgParam = params.get("pkg");
       if (giftParam) {
         const giftInput = document.getElementById("giftCode");
         if (giftInput) {
           giftInput.value = giftParam;
-          // Auto-apply after services load
-          setTimeout(() => applyGiftCode(), 1500);
+          // Auto-apply after services load; applyGiftCode will auto-select package if packageLocalId is returned
+          setTimeout(async () => {
+            await applyGiftCode();
+            // pkg auto-selection is handled by loadPackages() when packages load
+          }, 1500);
         }
+      } else if (pkgParam) {
+        // Direct package link (no gift code) — auto-select handled by loadPackages()
       }
     }
 
@@ -8772,7 +9226,9 @@ function giftCardPage(code: string): string {
         } else {
           document.getElementById("giftStatus").innerHTML = '<div style="color:#2d5a27;font-weight:600;">✓ Valid — Ready to use!</div>';
           const link = document.getElementById("bookLink");
-          link.href = window.location.origin + "/api/book/" + data.businessSlug + "?gift=" + encodeURIComponent(data.code);
+          let bookUrl = window.location.origin + "/api/book/" + data.businessSlug + "?gift=" + encodeURIComponent(data.code);
+          if (data.packageLocalId) bookUrl += "&pkg=" + encodeURIComponent(data.packageLocalId);
+          link.href = bookUrl;
           link.style.display = "block";
         }
       } catch(e) {

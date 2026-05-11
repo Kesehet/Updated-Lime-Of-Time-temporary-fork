@@ -805,6 +805,11 @@ export function dbAppointmentToLocal(a: any): Appointment {
     refundedAmount: a.refundedAmount != null ? parseFloat(a.refundedAmount) : undefined,
     stripeRefundId: a.stripeRefundId ?? undefined,
     clientPaidNotifiedAt: a.clientPaidNotifiedAt ? new Date(a.clientPaidNotifiedAt).toISOString() : undefined,
+    // Package booking fields
+    packageGroupId: a.packageBookingId ?? undefined,
+    packageName: a.packageLocalId ? (a.packageName ?? undefined) : undefined,
+    sessionIndex: a.sessionNumber != null ? (a.sessionNumber - 1) : undefined,
+    sessionTotal: a.sessionTotal ?? undefined,
   } as Appointment;
 }
 export function dbReviewToLocal(r: any): Review {

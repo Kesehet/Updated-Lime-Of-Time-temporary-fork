@@ -1,0 +1,8 @@
+{
+  "query": "SELECT code, initialBalance, remainingBalance, usedAt, usedByBookingId FROM gift_cards WHERE code = 'GIFT-A4PT4RNA';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT code, initialBalance, remainingBalance, usedAt, usedByBookingId FROM gift_cards WHERE code = 'GIFT-A4PT4RNA';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'initialbalance' in 'field list'"
+  ]
+}

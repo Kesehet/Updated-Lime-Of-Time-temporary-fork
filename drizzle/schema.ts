@@ -304,6 +304,16 @@ export const appointments = mysqlTable("appointments", {
    */
   reviewNotifSentAt: timestamp("reviewNotifSentAt"),
   clientAddress: text("clientAddress"),
+  /** Links all appointments in a package booking together */
+  packageBookingId: varchar("packageBookingId", { length: 64 }),
+  /** The package localId this appointment belongs to */
+  packageLocalId: varchar("packageLocalId", { length: 64 }),
+  /** Session number within the package (1-based) */
+  sessionNumber: int("sessionNumber"),
+  /** Total number of sessions in the package */
+  sessionTotal: int("sessionTotal"),
+  /** Package name for display in appointment detail */
+  packageName: varchar("packageName", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -396,6 +406,8 @@ export const giftCards = mysqlTable("gift_cards", {
   preselectedDate: varchar("preselectedDate", { length: 10 }),
   preselectedTime: varchar("preselectedTime", { length: 5 }),
   pendingRedemptionAppointmentId: varchar("pendingRedemptionAppointmentId", { length: 64 }),
+  /** Package localId this gift is for */
+  packageLocalId: varchar("packageLocalId", { length: 64 }),
 });
 
 export type DbGiftCard = typeof giftCards.$inferSelect;
@@ -804,6 +816,8 @@ export const servicePackages = mysqlTable("service_packages", {
   category: varchar("category", { length: 100 }),
   /** Optional: number of days after purchase before the client's package expires */
   expiryDays: int("expiryDays"),
+  /** Minimum days required between consecutive package sessions */
+  bufferDays: int("bufferDays").default(0),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

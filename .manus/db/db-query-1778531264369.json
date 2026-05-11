@@ -1,0 +1,13 @@
+{
+  "query": "SELECT * FROM gift_cards WHERE code = 'GIFT-A4PT4RNA' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT * FROM gift_cards WHERE code = 'GIFT-A4PT4RNA' LIMIT 1;",
+  "rows": [],
+  "messages": [
+    "1140002\t1620003\tpub-gift-1778529637968-eu995b\tGIFT-A4PT4RNA\tNULL\tJane Smith\tNULL\t",
+    "---GIFT_DATA---",
+    "{\"giftType\":\"service\",\"serviceIds\":[],\"productIds\":[],\"packageLocalId\":\"pkg-lime-glow-bundle\",\"originalValue\":105,\"remainingBalance\":105,\"purchasedPublicly\":true}\t0\tNULL\t2026-08-09\t2026-05-11 20:00:37\t2026-05-11 20:06:47\tJohn Doe\tjohn@example.com\tjane@example.com\t1\tzelle\tpaid\t105.00\t1\tNULL\tNULL\tNULL\tNULL\t0.00\tpkg-lime-glow-bundle"
+  ],
+  "stdout": "id\tbusinessOwnerId\tlocalId\tcode\tserviceLocalId\trecipientName\trecipientPhone\tmessage\tredeemed\tredeemedAt\texpiresAt\tcreatedAt\tupdatedAt\tpurchaserName\tpurchaserEmail\trecipientEmail\trecipientChoosesDate\tpaymentMethod\tpaymentStatus\ttotalValue\tpurchasedPublicly\tpreselectedDate\tpreselectedTime\tpendingRedemptionAppointmentId\tpendingRedemptionAt\tappliedValue\tpackageLocalId\n1140002\t1620003\tpub-gift-1778529637968-eu995b\tGIFT-A4PT4RNA\tNULL\tJane Smith\tNULL\t\n---GIFT_DATA---\n{\"giftType\":\"service\",\"serviceIds\":[],\"productIds\":[],\"packageLocalId\":\"pkg-lime-glow-bundle\",\"originalValue\":105,\"remainingBalance\":105,\"purchasedPublicly\":true}\t0\tNULL\t2026-08-09\t2026-05-11 20:00:37\t2026-05-11 20:06:47\tJohn Doe\tjohn@example.com\tjane@example.com\t1\tzelle\tpaid\t105.00\t1\tNULL\tNULL\tNULL\tNULL\t0.00\tpkg-lime-glow-bundle\n",
+  "stderr": "",
+  "execution_time_ms": 608
+}

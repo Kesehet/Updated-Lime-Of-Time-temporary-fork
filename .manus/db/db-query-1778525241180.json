@@ -1,0 +1,34 @@
+{
+  "query": "SHOW COLUMNS FROM appointments WHERE Field IN ('time', 'duration', 'serviceLocalId');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SHOW COLUMNS FROM appointments WHERE Field IN ('time', 'duration', 'serviceLocalId');",
+  "rows": [
+    {
+      "Field": "serviceLocalId",
+      "Type": "varchar(64)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "time",
+      "Type": "varchar(5)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "duration",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nserviceLocalId\tvarchar(64)\tNO\t\tNULL\t\ntime\tvarchar(5)\tNO\t\tNULL\t\nduration\tint\tNO\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 595
+}

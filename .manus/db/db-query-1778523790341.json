@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE appointments \n  ADD COLUMN IF NOT EXISTS packageBookingId VARCHAR(255) NULL,\n  ADD COLUMN IF NOT EXISTS packageLocalId VARCHAR(255) NULL,\n  ADD COLUMN IF NOT EXISTS sessionNumber INT NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \nALTER TABLE appointments \n  ADD COLUMN IF NOT EXISTS packageBookingId VARCHAR(255) NULL,\n  ADD COLUMN IF NOT EXISTS packageLocalId VARCHAR(255) NULL,\n  ADD COLUMN IF NOT EXISTS sessionNumber INT NULL;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 640
+}

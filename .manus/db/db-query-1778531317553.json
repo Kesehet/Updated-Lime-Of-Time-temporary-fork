@@ -1,0 +1,52 @@
+{
+  "query": "SELECT id, localId, packageBookingId, sessionNumber, sessionTotal, packageName, totalPrice, giftApplied, giftCode, giftUsedAmount, status, createdAt FROM appointments WHERE packageBookingId = 'pkg-1778531227268-i2aqop' ORDER BY sessionNumber;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, localId, packageBookingId, sessionNumber, sessionTotal, packageName, totalPrice, giftApplied, giftCode, giftUsedAmount, status, createdAt FROM appointments WHERE packageBookingId = 'pkg-1778531227268-i2aqop' ORDER BY sessionNumber;",
+  "rows": [
+    {
+      "id": "3270001",
+      "localId": "web-1778531227268-0-kh74f5",
+      "packageBookingId": "pkg-1778531227268-i2aqop",
+      "sessionNumber": "1",
+      "sessionTotal": "3",
+      "packageName": "Glow & Go Bundle",
+      "totalPrice": "0.00",
+      "giftApplied": "0",
+      "giftCode": "NULL",
+      "giftUsedAmount": "NULL",
+      "status": "pending",
+      "createdAt": "2026-05-11 20:27:07"
+    },
+    {
+      "id": "3270002",
+      "localId": "web-1778531227316-1-68ql5k",
+      "packageBookingId": "pkg-1778531227268-i2aqop",
+      "sessionNumber": "2",
+      "sessionTotal": "3",
+      "packageName": "Glow & Go Bundle",
+      "totalPrice": "0.00",
+      "giftApplied": "0",
+      "giftCode": "NULL",
+      "giftUsedAmount": "NULL",
+      "status": "pending",
+      "createdAt": "2026-05-11 20:27:07"
+    },
+    {
+      "id": "3270003",
+      "localId": "web-1778531227354-2-xks4dh",
+      "packageBookingId": "pkg-1778531227268-i2aqop",
+      "sessionNumber": "3",
+      "sessionTotal": "3",
+      "packageName": "Glow & Go Bundle",
+      "totalPrice": "0.00",
+      "giftApplied": "0",
+      "giftCode": "NULL",
+      "giftUsedAmount": "NULL",
+      "status": "pending",
+      "createdAt": "2026-05-11 20:27:07"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlocalId\tpackageBookingId\tsessionNumber\tsessionTotal\tpackageName\ttotalPrice\tgiftApplied\tgiftCode\tgiftUsedAmount\tstatus\tcreatedAt\n3270001\tweb-1778531227268-0-kh74f5\tpkg-1778531227268-i2aqop\t1\t3\tGlow & Go Bundle\t0.00\t0\tNULL\tNULL\tpending\t2026-05-11 20:27:07\n3270002\tweb-1778531227316-1-68ql5k\tpkg-1778531227268-i2aqop\t2\t3\tGlow & Go Bundle\t0.00\t0\tNULL\tNULL\tpending\t2026-05-11 20:27:07\n3270003\tweb-1778531227354-2-xks4dh\tpkg-1778531227268-i2aqop\t3\t3\tGlow & Go Bundle\t0.00\t0\tNULL\tNULL\tpending\t2026-05-11 20:27:07\n",
+  "stderr": "",
+  "execution_time_ms": 576
+}

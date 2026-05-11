@@ -519,6 +519,13 @@
       "when": 1778511449843,
       "tag": "0073_jazzy_thunderbolts",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "5",
+      "when": 1778531447333,
+      "tag": "0074_tearful_sersi",
+      "breakpoints": true
     }
   ]
 }

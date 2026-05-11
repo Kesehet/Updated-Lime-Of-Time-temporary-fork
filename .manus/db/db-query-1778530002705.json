@@ -1,0 +1,16 @@
+{
+  "query": "SELECT code, paymentStatus, packageLocalId, redeemed FROM gift_cards WHERE code = 'GIFT-A4PT4RNA';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT code, paymentStatus, packageLocalId, redeemed FROM gift_cards WHERE code = 'GIFT-A4PT4RNA';",
+  "rows": [
+    {
+      "code": "GIFT-A4PT4RNA",
+      "paymentStatus": "unpaid",
+      "packageLocalId": "pkg-lime-glow-bundle",
+      "redeemed": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "code\tpaymentStatus\tpackageLocalId\tredeemed\nGIFT-A4PT4RNA\tunpaid\tpkg-lime-glow-bundle\t0\n",
+  "stderr": "",
+  "execution_time_ms": 587
+}

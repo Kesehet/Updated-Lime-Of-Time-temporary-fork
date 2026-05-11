@@ -1,0 +1,52 @@
+{
+  "query": "SELECT localId, date, time, duration, packageBookingId, packageLocalId, sessionNumber, sessionTotal, packageName, totalPrice, paymentMethod, paymentStatus FROM appointments WHERE packageBookingId = 'pkg-1778525925834-uey8ps' ORDER BY sessionNumber;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT localId, date, time, duration, packageBookingId, packageLocalId, sessionNumber, sessionTotal, packageName, totalPrice, paymentMethod, paymentStatus FROM appointments WHERE packageBookingId = 'pkg-1778525925834-uey8ps' ORDER BY sessionNumber;",
+  "rows": [
+    {
+      "localId": "web-1778525925834-0-57vous",
+      "date": "2026-05-20",
+      "time": "10:00",
+      "duration": "105",
+      "packageBookingId": "pkg-1778525925834-uey8ps",
+      "packageLocalId": "pkg-lime-glow-bundle",
+      "sessionNumber": "1",
+      "sessionTotal": "3",
+      "packageName": "Glow & Go Bundle",
+      "totalPrice": "105.00",
+      "paymentMethod": "zelle",
+      "paymentStatus": "unpaid"
+    },
+    {
+      "localId": "web-1778525925874-1-errf7g",
+      "date": "2026-05-23",
+      "time": "11:00",
+      "duration": "105",
+      "packageBookingId": "pkg-1778525925834-uey8ps",
+      "packageLocalId": "pkg-lime-glow-bundle",
+      "sessionNumber": "2",
+      "sessionTotal": "3",
+      "packageName": "Glow & Go Bundle",
+      "totalPrice": "0.00",
+      "paymentMethod": "NULL",
+      "paymentStatus": "NULL"
+    },
+    {
+      "localId": "web-1778525925908-2-cvs6jj",
+      "date": "2026-05-26",
+      "time": "14:00",
+      "duration": "105",
+      "packageBookingId": "pkg-1778525925834-uey8ps",
+      "packageLocalId": "pkg-lime-glow-bundle",
+      "sessionNumber": "3",
+      "sessionTotal": "3",
+      "packageName": "Glow & Go Bundle",
+      "totalPrice": "0.00",
+      "paymentMethod": "NULL",
+      "paymentStatus": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "localId\tdate\ttime\tduration\tpackageBookingId\tpackageLocalId\tsessionNumber\tsessionTotal\tpackageName\ttotalPrice\tpaymentMethod\tpaymentStatus\nweb-1778525925834-0-57vous\t2026-05-20\t10:00\t105\tpkg-1778525925834-uey8ps\tpkg-lime-glow-bundle\t1\t3\tGlow & Go Bundle\t105.00\tzelle\tunpaid\nweb-1778525925874-1-errf7g\t2026-05-23\t11:00\t105\tpkg-1778525925834-uey8ps\tpkg-lime-glow-bundle\t2\t3\tGlow & Go Bundle\t0.00\tNULL\tNULL\nweb-1778525925908-2-cvs6jj\t2026-05-26\t14:00\t105\tpkg-1778525925834-uey8ps\tpkg-lime-glow-bundle\t3\t3\tGlow & Go Bundle\t0.00\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 626
+}

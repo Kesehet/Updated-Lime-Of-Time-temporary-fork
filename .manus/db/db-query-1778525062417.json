@@ -1,0 +1,28 @@
+{
+  "query": "SELECT localId, name, totalSessions, bufferDays FROM service_packages LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT localId, name, totalSessions, bufferDays FROM service_packages LIMIT 10;",
+  "rows": [
+    {
+      "localId": "pkg-lime-glow-bundle",
+      "name": "Glow & Go Bundle",
+      "totalSessions": "1",
+      "bufferDays": "0"
+    },
+    {
+      "localId": "pkg-lime-color-treatment",
+      "name": "Color & Care Package",
+      "totalSessions": "1",
+      "bufferDays": "0"
+    },
+    {
+      "localId": "pkg-lime-wellness-escape",
+      "name": "Wellness Escape Package",
+      "totalSessions": "1",
+      "bufferDays": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "localId\tname\ttotalSessions\tbufferDays\npkg-lime-glow-bundle\tGlow & Go Bundle\t1\t0\npkg-lime-color-treatment\tColor & Care Package\t1\t0\npkg-lime-wellness-escape\tWellness Escape Package\t1\t0\n",
+  "stderr": "",
+  "execution_time_ms": 582
+}

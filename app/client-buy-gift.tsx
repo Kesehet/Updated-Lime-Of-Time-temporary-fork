@@ -311,9 +311,12 @@ export default function ClientBuyGiftScreen() {
   const productCartTotal = useMemo(() => {
     return products.reduce((sum, p) => sum + (productCart[p.localId] ?? 0) * p.price, 0);
   }, [products, productCart]);
+  const selectedPackage = packages.find(p => p.localId === selectedPackageId) ?? null;
   const totalValue = giftMode === "balance"
     ? (parseFloat(balanceAmount) || 0)
-    : selectedItemsList.reduce((sum, i) => sum + i.price, 0) + productCartTotal;
+    : selectedPackage
+      ? selectedPackage.packagePrice
+      : selectedItemsList.reduce((sum, i) => sum + i.price, 0) + productCartTotal;
 
   const toggleItem = useCallback((id: string) => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -387,6 +390,7 @@ export default function ClientBuyGiftScreen() {
         productIds,
         addedProductItems: addedProductItems.length > 0 ? addedProductItems : undefined,
         addedProductTotal: addedProductTotal > 0 ? addedProductTotal : undefined,
+        packageLocalId: selectedPackageId || undefined,
         giftType: giftMode === "balance" ? "balance" : "service",
         balanceAmount: giftMode === "balance" ? parseFloat(balanceAmount) : undefined,
         paymentMethod,
@@ -812,19 +816,91 @@ export default function ClientBuyGiftScreen() {
               </>
             )}
 
-            {giftMode === "specific" && allItems.length === 0 && (
+            {giftMode === "specific" && packages.length > 0 && !selectedPackageId && (
+              <>
+                <Text style={s.sectionHeader}>Packages & Bundles</Text>
+                {packages.map(pkg => (
+                  <Pressable
+                    key={pkg.localId}
+                    style={({ pressed }) => [
+                      s.itemCard,
+                      selectedPackageId === pkg.localId && { borderColor: GREEN_ACCENT, borderWidth: 2 },
+                      pressed && { opacity: 0.85 },
+                    ]}
+                    onPress={() => {
+                      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSelectedPackageId(prev => prev === pkg.localId ? null : pkg.localId);
+                      setSelectedItems(new Set()); // clear individual items when package selected
+                    }}
+                  >
+                    <View style={{ width: 60, height: 60, borderRadius: 10, overflow: "hidden", backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" }}>
+                      {pkg.photoUri ? (
+                        <Image source={{ uri: pkg.photoUri }} style={{ width: 60, height: 60 }} contentFit="cover" />
+                      ) : (
+                        <Text style={{ fontSize: 28 }}>📦</Text>
+                      )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.itemName}>{pkg.name}</Text>
+                      {pkg.description ? <Text style={s.itemDesc} numberOfLines={2}>{pkg.description}</Text> : null}
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 }}>
+                        <Text style={{ color: TEXT_MUTED, fontSize: 12, textDecorationLine: "line-through" }}>${pkg.originalPrice.toFixed(2)}</Text>
+                        <Text style={s.itemPrice}>${pkg.packagePrice.toFixed(2)}</Text>
+                        <Text style={{ color: GREEN_ACCENT, fontSize: 11, fontWeight: "700" }}>{Math.round((1 - pkg.packagePrice / pkg.originalPrice) * 100)}% OFF</Text>
+                      </View>
+                      <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }}>{pkg.totalSessions} session{pkg.totalSessions > 1 ? "s" : ""} · {pkg.packageItems.length} service{pkg.packageItems.length > 1 ? "s" : ""}</Text>
+                    </View>
+                    <View style={[s.checkBox, selectedPackageId === pkg.localId && { backgroundColor: GREEN_ACCENT, borderColor: GREEN_ACCENT }]}>
+                      {selectedPackageId === pkg.localId && <IconSymbol name="checkmark" size={14} color="#fff" />}
+                    </View>
+                  </Pressable>
+                ))}
+              </>
+            )}
+
+            {giftMode === "specific" && selectedPackageId && (
+              <>
+                <Text style={s.sectionHeader}>Selected Package</Text>
+                {packages.filter(p => p.localId === selectedPackageId).map(pkg => (
+                  <View key={pkg.localId} style={[s.itemCard, { borderColor: GREEN_ACCENT, borderWidth: 2 }]}>
+                    <View style={{ width: 60, height: 60, borderRadius: 10, overflow: "hidden", backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" }}>
+                      {pkg.photoUri ? (
+                        <Image source={{ uri: pkg.photoUri }} style={{ width: 60, height: 60 }} contentFit="cover" />
+                      ) : (
+                        <Text style={{ fontSize: 28 }}>📦</Text>
+                      )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.itemName}>{pkg.name}</Text>
+                      {pkg.description ? <Text style={s.itemDesc} numberOfLines={2}>{pkg.description}</Text> : null}
+                      <Text style={s.itemPrice}>${pkg.packagePrice.toFixed(2)}</Text>
+                    </View>
+                    <Pressable
+                      onPress={() => setSelectedPackageId(null)}
+                      style={{ padding: 8, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.10)" }}
+                    >
+                      <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>Change</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </>
+            )}
+
+            {giftMode === "specific" && allItems.length === 0 && packages.length === 0 && (
               <View style={s.emptyState}>
                 <Text style={{ fontSize: 32 }}>🎁</Text>
                 <Text style={{ color: TEXT_MUTED, textAlign: "center" }}>No gift items available yet.</Text>
               </View>
             )}
 
-            {(selectedItems.size > 0 || (giftMode === "balance" && parseFloat(balanceAmount) > 0)) && (
+            {(selectedItems.size > 0 || selectedPackageId || (giftMode === "balance" && parseFloat(balanceAmount) > 0)) && (
               <View style={[s.totalBanner, { backgroundColor: `${GREEN_ACCENT}15`, borderColor: `${GREEN_ACCENT}40` }]}>
-                <Text style={{ fontSize: 20 }}>{giftMode === "balance" ? "💵" : "🎁"}</Text>
+                <Text style={{ fontSize: 20 }}>{giftMode === "balance" ? "💵" : selectedPackageId ? "📦" : "🎁"}</Text>
                 <View style={{ flex: 1 }}>
                   {giftMode === "balance" ? (
                     <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>Balance Credit Gift</Text>
+                  ) : selectedPackageId ? (
+                    <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>Package gift selected</Text>
                   ) : (
                     <Text style={{ color: TEXT_PRIMARY, fontWeight: "700", fontSize: 15 }}>
                       {selectedItems.size} item{selectedItems.size > 1 ? "s" : ""} selected

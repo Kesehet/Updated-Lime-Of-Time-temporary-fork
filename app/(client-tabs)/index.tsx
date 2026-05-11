@@ -504,8 +504,14 @@ export default function ClientHomeScreen() {
                 const handleRedeemGift = () => {
                   if (!canRedeem) return;
                   const params: Record<string, string> = { slug: gift.businessSlug! };
-                  if (gift.serviceLocalId) params.serviceLocalId = gift.serviceLocalId;
-                  else if (gift.serviceName) params.preServiceName = gift.serviceName;
+                  if ((gift as any).packageLocalId) {
+                    // Package gift — pre-select the package in the booking wizard
+                    params.packageLocalId = (gift as any).packageLocalId;
+                  } else if (gift.serviceLocalId) {
+                    params.serviceLocalId = gift.serviceLocalId;
+                  } else if (gift.serviceName) {
+                    params.preServiceName = gift.serviceName;
+                  }
                   params.preGiftCode = gift.code;
                   router.push({ pathname: "/client-booking-wizard", params } as any);
                 };

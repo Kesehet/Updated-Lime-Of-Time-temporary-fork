@@ -1,0 +1,9 @@
+{
+  "query": "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_NAME = 'appointments' AND COLUMN_NAME LIKE '%package%' OR (TABLE_NAME = 'appointments' AND COLUMN_NAME LIKE '%session%') OR (TABLE_NAME = 'appointments' AND COLUMN_NAME LIKE '%bundle%');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_NAME = 'appointments' AND COLUMN_NAME LIKE '%package%' OR (TABLE_NAME = 'appointments' AND COLUMN_NAME LIKE '%session%') OR (TABLE_NAME = 'appointments' AND COLUMN_NAME LIKE '%bundle%');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 656
+}

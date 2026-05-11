@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE service_packages ADD COLUMN bufferDays INT DEFAULT 0;\nALTER TABLE appointments ADD COLUMN packageBookingId VARCHAR(64) NULL;\nALTER TABLE appointments ADD COLUMN packageLocalId VARCHAR(64) NULL;\nALTER TABLE appointments ADD COLUMN sessionNumber INT NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \nALTER TABLE service_packages ADD COLUMN bufferDays INT DEFAULT 0;\nALTER TABLE appointments ADD COLUMN packageBookingId VARCHAR(64) NULL;\nALTER TABLE appointments ADD COLUMN packageLocalId VARCHAR(64) NULL;\nALTER TABLE appointments ADD COLUMN sessionNumber INT NULL;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1508
+}

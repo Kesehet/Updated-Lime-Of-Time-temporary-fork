@@ -1,0 +1,12 @@
+{
+  "query": "SELECT id, localId, packageBookingId, sessionNumber, sessionTotal, packageName, totalPrice, giftApplied, giftCode, giftUsedAmount, status, createdAt FROM appointments WHERE packageBookingId = 'pkg-1778531227268-i2aqop' ORDER BY sessionNumber;\nSELECT id, code, giftData, usedAt, usedByBookingId FROM gift_cards WHERE code = 'GIFT-A4PT4RNA';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, localId, packageBookingId, sessionNumber, sessionTotal, packageName, totalPrice, giftApplied, giftCode, giftUsedAmount, status, createdAt FROM appointments WHERE packageBookingId = 'pkg-1778531227268-i2aqop' ORDER BY sessionNumber;\nSELECT id, code, giftData, usedAt, usedByBookingId FROM gift_cards WHERE code = 'GIFT-A4PT4RNA';",
+  "returncode": 1,
+  "logs": [
+    "id\tlocalId\tpackageBookingId\tsessionNumber\tsessionTotal\tpackageName\ttotalPrice\tgiftApplied\tgiftCode\tgiftUsedAmount\tstatus\tcreatedAt",
+    "3270001\tweb-1778531227268-0-kh74f5\tpkg-1778531227268-i2aqop\t1\t3\tGlow & Go Bundle\t0.00\t0\tNULL\tNULL\tpending\t2026-05-11 20:27:07",
+    "3270002\tweb-1778531227316-1-68ql5k\tpkg-1778531227268-i2aqop\t2\t3\tGlow & Go Bundle\t0.00\t0\tNULL\tNULL\tpending\t2026-05-11 20:27:07",
+    "3270003\tweb-1778531227354-2-xks4dh\tpkg-1778531227268-i2aqop\t3\t3\tGlow & Go Bundle\t0.00\t0\tNULL\tNULL\tpending\t2026-05-11 20:27:07",
+    "ERROR 1054 (42S22) at line 2: Unknown column 'giftdata' in 'field list'"
+  ]
+}

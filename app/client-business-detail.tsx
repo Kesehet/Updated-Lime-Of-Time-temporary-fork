@@ -403,11 +403,7 @@ export default function ClientBusinessDetailScreen() {
             <Pressable key={tab} style={[s.tab, activeTab === tab && { borderBottomColor: ACCENT, borderBottomWidth: 2 }]} onPress={() => setActiveTab(tab)}>
               <Text style={[s.tabText, { color: activeTab === tab ? ACCENT : TEXT_MUTED }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 {tab === "gallery"
-                  ? `Gallery (${servicePhotos.length})`
-                  : tab === "reviews" && reviews.length > 0
-                  ? `Reviews (${reviews.length})`
-                  : tab === "packages"
-                  ? `Packages (${packages.length})`
+                  ? "Gallery"
                   : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </Text>
             </Pressable>

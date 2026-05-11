@@ -457,6 +457,27 @@ export default function ClientBookingWizardScreen() {
             : `Gift Certificate — $${parseFloat(data.value).toFixed(2)} value`;
           setGiftApplied({ code: data.code, value: parseFloat(data.value), totalValue: parseFloat(data.totalValue ?? data.value), label, giftType });
           if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          // If this is a package gift, auto-select the package in the service step
+          if (data.packageLocalId && packages.length > 0) {
+            const pkg = packages.find((p) => p.localId === data.packageLocalId);
+            if (pkg) {
+              setSelectedPackage(pkg);
+              setServiceTab("packages");
+              setSessionDates(Array.from({ length: pkg.totalSessions }, () => ({ date: null, slot: null })));
+              setActiveSessionIdx(0);
+              const syntheticService = {
+                localId: pkg.localId,
+                name: pkg.name,
+                duration: pkg.sessionDurationMinutes,
+                price: String(pkg.packagePrice),
+                description: pkg.description,
+                category: pkg.category,
+                photoUri: pkg.photoUri,
+              };
+              setSelectedService(syntheticService as any);
+              setSelectedServices([syntheticService as any]);
+            }
+          }
         }
       } catch { /* silent — user can still apply manually */ }
     })();
@@ -2274,6 +2295,23 @@ export default function ClientBookingWizardScreen() {
                           : `Gift Certificate — $${parseFloat(data.value).toFixed(2)} value`;
                         setGiftApplied({ code: data.code, value: parseFloat(data.value), totalValue: parseFloat(data.totalValue ?? data.value), label, giftType });
                         if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        // If this is a package gift, auto-select the package
+                        if (data.packageLocalId && packages.length > 0) {
+                          const pkg = packages.find((p) => p.localId === data.packageLocalId);
+                          if (pkg) {
+                            setSelectedPackage(pkg);
+                            setServiceTab("packages");
+                            setSessionDates(Array.from({ length: pkg.totalSessions }, () => ({ date: null, slot: null })));
+                            setActiveSessionIdx(0);
+                            const syntheticService = {
+                              localId: pkg.localId, name: pkg.name,
+                              duration: pkg.sessionDurationMinutes, price: String(pkg.packagePrice),
+                              description: pkg.description, category: pkg.category, photoUri: pkg.photoUri,
+                            };
+                            setSelectedService(syntheticService as any);
+                            setSelectedServices([syntheticService as any]);
+                          }
+                        }
                       }
                     } catch {
                       setGiftError("Could not validate gift certificate");

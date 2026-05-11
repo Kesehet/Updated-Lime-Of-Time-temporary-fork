@@ -1299,6 +1299,7 @@ export function registerClientRoutes(app: Express) {
           remainingBalance: remainingBalance ?? totalVal,
           giftType,
           paymentStatus: card.paymentStatus || "unpaid",
+          packageLocalId: (card as any).packageLocalId || null,
           createdAt: card.createdAt,
           bannerImageUri,
         };
