@@ -685,24 +685,27 @@ export default function ClientMessageThreadBusinessScreen() {
           />
         )}
         <View style={[s.inputBar, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 8) }]}>
-          <TextInput
-            style={[s.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.foreground }]}
-            placeholder="Reply to client..."
-            placeholderTextColor={colors.muted}
-            value={draft}
-            onChangeText={setDraft}
-            multiline
-            maxLength={1000}
-            returnKeyType="default"
-            textAlignVertical="top"
-          />
-          <View style={s.inputActions}>
+          <View style={s.inputRow}>
+            {/* ⚡ Template button */}
             <Pressable
               style={({ pressed }) => [s.templateIconBtn, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
               onPress={() => { setShowTemplates(true); if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
             >
               <Text style={{ fontSize: 18 }}>⚡</Text>
             </Pressable>
+            {/* Text input - grows up to 5 lines */}
+            <TextInput
+              style={[s.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.foreground }]}
+              placeholder="Reply to client..."
+              placeholderTextColor={colors.muted}
+              value={draft}
+              onChangeText={setDraft}
+              multiline
+              maxLength={1000}
+              returnKeyType="default"
+              textAlignVertical="top"
+            />
+            {/* Send button */}
             <Pressable
               style={({ pressed }) => [s.sendBtn, { backgroundColor: draft.trim() ? colors.primary : colors.border }, pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] }]}
               onPress={handleSend}
@@ -879,12 +882,12 @@ const makeStyles = (colors: ReturnType<typeof useColors>) =>
     msgBubble: { maxWidth: "75%", borderRadius: 16, padding: 10, gap: 4 },
     msgBody: { fontSize: 14, lineHeight: 20 },
     msgTime: { fontSize: 10, alignSelf: "flex-end" },
-    inputBar: { flexDirection: "column", gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1 },
+    inputBar: { paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1 },
     inputRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
     inputActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 8 },
-    templateIconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", borderWidth: 1 },
-    input: { flex: 1, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, minHeight: 300, maxHeight: 300, textAlignVertical: "top" },
-    sendBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+    templateIconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", borderWidth: 1, flexShrink: 0 },
+    input: { flex: 1, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingTop: 9, paddingBottom: 9, fontSize: 15, minHeight: 38, maxHeight: 120, textAlignVertical: "top" },
+    sendBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", flexShrink: 0 },
     modalOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)" },
     templateSheet: { position: "absolute", bottom: 0, left: 0, right: 0, height: "80%", borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, overflow: "hidden" },
     sheetHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },

@@ -2076,3 +2076,5 @@
 - [x] Fix template variable substitution in messaging thread (raw {service}/{time}/{location} shown instead of real values)
 - [x] Fix clientAppointments lookup to match by name fallback when clientId doesn't match
 - [x] buildTplVars no longer returns null - uses clientName from route params as fallback
+- [x] Fix messaging thread input bar: restore send button and ⚡ button (single-row iMessage-style layout)
+- [x] Fix keyboard covering input bar on iOS and Android
