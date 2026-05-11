@@ -2106,3 +2106,4 @@
 - [ ] Add /book/:slug route (without /api prefix) so lime-of-time.com/book/business-name works directly
 - [x] Add "Balance" tab to Buy a Gift page items step (preset amounts + custom input)
 - [x] Wire balance gift type into gift data for downstream Details → Payment steps
+- [x] Enforce $10 minimum balance amount on Buy a Gift Balance tab (front-end + server-side)

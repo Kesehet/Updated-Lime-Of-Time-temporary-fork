@@ -2086,6 +2086,9 @@ export function registerPublicRoutes(app: Express) {
         if (!amt || amt <= 0) {
           res.status(400).json({ error: "A positive balance amount is required for balance-type gifts" }); return;
         }
+        if (amt < 10) {
+          res.status(400).json({ error: "Minimum gift card balance amount is $10.00" }); return;
+        }
       } else if (!giftPackageLocalId) {
         if (!serviceIds.length && !productIds.length) {
           res.status(400).json({ error: "At least one service or product must be selected" }); return;
@@ -3122,11 +3125,12 @@ function buyGiftPage(slug: string, owner: any): string {
         <button onclick="selectBalancePreset(150)" data-amt="150" class="bal-preset" style="flex:1;min-width:70px;padding:12px 8px;border-radius:12px;border:2px solid var(--bdi);background:var(--bg-card);font-size:15px;font-weight:700;color:var(--text1);cursor:pointer;transition:all .15s;">$150</button>
         <button onclick="selectBalancePreset(200)" data-amt="200" class="bal-preset" style="flex:1;min-width:70px;padding:12px 8px;border-radius:12px;border:2px solid var(--bdi);background:var(--bg-card);font-size:15px;font-weight:700;color:var(--text1);cursor:pointer;transition:all .15s;">$200</button>
       </div>
-      <div style="font-size:12px;font-weight:700;color:var(--textm);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Or Enter Custom Amount</div>
+      <div style="font-size:12px;font-weight:700;color:var(--textm);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Or Enter Custom Amount <span style="font-weight:400;text-transform:none;font-size:11px;">(min $10)</span></div>
       <div style="display:flex;align-items:center;gap:8px;border:2px solid var(--bdi);border-radius:12px;padding:10px 14px;background:var(--bg-card);" id="balCustomWrap">
         <span style="font-size:18px;font-weight:700;color:var(--textm);">$</span>
-        <input type="number" id="balCustomInput" min="1" max="9999" step="1" placeholder="e.g. 75" oninput="onBalCustomInput(this.value)" style="flex:1;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;color:var(--text1);width:100%;">
+        <input type="number" id="balCustomInput" min="10" max="9999" step="1" placeholder="e.g. 75" oninput="onBalCustomInput(this.value)" style="flex:1;border:none;outline:none;background:transparent;font-size:18px;font-weight:700;color:var(--text1);width:100%;">
       </div>
+      <div id="balMinError" style="display:none;font-size:12px;color:var(--err);margin-top:6px;padding-left:4px;">Minimum gift card amount is $10.00</div>
       <div id="balSelectedDisplay" style="display:none;margin-top:14px;padding:12px 16px;border-radius:12px;background:rgba(233,30,140,0.08);border:2px solid var(--gift);text-align:center;">
         <div style="font-size:13px;color:var(--textm);margin-bottom:2px;">Gift Card Value</div>
         <div id="balSelectedAmt" style="font-size:24px;font-weight:800;color:var(--gift);"></div>
@@ -3482,9 +3486,17 @@ function selectBalancePreset(amt) {
   document.getElementById('balSelectedAmt').textContent = '$' + amt.toFixed(2);
   updateFooterBtn();
 }
+const BAL_MIN = 10;
 function onBalCustomInput(val) {
   var amt = parseFloat(val);
-  if (!isNaN(amt) && amt > 0) {
+  var minErr = document.getElementById('balMinError');
+  if (!isNaN(amt) && amt > 0 && amt < BAL_MIN) {
+    // Below minimum — show error, clear selection
+    selectedBalanceAmount = null;
+    document.getElementById('balCustomWrap').style.borderColor = 'var(--err)';
+    document.getElementById('balSelectedDisplay').style.display = 'none';
+    if (minErr) minErr.style.display = 'block';
+  } else if (!isNaN(amt) && amt >= BAL_MIN) {
     selectedBalanceAmount = amt;
     // Clear preset selections
     document.querySelectorAll('.bal-preset').forEach(function(btn) {
@@ -3495,6 +3507,7 @@ function onBalCustomInput(val) {
     document.getElementById('balCustomWrap').style.borderColor = 'var(--gift)';
     document.getElementById('balSelectedDisplay').style.display = 'block';
     document.getElementById('balSelectedAmt').textContent = '$' + amt.toFixed(2);
+    if (minErr) minErr.style.display = 'none';
     // Clear other selections
     selectedServiceIds.clear();
     selectedProductIds.clear();
@@ -3503,6 +3516,7 @@ function onBalCustomInput(val) {
     selectedBalanceAmount = null;
     document.getElementById('balCustomWrap').style.borderColor = 'var(--bdi)';
     document.getElementById('balSelectedDisplay').style.display = 'none';
+    if (minErr) minErr.style.display = 'none';
   }
   updateFooterBtn();
 }
