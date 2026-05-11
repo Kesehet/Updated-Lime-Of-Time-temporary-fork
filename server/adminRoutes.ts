@@ -1327,41 +1327,17 @@ export function registerAdminRoutes(app: Express): void {
       if (!phone || !/^\+[1-9]\d{6,14}$/.test(phone)) {
         res.json({ ok: false, message: "Phone must be in E.164 format (e.g. +14155551234)" }); return;
       }
-      // Read Twilio Verify credentials: env vars first, then platform_config
-      const accountSid = process.env.TWILIO_ACCOUNT_SID || "";
-      const authToken = process.env.TWILIO_AUTH_TOKEN || "";
-      const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID || "";
+      // Always read from DB first — env vars may be stale from previous sessions
+      const dbase = await getDb();
+      if (!dbase) { res.json({ ok: false, message: "Database not available" }); return; }
+      const cfgRows = await dbase.select().from(platformConfig);
+      const cfgMap: Record<string, string> = {};
+      for (const row of cfgRows) cfgMap[row.configKey] = row.configValue || "";
+      const accountSid = cfgMap["TWILIO_ACCOUNT_SID"] || process.env.TWILIO_ACCOUNT_SID || "";
+      const authToken = cfgMap["TWILIO_AUTH_TOKEN"] || process.env.TWILIO_AUTH_TOKEN || "";
+      const serviceSid = cfgMap["TWILIO_VERIFY_SERVICE_SID"] || process.env.TWILIO_VERIFY_SERVICE_SID || "";
       if (!accountSid || !authToken || !serviceSid) {
-        // Try platform_config fallback
-        const dbase = await getDb();
-        if (!dbase) { res.json({ ok: false, message: "Twilio credentials not configured" }); return; }
-        const cfgRows = await dbase.select().from(platformConfig);
-        const cfgMap: Record<string, string> = {};
-        for (const row of cfgRows) cfgMap[row.configKey] = row.configValue || "";
-        const sid2 = cfgMap["TWILIO_ACCOUNT_SID"] || "";
-        const token2 = cfgMap["TWILIO_AUTH_TOKEN"] || "";
-        const svcSid2 = cfgMap["TWILIO_VERIFY_SERVICE_SID"] || "";
-        if (!sid2 || !token2 || !svcSid2) {
-          res.json({ ok: false, message: "Twilio credentials not configured. Please save Account SID, Auth Token, and Verify Service SID in Platform Config." }); return;
-        }
-        const credentials2 = Buffer.from(`${sid2}:${token2}`).toString("base64");
-        const twilioRes2 = await fetch(`https://verify.twilio.com/v2/Services/${svcSid2}/Verifications`, {
-          method: "POST",
-          headers: { Authorization: `Basic ${credentials2}`, "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ To: phone, Channel: "sms" }).toString(),
-        });
-        if (twilioRes2.ok) {
-          const d2 = await twilioRes2.json() as any;
-          // Write success log entry
-          try { const dbase2 = await getDb(); if (dbase2) await dbase2.insert(otpSendLog).values({ phone, status: "sent", source: "admin_panel" }); } catch {}
-          res.json({ ok: true, message: `OTP sent (status: ${d2.status})` }); return;
-        } else {
-          const e2 = await twilioRes2.json().catch(() => ({})) as any;
-          const errMsg2 = e2?.message || `Twilio error ${twilioRes2.status}`;
-          // Write failure log entry
-          try { const dbase2 = await getDb(); if (dbase2) await dbase2.insert(otpSendLog).values({ phone, status: "failed", errorMessage: errMsg2, source: "admin_panel" }); } catch {}
-          res.json({ ok: false, message: errMsg2 }); return;
-        }
+        res.json({ ok: false, message: "Twilio credentials not configured. Please save Account SID, Auth Token, and Verify Service SID in Platform Config." }); return;
       }
       const credentials = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
       const twilioRes = await fetch(`https://verify.twilio.com/v2/Services/${serviceSid}/Verifications`, {
@@ -1371,12 +1347,12 @@ export function registerAdminRoutes(app: Express): void {
       });
       if (twilioRes.ok) {
         const d = await twilioRes.json() as any;
-        try { const dbase = await getDb(); if (dbase) await dbase.insert(otpSendLog).values({ phone, status: "sent", source: "admin_panel" }); } catch {}
+        try { await dbase.insert(otpSendLog).values({ phone, status: "sent", source: "admin_panel" }); } catch {}
         res.json({ ok: true, message: `OTP sent (status: ${d.status})` });
       } else {
         const e = await twilioRes.json().catch(() => ({})) as any;
         const errMsg = e?.message || `Twilio error ${twilioRes.status}`;
-        try { const dbase = await getDb(); if (dbase) await dbase.insert(otpSendLog).values({ phone, status: "failed", errorMessage: errMsg, source: "admin_panel" }); } catch {}
+        try { await dbase.insert(otpSendLog).values({ phone, status: "failed", errorMessage: errMsg, source: "admin_panel" }); } catch {}
         res.json({ ok: false, message: errMsg });
       }
     } catch (err: any) {

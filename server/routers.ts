@@ -1248,9 +1248,10 @@ const otpStore = new Map<string, { code: string; expiresAt: number }>();
 
 /** Get Twilio Verify credentials from env or platform_config (env takes priority) */
 async function getTwilioVerifyCredentials() {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID || await getPlatformConfig("TWILIO_ACCOUNT_SID");
-  const authToken = process.env.TWILIO_AUTH_TOKEN || await getPlatformConfig("TWILIO_AUTH_TOKEN");
-  const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID || await getPlatformConfig("TWILIO_VERIFY_SERVICE_SID");
+  // Always read from DB (platform_config) — env vars may be stale from previous sessions
+  const accountSid = await getPlatformConfig("TWILIO_ACCOUNT_SID") || process.env.TWILIO_ACCOUNT_SID;
+  const authToken = await getPlatformConfig("TWILIO_AUTH_TOKEN") || process.env.TWILIO_AUTH_TOKEN;
+  const serviceSid = await getPlatformConfig("TWILIO_VERIFY_SERVICE_SID") || process.env.TWILIO_VERIFY_SERVICE_SID;
   return { accountSid, authToken, serviceSid };
 }
 

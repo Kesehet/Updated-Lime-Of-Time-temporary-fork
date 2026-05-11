@@ -1,0 +1,34 @@
+{
+  "query": "SELECT configKey, configValue, LENGTH(configValue) as len, updatedAt\nFROM platform_config \nWHERE configKey IN ('TWILIO_ACCOUNT_SID','TWILIO_AUTH_TOKEN','TWILIO_VERIFY_SERVICE_SID','TWILIO_TEST_MODE')\nORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, configValue, LENGTH(configValue) as len, updatedAt\nFROM platform_config \nWHERE configKey IN ('TWILIO_ACCOUNT_SID','TWILIO_AUTH_TOKEN','TWILIO_VERIFY_SERVICE_SID','TWILIO_TEST_MODE')\nORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "TWILIO_ACCOUNT_SID",
+      "configValue": "AC0eb74aa2bc903683b21defa8c07e763e",
+      "len": "34",
+      "updatedAt": "2026-05-11 01:29:02"
+    },
+    {
+      "configKey": "TWILIO_AUTH_TOKEN",
+      "configValue": "81ee48751bb50292d112baabf30cdc74",
+      "len": "32",
+      "updatedAt": "2026-05-11 01:29:02"
+    },
+    {
+      "configKey": "TWILIO_TEST_MODE",
+      "configValue": "false",
+      "len": "5",
+      "updatedAt": "2026-05-11 01:36:03"
+    },
+    {
+      "configKey": "TWILIO_VERIFY_SERVICE_SID",
+      "configValue": "VA7348fcb20a15c8ebd03d1f789d1b005b",
+      "len": "34",
+      "updatedAt": "2026-05-11 01:29:02"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tconfigValue\tlen\tupdatedAt\nTWILIO_ACCOUNT_SID\tAC0eb74aa2bc903683b21defa8c07e763e\t34\t2026-05-11 01:29:02\nTWILIO_AUTH_TOKEN\t81ee48751bb50292d112baabf30cdc74\t32\t2026-05-11 01:29:02\nTWILIO_TEST_MODE\tfalse\t5\t2026-05-11 01:36:03\nTWILIO_VERIFY_SERVICE_SID\tVA7348fcb20a15c8ebd03d1f789d1b005b\t34\t2026-05-11 01:29:02\n",
+  "stderr": "",
+  "execution_time_ms": 591
+}
