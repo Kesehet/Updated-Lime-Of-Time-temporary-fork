@@ -1,0 +1,87 @@
+{
+  "query": "SELECT configKey, \n  CASE \n    WHEN configValue IS NULL OR configValue = '' THEN '⚠️ EMPTY'\n    WHEN isSensitive = 1 THEN CONCAT(LEFT(configValue, 12), '••••••••', RIGHT(configValue, 4), ' (', LENGTH(configValue), ' chars)')\n    ELSE configValue\n  END as value_preview,\n  isSensitive,\n  description,\n  updatedAt\nFROM platform_config \nWHERE configKey LIKE 'STRIPE%'\nORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, \n  CASE \n    WHEN configValue IS NULL OR configValue = '' THEN '⚠️ EMPTY'\n    WHEN isSensitive = 1 THEN CONCAT(LEFT(configValue, 12), '••••••••', RIGHT(configValue, 4), ' (', LENGTH(configValue), ' chars)')\n    ELSE configValue\n  END as value_preview,\n  isSensitive,\n  description,\n  updatedAt\nFROM platform_config \nWHERE configKey LIKE 'STRIPE%'\nORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "STRIPE_CONNECT_TEST_WEBHOOK_SECRET",
+      "value_preview": "whsec_njsYjY••••••••WXK9 (38 chars)",
+      "isSensitive": "1",
+      "description": "Stripe webhook signing secret for Connect Webhook (/api/stripe-connect/webhook)",
+      "updatedAt": "2026-05-01 15:47:59"
+    },
+    {
+      "configKey": "STRIPE_LIVE_PUBLISHABLE_KEY",
+      "value_preview": "pk_live_51RE••••••••wtuz (107 chars)",
+      "isSensitive": "1",
+      "description": "Stripe live mode publishable key",
+      "updatedAt": "2026-05-11 01:06:16"
+    },
+    {
+      "configKey": "STRIPE_LIVE_SECRET_KEY",
+      "value_preview": "sk_live_51RE••••••••8uPo (107 chars)",
+      "isSensitive": "1",
+      "description": "Stripe live mode secret key",
+      "updatedAt": "2026-05-11 01:08:10"
+    },
+    {
+      "configKey": "STRIPE_LIVE_WEBHOOK_SECRET",
+      "value_preview": "whsec_1d82u9••••••••9vz6 (38 chars)",
+      "isSensitive": "1",
+      "description": "Stripe Webhook Secret (Live, stored separately)",
+      "updatedAt": "2026-05-11 01:06:17"
+    },
+    {
+      "configKey": "STRIPE_PUBLISHABLE_KEY",
+      "value_preview": "pk_live_51REIGbG6LQX4qfeVElasCwiOtt4TXnBma2c5B66NqOjTepqZjqRhZEr6afGagShHrbTyT4cD3vEDN6rUPCsP0Y4b003eHvwtuz",
+      "isSensitive": "0",
+      "description": "Active Stripe publishable key (currently: live mode)",
+      "updatedAt": "2026-05-11 01:08:19"
+    },
+    {
+      "configKey": "STRIPE_SECRET_KEY",
+      "value_preview": "sk_live_51RE••••••••8uPo (107 chars)",
+      "isSensitive": "1",
+      "description": "Active Stripe secret key (currently: live mode)",
+      "updatedAt": "2026-05-11 01:08:19"
+    },
+    {
+      "configKey": "STRIPE_TEST_MODE",
+      "value_preview": "true",
+      "isSensitive": "0",
+      "description": "Stripe Test Mode (true/false)",
+      "updatedAt": "2026-05-10 20:50:29"
+    },
+    {
+      "configKey": "STRIPE_TEST_PUBLISHABLE_KEY",
+      "value_preview": "pk_test_51REIGbG6LQX4qfeVRXbxu8HGRslT0jbjhuQmiDZeai1QPBC0zukmY1xiXTch8bVDuNNEgH0N2TMbX7sq9ZJgFZwh00DOmiSfiB",
+      "isSensitive": "0",
+      "description": "Stripe Publishable Key (Test)",
+      "updatedAt": "2026-05-11 01:08:20"
+    },
+    {
+      "configKey": "STRIPE_TEST_SECRET_KEY",
+      "value_preview": "sk_test_51RE••••••••r4X0 (107 chars)",
+      "isSensitive": "1",
+      "description": "Stripe test mode secret key",
+      "updatedAt": "2026-05-11 01:08:20"
+    },
+    {
+      "configKey": "STRIPE_TEST_WEBHOOK_SECRET",
+      "value_preview": "whsec_njsYjY••••••••WXK9 (38 chars)",
+      "isSensitive": "1",
+      "description": "Stripe Webhook Secret (Test)",
+      "updatedAt": "2026-05-11 01:08:20"
+    },
+    {
+      "configKey": "STRIPE_WEBHOOK_SECRET",
+      "value_preview": "whsec_1d82u9••••••••9vz6 (38 chars)",
+      "isSensitive": "1",
+      "description": "Stripe webhook signing secret (whsec_...)",
+      "updatedAt": "2026-05-11 01:08:19"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tvalue_preview\tisSensitive\tdescription\tupdatedAt\nSTRIPE_CONNECT_TEST_WEBHOOK_SECRET\twhsec_njsYjY••••••••WXK9 (38 chars)\t1\tStripe webhook signing secret for Connect Webhook (/api/stripe-connect/webhook)\t2026-05-01 15:47:59\nSTRIPE_LIVE_PUBLISHABLE_KEY\tpk_live_51RE••••••••wtuz (107 chars)\t1\tStripe live mode publishable key\t2026-05-11 01:06:16\nSTRIPE_LIVE_SECRET_KEY\tsk_live_51RE••••••••8uPo (107 chars)\t1\tStripe live mode secret key\t2026-05-11 01:08:10\nSTRIPE_LIVE_WEBHOOK_SECRET\twhsec_1d82u9••••••••9vz6 (38 chars)\t1\tStripe Webhook Secret (Live, stored separately)\t2026-05-11 01:06:17\nSTRIPE_PUBLISHABLE_KEY\tpk_live_51REIGbG6LQX4qfeVElasCwiOtt4TXnBma2c5B66NqOjTepqZjqRhZEr6afGagShHrbTyT4cD3vEDN6rUPCsP0Y4b003eHvwtuz\t0\tActive Stripe publishable key (currently: live mode)\t2026-05-11 01:08:19\nSTRIPE_SECRET_KEY\tsk_live_51RE••••••••8uPo (107 chars)\t1\tActive Stripe secret key (currently: live mode)\t2026-05-11 01:08:19\nSTRIPE_TEST_MODE\ttrue\t0\tStripe Test Mode (true/false)\t2026-05-10 20:50:29\nSTRIPE_TEST_PUBLISHABLE_KEY\tpk_test_51REIGbG6LQX4qfeVRXbxu8HGRslT0jbjhuQmiDZeai1QPBC0zukmY1xiXTch8bVDuNNEgH0N2TMbX7sq9ZJgFZwh00DOmiSfiB\t0\tStripe Publishable Key (Test)\t2026-05-11 01:08:20\nSTRIPE_TEST_SECRET_KEY\tsk_test_51RE••••••••r4X0 (107 chars)\t1\tStripe test mode secret key\t2026-05-11 01:08:20\nSTRIPE_TEST_WEBHOOK_SECRET\twhsec_njsYjY••••••••WXK9 (38 chars)\t1\tStripe Webhook Secret (Test)\t2026-05-11 01:08:20\nSTRIPE_WEBHOOK_SECRET\twhsec_1d82u9••••••••9vz6 (38 chars)\t1\tStripe webhook signing secret (whsec_...)\t2026-05-11 01:08:19\n",
+  "stderr": "",
+  "execution_time_ms": 636
+}
