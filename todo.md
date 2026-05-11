@@ -2081,3 +2081,4 @@
 - [x] Fix ⚡ template picker: deduplicate templates and organize by category (Upcoming, Confirmed, Completed, Follow-up, etc.)
 - [x] Add smart client filter chips to Clients screen: All, Upcoming, Pending, Payment Required, Completed
 - [x] Each filter shows targeted action buttons (Send Reminder, Send Payment Link, Send Review Request, Come Back Soon)
+- [x] Fix "Selected time slot is no longer available" error on booking confirmation (interval mismatch + missing clientToday/nowMinutes in POST body)

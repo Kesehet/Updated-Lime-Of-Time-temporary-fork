@@ -860,8 +860,17 @@ export function registerPublicRoutes(app: Express) {
       // Pass client's local date/time so timezone differences don't cause false "slot in the past" errors
       const bookClientTodayStr: string | null = bookClientToday ?? null;
       const bookNowMin: number | null = (bookNowMinutes !== undefined && bookNowMinutes !== null) ? Number(bookNowMinutes) : null;
-      const slots = generateAvailableSlots(date, dur, bookWorkingHours, bookAppts, Math.min(dur, 30), bookSchedule, bookMode, bookBuffer, bookClientTodayStr, bookNowMin);
-      if (!slots.includes(time)) {
+      // Use the same interval logic as the booking page: respect configured slotInterval first,
+      // then fall back to Math.min(dur, 30). Also try a 5-min granularity as a safety net so
+      // that any valid slot shown to the client is also accepted here.
+      const bookConfiguredInterval = (owner as any).slotInterval ?? 0;
+      const bookInterval = bookConfiguredInterval > 0 ? bookConfiguredInterval : Math.min(dur, 30);
+      // Generate slots with the business-configured interval
+      const slots = generateAvailableSlots(date, dur, bookWorkingHours, bookAppts, bookInterval, bookSchedule, bookMode, bookBuffer, bookClientTodayStr, bookNowMin);
+      // Also generate with a 5-min granularity as a fallback (catches edge cases where the
+      // client-side used a finer grid than the configured interval)
+      const slots5 = bookInterval > 5 ? generateAvailableSlots(date, dur, bookWorkingHours, bookAppts, 5, bookSchedule, bookMode, bookBuffer, bookClientTodayStr, bookNowMin) : slots;
+      if (!slots.includes(time) && !slots5.includes(time)) {
         res.status(400).json({ error: "Selected time slot is no longer available" });
         return;
       }
@@ -7452,6 +7461,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
               promoLocalId: appliedPromo ? appliedPromo.localId : null,
               clientAddress: isMobileService() ? getClientAddressString() : null,
               travelFee: isMobileService() ? (dynamicTravelFee != null ? dynamicTravelFee : (selectedService.travelFee ? parseFloat(selectedService.travelFee) : null)) : null,
+              clientToday: (function(){ const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0'); })(),
+              nowMinutes: (function(){ const n = new Date(); return n.getHours()*60+n.getMinutes(); })(),
             }),
           });
           const bookData = await bookRes.json();
@@ -7520,6 +7531,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
             promoLocalId: appliedPromo ? appliedPromo.localId : null,
             clientAddress: isMobileService() ? getClientAddressString() : null,
             travelFee: isMobileService() ? (dynamicTravelFee != null ? dynamicTravelFee : (selectedService.travelFee ? parseFloat(selectedService.travelFee) : null)) : null,
+            clientToday: (function(){ const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0'); })(),
+            nowMinutes: (function(){ const n = new Date(); return n.getHours()*60+n.getMinutes(); })(),
           }),
         });
         const data = await res.json();
