@@ -1801,6 +1801,9 @@ export function registerPublicRoutes(app: Express) {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
+      res.setHeader('CDN-Cache-Control', 'no-store');
+      res.setHeader('Cloudflare-CDN-Cache-Control', 'no-store');
       res.send(bookingPage(req.params.slug, owner, locationId, locs, feePercent));
     } catch (err) {
       console.error("[Public] Error serving booking page:", err);
@@ -1823,6 +1826,9 @@ export function registerPublicRoutes(app: Express) {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
+      res.setHeader('CDN-Cache-Control', 'no-store');
+      res.setHeader('Cloudflare-CDN-Cache-Control', 'no-store');
       res.send(bookingPage(req.params.slug, owner, req.params.locationId, locs, feePercent2));
     } catch (err) {
       console.error("[Public] Error serving booking page:", err);
