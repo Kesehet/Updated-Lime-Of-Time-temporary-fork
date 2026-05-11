@@ -2103,3 +2103,4 @@
 - [x] Package booking receipt shows savings badge and original price
 - [x] Fix multi-service selection on public booking page (currently only allows single service selection via modal)
 - [x] Remove clickable address/phone links from location selection cards (keep only on top business info card)
+- [ ] Add /book/:slug route (without /api prefix) so lime-of-time.com/book/business-name works directly

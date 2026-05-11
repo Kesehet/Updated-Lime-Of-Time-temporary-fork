@@ -6139,7 +6139,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
             '<div style="font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(s.name) + '</div>' +
             '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">' + esc(cat) + ' &middot; ' + dur + ' &middot; $' + parseFloat(s.price || 0).toFixed(2) + '</div>' +
             '</div>' +
-            '<button onclick="toggleServiceSelection(\'' + s.localId + '\')" style="flex-shrink:0;background:transparent;border:none;cursor:pointer;padding:4px;color:var(--text-secondary);font-size:18px;line-height:1;" title="Remove">&#10005;</button>' +
+            '<button onclick="toggleServiceSelection(' + Q + s.localId + Q + ')" style="flex-shrink:0;background:transparent;border:none;cursor:pointer;padding:4px;color:var(--text-secondary);font-size:18px;line-height:1;" title="Remove">&#10005;</button>' +
             '</div>';
         });
       });
