@@ -1,0 +1,20 @@
+{
+  "query": "INSERT INTO platform_config (configKey, configValue, updatedAt)\nVALUES \n  ('STRIPE_CONNECT_SECRET_KEY', 'sk_test_51TVjfG9sdkdOvw4ACIIYb4c3DfKpvaGk0r3HFJOEYtW0Av6t3LL9D2VFL35vQNG35KE1iEcb7T1vZ7Oc97y1Rub700Za1eik3l', NOW()),\n  ('STRIPE_CONNECT_PUBLISHABLE_KEY', 'pk_test_51TVjfG9sdkdOvw4Ag4U2zK9GxKxhQAacgdSrpdoglTNStHeNXdSBcYkgIUe5GzxsIZ9MU3WPEtgdUl5YBjezE6Il00L1k3YjKA', NOW())\nON DUPLICATE KEY UPDATE configValue = VALUES(configValue), updatedAt = NOW();\n\nSELECT configKey, LEFT(configValue, 20) AS keyPrefix, updatedAt \nFROM platform_config \nWHERE configKey IN ('STRIPE_CONNECT_SECRET_KEY', 'STRIPE_CONNECT_PUBLISHABLE_KEY')\nORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute INSERT INTO platform_config (configKey, configValue, updatedAt)\nVALUES \n  ('STRIPE_CONNECT_SECRET_KEY', 'sk_test_51TVjfG9sdkdOvw4ACIIYb4c3DfKpvaGk0r3HFJOEYtW0Av6t3LL9D2VFL35vQNG35KE1iEcb7T1vZ7Oc97y1Rub700Za1eik3l', NOW()),\n  ('STRIPE_CONNECT_PUBLISHABLE_KEY', 'pk_test_51TVjfG9sdkdOvw4Ag4U2zK9GxKxhQAacgdSrpdoglTNStHeNXdSBcYkgIUe5GzxsIZ9MU3WPEtgdUl5YBjezE6Il00L1k3YjKA', NOW())\nON DUPLICATE KEY UPDATE configValue = VALUES(configValue), updatedAt = NOW();\n\nSELECT configKey, LEFT(configValue, 20) AS keyPrefix, updatedAt \nFROM platform_config \nWHERE configKey IN ('STRIPE_CONNECT_SECRET_KEY', 'STRIPE_CONNECT_PUBLISHABLE_KEY')\nORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "STRIPE_CONNECT_PUBLISHABLE_KEY",
+      "keyPrefix": "pk_test_51TVjfG9sdkd",
+      "updatedAt": "2026-05-11 02:43:53"
+    },
+    {
+      "configKey": "STRIPE_CONNECT_SECRET_KEY",
+      "keyPrefix": "sk_test_51TVjfG9sdkd",
+      "updatedAt": "2026-05-11 02:43:53"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tkeyPrefix\tupdatedAt\nSTRIPE_CONNECT_PUBLISHABLE_KEY\tpk_test_51TVjfG9sdkd\t2026-05-11 02:43:53\nSTRIPE_CONNECT_SECRET_KEY\tsk_test_51TVjfG9sdkd\t2026-05-11 02:43:53\n",
+  "stderr": "",
+  "execution_time_ms": 674
+}

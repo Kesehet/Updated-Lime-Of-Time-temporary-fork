@@ -1018,6 +1018,8 @@ export function registerAdminRoutes(app: Express): void {
         { key: "STRIPE_TEST_SECRET_KEY", sensitive: true, desc: "Stripe Secret Key (Test)" },
         { key: "STRIPE_TEST_PUBLISHABLE_KEY", sensitive: false, desc: "Stripe Publishable Key (Test)" },
         { key: "STRIPE_TEST_WEBHOOK_SECRET", sensitive: true, desc: "Stripe Webhook Secret (Test)" },
+        { key: "STRIPE_CONNECT_SECRET_KEY", sensitive: true, desc: "Stripe Connect Secret Key (Business Sandbox — used for all Connect operations)" },
+        { key: "STRIPE_CONNECT_PUBLISHABLE_KEY", sensitive: false, desc: "Stripe Connect Publishable Key (Business Sandbox)" },
       ];
       // Checkbox fields - only present in body when checked; absent means unchecked
       const checkboxKeys = new Set(['TWILIO_TEST_MODE', 'STRIPE_TEST_MODE']);
@@ -5370,6 +5372,28 @@ function platformConfigPage(
         <div id="stripeSuiteLog" style="display:none;margin-top:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;max-height:260px;overflow-y:auto;"></div>
       </div>
 
+      <!-- Stripe Connect Business Sandbox Keys -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div style="font-size:16px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;">
+            🔗 Stripe Connect (Business Sandbox)
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">
+          These keys are used for all Stripe Connect operations (business owner onboarding, payouts, balance). This is a <strong>separate Stripe account</strong> from the platform keys above — it’s the account where business owners connect their Stripe accounts.
+        </div>
+        <div style="background:#635bff15;border:1px solid #635bff30;border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;color:#a5b4fc;">
+          💡 <strong>How it works:</strong> Business owners connect their own Stripe accounts to this sandbox. Payments flow from clients → business owner’s Stripe account → their bank. A 1.5% platform fee goes to this Connect account.
+        </div>
+        ${field("stripe_connect_secret_key", "Connect Secret Key", "The sk_test_... or sk_live_... key for the business sandbox Stripe account", true, "sk_test_...", cfgMap["STRIPE_CONNECT_SECRET_KEY"] || "")}
+        ${field("stripe_connect_publishable_key", "Connect Publishable Key", "The pk_test_... or pk_live_... key for the business sandbox Stripe account", false, "pk_test_...", cfgMap["STRIPE_CONNECT_PUBLISHABLE_KEY"] || "")}
+        <button type="button" id="saveConnectKeysBtn" onclick="saveConnectKeys()"
+          style="background:#635bff;color:white;padding:8px 18px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px;">
+          💾 Save Connect Keys
+        </button>
+        <span id="saveConnectKeysResult" style="font-size:12px;margin-left:10px;"></span>
+      </div>
+
       <button id="savePlatformBtn" type="submit" disabled style="background:var(--border);color:var(--text-muted);padding:12px 28px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:not-allowed;width:100%;transition:background 0.2s,color 0.2s;margin-top:8px;">
         💾 Save Platform Configuration
       </button>
@@ -5961,6 +5985,12 @@ function platformConfigPage(
       await saveStripeFields(
         ['stripe_test_secret_key','stripe_test_publishable_key','stripe_test_webhook_secret'],
         'saveTestKeysResult', 'saveTestKeysBtn', '\ud83d\udcbe Save Test Keys'
+      );
+    };
+    window.saveConnectKeys = async function saveConnectKeys() {
+      await saveStripeFields(
+        ['stripe_connect_secret_key','stripe_connect_publishable_key'],
+        'saveConnectKeysResult', 'saveConnectKeysBtn', '\ud83d\udcbe Save Connect Keys'
       );
     };
     window.testStripeLive = async function testStripeLive() {

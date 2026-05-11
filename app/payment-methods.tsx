@@ -50,6 +50,156 @@ type PayoutData = {
 type BalanceEntry = { amount: number; currency: string };
 type StripeBalance = { available: BalanceEntry[]; pending: BalanceEntry[] };
 
+// ── Stripe Setup Guide Component ─────────────────────────────────────────────
+type StripeSetupGuideProps = {
+  colors: ReturnType<typeof useColors>;
+  onConnect: () => void;
+  connectLoading: boolean;
+};
+
+function StripeSetupGuide({ colors, onConnect, connectLoading }: StripeSetupGuideProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  const steps = [
+    {
+      num: "1",
+      title: "Create a free Stripe account",
+      desc: "Go to stripe.com and sign up for free. No monthly fees — Stripe only charges a small fee per transaction (2.9% + 30¢).",
+      icon: "🌐",
+    },
+    {
+      num: "2",
+      title: "Verify your identity",
+      desc: "Stripe will ask for your name, date of birth, and the last 4 digits of your SSN. This is required by law to send money to your bank.",
+      icon: "🪪",
+    },
+    {
+      num: "3",
+      title: "Add your bank account",
+      desc: "Enter your bank routing and account numbers so Stripe can deposit your earnings directly to your bank (usually within 2 business days).",
+      icon: "🏦",
+    },
+    {
+      num: "4",
+      title: "Tap \"Connect with Stripe\" below",
+      desc: "After your Stripe account is ready, tap the button below. You'll be guided through a quick 2-minute connection process.",
+      icon: "✅",
+    },
+  ];
+
+  return (
+    <View style={{ marginBottom: 4 }}>
+      {/* Collapsible guide toggle */}
+      <TouchableOpacity
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          paddingVertical: 10,
+          paddingHorizontal: 12,
+          backgroundColor: "#635bff15",
+          borderRadius: 10,
+          borderWidth: 1,
+          borderColor: "#635bff30",
+          marginBottom: expanded ? 12 : 16,
+        }}
+        onPress={() => setExpanded((v) => !v)}
+        activeOpacity={0.7}
+      >
+        <Text style={{ fontSize: 16 }}>📖</Text>
+        <Text style={{ flex: 1, fontSize: 13, fontWeight: "600", color: "#635bff" }}>
+          How to set up Stripe (step-by-step guide)
+        </Text>
+        <Text style={{ fontSize: 14, color: "#635bff" }}>{expanded ? "▲" : "▼"}</Text>
+      </TouchableOpacity>
+
+      {expanded && (
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: colors.border,
+            padding: 14,
+            marginBottom: 16,
+            gap: 14,
+          }}
+        >
+          {/* What is Stripe */}
+          <View style={{ backgroundColor: "#635bff10", borderRadius: 8, padding: 12, borderLeftWidth: 3, borderLeftColor: "#635bff" }}>
+            <Text style={{ fontSize: 13, fontWeight: "700", color: "#635bff", marginBottom: 4 }}>💡 What is Stripe?</Text>
+            <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 19 }}>
+              Stripe is a trusted payment service used by millions of businesses worldwide (including Amazon, Shopify, and Lyft). It lets your clients pay by credit card, debit card, Apple Pay, or Google Pay — and deposits the money directly into your bank account. It's completely free to sign up.
+            </Text>
+          </View>
+
+          {/* Steps */}
+          {steps.map((step) => (
+            <View key={step.num} style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: "#635bff",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: "700", color: "#fff" }}>{step.num}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                  <Text style={{ fontSize: 14 }}>{step.icon}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground }}>{step.title}</Text>
+                </View>
+                <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18 }}>{step.desc}</Text>
+              </View>
+            </View>
+          ))}
+
+          {/* Reassurance */}
+          <View style={{ backgroundColor: "#f0fdf4", borderRadius: 8, padding: 10, borderWidth: 1, borderColor: "#bbf7d0" }}>
+            <Text style={{ fontSize: 12, color: "#15803d", lineHeight: 17 }}>
+              🔒 <Text style={{ fontWeight: "700" }}>Your money is safe.</Text> Stripe is PCI-compliant and used by millions of businesses. You own your Stripe account — we never touch your funds.
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Connect button */}
+      <TouchableOpacity
+        style={[guideStyles.stripeBtn, { backgroundColor: "#635bff" }]}
+        onPress={onConnect}
+        disabled={connectLoading}
+        activeOpacity={0.8}
+      >
+        {connectLoading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={guideStyles.stripeBtnText}>Connect with Stripe →</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const guideStyles = StyleSheet.create({
+  stripeBtn: {
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  stripeBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+});
+
+// ── Main Screen ───────────────────────────────────────────────────────────────
 export default function PaymentMethodsScreen() {
   const { state } = useStore();
   const colors = useColors();
@@ -364,18 +514,9 @@ export default function PaymentMethodsScreen() {
                   <Text style={[styles.stripeNote, { color: colors.muted }]}>
                     Connect your Stripe account to let clients pay by card (Visa, Mastercard, Apple Pay, Google Pay) when booking. Funds go directly to your bank.
                   </Text>
-                  <TouchableOpacity
-                    style={[styles.stripeBtn, { backgroundColor: "#635bff" }]}
-                    onPress={handleConnectStripe}
-                    disabled={connectLoading}
-                    activeOpacity={0.8}
-                  >
-                    {connectLoading ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Text style={styles.stripeBtnText}>Connect with Stripe →</Text>
-                    )}
-                  </TouchableOpacity>
+
+                  {/* Step-by-step Stripe setup guide */}
+                  <StripeSetupGuide colors={colors} onConnect={handleConnectStripe} connectLoading={connectLoading} />
                 </>
               )}
 

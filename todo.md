@@ -2058,3 +2058,7 @@
 - [x] Booking wizard: Auto-dismiss keyboard on Continue (Keyboard.dismiss in handleNext)
 - [x] Booking wizard: Address autocomplete using OpenStreetMap Nominatim API
 - [x] Booking wizard: Save address to profile checkbox on Confirm step
+
+- [x] Fix Stripe Connect onboarding HTTPS error — use business sandbox test keys for Connect OAuth flow in test mode
+- [x] Add step-by-step Stripe account creation guide on Payment Methods page
+- [x] Lock Stripe card payment option behind subscription tier with upgrade prompt (already implemented)

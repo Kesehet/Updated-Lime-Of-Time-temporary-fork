@@ -36,21 +36,34 @@ async function getPlatformFeePercent(): Promise<number> {
 }
 
 // ── Stripe client factory (reads key from DB config) ─────────────────────────
+// Resolution order for Connect operations:
+//   1. STRIPE_CONNECT_SECRET_KEY  — dedicated business sandbox key (set by admin)
+//   2. STRIPE_SECRET_KEY          — active platform key (fallback)
+//   3. STRIPE_TEST_SECRET_KEY     — test key if test mode on
+//   4. STRIPE_LIVE_SECRET_KEY     — live key last resort
 async function getStripe(): Promise<Stripe | null> {
-  // Resolution order: active key → test key (if test mode on) → live key
+  // 1. Dedicated Connect key (business sandbox — different Stripe account from platform)
+  const connectKey = await getPlatformConfig("STRIPE_CONNECT_SECRET_KEY").catch(() => "");
+  if (connectKey) return new Stripe(connectKey, { apiVersion: "2026-03-25.dahlia" as any });
+  // 2. Active platform key
   const activeKey = await getPlatformConfig("STRIPE_SECRET_KEY").catch(() => "");
   if (activeKey) return new Stripe(activeKey, { apiVersion: "2026-03-25.dahlia" as any });
+  // 3. Test key if test mode on
   const testMode = await getPlatformConfig("STRIPE_TEST_MODE").catch(() => "");
   if (testMode === "true") {
     const testKey = await getPlatformConfig("STRIPE_TEST_SECRET_KEY").catch(() => "");
     if (testKey) return new Stripe(testKey, { apiVersion: "2026-03-25.dahlia" as any });
   }
+  // 4. Live key
   const liveKey = await getPlatformConfig("STRIPE_LIVE_SECRET_KEY").catch(() => "");
   if (liveKey) return new Stripe(liveKey, { apiVersion: "2026-03-25.dahlia" as any });
   return null;
 }
 
 async function getPublishableKey(): Promise<string | null> {
+  // Check dedicated Connect publishable key first (business sandbox)
+  const connectKey = await getPlatformConfig("STRIPE_CONNECT_PUBLISHABLE_KEY").catch(() => "");
+  if (connectKey) return connectKey;
   const activeKey = await getPlatformConfig("STRIPE_PUBLISHABLE_KEY").catch(() => "");
   if (activeKey) return activeKey;
   const testMode = await getPlatformConfig("STRIPE_TEST_MODE").catch(() => "");
@@ -130,7 +143,9 @@ export function registerStripeConnectRoutes(app: Express): void {
       }
 
       // Determine return / refresh URLs
-      const origin = `${req.protocol}://${req.get("host")}`;
+      // Use X-Forwarded-Proto when behind a reverse proxy (Manus/nginx) so Stripe gets HTTPS URLs
+      const proto = (req.get("x-forwarded-proto") || req.protocol || "https").split(",")[0].trim();
+      const origin = `${proto}://${req.get("host")}`;
       const returnUrl = `${origin}/api/stripe-connect/return?businessOwnerId=${businessOwnerId}`;
       const refreshUrl = `${origin}/api/stripe-connect/refresh?businessOwnerId=${businessOwnerId}`;
 
