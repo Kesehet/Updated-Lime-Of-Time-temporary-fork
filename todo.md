@@ -2062,3 +2062,5 @@
 - [x] Fix Stripe Connect onboarding HTTPS error — use business sandbox test keys for Connect OAuth flow in test mode
 - [x] Add step-by-step Stripe account creation guide on Payment Methods page
 - [x] Lock Stripe card payment option behind subscription tier with upgrade prompt (already implemented)
+- [x] Fix Stripe payment sheet using wrong key — STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY updated to test values in DB; create-payment-sheet endpoint now returns pk_test_51TVjfG9... (business sandbox key)
+- [x] Fix staff members not showing on public booking page for non-seed services — renderStaffForService() now checks if any staff member is assigned to the service; if none are, all staff are shown (no over-filtering)

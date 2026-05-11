@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, businessName, stripeConnectAccountId, stripeConnectEnabled FROM business_owners WHERE id = 1620003;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, businessName, stripeConnectAccountId, stripeConnectEnabled FROM business_owners WHERE id = 1620003;",
+  "rows": [
+    {
+      "id": "1620003",
+      "businessName": "Lime Cut & Wellness",
+      "stripeConnectAccountId": "acct_1TVkAKQD4JyuAYz3",
+      "stripeConnectEnabled": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbusinessName\tstripeConnectAccountId\tstripeConnectEnabled\n1620003\tLime Cut & Wellness\tacct_1TVkAKQD4JyuAYz3\t1\n",
+  "stderr": "",
+  "execution_time_ms": 565
+}

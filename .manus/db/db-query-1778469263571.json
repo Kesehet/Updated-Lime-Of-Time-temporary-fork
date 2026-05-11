@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE platform_config SET configValue = (SELECT configValue FROM (SELECT configValue FROM platform_config WHERE configKey = 'STRIPE_TEST_SECRET_KEY') t) WHERE configKey = 'STRIPE_SECRET_KEY';\nUPDATE platform_config SET configValue = (SELECT configValue FROM (SELECT configValue FROM platform_config WHERE configKey = 'STRIPE_TEST_PUBLISHABLE_KEY') t) WHERE configKey = 'STRIPE_PUBLISHABLE_KEY';\nUPDATE platform_config SET configValue = (SELECT configValue FROM (SELECT configValue FROM platform_config WHERE configKey = 'STRIPE_TEST_WEBHOOK_SECRET') t) WHERE configKey = 'STRIPE_WEBHOOK_SECRET';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute UPDATE platform_config SET configValue = (SELECT configValue FROM (SELECT configValue FROM platform_config WHERE configKey = 'STRIPE_TEST_SECRET_KEY') t) WHERE configKey = 'STRIPE_SECRET_KEY';\nUPDATE platform_config SET configValue = (SELECT configValue FROM (SELECT configValue FROM platform_config WHERE configKey = 'STRIPE_TEST_PUBLISHABLE_KEY') t) WHERE configKey = 'STRIPE_PUBLISHABLE_KEY';\nUPDATE platform_config SET configValue = (SELECT configValue FROM (SELECT configValue FROM platform_config WHERE configKey = 'STRIPE_TEST_WEBHOOK_SECRET') t) WHERE configKey = 'STRIPE_WEBHOOK_SECRET';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 707
+}

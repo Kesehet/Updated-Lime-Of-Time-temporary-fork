@@ -1,0 +1,8 @@
+{
+  "query": "SELECT `key`, SUBSTRING(`value`, 1, 25) as value_preview FROM platform_config WHERE `key` IN ('STRIPE_TEST_MODE', 'STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY', 'STRIPE_CONNECT_SECRET_KEY', 'STRIPE_CONNECT_PUBLISHABLE_KEY', 'STRIPE_TEST_SECRET_KEY', 'STRIPE_TEST_PUBLISHABLE_KEY') ORDER BY `key`;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT `key`, SUBSTRING(`value`, 1, 25) as value_preview FROM platform_config WHERE `key` IN ('STRIPE_TEST_MODE', 'STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY', 'STRIPE_CONNECT_SECRET_KEY', 'STRIPE_CONNECT_PUBLISHABLE_KEY', 'STRIPE_TEST_SECRET_KEY', 'STRIPE_TEST_PUBLISHABLE_KEY') ORDER BY `key`;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'key' in 'where clause'"
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "query": "SELECT configKey, LEFT(configValue, 30) as value_preview, LENGTH(configValue) as len FROM platform_config WHERE configKey LIKE 'STRIPE%' ORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, LEFT(configValue, 30) as value_preview, LENGTH(configValue) as len FROM platform_config WHERE configKey LIKE 'STRIPE%' ORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "STRIPE_CONNECT_PUBLISHABLE_KEY",
+      "value_preview": "pk_test_51TVjfG9sdkdOvw4Ag4U2z",
+      "len": "107"
+    },
+    {
+      "configKey": "STRIPE_CONNECT_SECRET_KEY",
+      "value_preview": "sk_test_51TVjfG9sdkdOvw4ACIIYb",
+      "len": "107"
+    },
+    {
+      "configKey": "STRIPE_CONNECT_TEST_WEBHOOK_SECRET",
+      "value_preview": "whsec_njsYjYGxYVCFYddQLe1d7v6r",
+      "len": "38"
+    },
+    {
+      "configKey": "STRIPE_LIVE_PUBLISHABLE_KEY",
+      "value_preview": "pk_live_51REIGbG6LQX4qfeVElasC",
+      "len": "107"
+    },
+    {
+      "configKey": "STRIPE_LIVE_SECRET_KEY",
+      "value_preview": "sk_live_51REIGbG6LQX4qfeVG7Bil",
+      "len": "107"
+    },
+    {
+      "configKey": "STRIPE_LIVE_WEBHOOK_SECRET",
+      "value_preview": "whsec_1d82u9ikRdLAl2i51LO32sEr",
+      "len": "38"
+    },
+    {
+      "configKey": "STRIPE_PUBLISHABLE_KEY",
+      "value_preview": "pk_live_51REIGbG6LQX4qfeVElasC",
+      "len": "107"
+    },
+    {
+      "configKey": "STRIPE_SECRET_KEY",
+      "value_preview": "sk_live_51REIGbG6LQX4qfeVG7Bil",
+      "len": "107"
+    },
+    {
+      "configKey": "STRIPE_TEST_MODE",
+      "value_preview": "true",
+      "len": "4"
+    },
+    {
+      "configKey": "STRIPE_TEST_PUBLISHABLE_KEY",
+      "value_preview": "pk_test_51REIGbG6LQX4qfeVRXbxu",
+      "len": "107"
+    },
+    {
+      "configKey": "STRIPE_TEST_SECRET_KEY",
+      "value_preview": "sk_test_51REIGbG6LQX4qfeVbBFQM",
+      "len": "107"
+    },
+    {
+      "configKey": "STRIPE_TEST_WEBHOOK_SECRET",
+      "value_preview": "whsec_njsYjYGxYVCFYddQLe1d7v6r",
+      "len": "38"
+    },
+    {
+      "configKey": "STRIPE_WEBHOOK_SECRET",
+      "value_preview": "whsec_1d82u9ikRdLAl2i51LO32sEr",
+      "len": "38"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tvalue_preview\tlen\nSTRIPE_CONNECT_PUBLISHABLE_KEY\tpk_test_51TVjfG9sdkdOvw4Ag4U2z\t107\nSTRIPE_CONNECT_SECRET_KEY\tsk_test_51TVjfG9sdkdOvw4ACIIYb\t107\nSTRIPE_CONNECT_TEST_WEBHOOK_SECRET\twhsec_njsYjYGxYVCFYddQLe1d7v6r\t38\nSTRIPE_LIVE_PUBLISHABLE_KEY\tpk_live_51REIGbG6LQX4qfeVElasC\t107\nSTRIPE_LIVE_SECRET_KEY\tsk_live_51REIGbG6LQX4qfeVG7Bil\t107\nSTRIPE_LIVE_WEBHOOK_SECRET\twhsec_1d82u9ikRdLAl2i51LO32sEr\t38\nSTRIPE_PUBLISHABLE_KEY\tpk_live_51REIGbG6LQX4qfeVElasC\t107\nSTRIPE_SECRET_KEY\tsk_live_51REIGbG6LQX4qfeVG7Bil\t107\nSTRIPE_TEST_MODE\ttrue\t4\nSTRIPE_TEST_PUBLISHABLE_KEY\tpk_test_51REIGbG6LQX4qfeVRXbxu\t107\nSTRIPE_TEST_SECRET_KEY\tsk_test_51REIGbG6LQX4qfeVbBFQM\t107\nSTRIPE_TEST_WEBHOOK_SECRET\twhsec_njsYjYGxYVCFYddQLe1d7v6r\t38\nSTRIPE_WEBHOOK_SECRET\twhsec_1d82u9ikRdLAl2i51LO32sEr\t38\n",
+  "stderr": "",
+  "execution_time_ms": 567
+}

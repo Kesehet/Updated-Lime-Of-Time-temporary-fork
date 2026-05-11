@@ -1,0 +1,38 @@
+{
+  "query": "SELECT configKey, SUBSTRING(configValue, 1, 25) as value_preview FROM platform_config WHERE configKey IN ('STRIPE_TEST_MODE', 'STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY', 'STRIPE_CONNECT_SECRET_KEY', 'STRIPE_CONNECT_PUBLISHABLE_KEY', 'STRIPE_TEST_SECRET_KEY', 'STRIPE_TEST_PUBLISHABLE_KEY') ORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, SUBSTRING(configValue, 1, 25) as value_preview FROM platform_config WHERE configKey IN ('STRIPE_TEST_MODE', 'STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY', 'STRIPE_CONNECT_SECRET_KEY', 'STRIPE_CONNECT_PUBLISHABLE_KEY', 'STRIPE_TEST_SECRET_KEY', 'STRIPE_TEST_PUBLISHABLE_KEY') ORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "STRIPE_CONNECT_PUBLISHABLE_KEY",
+      "value_preview": "pk_test_51TVjfG9sdkdOvw4A"
+    },
+    {
+      "configKey": "STRIPE_CONNECT_SECRET_KEY",
+      "value_preview": "sk_test_51TVjfG9sdkdOvw4A"
+    },
+    {
+      "configKey": "STRIPE_PUBLISHABLE_KEY",
+      "value_preview": "pk_test_51REIGbG6LQX4qfeV"
+    },
+    {
+      "configKey": "STRIPE_SECRET_KEY",
+      "value_preview": "sk_test_51REIGbG6LQX4qfeV"
+    },
+    {
+      "configKey": "STRIPE_TEST_MODE",
+      "value_preview": "true"
+    },
+    {
+      "configKey": "STRIPE_TEST_PUBLISHABLE_KEY",
+      "value_preview": "pk_test_51REIGbG6LQX4qfeV"
+    },
+    {
+      "configKey": "STRIPE_TEST_SECRET_KEY",
+      "value_preview": "sk_test_51REIGbG6LQX4qfeV"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tvalue_preview\nSTRIPE_CONNECT_PUBLISHABLE_KEY\tpk_test_51TVjfG9sdkdOvw4A\nSTRIPE_CONNECT_SECRET_KEY\tsk_test_51TVjfG9sdkdOvw4A\nSTRIPE_PUBLISHABLE_KEY\tpk_test_51REIGbG6LQX4qfeV\nSTRIPE_SECRET_KEY\tsk_test_51REIGbG6LQX4qfeV\nSTRIPE_TEST_MODE\ttrue\nSTRIPE_TEST_PUBLISHABLE_KEY\tpk_test_51REIGbG6LQX4qfeV\nSTRIPE_TEST_SECRET_KEY\tsk_test_51REIGbG6LQX4qfeV\n",
+  "stderr": "",
+  "execution_time_ms": 560
+}

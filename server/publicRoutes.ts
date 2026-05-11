@@ -5963,8 +5963,10 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       const list = document.getElementById("staffListStep3");
       if (!list) return;
       // Filter staff who can perform this service AND are assigned to the selected location
+      // If NO staff member is explicitly assigned to this service, show all staff (don't over-filter)
+      const anyStaffHasService = staffMembers.some(s => s.serviceIds.length > 0 && s.serviceIds.includes(serviceId));
       const eligible = staffMembers.filter(s => {
-        const canDoService = s.serviceIds.length === 0 || s.serviceIds.includes(serviceId);
+        const canDoService = !anyStaffHasService || s.serviceIds.length === 0 || s.serviceIds.includes(serviceId);
         if (!canDoService) return false;
         if (!selectedLocation) return true;
         if (!s.locationIds) return true;

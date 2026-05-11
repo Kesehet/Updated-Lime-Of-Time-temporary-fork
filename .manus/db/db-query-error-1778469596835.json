@@ -1,0 +1,8 @@
+{
+  "query": "SELECT key, LEFT(value, 25) as value_preview FROM platform_config WHERE key IN ('STRIPE_TEST_MODE', 'STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY', 'STRIPE_CONNECT_SECRET_KEY', 'STRIPE_CONNECT_PUBLISHABLE_KEY', 'STRIPE_TEST_SECRET_KEY', 'STRIPE_TEST_PUBLISHABLE_KEY') ORDER BY key;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT key, LEFT(value, 25) as value_preview FROM platform_config WHERE key IN ('STRIPE_TEST_MODE', 'STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY', 'STRIPE_CONNECT_SECRET_KEY', 'STRIPE_CONNECT_PUBLISHABLE_KEY', 'STRIPE_TEST_SECRET_KEY', 'STRIPE_TEST_PUBLISHABLE_KEY') ORDER BY key;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 1 column 10 near \"key, LEFT(value, 25) as value_preview FROM platform_config WHERE key IN ('STRIPE_TEST_MODE', 'STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY', 'STRIPE_CONNECT_SECRET_KEY', 'STRIPE_CONNECT_PUBLISHABLE_KEY', 'STRIPE_TEST_SECRET_KEY', 'STRIPE_TEST_PUBLISHABLE_KEY') ORDER BY key\""
+  ]
+}
