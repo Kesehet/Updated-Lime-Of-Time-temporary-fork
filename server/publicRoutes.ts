@@ -5662,14 +5662,11 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         html += checkmark;
         html += '</div>';
         if (fullAddr) {
-          html += '<div style="font-size:12px;color:var(--text-secondary);margin-top:3px;">';
-          if (mapUrl) html += '<a href="' + mapUrl + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:underline;font-size:12px;">' + escText(fullAddr) + '</a>';
-          else html += escText(fullAddr);
-          html += '</div>';
+          html += '<div style="font-size:12px;color:var(--text-secondary);margin-top:3px;">' + escText(fullAddr) + '</div>';
         } else if (loc.address) {
           html += '<div style="font-size:12px;color:var(--text-secondary);margin-top:3px;">' + escText(loc.address) + '</div>';
         }
-        if (loc.phone) html += '<div style="font-size:12px;color:var(--accent);margin-top:2px;font-weight:500;">' + escText(formatPhoneNumber(loc.phone)) + '</div>';
+        if (loc.phone) html += '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">' + escText(formatPhoneNumber(loc.phone)) + '</div>';
         html += '</div>';
       });
       html += '</div>';

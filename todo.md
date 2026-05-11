@@ -2101,3 +2101,5 @@
 - [x] Package selection sets duration = sessionDurationMinutes * totalSessions for calendar slot blocking
 - [x] Package booking POSTs with package name in notes, correct duration, and price
 - [x] Package booking receipt shows savings badge and original price
+- [x] Fix multi-service selection on public booking page (currently only allows single service selection via modal)
+- [x] Remove clickable address/phone links from location selection cards (keep only on top business info card)
