@@ -2091,3 +2091,8 @@
 - [x] Gift and Book an Appointment flows now slide up from bottom (modal presentation with swipe-down-to-dismiss)
 - [x] Added drag handle indicator to both client-buy-gift and client-booking-wizard screens
 - [x] Add delete-for-me message feature for both Business and Client portals
+- [x] Fix message bubble clipping (maxWidth on Pressable wrapper, not msgBubble style)
+- [x] Fix template placeholder substitution when no appointment selected (business name, phone, booking/review URLs, fallbacks for service/time/location)
+- [x] Add state to handleSelectReminderTemplate useCallback dependency array
+- [x] Add search bar to Messages tab in Clients screen (filter by client name or message content)
+- [x] Unread message badge already on Clients tab via useBusinessUnreadCount hook (confirmed working)

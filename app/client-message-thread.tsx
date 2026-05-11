@@ -299,7 +299,7 @@ export default function ClientMessageThreadScreen() {
                       );
                     }}
                     delayLongPress={400}
-                    style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
+                    style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, maxWidth: "75%", flexShrink: 1 }]}
                   >
                     <View style={[
                       styles.msgBubble,
@@ -486,7 +486,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(143,191,106,0.25)",
   },
   msgBubble: {
-    maxWidth: "75%",
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 10,

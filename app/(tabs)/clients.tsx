@@ -164,6 +164,7 @@ export default function ClientsScreen() {
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [threadsLoading, setThreadsLoading] = useState(false);
   const [threadsError, setThreadsError] = useState<string | null>(null);
+  const [messageSearch, setMessageSearch] = useState("");
 
   const loadThreads = useCallback(async () => {
     const token = await Auth.getSessionToken();
@@ -464,6 +465,17 @@ export default function ClientsScreen() {
 
   // Total unread count for tab badge
   const totalUnread = threads.reduce((sum, t) => sum + (t.unreadCount ?? 0), 0);
+
+  // Filtered threads for search
+  const filteredThreads = useMemo(() => {
+    if (!messageSearch.trim()) return threads;
+    const q = messageSearch.trim().toLowerCase();
+    return threads.filter(
+      (t) =>
+        t.clientName.toLowerCase().includes(q) ||
+        t.lastMessage.toLowerCase().includes(q)
+    );
+  }, [threads, messageSearch]);
 
   // Filter counts for badges
   const filterCounts = useMemo(() => {
@@ -808,9 +820,27 @@ export default function ClientsScreen() {
           </>
         )}
 
-        {/* ── Messages Tab ─────────────────────────────────────────────────── */}
+        {/* ── Messages Tab ─────────────────────────────────────────────────────────────── */}
         {activeTab === "messages" && (
           <>
+            {/* Search bar */}
+            <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border, marginHorizontal: hp, marginBottom: 8 }]}>
+              <IconSymbol name="magnifyingglass" size={18} color={colors.muted} />
+              <TextInput
+                style={[styles.searchInput, { color: colors.foreground }]}
+                placeholder="Search by name or message..."
+                placeholderTextColor={colors.muted}
+                value={messageSearch}
+                onChangeText={setMessageSearch}
+                returnKeyType="done"
+                clearButtonMode="while-editing"
+              />
+              {messageSearch.length > 0 && (
+                <Pressable onPress={() => setMessageSearch("")} style={{ padding: 4 }}>
+                  <IconSymbol name="xmark.circle.fill" size={16} color={colors.muted} />
+                </Pressable>
+              )}
+            </View>
             {threadsLoading ? (
               <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 60 }}>
                 <ActivityIndicator size="large" color={colors.primary} />
@@ -846,9 +876,17 @@ export default function ClientsScreen() {
                   When clients send you messages from the client app, they'll appear here.
                 </Text>
               </View>
+            ) : filteredThreads.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <IconSymbol name="magnifyingglass" size={40} color={colors.muted + "60"} />
+                <Text style={{ fontSize: fs.sm, color: colors.muted, marginTop: 12 }}>No results</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4, textAlign: "center", paddingHorizontal: 32 }}>
+                  No conversations match "{messageSearch}"
+                </Text>
+              </View>
             ) : (
               <FlatList
-                data={threads}
+                data={filteredThreads}
                 keyExtractor={(item) => String(item.clientAccountId)}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 80 }}

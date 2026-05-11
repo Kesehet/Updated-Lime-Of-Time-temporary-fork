@@ -634,12 +634,35 @@ export default function ClientMessageThreadBusinessScreen() {
       filled = applyTemplate(tpl.customMessage, vars);
     } else {
       const firstName = (clientName ?? "there").split(" ")[0];
-      filled = applyTemplate(tpl.customMessage, { clientName: firstName, name: firstName });
+      const biz = state.settings;
+      const profile = biz.profile ?? {};
+      const slug = biz.customSlug || biz.businessName.replace(/\s+/g, "-").toLowerCase();
+      const bizPhone = formatPhoneNumber(stripPhoneFormat(profile.phone || ""));
+      const bookUrl = `${PUBLIC_BOOKING_URL}/book/${slug}`;
+      const reviewUrl = `${PUBLIC_BOOKING_URL}/review/${slug}`;
+      filled = applyTemplate(tpl.customMessage, {
+        clientName: firstName,
+        name: firstName,
+        businessName: biz.businessName,
+        phone: bizPhone,
+        service: "your service",
+        serviceName: "your service",
+        time: "",
+        date: "",
+        duration: "",
+        price: "",
+        total: "",
+        priceLine: "",
+        location: profile.address ? `${profile.address}${profile.city ? ", " + profile.city : ""}` : "",
+        bookingUrl: bookUrl,
+        reviewUrl,
+        clientPhone: "",
+      });
     }
     setDraft(filled);
     setShowTemplates(false);
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, [clientAppointments, selectedApptId, clientName, buildTplVars]);
+  }, [clientAppointments, selectedApptId, clientName, buildTplVars, state]);
 
   const handleSelectGeneralTemplate = useCallback((body: string) => {
     const firstName = (clientName ?? "there").split(" ")[0];
@@ -772,7 +795,7 @@ export default function ClientMessageThreadBusinessScreen() {
                       );
                     }}
                     delayLongPress={400}
-                    style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
+                    style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1, maxWidth: "75%", flexShrink: 1 }]}
                   >
                     <View style={[s.msgBubble, isBusiness ? { backgroundColor: colors.primary, borderBottomRightRadius: 4 } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderBottomLeftRadius: 4 }]}>
                       <RichMessageBody body={msg.body} textColor={isBusiness ? "#FFFFFF" : colors.foreground} linkColor={isBusiness ? "rgba(255,255,255,0.9)" : colors.primary} msgTitle={clientName ?? "Appointment"} />
@@ -999,7 +1022,7 @@ const makeStyles = (colors: ReturnType<typeof useColors>) =>
     msgRowLeft: { justifyContent: "flex-start" },
     msgRowRight: { justifyContent: "flex-end" },
     msgAvatar: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-    msgBubble: { maxWidth: "75%", borderRadius: 16, padding: 10, gap: 4 },
+    msgBubble: { borderRadius: 16, padding: 10, gap: 4 },
     msgBody: { fontSize: 14, lineHeight: 20 },
     msgTime: { fontSize: 10, alignSelf: "flex-end" },
     inputBar: { paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1 },
