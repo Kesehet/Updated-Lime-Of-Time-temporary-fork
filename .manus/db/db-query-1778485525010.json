@@ -1,0 +1,28 @@
+{
+  "query": "SELECT a.localId as appt_local_id, a.clientLocalId, c.localId as client_local_id, c.name FROM appointments a JOIN clients c ON c.localId = a.clientLocalId WHERE c.name = 'MJ' LIMIT 3;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT a.localId as appt_local_id, a.clientLocalId, c.localId as client_local_id, c.name FROM appointments a JOIN clients c ON c.localId = a.clientLocalId WHERE c.name = 'MJ' LIMIT 3;",
+  "rows": [
+    {
+      "appt_local_id": "web-1777616606362-27487c",
+      "clientLocalId": "web-1777616606192-076bzr",
+      "client_local_id": "web-1777616606192-076bzr",
+      "name": "MJ"
+    },
+    {
+      "appt_local_id": "web-1778118594235-3cg39w",
+      "clientLocalId": "web-1777574972135-julmnm",
+      "client_local_id": "web-1777574972135-julmnm",
+      "name": "MJ"
+    },
+    {
+      "appt_local_id": "web-1778207894283-sisfly",
+      "clientLocalId": "web-1777616606192-076bzr",
+      "client_local_id": "web-1777616606192-076bzr",
+      "name": "MJ"
+    }
+  ],
+  "messages": [],
+  "stdout": "appt_local_id\tclientLocalId\tclient_local_id\tname\nweb-1777616606362-27487c\tweb-1777616606192-076bzr\tweb-1777616606192-076bzr\tMJ\nweb-1778118594235-3cg39w\tweb-1777574972135-julmnm\tweb-1777574972135-julmnm\tMJ\nweb-1778207894283-sisfly\tweb-1777616606192-076bzr\tweb-1777616606192-076bzr\tMJ\n",
+  "stderr": "",
+  "execution_time_ms": 574
+}

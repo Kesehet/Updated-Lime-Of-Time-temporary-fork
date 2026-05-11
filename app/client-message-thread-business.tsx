@@ -338,11 +338,24 @@ export default function ClientMessageThreadBusinessScreen() {
 
   // ── Client appointments from store (for template context) ─────────────────
   const clientAppointments = useMemo(() => {
-    if (!clientId) return [];
     const now = new Date();
     const todayStr = now.toISOString().slice(0, 10);
+    // Primary match: by clientId (local ID)
+    // Fallback: by client name lookup (in case clientId wasn't passed or doesn't match)
+    let matchingClientIds: Set<string>;
+    if (clientId) {
+      matchingClientIds = new Set([clientId as string]);
+      // Also find any clients with the same name (for web-booked clients with different IDs)
+      const nameMatch = state.clients.filter((c) => c.name === clientName);
+      nameMatch.forEach((c) => matchingClientIds.add(c.id));
+    } else {
+      // No clientId — match by name
+      const nameMatch = state.clients.filter((c) => c.name === clientName);
+      matchingClientIds = new Set(nameMatch.map((c) => c.id));
+    }
+    if (matchingClientIds.size === 0) return [];
     return state.appointments
-      .filter((a) => a.clientId === clientId && (a.status === "confirmed" || a.status === "pending" || a.status === "completed"))
+      .filter((a) => matchingClientIds.has(a.clientId) && (a.status === "confirmed" || a.status === "pending" || a.status === "completed"))
       .sort((a, b) => {
         // Upcoming first, then past
         const aFuture = a.date >= todayStr;
@@ -386,9 +399,10 @@ export default function ClientMessageThreadBusinessScreen() {
   }, [allReminderTemplates, clientAppointments, selectedApptId]);
 
   // ── Build template variables for the selected appointment ─────────────────
-  const buildTplVars = useCallback((appt: Appointment): Record<string, string> | null => {
+  const buildTplVars = useCallback((appt: Appointment): Record<string, string> => {
     const client = state.clients.find((c) => c.id === appt.clientId);
-    if (!client) return null;
+    // Use clientName from route params as fallback if client not in local store
+    const resolvedClientName = client?.name ?? (clientName as string) ?? "there";
     const svc = getServiceById(appt.serviceId);
     const assignedLocation = appt.locationId ? getLocationById(appt.locationId) : null;
     const biz = state.settings;
@@ -446,7 +460,8 @@ export default function ClientMessageThreadBusinessScreen() {
     });
 
     return {
-      clientName: client.name,
+      clientName: resolvedClientName,
+      name: resolvedClientName,
       businessName: biz.businessName,
       serviceName,
       service: serviceName,
@@ -458,11 +473,11 @@ export default function ClientMessageThreadBusinessScreen() {
       priceLine,
       location: locLine,
       phone: formatPhoneNumber(stripPhoneFormat(locPhone)),
-      clientPhone: client.phone ?? "",
+      clientPhone: client?.phone ?? "",
       bookingUrl: bookUrl,
       reviewUrl,
     };
-  }, [state.clients, state.settings, getServiceById, getLocationById]);
+  }, [state.clients, state.settings, getServiceById, getLocationById, clientName]);
 
   // ── Messages API ──────────────────────────────────────────────────────────
   const loadMessages = useCallback(async (silent = false) => {
@@ -532,14 +547,9 @@ export default function ClientMessageThreadBusinessScreen() {
     const selectedAppt = clientAppointments.find((a) => a.id === selectedApptId);
     let filled: string;
     if (selectedAppt) {
+      // buildTplVars always returns a vars object now (never null)
       const vars = buildTplVars(selectedAppt);
-      if (vars) {
-        filled = applyTemplate(tpl.customMessage, vars);
-      } else {
-        // Fallback: just fill {name}
-        const firstName = (clientName ?? "there").split(" ")[0];
-        filled = applyTemplate(tpl.customMessage, { clientName: firstName, name: firstName });
-      }
+      filled = applyTemplate(tpl.customMessage, vars);
     } else {
       const firstName = (clientName ?? "there").split(" ")[0];
       filled = applyTemplate(tpl.customMessage, { clientName: firstName, name: firstName });

@@ -2073,3 +2073,6 @@
 - [x] Make message content clickable: phone→call, address→maps, date→native calendar
 - [x] Fix send button hidden by keyboard on iOS and Android in messaging thread
 - [x] Add portal delivery status indicator (✓ In-App / SMS only) on Remind button
+- [x] Fix template variable substitution in messaging thread (raw {service}/{time}/{location} shown instead of real values)
+- [x] Fix clientAppointments lookup to match by name fallback when clientId doesn't match
+- [x] buildTplVars no longer returns null - uses clientName from route params as fallback
