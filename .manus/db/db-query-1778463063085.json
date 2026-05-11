@@ -1,0 +1,85 @@
+{
+  "query": "SELECT configKey, \n  CASE WHEN configValue = '' OR configValue IS NULL THEN '⚠️ EMPTY'\n       WHEN isSensitive = 1 THEN CONCAT(LEFT(configValue,8), '...', RIGHT(configValue,4), ' (', LENGTH(configValue), ' chars)')\n       ELSE configValue\n  END as preview,\n  updatedAt\nFROM platform_config \nWHERE configKey LIKE 'TWILIO%'\nORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, \n  CASE WHEN configValue = '' OR configValue IS NULL THEN '⚠️ EMPTY'\n       WHEN isSensitive = 1 THEN CONCAT(LEFT(configValue,8), '...', RIGHT(configValue,4), ' (', LENGTH(configValue), ' chars)')\n       ELSE configValue\n  END as preview,\n  updatedAt\nFROM platform_config \nWHERE configKey LIKE 'TWILIO%'\nORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "TWILIO_ACCOUNT_SID",
+      "preview": "AC0eb74a...763e (34 chars)",
+      "updatedAt": "2026-05-11 01:29:02"
+    },
+    {
+      "configKey": "TWILIO_AUTH_TOKEN",
+      "preview": "81ee4875...dc74 (32 chars)",
+      "updatedAt": "2026-05-11 01:29:02"
+    },
+    {
+      "configKey": "TWILIO_FROM_NUMBER",
+      "preview": "+18556074585",
+      "updatedAt": "2026-05-11 01:29:02"
+    },
+    {
+      "configKey": "TWILIO_LIVE_ACCOUNT_SID",
+      "preview": "AC0eb74a...763e (34 chars)",
+      "updatedAt": "2026-05-11 01:15:17"
+    },
+    {
+      "configKey": "TWILIO_LIVE_AUTH_TOKEN",
+      "preview": "81ee4875...dc74 (32 chars)",
+      "updatedAt": "2026-05-11 01:18:27"
+    },
+    {
+      "configKey": "TWILIO_LIVE_FROM_NUMBER",
+      "preview": "+18556074585",
+      "updatedAt": "2026-05-11 01:19:08"
+    },
+    {
+      "configKey": "TWILIO_LIVE_VERIFY_SERVICE_SID",
+      "preview": "VA7348fc...005b (34 chars)",
+      "updatedAt": "2026-05-11 01:23:25"
+    },
+    {
+      "configKey": "TWILIO_PER_PHONE_OTP",
+      "preview": "{}",
+      "updatedAt": "2026-04-20 16:26:03"
+    },
+    {
+      "configKey": "TWILIO_TEST_ACCOUNT_SID",
+      "preview": "AC12c02d...f26b (34 chars)",
+      "updatedAt": "2026-05-11 01:29:22"
+    },
+    {
+      "configKey": "TWILIO_TEST_AUTH_TOKEN",
+      "preview": "ab44c71e...3ce0 (32 chars)",
+      "updatedAt": "2026-05-11 01:29:22"
+    },
+    {
+      "configKey": "TWILIO_TEST_FROM_NUMBER",
+      "preview": "⚠️ EMPTY",
+      "updatedAt": "2026-05-11 00:38:39"
+    },
+    {
+      "configKey": "TWILIO_TEST_MODE",
+      "preview": "false",
+      "updatedAt": "2026-05-11 01:29:27"
+    },
+    {
+      "configKey": "TWILIO_TEST_OTP",
+      "preview": "123456",
+      "updatedAt": "2026-05-11 01:08:19"
+    },
+    {
+      "configKey": "TWILIO_TEST_VERIFY_SERVICE_SID",
+      "preview": "⚠️ EMPTY",
+      "updatedAt": "2026-05-11 00:38:39"
+    },
+    {
+      "configKey": "TWILIO_VERIFY_SERVICE_SID",
+      "preview": "VA7348fc...005b (34 chars)",
+      "updatedAt": "2026-05-11 01:29:02"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tpreview\tupdatedAt\nTWILIO_ACCOUNT_SID\tAC0eb74a...763e (34 chars)\t2026-05-11 01:29:02\nTWILIO_AUTH_TOKEN\t81ee4875...dc74 (32 chars)\t2026-05-11 01:29:02\nTWILIO_FROM_NUMBER\t+18556074585\t2026-05-11 01:29:02\nTWILIO_LIVE_ACCOUNT_SID\tAC0eb74a...763e (34 chars)\t2026-05-11 01:15:17\nTWILIO_LIVE_AUTH_TOKEN\t81ee4875...dc74 (32 chars)\t2026-05-11 01:18:27\nTWILIO_LIVE_FROM_NUMBER\t+18556074585\t2026-05-11 01:19:08\nTWILIO_LIVE_VERIFY_SERVICE_SID\tVA7348fc...005b (34 chars)\t2026-05-11 01:23:25\nTWILIO_PER_PHONE_OTP\t{}\t2026-04-20 16:26:03\nTWILIO_TEST_ACCOUNT_SID\tAC12c02d...f26b (34 chars)\t2026-05-11 01:29:22\nTWILIO_TEST_AUTH_TOKEN\tab44c71e...3ce0 (32 chars)\t2026-05-11 01:29:22\nTWILIO_TEST_FROM_NUMBER\t⚠️ EMPTY\t2026-05-11 00:38:39\nTWILIO_TEST_MODE\tfalse\t2026-05-11 01:29:27\nTWILIO_TEST_OTP\t123456\t2026-05-11 01:08:19\nTWILIO_TEST_VERIFY_SERVICE_SID\t⚠️ EMPTY\t2026-05-11 00:38:39\nTWILIO_VERIFY_SERVICE_SID\tVA7348fc...005b (34 chars)\t2026-05-11 01:29:02\n",
+  "stderr": "",
+  "execution_time_ms": 617
+}
