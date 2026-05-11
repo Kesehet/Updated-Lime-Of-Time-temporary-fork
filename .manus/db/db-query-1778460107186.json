@@ -1,0 +1,54 @@
+{
+  "query": "SELECT configKey, configValue FROM platform_config WHERE configKey LIKE 'STRIPE%' ORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, configValue FROM platform_config WHERE configKey LIKE 'STRIPE%' ORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "STRIPE_CONNECT_TEST_WEBHOOK_SECRET",
+      "configValue": "whsec_njsYjYGxYVCFYddQLe1d7v6rHwaoWXK9"
+    },
+    {
+      "configKey": "STRIPE_LIVE_PUBLISHABLE_KEY",
+      "configValue": "pk_live_51REIGbG6LQX4qfeVElasCwiOtt4TXnBma2c5B66NqOjTepqZjqRhZEr6afGagShHrbTyT4cD3vEDN6rUPCsP0Y4b003eHvwtuz"
+    },
+    {
+      "configKey": "STRIPE_LIVE_SECRET_KEY",
+      "configValue": "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"
+    },
+    {
+      "configKey": "STRIPE_LIVE_WEBHOOK_SECRET",
+      "configValue": "whsec_1d82u9ikRdLAl2i51LO32sErH2IK9vz6"
+    },
+    {
+      "configKey": "STRIPE_PUBLISHABLE_KEY",
+      "configValue": ""
+    },
+    {
+      "configKey": "STRIPE_SECRET_KEY",
+      "configValue": ""
+    },
+    {
+      "configKey": "STRIPE_TEST_MODE",
+      "configValue": "true"
+    },
+    {
+      "configKey": "STRIPE_TEST_PUBLISHABLE_KEY",
+      "configValue": ""
+    },
+    {
+      "configKey": "STRIPE_TEST_SECRET_KEY",
+      "configValue": ""
+    },
+    {
+      "configKey": "STRIPE_TEST_WEBHOOK_SECRET",
+      "configValue": ""
+    },
+    {
+      "configKey": "STRIPE_WEBHOOK_SECRET",
+      "configValue": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tconfigValue\nSTRIPE_CONNECT_TEST_WEBHOOK_SECRET\twhsec_njsYjYGxYVCFYddQLe1d7v6rHwaoWXK9\nSTRIPE_LIVE_PUBLISHABLE_KEY\tpk_live_51REIGbG6LQX4qfeVElasCwiOtt4TXnBma2c5B66NqOjTepqZjqRhZEr6afGagShHrbTyT4cD3vEDN6rUPCsP0Y4b003eHvwtuz\nSTRIPE_LIVE_SECRET_KEY\t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\nSTRIPE_LIVE_WEBHOOK_SECRET\twhsec_1d82u9ikRdLAl2i51LO32sErH2IK9vz6\nSTRIPE_PUBLISHABLE_KEY\t\nSTRIPE_SECRET_KEY\t\nSTRIPE_TEST_MODE\ttrue\nSTRIPE_TEST_PUBLISHABLE_KEY\t\nSTRIPE_TEST_SECRET_KEY\t\nSTRIPE_TEST_WEBHOOK_SECRET\t\nSTRIPE_WEBHOOK_SECRET\t\n",
+  "stderr": "",
+  "execution_time_ms": 611
+}

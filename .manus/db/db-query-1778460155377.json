@@ -1,0 +1,22 @@
+{
+  "query": "SELECT configKey, LEFT(configValue, 20) as preview FROM platform_config WHERE configKey IN ('STRIPE_TEST_SECRET_KEY', 'STRIPE_TEST_PUBLISHABLE_KEY', 'STRIPE_TEST_MODE');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, LEFT(configValue, 20) as preview FROM platform_config WHERE configKey IN ('STRIPE_TEST_SECRET_KEY', 'STRIPE_TEST_PUBLISHABLE_KEY', 'STRIPE_TEST_MODE');",
+  "rows": [
+    {
+      "configKey": "STRIPE_TEST_MODE",
+      "preview": "true"
+    },
+    {
+      "configKey": "STRIPE_TEST_PUBLISHABLE_KEY",
+      "preview": "pk_test_51REIGbG6LQX"
+    },
+    {
+      "configKey": "STRIPE_TEST_SECRET_KEY",
+      "preview": "sk_test_51REIGbG6LQX"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tpreview\nSTRIPE_TEST_MODE\ttrue\nSTRIPE_TEST_PUBLISHABLE_KEY\tpk_test_51REIGbG6LQX\nSTRIPE_TEST_SECRET_KEY\tsk_test_51REIGbG6LQX\n",
+  "stderr": "",
+  "execution_time_ms": 578
+}
