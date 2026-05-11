@@ -1,0 +1,115 @@
+{
+  "query": "SELECT configKey, \n  CASE \n    WHEN configValue IS NULL OR configValue = '' THEN '⚠️ EMPTY'\n    WHEN isSensitive = 1 THEN CONCAT(LEFT(configValue, 8), '••••••••', RIGHT(configValue, 4), ' (', LENGTH(configValue), ' chars)')\n    ELSE configValue\n  END as value_preview,\n  isSensitive,\n  description,\n  updatedAt\nFROM platform_config \nWHERE configKey LIKE 'TWILIO%'\nORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, \n  CASE \n    WHEN configValue IS NULL OR configValue = '' THEN '⚠️ EMPTY'\n    WHEN isSensitive = 1 THEN CONCAT(LEFT(configValue, 8), '••••••••', RIGHT(configValue, 4), ' (', LENGTH(configValue), ' chars)')\n    ELSE configValue\n  END as value_preview,\n  isSensitive,\n  description,\n  updatedAt\nFROM platform_config \nWHERE configKey LIKE 'TWILIO%'\nORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "TWILIO_ACCOUNT_SID",
+      "value_preview": "⚠️ EMPTY",
+      "isSensitive": "1",
+      "description": "Twilio Account SID from console.twilio.com",
+      "updatedAt": "2026-05-11 00:38:38"
+    },
+    {
+      "configKey": "TWILIO_AUTH_TOKEN",
+      "value_preview": "⚠️ EMPTY",
+      "isSensitive": "1",
+      "description": "Twilio Auth Token from console.twilio.com",
+      "updatedAt": "2026-05-11 00:38:38"
+    },
+    {
+      "configKey": "TWILIO_FROM_NUMBER",
+      "value_preview": "⚠️ EMPTY",
+      "isSensitive": "0",
+      "description": "Twilio phone number in E.164 format e.g. +14125551234",
+      "updatedAt": "2026-05-11 00:38:39"
+    },
+    {
+      "configKey": "TWILIO_LIVE_ACCOUNT_SID",
+      "value_preview": "AC0eb74a••••••••763e (34 chars)",
+      "isSensitive": "1",
+      "description": "Twilio Live Account SID",
+      "updatedAt": "2026-05-11 01:15:17"
+    },
+    {
+      "configKey": "TWILIO_LIVE_AUTH_TOKEN",
+      "value_preview": "7bf97543••••••••7e4a (32 chars)",
+      "isSensitive": "1",
+      "description": "Twilio Live Auth Token",
+      "updatedAt": "2026-05-11 01:16:18"
+    },
+    {
+      "configKey": "TWILIO_LIVE_FROM_NUMBER",
+      "value_preview": "+1 (855) 607 - 4585",
+      "isSensitive": "0",
+      "description": "Twilio Live From Phone Number",
+      "updatedAt": "2026-05-11 01:12:44"
+    },
+    {
+      "configKey": "TWILIO_LIVE_VERIFY_SERVICE_SID",
+      "value_preview": "ZS6b3f46••••••••895e (34 chars)",
+      "isSensitive": "1",
+      "description": "Twilio Live Verify Service SID",
+      "updatedAt": "2026-05-11 01:12:44"
+    },
+    {
+      "configKey": "TWILIO_PER_PHONE_OTP",
+      "value_preview": "{}",
+      "isSensitive": "0",
+      "description": "Per-phone static OTP overrides (JSON map of phone->code)",
+      "updatedAt": "2026-04-20 16:26:03"
+    },
+    {
+      "configKey": "TWILIO_TEST_ACCOUNT_SID",
+      "value_preview": "VA7348fc••••••••005b (34 chars)",
+      "isSensitive": "1",
+      "description": "Twilio Test Account SID",
+      "updatedAt": "2026-05-11 01:16:18"
+    },
+    {
+      "configKey": "TWILIO_TEST_AUTH_TOKEN",
+      "value_preview": "7d157dfa••••••••8130 (32 chars)",
+      "isSensitive": "1",
+      "description": "Twilio Test Auth Token",
+      "updatedAt": "2026-05-11 01:16:18"
+    },
+    {
+      "configKey": "TWILIO_TEST_FROM_NUMBER",
+      "value_preview": "⚠️ EMPTY",
+      "isSensitive": "0",
+      "description": "Twilio Test From Phone Number",
+      "updatedAt": "2026-05-11 00:38:39"
+    },
+    {
+      "configKey": "TWILIO_TEST_MODE",
+      "value_preview": "true",
+      "isSensitive": "0",
+      "description": "When true, OTP is always 123456 (disable before going live)",
+      "updatedAt": "2026-05-11 01:16:22"
+    },
+    {
+      "configKey": "TWILIO_TEST_OTP",
+      "value_preview": "123456",
+      "isSensitive": "0",
+      "description": "Test OTP code (default: 123456)",
+      "updatedAt": "2026-05-11 01:08:19"
+    },
+    {
+      "configKey": "TWILIO_TEST_VERIFY_SERVICE_SID",
+      "value_preview": "⚠️ EMPTY",
+      "isSensitive": "1",
+      "description": "Twilio Test Verify Service SID",
+      "updatedAt": "2026-05-11 00:38:39"
+    },
+    {
+      "configKey": "TWILIO_VERIFY_SERVICE_SID",
+      "value_preview": "⚠️ EMPTY",
+      "isSensitive": "1",
+      "description": "Twilio Verify Service SID",
+      "updatedAt": "2026-05-11 00:38:38"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tvalue_preview\tisSensitive\tdescription\tupdatedAt\nTWILIO_ACCOUNT_SID\t⚠️ EMPTY\t1\tTwilio Account SID from console.twilio.com\t2026-05-11 00:38:38\nTWILIO_AUTH_TOKEN\t⚠️ EMPTY\t1\tTwilio Auth Token from console.twilio.com\t2026-05-11 00:38:38\nTWILIO_FROM_NUMBER\t⚠️ EMPTY\t0\tTwilio phone number in E.164 format e.g. +14125551234\t2026-05-11 00:38:39\nTWILIO_LIVE_ACCOUNT_SID\tAC0eb74a••••••••763e (34 chars)\t1\tTwilio Live Account SID\t2026-05-11 01:15:17\nTWILIO_LIVE_AUTH_TOKEN\t7bf97543••••••••7e4a (32 chars)\t1\tTwilio Live Auth Token\t2026-05-11 01:16:18\nTWILIO_LIVE_FROM_NUMBER\t+1 (855) 607 - 4585\t0\tTwilio Live From Phone Number\t2026-05-11 01:12:44\nTWILIO_LIVE_VERIFY_SERVICE_SID\tZS6b3f46••••••••895e (34 chars)\t1\tTwilio Live Verify Service SID\t2026-05-11 01:12:44\nTWILIO_PER_PHONE_OTP\t{}\t0\tPer-phone static OTP overrides (JSON map of phone->code)\t2026-04-20 16:26:03\nTWILIO_TEST_ACCOUNT_SID\tVA7348fc••••••••005b (34 chars)\t1\tTwilio Test Account SID\t2026-05-11 01:16:18\nTWILIO_TEST_AUTH_TOKEN\t7d157dfa••••••••8130 (32 chars)\t1\tTwilio Test Auth Token\t2026-05-11 01:16:18\nTWILIO_TEST_FROM_NUMBER\t⚠️ EMPTY\t0\tTwilio Test From Phone Number\t2026-05-11 00:38:39\nTWILIO_TEST_MODE\ttrue\t0\tWhen true, OTP is always 123456 (disable before going live)\t2026-05-11 01:16:22\nTWILIO_TEST_OTP\t123456\t0\tTest OTP code (default: 123456)\t2026-05-11 01:08:19\nTWILIO_TEST_VERIFY_SERVICE_SID\t⚠️ EMPTY\t1\tTwilio Test Verify Service SID\t2026-05-11 00:38:39\nTWILIO_VERIFY_SERVICE_SID\t⚠️ EMPTY\t1\tTwilio Verify Service SID\t2026-05-11 00:38:38\n",
+  "stderr": "",
+  "execution_time_ms": 570
+}

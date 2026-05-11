@@ -1,0 +1,42 @@
+{
+  "query": "SELECT configKey, \n  CASE WHEN configValue = '' OR configValue IS NULL THEN '⚠️ EMPTY'\n       ELSE CONCAT(LEFT(configValue,6), '...', RIGHT(configValue,4), ' (', LENGTH(configValue), ' chars)')\n  END as preview\nFROM platform_config \nWHERE configKey IN (\n  'TWILIO_ACCOUNT_SID','TWILIO_AUTH_TOKEN','TWILIO_VERIFY_SERVICE_SID','TWILIO_FROM_NUMBER',\n  'TWILIO_LIVE_ACCOUNT_SID','TWILIO_LIVE_AUTH_TOKEN','TWILIO_LIVE_VERIFY_SERVICE_SID','TWILIO_LIVE_FROM_NUMBER'\n)\nORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, \n  CASE WHEN configValue = '' OR configValue IS NULL THEN '⚠️ EMPTY'\n       ELSE CONCAT(LEFT(configValue,6), '...', RIGHT(configValue,4), ' (', LENGTH(configValue), ' chars)')\n  END as preview\nFROM platform_config \nWHERE configKey IN (\n  'TWILIO_ACCOUNT_SID','TWILIO_AUTH_TOKEN','TWILIO_VERIFY_SERVICE_SID','TWILIO_FROM_NUMBER',\n  'TWILIO_LIVE_ACCOUNT_SID','TWILIO_LIVE_AUTH_TOKEN','TWILIO_LIVE_VERIFY_SERVICE_SID','TWILIO_LIVE_FROM_NUMBER'\n)\nORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "TWILIO_ACCOUNT_SID",
+      "preview": "⚠️ EMPTY"
+    },
+    {
+      "configKey": "TWILIO_AUTH_TOKEN",
+      "preview": "⚠️ EMPTY"
+    },
+    {
+      "configKey": "TWILIO_FROM_NUMBER",
+      "preview": "⚠️ EMPTY"
+    },
+    {
+      "configKey": "TWILIO_LIVE_ACCOUNT_SID",
+      "preview": "AC0eb7...763e (34 chars)"
+    },
+    {
+      "configKey": "TWILIO_LIVE_AUTH_TOKEN",
+      "preview": "81ee48...dc74 (32 chars)"
+    },
+    {
+      "configKey": "TWILIO_LIVE_FROM_NUMBER",
+      "preview": "+18556...4585 (12 chars)"
+    },
+    {
+      "configKey": "TWILIO_LIVE_VERIFY_SERVICE_SID",
+      "preview": "AC0eb7...763e (34 chars)"
+    },
+    {
+      "configKey": "TWILIO_VERIFY_SERVICE_SID",
+      "preview": "⚠️ EMPTY"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tpreview\nTWILIO_ACCOUNT_SID\t⚠️ EMPTY\nTWILIO_AUTH_TOKEN\t⚠️ EMPTY\nTWILIO_FROM_NUMBER\t⚠️ EMPTY\nTWILIO_LIVE_ACCOUNT_SID\tAC0eb7...763e (34 chars)\nTWILIO_LIVE_AUTH_TOKEN\t81ee48...dc74 (32 chars)\nTWILIO_LIVE_FROM_NUMBER\t+18556...4585 (12 chars)\nTWILIO_LIVE_VERIFY_SERVICE_SID\tAC0eb7...763e (34 chars)\nTWILIO_VERIFY_SERVICE_SID\t⚠️ EMPTY\n",
+  "stderr": "",
+  "execution_time_ms": 561
+}

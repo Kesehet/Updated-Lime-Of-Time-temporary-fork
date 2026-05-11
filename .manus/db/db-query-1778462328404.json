@@ -1,0 +1,30 @@
+{
+  "query": "SELECT configKey, configValue, LENGTH(configValue) as len\nFROM platform_config \nWHERE configKey IN ('TWILIO_LIVE_FROM_NUMBER', 'TWILIO_FROM_NUMBER', 'TWILIO_TEST_ACCOUNT_SID', 'TWILIO_LIVE_ACCOUNT_SID')\nORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, configValue, LENGTH(configValue) as len\nFROM platform_config \nWHERE configKey IN ('TWILIO_LIVE_FROM_NUMBER', 'TWILIO_FROM_NUMBER', 'TWILIO_TEST_ACCOUNT_SID', 'TWILIO_LIVE_ACCOUNT_SID')\nORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "TWILIO_FROM_NUMBER",
+      "configValue": "",
+      "len": "0"
+    },
+    {
+      "configKey": "TWILIO_LIVE_ACCOUNT_SID",
+      "configValue": "AC0eb74aa2bc903683b21defa8c07e763e",
+      "len": "34"
+    },
+    {
+      "configKey": "TWILIO_LIVE_FROM_NUMBER",
+      "configValue": "+1 (855) 607 - 4585",
+      "len": "19"
+    },
+    {
+      "configKey": "TWILIO_TEST_ACCOUNT_SID",
+      "configValue": "VA7348fcb20a15c8ebd03d1f789d1b005b",
+      "len": "34"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tconfigValue\tlen\nTWILIO_FROM_NUMBER\t\t0\nTWILIO_LIVE_ACCOUNT_SID\tAC0eb74aa2bc903683b21defa8c07e763e\t34\nTWILIO_LIVE_FROM_NUMBER\t+1 (855) 607 - 4585\t19\nTWILIO_TEST_ACCOUNT_SID\tVA7348fcb20a15c8ebd03d1f789d1b005b\t34\n",
+  "stderr": "",
+  "execution_time_ms": 571
+}
