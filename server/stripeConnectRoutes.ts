@@ -185,17 +185,29 @@ export function registerStripeConnectRoutes(app: Express): void {
         console.error("[StripeConnect] return status refresh error:", e);
       }
     }
-    // Show a simple success page that closes the browser tab
+    // Redirect to the app deep link so the in-app browser auto-closes and the app receives the callback
+    const appScheme = "manus20260406102824";
+    const deepLink = `${appScheme}://stripe-connect/return?success=true&businessOwnerId=${businessOwnerId}`;
     res.send(`<!DOCTYPE html><html><head><title>Stripe Connected</title>
       <meta name="viewport" content="width=device-width,initial-scale=1">
       <style>body{font-family:-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f0fdf4;color:#166534;}
       .card{background:#fff;border-radius:16px;padding:32px 40px;box-shadow:0 4px 24px #0001;text-align:center;max-width:400px;}
       h1{font-size:24px;margin:16px 0 8px;}p{color:#4b5563;font-size:15px;margin:0 0 24px;}
-      .check{font-size:48px;}</style></head>
-      <body><div class="card"><div class="check">✅</div>
+      .check{font-size:48px;}</style>
+      <script>
+        // Try to redirect to the app deep link immediately
+        window.location.href = '${deepLink}';
+        // Fallback: show success page after 1.5s if deep link doesn't work
+        setTimeout(function() {
+          document.getElementById('content').style.display = 'flex';
+        }, 1500);
+      </script>
+      </head>
+      <body><div id="content" class="card" style="display:none;"><div class="check">✅</div>
       <h1>Stripe Connected!</h1>
       <p>Your account has been connected successfully. You can now accept card payments from clients.</p>
       <p style="font-size:13px;color:#9ca3af;">You can close this tab and return to the app.</p>
+      <a href="${deepLink}" style="display:inline-block;margin-top:8px;background:#635bff;color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;">← Return to App</a>
       </div></body></html>`);
   });
 
@@ -209,7 +221,8 @@ export function registerStripeConnectRoutes(app: Express): void {
       const owner = await getOwner(businessOwnerId);
       const accountId = (owner as any)?.stripeConnectAccountId as string | null;
       if (!accountId) { res.status(404).send("No Stripe account found"); return; }
-      const origin = `${req.protocol}://${req.get("host")}`;
+      const proto2 = (req.get("x-forwarded-proto") || req.protocol || "https").split(",")[0].trim();
+      const origin = `${proto2}://${req.get("host")}`;
       const accountLink = await stripe.accountLinks.create({
         account: accountId,
         refresh_url: `${origin}/api/stripe-connect/refresh?businessOwnerId=${businessOwnerId}`,

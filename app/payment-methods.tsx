@@ -309,8 +309,19 @@ export default function PaymentMethodsScreen() {
         body: JSON.stringify({ businessOwnerId }),
       });
       if (data.url) {
-        await WebBrowser.openBrowserAsync(data.url);
+        // Use openAuthSessionAsync so the in-app browser auto-closes when Stripe
+        // redirects back to our app deep link (manus20260406102824://stripe-connect/return)
+        const result = await WebBrowser.openAuthSessionAsync(
+          data.url,
+          "manus20260406102824://"
+        );
+        // Refresh status regardless of result type (success, cancel, dismiss)
+        // The server already updated the DB when the return URL was hit
         await loadConnectStatus();
+        if (result.type === "success") {
+          // Deep link was followed — connection likely complete
+          Alert.alert("Stripe Connected!", "Your Stripe account has been connected. You can now accept card payments from clients.");
+        }
       }
     } catch (err: any) {
       Alert.alert("Error", err?.message ?? "Failed to start Stripe onboarding");

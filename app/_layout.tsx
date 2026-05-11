@@ -19,6 +19,12 @@ import {
 import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
+import * as WebBrowser from "expo-web-browser";
+
+// Required for openAuthSessionAsync to work on Android
+// This must be called at the top level of the app so the browser closes
+// when the deep link redirect is received
+WebBrowser.maybeCompleteAuthSession();
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { StoreProvider, useStore } from "@/lib/store";
 import { ClientStoreProvider } from "@/lib/client-store";
@@ -325,6 +331,7 @@ function RootLayout() {
               <Stack.Screen name="review/[slug]" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="gift/[code]" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="oauth/callback" />
+              <Stack.Screen name="stripe-connect/return" options={{ headerShown: false, presentation: "fullScreenModal" }} />
               <Stack.Screen name="schedule-settings" options={{ presentation: "card" }} />
               <Stack.Screen name="booking-policies" options={{ presentation: "card" }} />
               <Stack.Screen name="business-profile" options={{ presentation: "card" }} />
