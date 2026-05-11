@@ -2088,3 +2088,5 @@
 - [x] Step 3: Category-grouped selected services panel with remove button and total time/price
 - [x] Step 5 (Extras): Products only, skip step if no products available
 - [x] Step 8 (Confirm): Each service/product as separate line item with name, category, duration, price
+- [x] Gift and Book an Appointment flows now slide up from bottom (modal presentation with swipe-down-to-dismiss)
+- [x] Added drag handle indicator to both client-buy-gift and client-booking-wizard screens

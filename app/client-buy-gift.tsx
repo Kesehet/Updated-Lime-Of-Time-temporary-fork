@@ -574,6 +574,10 @@ export default function ClientBuyGiftScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
       <ClientPortalBackground />
+      {/* Drag handle — visual affordance for modal dismiss (swipe down) */}
+      <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 2 }}>
+        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" }} />
+      </View>
 
       {/* Header */}
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
