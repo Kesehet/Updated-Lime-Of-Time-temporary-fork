@@ -1,0 +1,35 @@
+{
+  "query": "SELECT configKey, LENGTH(configValue) as val_len, SUBSTRING(configValue, 1, 15) as preview FROM platform_config WHERE configKey LIKE '%CONNECT%' OR configKey LIKE '%connect%' OR configKey LIKE '%WEBHOOK%' OR configKey LIKE '%webhook%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, LENGTH(configValue) as val_len, SUBSTRING(configValue, 1, 15) as preview FROM platform_config WHERE configKey LIKE '%CONNECT%' OR configKey LIKE '%connect%' OR configKey LIKE '%WEBHOOK%' OR configKey LIKE '%webhook%'",
+  "rows": [
+    {
+      "configKey": "STRIPE_WEBHOOK_SECRET",
+      "val_len": "0",
+      "preview": ""
+    },
+    {
+      "configKey": "stripe_webhook_secret",
+      "val_len": "0",
+      "preview": ""
+    },
+    {
+      "configKey": "STRIPE_TEST_WEBHOOK_SECRET",
+      "val_len": "38",
+      "preview": "whsec_njsYjYGxY"
+    },
+    {
+      "configKey": "STRIPE_LIVE_WEBHOOK_SECRET",
+      "val_len": "0",
+      "preview": ""
+    },
+    {
+      "configKey": "STRIPE_CONNECT_TEST_WEBHOOK_SECRET",
+      "val_len": "38",
+      "preview": "whsec_njsYjYGxY"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tval_len\tpreview\nSTRIPE_WEBHOOK_SECRET\t0\t\nstripe_webhook_secret\t0\t\nSTRIPE_TEST_WEBHOOK_SECRET\t38\twhsec_njsYjYGxY\nSTRIPE_LIVE_WEBHOOK_SECRET\t0\t\nSTRIPE_CONNECT_TEST_WEBHOOK_SECRET\t38\twhsec_njsYjYGxY\n",
+  "stderr": "",
+  "execution_time_ms": 602
+}

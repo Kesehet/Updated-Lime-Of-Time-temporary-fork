@@ -37,13 +37,43 @@ async function getPlatformFeePercent(): Promise<number> {
 
 // ── Stripe client factory (reads key from DB config) ─────────────────────────
 async function getStripe(): Promise<Stripe | null> {
-  const key = await getPlatformConfig("STRIPE_SECRET_KEY");
-  if (!key) return null;
-  return new Stripe(key, { apiVersion: "2026-03-25.dahlia" as any });
+  // Resolution order: active key → test key (if test mode on) → live key
+  const activeKey = await getPlatformConfig("STRIPE_SECRET_KEY").catch(() => "");
+  if (activeKey) return new Stripe(activeKey, { apiVersion: "2026-03-25.dahlia" as any });
+  const testMode = await getPlatformConfig("STRIPE_TEST_MODE").catch(() => "");
+  if (testMode === "true") {
+    const testKey = await getPlatformConfig("STRIPE_TEST_SECRET_KEY").catch(() => "");
+    if (testKey) return new Stripe(testKey, { apiVersion: "2026-03-25.dahlia" as any });
+  }
+  const liveKey = await getPlatformConfig("STRIPE_LIVE_SECRET_KEY").catch(() => "");
+  if (liveKey) return new Stripe(liveKey, { apiVersion: "2026-03-25.dahlia" as any });
+  return null;
+}
+
+async function getPublishableKey(): Promise<string | null> {
+  const activeKey = await getPlatformConfig("STRIPE_PUBLISHABLE_KEY").catch(() => "");
+  if (activeKey) return activeKey;
+  const testMode = await getPlatformConfig("STRIPE_TEST_MODE").catch(() => "");
+  if (testMode === "true") {
+    const testKey = await getPlatformConfig("STRIPE_TEST_PUBLISHABLE_KEY").catch(() => "");
+    if (testKey) return testKey;
+  }
+  const liveKey = await getPlatformConfig("STRIPE_LIVE_PUBLISHABLE_KEY").catch(() => "");
+  return liveKey || null;
 }
 
 async function getWebhookSecret(): Promise<string | null> {
-  return getPlatformConfig("STRIPE_WEBHOOK_SECRET");
+  const secret = await getPlatformConfig("STRIPE_WEBHOOK_SECRET").catch(() => "");
+  if (secret) return secret;
+  const testMode = await getPlatformConfig("STRIPE_TEST_MODE").catch(() => "");
+  if (testMode === "true") {
+    const testSecret = await getPlatformConfig("STRIPE_CONNECT_TEST_WEBHOOK_SECRET").catch(() => "");
+    if (testSecret) return testSecret;
+    const testWebhookSecret = await getPlatformConfig("STRIPE_TEST_WEBHOOK_SECRET").catch(() => "");
+    if (testWebhookSecret) return testWebhookSecret;
+  }
+  const liveSecret = await getPlatformConfig("STRIPE_LIVE_WEBHOOK_SECRET").catch(() => "");
+  return liveSecret || null;
 }
 
 // ── Helper: get business owner by ID ─────────────────────────────────────────
@@ -1634,7 +1664,7 @@ export function registerStripeConnectRoutes(app: Express): void {
       }
       const stripe = await getStripe();
       if (!stripe) { res.status(503).json({ error: "Stripe not configured" }); return; }
-      const publishableKey = await getPlatformConfig("STRIPE_PUBLISHABLE_KEY");
+      const publishableKey = await getPublishableKey();
       if (!publishableKey) { res.status(503).json({ error: "Stripe publishable key not configured" }); return; }
       const owner = await getOwner(businessOwnerId);
       if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
@@ -1698,7 +1728,7 @@ export function registerStripeConnectRoutes(app: Express): void {
       }
       const stripe = await getStripe();
       if (!stripe) { res.status(503).json({ error: "Stripe not configured" }); return; }
-      const publishableKey = await getPlatformConfig("STRIPE_PUBLISHABLE_KEY");
+      const publishableKey = await getPublishableKey();
       if (!publishableKey) { res.status(503).json({ error: "Stripe publishable key not configured" }); return; }
       const owner = await getOwner(businessOwnerId);
       if (!owner) { res.status(404).json({ error: "Business not found" }); return; }

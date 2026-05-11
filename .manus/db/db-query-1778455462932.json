@@ -1,0 +1,85 @@
+{
+  "query": "SELECT configKey, SUBSTRING(configValue, 1, 40) as val_preview, LENGTH(configValue) as val_len FROM platform_config WHERE configKey LIKE '%stripe%' OR configKey LIKE '%STRIPE%' OR configKey LIKE '%webhook%' OR configKey LIKE '%WEBHOOK%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, SUBSTRING(configValue, 1, 40) as val_preview, LENGTH(configValue) as val_len FROM platform_config WHERE configKey LIKE '%stripe%' OR configKey LIKE '%STRIPE%' OR configKey LIKE '%webhook%' OR configKey LIKE '%WEBHOOK%'",
+  "rows": [
+    {
+      "configKey": "STRIPE_PUBLISHABLE_KEY",
+      "val_preview": "",
+      "val_len": "0"
+    },
+    {
+      "configKey": "STRIPE_SECRET_KEY",
+      "val_preview": "",
+      "val_len": "0"
+    },
+    {
+      "configKey": "STRIPE_WEBHOOK_SECRET",
+      "val_preview": "",
+      "val_len": "0"
+    },
+    {
+      "configKey": "stripe_secret_key",
+      "val_preview": "",
+      "val_len": "0"
+    },
+    {
+      "configKey": "stripe_publishable_key",
+      "val_preview": "",
+      "val_len": "0"
+    },
+    {
+      "configKey": "stripe_webhook_secret",
+      "val_preview": "",
+      "val_len": "0"
+    },
+    {
+      "configKey": "stripe_test_mode",
+      "val_preview": "",
+      "val_len": "0"
+    },
+    {
+      "configKey": "STRIPE_TEST_MODE",
+      "val_preview": "true",
+      "val_len": "4"
+    },
+    {
+      "configKey": "STRIPE_TEST_SECRET_KEY",
+      "val_preview": "",
+      "val_len": "0"
+    },
+    {
+      "configKey": "STRIPE_TEST_PUBLISHABLE_KEY",
+      "val_preview": "",
+      "val_len": "0"
+    },
+    {
+      "configKey": "STRIPE_TEST_WEBHOOK_SECRET",
+      "val_preview": "",
+      "val_len": "0"
+    },
+    {
+      "configKey": "STRIPE_LIVE_SECRET_KEY",
+      "val_preview": "sk_live_51REIGbG6LQX4qfeV5V5aAdPzTssq9dz",
+      "val_len": "107"
+    },
+    {
+      "configKey": "STRIPE_LIVE_PUBLISHABLE_KEY",
+      "val_preview": "pk_live_51REIGbG6LQX4qfeVElasCwiOtt4TXnB",
+      "val_len": "107"
+    },
+    {
+      "configKey": "STRIPE_LIVE_WEBHOOK_SECRET",
+      "val_preview": "whsec_1d82u9ikRdLAl2i51LO32sErH2IK9vz6",
+      "val_len": "38"
+    },
+    {
+      "configKey": "STRIPE_CONNECT_TEST_WEBHOOK_SECRET",
+      "val_preview": "whsec_njsYjYGxYVCFYddQLe1d7v6rHwaoWXK9",
+      "val_len": "38"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tval_preview\tval_len\nSTRIPE_PUBLISHABLE_KEY\t\t0\nSTRIPE_SECRET_KEY\t\t0\nSTRIPE_WEBHOOK_SECRET\t\t0\nstripe_secret_key\t\t0\nstripe_publishable_key\t\t0\nstripe_webhook_secret\t\t0\nstripe_test_mode\t\t0\nSTRIPE_TEST_MODE\ttrue\t4\nSTRIPE_TEST_SECRET_KEY\t\t0\nSTRIPE_TEST_PUBLISHABLE_KEY\t\t0\nSTRIPE_TEST_WEBHOOK_SECRET\t\t0\nSTRIPE_LIVE_SECRET_KEY\tsk_live_51REIGbG6LQX4qfeV5V5aAdPzTssq9dz\t107\nSTRIPE_LIVE_PUBLISHABLE_KEY\tpk_live_51REIGbG6LQX4qfeVElasCwiOtt4TXnB\t107\nSTRIPE_LIVE_WEBHOOK_SECRET\twhsec_1d82u9ikRdLAl2i51LO32sErH2IK9vz6\t38\nSTRIPE_CONNECT_TEST_WEBHOOK_SECRET\twhsec_njsYjYGxYVCFYddQLe1d7v6rHwaoWXK9\t38\n",
+  "stderr": "",
+  "execution_time_ms": 582
+}

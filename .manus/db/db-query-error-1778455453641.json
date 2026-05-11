@@ -1,0 +1,8 @@
+{
+  "query": "SELECT config_key, SUBSTRING(config_value, 1, 30) as val_preview, LENGTH(config_value) as val_len FROM platform_config WHERE config_key LIKE '%stripe%' OR config_key LIKE '%STRIPE%' OR config_key LIKE '%webhook%' OR config_key LIKE '%WEBHOOK%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT config_key, SUBSTRING(config_value, 1, 30) as val_preview, LENGTH(config_value) as val_len FROM platform_config WHERE config_key LIKE '%stripe%' OR config_key LIKE '%STRIPE%' OR config_key LIKE '%webhook%' OR config_key LIKE '%WEBHOOK%'",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'config_key' in 'where clause'"
+  ]
+}

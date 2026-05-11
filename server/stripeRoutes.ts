@@ -20,8 +20,11 @@ async function getStripeSecretKey(): Promise<string> {
     const testKey = await getPlatformConfig("STRIPE_TEST_SECRET_KEY").catch(() => "");
     return testKey || process.env.STRIPE_TEST_SECRET_KEY || "";
   }
+  // Try generic key first, then fall back to LIVE-prefixed key
   const dbKey = await getPlatformConfig("STRIPE_SECRET_KEY").catch(() => "");
-  return dbKey || process.env.STRIPE_SECRET_KEY || "";
+  if (dbKey) return dbKey;
+  const liveKey = await getPlatformConfig("STRIPE_LIVE_SECRET_KEY").catch(() => "");
+  return liveKey || process.env.STRIPE_SECRET_KEY || "";
 }
 async function getStripeWebhookSecret(): Promise<string> {
   const testMode = await getPlatformConfig("STRIPE_TEST_MODE").catch(() => "");
@@ -29,8 +32,11 @@ async function getStripeWebhookSecret(): Promise<string> {
     const testSecret = await getPlatformConfig("STRIPE_TEST_WEBHOOK_SECRET").catch(() => "");
     return testSecret || process.env.STRIPE_TEST_WEBHOOK_SECRET || "";
   }
+  // Try generic key first, then fall back to LIVE-prefixed key
   const dbSecret = await getPlatformConfig("STRIPE_WEBHOOK_SECRET").catch(() => "");
-  return dbSecret || process.env.STRIPE_WEBHOOK_SECRET || "";
+  if (dbSecret) return dbSecret;
+  const liveSecret = await getPlatformConfig("STRIPE_LIVE_WEBHOOK_SECRET").catch(() => "");
+  return liveSecret || process.env.STRIPE_WEBHOOK_SECRET || "";
 }
 async function getStripePublishableKey(): Promise<string> {
   const testMode = await getPlatformConfig("STRIPE_TEST_MODE").catch(() => "");
@@ -38,8 +44,11 @@ async function getStripePublishableKey(): Promise<string> {
     const testKey = await getPlatformConfig("STRIPE_TEST_PUBLISHABLE_KEY").catch(() => "");
     return testKey || process.env.STRIPE_TEST_PUBLISHABLE_KEY || "";
   }
+  // Try generic key first, then fall back to LIVE-prefixed key
   const dbKey = await getPlatformConfig("STRIPE_PUBLISHABLE_KEY").catch(() => "");
-  return dbKey || process.env.STRIPE_PUBLISHABLE_KEY || "";
+  if (dbKey) return dbKey;
+  const liveKey = await getPlatformConfig("STRIPE_LIVE_PUBLISHABLE_KEY").catch(() => "");
+  return liveKey || process.env.STRIPE_PUBLISHABLE_KEY || "";
 }
 
 // Fallback prices in cents (used only if DB is unavailable)

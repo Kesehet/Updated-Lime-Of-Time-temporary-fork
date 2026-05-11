@@ -1,0 +1,45 @@
+{
+  "query": "SELECT configKey, LENGTH(configValue) as val_len, SUBSTRING(configValue, 1, 20) as preview FROM platform_config WHERE configKey LIKE '%LIVE%' OR configKey LIKE '%live%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, LENGTH(configValue) as val_len, SUBSTRING(configValue, 1, 20) as preview FROM platform_config WHERE configKey LIKE '%LIVE%' OR configKey LIKE '%live%'",
+  "rows": [
+    {
+      "configKey": "STRIPE_LIVE_SECRET_KEY",
+      "val_len": "0",
+      "preview": ""
+    },
+    {
+      "configKey": "STRIPE_LIVE_PUBLISHABLE_KEY",
+      "val_len": "0",
+      "preview": ""
+    },
+    {
+      "configKey": "STRIPE_LIVE_WEBHOOK_SECRET",
+      "val_len": "0",
+      "preview": ""
+    },
+    {
+      "configKey": "TWILIO_LIVE_ACCOUNT_SID",
+      "val_len": "0",
+      "preview": ""
+    },
+    {
+      "configKey": "TWILIO_LIVE_AUTH_TOKEN",
+      "val_len": "0",
+      "preview": ""
+    },
+    {
+      "configKey": "TWILIO_LIVE_VERIFY_SERVICE_SID",
+      "val_len": "0",
+      "preview": ""
+    },
+    {
+      "configKey": "TWILIO_LIVE_FROM_NUMBER",
+      "val_len": "0",
+      "preview": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tval_len\tpreview\nSTRIPE_LIVE_SECRET_KEY\t0\t\nSTRIPE_LIVE_PUBLISHABLE_KEY\t0\t\nSTRIPE_LIVE_WEBHOOK_SECRET\t0\t\nTWILIO_LIVE_ACCOUNT_SID\t0\t\nTWILIO_LIVE_AUTH_TOKEN\t0\t\nTWILIO_LIVE_VERIFY_SERVICE_SID\t0\t\nTWILIO_LIVE_FROM_NUMBER\t0\t\n",
+  "stderr": "",
+  "execution_time_ms": 565
+}
