@@ -1,0 +1,14 @@
+{
+  "query": "UPDATE platform_config SET configValue = 'true', updatedAt = NOW() WHERE configKey = 'TWILIO_TEST_MODE';\nSELECT configKey, configValue FROM platform_config WHERE configKey = 'TWILIO_TEST_MODE';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute UPDATE platform_config SET configValue = 'true', updatedAt = NOW() WHERE configKey = 'TWILIO_TEST_MODE';\nSELECT configKey, configValue FROM platform_config WHERE configKey = 'TWILIO_TEST_MODE';",
+  "rows": [
+    {
+      "configKey": "TWILIO_TEST_MODE",
+      "configValue": "true"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tconfigValue\nTWILIO_TEST_MODE\ttrue\n",
+  "stderr": "",
+  "execution_time_ms": 622
+}

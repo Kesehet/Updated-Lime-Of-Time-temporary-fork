@@ -1333,6 +1333,16 @@ export function registerAdminRoutes(app: Express): void {
       const cfgRows = await dbase.select().from(platformConfig);
       const cfgMap: Record<string, string> = {};
       for (const row of cfgRows) cfgMap[row.configKey] = row.configValue || "";
+
+      // ── Test mode: never call Twilio, always use 123456 ──────────────────
+      const twilioTestMode = cfgMap["TWILIO_TEST_MODE"] === "true";
+      const testOtpCode = cfgMap["TWILIO_TEST_OTP"] || "123456";
+      if (twilioTestMode) {
+        try { await dbase.insert(otpSendLog).values({ phone, status: "sent", source: "admin_panel_test" }); } catch {}
+        res.json({ ok: true, testMode: true, message: `Test mode active — OTP is <strong>${testOtpCode}</strong> (no real SMS sent)` }); return;
+      }
+
+      // ── Live mode: call Twilio Verify ────────────────────────────────────
       const accountSid = cfgMap["TWILIO_ACCOUNT_SID"] || process.env.TWILIO_ACCOUNT_SID || "";
       const authToken = cfgMap["TWILIO_AUTH_TOKEN"] || process.env.TWILIO_AUTH_TOKEN || "";
       const serviceSid = cfgMap["TWILIO_VERIFY_SERVICE_SID"] || process.env.TWILIO_VERIFY_SERVICE_SID || "";
