@@ -1021,13 +1021,24 @@ export function registerAdminRoutes(app: Express): void {
       ];
       // Checkbox fields - only present in body when checked; absent means unchecked
       const checkboxKeys = new Set(['TWILIO_TEST_MODE', 'STRIPE_TEST_MODE']);
+      // Partial-save protection: only update fields that were actually submitted.
+      // This prevents partial saves (e.g. "Save Test Keys" button) from wiping
+      // unrelated fields (e.g. Twilio keys, live Stripe keys).
+      const submittedKeys = new Set(Object.keys(req.body));
       for (const def of keyDefs) {
         const formKey = def.key.toLowerCase();
         let value: string;
         if (checkboxKeys.has(def.key)) {
-          // Checkbox: 'true' if present, 'false' if absent
+          // Checkbox: only update if explicitly submitted in this request.
+          // When the full form is submitted, all checkboxes are included.
+          // When a partial save is done, only the relevant checkbox is included.
+          if (!submittedKeys.has(formKey)) continue; // not in this partial save — skip
           value = req.body[formKey] === 'true' ? 'true' : 'false';
         } else {
+          // Text/password field: skip entirely if not present in request body.
+          // This is the key fix: partial saves only include their own fields,
+          // so absent fields must NOT be written as empty strings.
+          if (!submittedKeys.has(formKey)) continue;
           value = (req.body[formKey] || "").toString().trim();
         }
         // Upsert: update if exists, insert if not

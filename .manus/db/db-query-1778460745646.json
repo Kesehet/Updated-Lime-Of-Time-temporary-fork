@@ -1,0 +1,34 @@
+{
+  "query": "SELECT configKey, LEFT(configValue, 20) as preview FROM platform_config WHERE configKey IN ('STRIPE_LIVE_SECRET_KEY', 'STRIPE_LIVE_PUBLISHABLE_KEY', 'STRIPE_TEST_SECRET_KEY', 'STRIPE_TEST_PUBLISHABLE_KEY', 'STRIPE_TEST_MODE', 'TWILIO_ACCOUNT_SID') ORDER BY configKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, LEFT(configValue, 20) as preview FROM platform_config WHERE configKey IN ('STRIPE_LIVE_SECRET_KEY', 'STRIPE_LIVE_PUBLISHABLE_KEY', 'STRIPE_TEST_SECRET_KEY', 'STRIPE_TEST_PUBLISHABLE_KEY', 'STRIPE_TEST_MODE', 'TWILIO_ACCOUNT_SID') ORDER BY configKey;",
+  "rows": [
+    {
+      "configKey": "STRIPE_LIVE_PUBLISHABLE_KEY",
+      "preview": "pk_live_51REIGbG6LQX"
+    },
+    {
+      "configKey": "STRIPE_LIVE_SECRET_KEY",
+      "preview": "sk_live_51REIGbG6LQX"
+    },
+    {
+      "configKey": "STRIPE_TEST_MODE",
+      "preview": "true"
+    },
+    {
+      "configKey": "STRIPE_TEST_PUBLISHABLE_KEY",
+      "preview": "pk_test_51REIGbG6LQX"
+    },
+    {
+      "configKey": "STRIPE_TEST_SECRET_KEY",
+      "preview": "sk_test_51REIGbG6LQX"
+    },
+    {
+      "configKey": "TWILIO_ACCOUNT_SID",
+      "preview": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tpreview\nSTRIPE_LIVE_PUBLISHABLE_KEY\tpk_live_51REIGbG6LQX\nSTRIPE_LIVE_SECRET_KEY\tsk_live_51REIGbG6LQX\nSTRIPE_TEST_MODE\ttrue\nSTRIPE_TEST_PUBLISHABLE_KEY\tpk_test_51REIGbG6LQX\nSTRIPE_TEST_SECRET_KEY\tsk_test_51REIGbG6LQX\nTWILIO_ACCOUNT_SID\t\n",
+  "stderr": "",
+  "execution_time_ms": 643
+}
