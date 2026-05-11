@@ -285,8 +285,8 @@ export default function ClientMessageThreadScreen() {
                           {
                             text: "📋 Copy Text",
                             onPress: () => {
-                              const RN = require("react-native");
-                              RN.Clipboard?.setString?.(msg.body);
+                              const Clipboard = require("expo-clipboard");
+                              Clipboard.setStringAsync?.(msg.body) ?? Clipboard.setString?.(msg.body);
                             },
                           },
                           {

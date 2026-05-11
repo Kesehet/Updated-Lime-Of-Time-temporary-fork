@@ -758,9 +758,8 @@ export default function ClientMessageThreadBusinessScreen() {
                           {
                             text: "📋 Copy Text",
                             onPress: () => {
-                              const { Clipboard } = require("@react-native-clipboard/clipboard") as any;
-                              if (Clipboard?.setString) { Clipboard.setString(msg.body); }
-                              else { require("react-native").Clipboard?.setString?.(msg.body); }
+                              const Clipboard = require("expo-clipboard");
+                              Clipboard.setStringAsync?.(msg.body) ?? Clipboard.setString?.(msg.body);
                             },
                           },
                           {
