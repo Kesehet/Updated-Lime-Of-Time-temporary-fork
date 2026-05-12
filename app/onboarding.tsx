@@ -1799,6 +1799,7 @@ export default function OnboardingScreen() {
                     onSelectPlan={(planKey, period) => handleSelectPlan(planKey, period)}
                     loadingPlanKey={subLoading ? subSelectedPlan : null}
                     isOnboarding
+                    isTrialEligible={true}
                   />
                 </Animated.View>
                 <Animated.View style={btnStyle}>

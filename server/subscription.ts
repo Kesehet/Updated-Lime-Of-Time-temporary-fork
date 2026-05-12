@@ -174,6 +174,7 @@ export async function getBusinessSubscriptionInfo(businessOwnerId: number) {
       effectiveYearlyPrice,
       stripeCurrentPeriodEnd: business.stripeCurrentPeriodEnd ?? null,
       stripeCustomerId: business.stripeCustomerId ?? null,
+      hasUsedTrial: (business as any).hasUsedTrial ?? false,
       // Grace period / scheduled downgrade info
       cancelAtPeriodEnd: (business as any).cancelAtPeriodEnd ?? false,
       scheduledPlanKey: (business as any).scheduledPlanKey ?? null,

@@ -1,7 +1,6 @@
 /**
- * PlanCarousel — Clean, professional subscription plan selector.
- * Dark cards with lime green accents, no excessive animations.
- * Full-height layout, CTA always visible, compare modal preserved.
+ * PlanCarousel — Professional subscription plan selector.
+ * Full-page layout with centered cards, 14-day trial badge, compare modal.
  */
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import * as Haptics from "expo-haptics";
@@ -17,6 +16,7 @@ import {
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
@@ -59,6 +59,7 @@ type PlanCarouselProps = {
   currentPlanKey?: string | null;
   containerWidth?: number;
   isOnboarding?: boolean;
+  isTrialEligible?: boolean;
 };
 
 // ─── Plan Config ──────────────────────────────────────────────────────────────
@@ -151,6 +152,7 @@ function PlanSlide({
   isUpgrade,
   slideWidth,
   slideHeight,
+  isTrialEligible,
 }: {
   plan: PlanData;
   isYearly: boolean;
@@ -160,6 +162,7 @@ function PlanSlide({
   isUpgrade?: boolean;
   slideWidth: number;
   slideHeight?: number;
+  isTrialEligible?: boolean;
 }) {
   const cfg = PLAN_CONFIG[plan.planKey] ?? PLAN_CONFIG.solo;
   const features = PLAN_FEATURES[plan.planKey] ?? [];
@@ -176,13 +179,20 @@ function PlanSlide({
       : 0;
   const priceWhole = isFree ? "0" : Math.floor(rawPrice).toString();
   const priceCents = isFree ? "00" : (rawPrice % 1).toFixed(2).slice(2);
-  const ctaLabel = isCurrentPlan
-    ? "✓ Current Plan"
-    : isFree
-    ? "Continue with Free"
-    : isUpgrade
-    ? `Upgrade to ${plan.displayName}`
-    : `Switch to ${plan.displayName}`;
+
+  // CTA label
+  let ctaLabel = "";
+  if (isCurrentPlan) {
+    ctaLabel = "Current Plan";
+  } else if (isFree) {
+    ctaLabel = "Continue with Free";
+  } else if (isTrialEligible && !isFree) {
+    ctaLabel = "Start 14-Day Free Trial";
+  } else if (isUpgrade) {
+    ctaLabel = "Upgrade to " + plan.displayName;
+  } else {
+    ctaLabel = "Switch to " + plan.displayName;
+  }
 
   // Subtle fade-in on mount
   const opacity = useSharedValue(0);
@@ -209,12 +219,12 @@ function PlanSlide({
           </View>
           {isCurrentPlan && (
             <View style={[ss.currentBadge, { backgroundColor: cfg.accent + "18", borderColor: cfg.accent + "40" }]}>
-              <Text style={[ss.badgeText, { color: cfg.accent }]}>YOUR PLAN</Text>
+              <Text style={[ss.badgeText, { color: cfg.accent }]}>{"YOUR PLAN"}</Text>
             </View>
           )}
           {isPopular && !isCurrentPlan && (
             <View style={[ss.popularBadge]}>
-              <Text style={ss.popularBadgeText}>⭐ Popular</Text>
+              <Text style={ss.popularBadgeText}>{"Popular"}</Text>
             </View>
           )}
         </View>
@@ -223,28 +233,35 @@ function PlanSlide({
         <Text style={[ss.planName, { color: "#ffffff" }]}>{plan.displayName}</Text>
         <Text style={ss.planTagline}>{cfg.tagline}</Text>
 
+        {/* 14-day trial badge */}
+        {isTrialEligible && !isFree && !isCurrentPlan && (
+          <View style={[ss.trialBadge, { backgroundColor: cfg.accent + "18", borderColor: cfg.accent + "40" }]}>
+            <Text style={[ss.trialBadgeText, { color: cfg.accent }]}>{"14-day free trial included"}</Text>
+          </View>
+        )}
+
         {/* Price */}
         <View style={ss.priceRow}>
-          <Text style={[ss.priceCurrency, { color: cfg.accent }]}>$</Text>
+          <Text style={[ss.priceCurrency, { color: cfg.accent }]}>{"$"}</Text>
           <Text style={[ss.priceWhole, { color: "#ffffff" }]}>{priceWhole}</Text>
           <View style={ss.priceRight}>
-            <Text style={[ss.priceCents, { color: cfg.accent }]}>.{priceCents}</Text>
+            <Text style={[ss.priceCents, { color: cfg.accent }]}>{"." + priceCents}</Text>
             <Text style={ss.pricePer}>{isFree ? "forever" : "/mo"}</Text>
           </View>
           {isYearly && !isFree && savings > 0 && (
             <View style={[ss.savingsPill, { backgroundColor: cfg.accent + "20", borderColor: cfg.accent + "40" }]}>
-              <Text style={[ss.savingsPillText, { color: cfg.accent }]}>Save {savings}%</Text>
+              <Text style={[ss.savingsPillText, { color: cfg.accent }]}>{"Save " + savings + "%"}</Text>
             </View>
           )}
         </View>
         {isYearly && !isFree && (
           <Text style={ss.billedNote}>
-            {`Billed $${effectiveYearly.toFixed(2)}/year`}
+            {"Billed $" + effectiveYearly.toFixed(2) + "/year"}
           </Text>
         )}
         {hasDiscount && rawOriginal > rawPrice && (
           <Text style={[ss.billedNote, { textDecorationLine: "line-through", color: "rgba(255,255,255,0.25)" }]}>
-            {`Was $${rawOriginal.toFixed(2)}/mo`}
+            {"Was $" + rawOriginal.toFixed(2) + "/mo"}
           </Text>
         )}
 
@@ -260,7 +277,7 @@ function PlanSlide({
           {features.map((f, i) => (
             <View key={i} style={ss.featureRow}>
               <View style={[ss.checkCircle, { backgroundColor: cfg.accent + "18" }]}>
-                <Text style={[ss.checkMark, { color: cfg.accent }]}>✓</Text>
+                <Text style={[ss.checkMark, { color: cfg.accent }]}>{"✓"}</Text>
               </View>
               <Text style={ss.featureText}>{f.text}</Text>
             </View>
@@ -301,13 +318,18 @@ export function PlanCarousel({
   currentPlanKey = null,
   containerWidth,
   isOnboarding = false,
+  isTrialEligible = false,
 }: PlanCarouselProps) {
   const [showCompare, setShowCompare] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const [carouselHeight, setCarouselHeight] = useState(0);
 
-  const slideWidth = (containerWidth ?? SCREEN_W) - 40;
+  // Card width: full width minus side padding, centered
+  const availableWidth = containerWidth ?? SCREEN_W;
+  const slideWidth = Math.min(availableWidth - 40, 420);
+  // Center padding so single card is always centered
+  const sidePad = (availableWidth - slideWidth) / 2;
 
   useEffect(() => {
     if (isOnboarding) {
@@ -337,11 +359,12 @@ export function PlanCarousel({
     scrollRef.current?.scrollTo({ x: clamped * (slideWidth + 16), animated: true });
     setActiveIdx(clamped);
   };
+
   if (isLoading) {
     return (
       <View style={ss.center}>
         <ActivityIndicator color="#4ade80" size="large" />
-        <Text style={ss.loadingText}>Loading plans…</Text>
+        <Text style={ss.loadingText}>{"Loading plans..."}</Text>
       </View>
     );
   }
@@ -349,7 +372,7 @@ export function PlanCarousel({
   if (!plans || plans.length === 0) {
     return (
       <View style={ss.center}>
-        <Text style={ss.loadingText}>No plans available.</Text>
+        <Text style={ss.loadingText}>{"No plans available."}</Text>
       </View>
     );
   }
@@ -370,7 +393,7 @@ export function PlanCarousel({
           style={[ss.toggleBtn, !isYearly && [ss.toggleBtnActive, { backgroundColor: activeCfg.accent }]]}
         >
           <Text style={[ss.toggleText, { color: !isYearly ? "#000" : "rgba(255,255,255,0.5)" }]}>
-            Monthly
+            {"Monthly"}
           </Text>
         </Pressable>
         <Pressable
@@ -378,17 +401,17 @@ export function PlanCarousel({
           style={[ss.toggleBtn, isYearly && [ss.toggleBtnActive, { backgroundColor: activeCfg.accent }]]}
         >
           <Text style={[ss.toggleText, { color: isYearly ? "#000" : "rgba(255,255,255,0.5)" }]}>
-            Yearly
+            {"Yearly"}
           </Text>
           {!isYearly && (
             <View style={ss.savePill}>
-              <Text style={ss.savePillText}>−20%</Text>
+              <Text style={ss.savePillText}>{"-20%"}</Text>
             </View>
           )}
         </Pressable>
       </View>
 
-      {/* Carousel */}
+      {/* Carousel — centered */}
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -396,7 +419,11 @@ export function PlanCarousel({
         snapToInterval={slideWidth + 16}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
+        contentContainerStyle={{
+          paddingHorizontal: sidePad,
+          gap: 16,
+          alignItems: "center",
+        }}
         onMomentumScrollEnd={handleScroll}
         onScrollEndDrag={handleScroll}
         scrollEventThrottle={16}
@@ -412,6 +439,7 @@ export function PlanCarousel({
             isUpgrade={currentIdx !== -1 ? idx > currentIdx : true}
             slideWidth={slideWidth}
             slideHeight={slideHeight}
+            isTrialEligible={isTrialEligible}
           />
         ))}
       </ScrollView>
@@ -426,7 +454,7 @@ export function PlanCarousel({
             { opacity: activeIdx === 0 ? 0.2 : pressed ? 0.6 : 1 },
           ]}
         >
-          <Text style={[ss.navArrowText, { color: activeCfg.accent }]}>‹</Text>
+          <Text style={[ss.navArrowText, { color: activeCfg.accent }]}>{"‹"}</Text>
         </Pressable>
         <View style={ss.dotsRow}>
           {plans.map((p, i) => {
@@ -454,7 +482,7 @@ export function PlanCarousel({
             { opacity: activeIdx === plans.length - 1 ? 0.2 : pressed ? 0.6 : 1 },
           ]}
         >
-          <Text style={[ss.navArrowText, { color: activeCfg.accent }]}>›</Text>
+          <Text style={[ss.navArrowText, { color: activeCfg.accent }]}>{"›"}</Text>
         </Pressable>
       </View>
 
@@ -463,7 +491,7 @@ export function PlanCarousel({
         onPress={() => setShowCompare(true)}
         style={({ pressed }) => [ss.compareBtn, { opacity: pressed ? 0.6 : 1 }]}
       >
-        <Text style={[ss.compareBtnText, { color: activeCfg.accent }]}>Compare all plans →</Text>
+        <Text style={[ss.compareBtnText, { color: activeCfg.accent }]}>{"Compare all plans →"}</Text>
       </Pressable>
 
       {/* Compare Modal */}
@@ -475,7 +503,7 @@ export function PlanCarousel({
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: "#0a0f0a" }}>
           <View style={ss.compareHeader}>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: "#fff", letterSpacing: -0.3 }}>Compare Plans</Text>
+            <Text style={{ fontSize: 18, fontWeight: "700", color: "#fff", letterSpacing: -0.3 }}>{"Compare Plans"}</Text>
             <Pressable
               onPress={() => setShowCompare(false)}
               style={({ pressed }) => ({
@@ -488,7 +516,7 @@ export function PlanCarousel({
                 borderColor: "rgba(74,222,128,0.3)",
               })}
             >
-              <Text style={{ fontSize: 13, fontWeight: "700", color: "#4ade80" }}>Done</Text>
+              <Text style={{ fontSize: 13, fontWeight: "700", color: "#4ade80" }}>{"Done"}</Text>
             </Pressable>
           </View>
           <ScrollView
@@ -499,13 +527,13 @@ export function PlanCarousel({
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={{ flexDirection: "row" }}>
                 <View style={[ss.compareCell, ss.compareLabelCol]}>
-                  <Text style={{ fontSize: 11, fontWeight: "700", color: "rgba(74,222,128,0.5)", letterSpacing: 1 }}>FEATURE</Text>
+                  <Text style={{ fontSize: 11, fontWeight: "700", color: "rgba(74,222,128,0.5)", letterSpacing: 1 }}>{"FEATURE"}</Text>
                 </View>
                 {COMPARE_PLANS.map((p) => (
                   <View key={p.planKey} style={[ss.compareCell, ss.comparePlanCol, { backgroundColor: p.neon + "10" }]}>
                     <Text style={{ fontSize: 13, fontWeight: "800", color: p.neon }} numberOfLines={1}>{p.displayName}</Text>
                     <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>
-                      {p.monthlyPrice === 0 ? "Free" : `$${p.monthlyPrice}/mo`}
+                      {p.monthlyPrice === 0 ? "Free" : "$" + p.monthlyPrice + "/mo"}
                     </Text>
                   </View>
                 ))}
@@ -518,10 +546,11 @@ export function PlanCarousel({
                   {COMPARE_PLANS.map((p) => {
                     const feat = p.features.find((f) => f.label === row);
                     const isDim = (feat as any)?.dim === true;
+                    const featValue = feat?.value ?? "—";
                     return (
                       <View key={p.planKey} style={[ss.compareCell, ss.comparePlanCol, { backgroundColor: p.neon + "05" }]}>
                         <Text style={{ fontSize: 12, color: isDim ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.8)", textAlign: "center" }} numberOfLines={2}>
-                          {feat?.value ?? "—"}
+                          {featValue}
                         </Text>
                       </View>
                     );
@@ -599,7 +628,7 @@ const COMPARE_FEATURE_ROWS = [
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const ss = StyleSheet.create({
   container: { width: "100%" },
-  center: { alignItems: "center", paddingVertical: 60, gap: 12 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 60, gap: 12 },
   loadingText: { fontSize: 14, color: "rgba(74,222,128,0.5)" },
 
   // Billing toggle
@@ -672,6 +701,17 @@ const ss = StyleSheet.create({
     paddingVertical: 4,
   },
   popularBadgeText: { fontSize: 9, fontWeight: "900", letterSpacing: 0.8, color: "#fbbf24" },
+
+  // Trial badge
+  trialBadge: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: "flex-start",
+    marginBottom: 12,
+  },
+  trialBadgeText: { fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
 
   // Plan name
   planName: { fontSize: 30, fontWeight: "800", letterSpacing: -0.8, lineHeight: 34, marginBottom: 4 },
