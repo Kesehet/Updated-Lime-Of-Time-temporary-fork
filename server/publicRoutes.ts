@@ -170,7 +170,90 @@ export function registerPublicRoutes(app: Express) {
     });
   });
 
-  // ── Public REST API endpoints ──────────────────────────────────────
+  // ── /join — App referral landing page ────────────────────────────────────────────
+  app.get("/join", async (req: Request, res: Response) => {
+    const refCode = (req.query.ref as string) || "";
+    let referrerName = "";
+    let discountBanner = "";
+    if (refCode) {
+      try {
+        const drizzleDb = db.getDb();
+        const { referralCodes, businessOwners } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const rows = await drizzleDb
+          .select({ businessName: businessOwners.businessName })
+          .from(referralCodes)
+          .innerJoin(businessOwners, eq(referralCodes.businessOwnerId, businessOwners.id))
+          .where(eq(referralCodes.code, refCode.toUpperCase()))
+          .limit(1);
+        if (rows[0]) {
+          referrerName = rows[0].businessName;
+          // Store ref in cookie for 30 days so the app can pick it up on first open
+          res.cookie("lot_ref", refCode.toUpperCase(), { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: false, sameSite: "lax" });
+          discountBanner = `
+            <div style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;padding:16px 20px;border-radius:12px;margin-bottom:28px;display:flex;align-items:center;gap:12px">
+              <span style="font-size:28px">&#127881;</span>
+              <div>
+                <div style="font-size:15px;font-weight:700">Referred by ${referrerName}</div>
+                <div style="font-size:13px;opacity:0.9;margin-top:2px">Get <strong>50% off your first 3 months</strong> when you sign up with code <strong>${refCode.toUpperCase()}</strong></div>
+              </div>
+            </div>`;
+        }
+      } catch (e) {
+        console.error("[/join] referral lookup error", e);
+      }
+    }
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lime Of Time — Smart Scheduling for Your Business</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0fdf4; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .card { background: #fff; border-radius: 24px; padding: 36px 28px; max-width: 420px; width: 100%; box-shadow: 0 8px 40px rgba(0,0,0,0.10); }
+    .logo { width: 72px; height: 72px; border-radius: 18px; background: #16a34a; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+    .logo-text { font-size: 32px; }
+    h1 { font-size: 26px; font-weight: 800; color: #111; text-align: center; margin-bottom: 8px; }
+    .subtitle { font-size: 15px; color: #555; text-align: center; line-height: 1.5; margin-bottom: 28px; }
+    .features { list-style: none; margin-bottom: 28px; }
+    .features li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #333; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+    .features li:last-child { border-bottom: none; }
+    .check { width: 22px; height: 22px; border-radius: 50%; background: #dcfce7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; }
+    .btn { display: block; width: 100%; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; text-decoration: none; margin-bottom: 12px; cursor: pointer; border: none; }
+    .btn-ios { background: #000; color: #fff; }
+    .btn-android { background: #16a34a; color: #fff; }
+    .code-pill { background: #f0fdf4; border: 1.5px solid #16a34a; color: #16a34a; font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 20px; display: inline-block; margin-bottom: 20px; letter-spacing: 1px; }
+    .footer { font-size: 12px; color: #aaa; text-align: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo"><span class="logo-text">&#128344;</span></div>
+    <h1>Lime Of Time</h1>
+    <p class="subtitle">Smart scheduling, client management, and payments — all in one app built for service businesses.</p>
+    ${discountBanner}
+    ${refCode ? `<div style="text-align:center"><span class="code-pill">Code: ${refCode.toUpperCase()}</span></div>` : ""}
+    <ul class="features">
+      <li><span class="check">&#10003;</span> Online booking page for your clients</li>
+      <li><span class="check">&#10003;</span> Appointment calendar &amp; reminders</li>
+      <li><span class="check">&#10003;</span> Client management &amp; history</li>
+      <li><span class="check">&#10003;</span> Payments, invoices &amp; gift cards</li>
+      <li><span class="check">&#10003;</span> Staff &amp; multi-location support</li>
+      <li><span class="check">&#10003;</span> Analytics &amp; revenue reports</li>
+    </ul>
+    <a href="https://apps.apple.com/app/lime-of-time" class="btn btn-ios">🍎 Download on the App Store</a>
+    <a href="https://play.google.com/store/apps/details?id=space.manus.lime.of.time" class="btn btn-android">🟢 Get it on Google Play</a>
+    <p class="footer">Start free · No credit card required · Upgrade anytime</p>
+  </div>
+</body>
+</html>`;
+    res.setHeader("Content-Type", "text/html");
+    res.send(html);
+  });
+
+  // ── Public REST API endpoints ──────────────────────────────────────────────────────
 
   /** Get business info by slug */
   app.get("/api/public/business/:slug", async (req: Request, res: Response) => {

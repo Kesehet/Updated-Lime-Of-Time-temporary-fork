@@ -828,6 +828,25 @@ export default function SettingsScreen() {
         },
       ])}
 
+      {/* Growth */}
+      <SectionHeader label="Growth" accentColor="#16a34a" colors={colors} />
+      {renderNavList([
+        {
+          title: "Refer a Business",
+          subtitle: "Share the app, earn 1 free month per conversion",
+          icon: "person.2.fill",
+          route: "/referrals",
+          color: "#16a34a",
+        },
+        {
+          title: "Promo Codes",
+          subtitle: "Create discount codes for clients",
+          icon: "tag.fill",
+          route: "/promo-codes",
+          color: "#F59E0B",
+        },
+      ])}
+
       {/* Appearance */}
       <SectionHeader label="Appearance" accentColor="#8B5CF6" colors={colors} />
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>

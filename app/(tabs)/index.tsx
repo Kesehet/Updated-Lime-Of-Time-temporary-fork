@@ -2670,7 +2670,49 @@ export default function HomeScreen() {
           </LinearGradient>
         </Pressable>
 
-        {/* ─── Quick Actions ──────────────────────────────────────────────────────── */}
+        {/* ─── Refer a Business Card ───────────────────────────────────────────────────────────────────── */}
+        {referralData?.code && (() => {
+          const joinUrl = `https://lime-of-time.com/join?ref=${referralData.code}`;
+          return (
+            <Pressable
+              onPress={() => (router as any).push("/referrals")}
+              style={({ pressed }) => ({
+                marginTop: 12,
+                borderRadius: 18,
+                overflow: "hidden" as const,
+                opacity: pressed ? 0.88 : 1,
+                transform: [{ scale: pressed ? 0.99 : 1 }],
+              })}
+            >
+              <LinearGradient
+                colors={["#16a34a", "#15803d"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ flexDirection: "row", alignItems: "center", padding: 16, gap: 14 }}
+              >
+                {/* QR preview */}
+                <View style={{ width: 72, height: 72, borderRadius: 12, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", padding: 4, flexShrink: 0 }}>
+                  <QRCode value={joinUrl} size={60} color="#000" backgroundColor="#fff" />
+                </View>
+                {/* Text */}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fs.md, fontWeight: "800", color: "#fff", marginBottom: 2 }}>Refer a Business</Text>
+                  <Text style={{ fontSize: fs.xs, color: "rgba(255,255,255,0.75)", lineHeight: 17 }}>Share this app with other businesses and earn 1 free month</Text>
+                  <View style={{ flexDirection: "row", gap: 6, marginTop: 8 }}>
+                    {["Copy Link", "Share", "Full QR"].map((label) => (
+                      <View key={label} style={{ backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ fontSize: 10, fontWeight: "700", color: "#fff" }}>{label}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+                <IconSymbol name="chevron.right" size={18} color="rgba(255,255,255,0.6)" />
+              </LinearGradient>
+            </Pressable>
+          );
+        })()}
+
+        {/* ─── Quick Actions ────────────────────────────────────────────────────────────────────── */}
         <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 24 }]}>
           Quick Actions
         </Text>
