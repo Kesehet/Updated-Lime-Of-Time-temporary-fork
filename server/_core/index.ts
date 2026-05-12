@@ -15,6 +15,7 @@ import { registerStripeConnectRoutes } from "../stripeConnectRoutes";
 import { registerClientRoutes } from "../clientRoutes";
 import { startRenewalNotificationCron } from "../renewalNotificationCron";
 import { startAppointmentReminderCron } from "../appointmentReminderCron";
+import { startReferralExpiryCron } from "../referralExpiryCron";
 import { startRequestExpiryCron } from "../requestExpiryCron";
 import { startClientReminderCron } from "../clientReminderCron";
 
@@ -120,5 +121,6 @@ startServer().catch(console.error);
 // Start background crons
 startRenewalNotificationCron();
 startAppointmentReminderCron();
+startReferralExpiryCron();
 startRequestExpiryCron();
 startClientReminderCron();

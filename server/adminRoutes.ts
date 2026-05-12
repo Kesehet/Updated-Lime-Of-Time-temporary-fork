@@ -1897,6 +1897,20 @@ export function registerAdminRoutes(app: Express): void {
       const totalConverted = allRefs.filter((r: any) => r.status === 'converted' || r.status === 'rewarded').length;
       const totalRewarded = allRefs.filter((r: any) => r.status === 'rewarded').length;
 
+      // Build leaderboard: rank referrers by number of converted/rewarded referrals
+      const conversionMap: Record<number, { conversions: number; pending: number; total: number }> = {};
+      for (const r of allRefs as any[]) {
+        const rid = r.referrerBusinessOwnerId;
+        if (!conversionMap[rid]) conversionMap[rid] = { conversions: 0, pending: 0, total: 0 };
+        conversionMap[rid].total++;
+        if (r.status === 'converted' || r.status === 'rewarded') conversionMap[rid].conversions++;
+        if (r.status === 'pending') conversionMap[rid].pending++;
+      }
+      const leaderboard = Object.entries(conversionMap)
+        .map(([id, stats]) => ({ id: parseInt(id), name: bizMap[parseInt(id)] || String(id), ...stats }))
+        .sort((a, b) => b.conversions - a.conversions || b.total - a.total)
+        .slice(0, 20);
+
       res.send(adminLayout("Referrals", "referrals", `
         <div class="page-header">
           <h2>Referral Program</h2>
@@ -1931,6 +1945,33 @@ export function registerAdminRoutes(app: Express): void {
             </div>
             <button type="submit" style="padding:8px 20px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Send SMS</button>
           </form>
+        </div>
+
+        <div class="card" style="margin-bottom:24px;">
+          <h3 style="margin:0 0 4px;">🏆 Top Referrers Leaderboard</h3>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px;">Ranked by successful conversions (converted + rewarded). Top 20 shown.</p>
+          ${leaderboard.length === 0 ? '<p style="color:var(--text-muted);font-size:13px;">No referral conversions yet.</p>' : `
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr><th style="width:40px;">#</th><th>Business</th><th>Conversions</th><th>Pending</th><th>Total Shared</th><th>Conv. Rate</th><th>Badge</th></tr></thead>
+              <tbody>
+                ${leaderboard.map((entry, idx) => {
+                  const rate = entry.total > 0 ? Math.round((entry.conversions / entry.total) * 100) : 0;
+                  const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
+                  const badge = entry.conversions >= 10 ? '<span class="badge badge-success">VIP Advocate</span>' : entry.conversions >= 5 ? '<span class="badge" style="background:#7C3AED22;color:#7C3AED;">Super Referrer</span>' : entry.conversions >= 1 ? '<span class="badge" style="background:#0EA5E922;color:#0EA5E9;">Active</span>' : '<span class="badge" style="background:var(--surface);color:var(--text-muted);">Pending</span>';
+                  return `<tr>
+                    <td style="font-size:18px;text-align:center;">${medal}</td>
+                    <td><strong>${entry.name}</strong></td>
+                    <td><strong style="color:#10B981;font-size:16px;">${entry.conversions}</strong></td>
+                    <td style="color:var(--text-muted);">${entry.pending}</td>
+                    <td>${entry.total}</td>
+                    <td>${rate}%</td>
+                    <td>${badge}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>`}
         </div>
 
         <div class="card" style="margin-bottom:24px;">

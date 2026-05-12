@@ -284,12 +284,32 @@ export function registerStripeRoutes(app: Express): void {
         }
       }
 
+      // Build custom_text.submit message to confirm discount on checkout page
+      let customSubmitText: string | undefined;
+      if (resolvedReferralCodeId) {
+        // Referral discount applied
+        const refRc = resolvedReferralCodeId ? await (async () => {
+          try {
+            const rcRows2 = await (await getDb())!.select().from((await import('../drizzle/schema')).referralCodes).where((await import('drizzle-orm')).eq((await import('../drizzle/schema')).referralCodes.id, resolvedReferralCodeId)).limit(1);
+            return rcRows2[0];
+          } catch { return null; }
+        })() : null;
+        const pct = (refRc as any)?.discountPercent ?? 50;
+        const months = (refRc as any)?.discountMonths ?? 3;
+        customSubmitText = `🎉 Referral discount applied: ${pct}% off your first ${months} months. After that, your plan renews at the standard rate.`;
+      } else if (stripeCouponId && planInfo?.discountPercent > 0) {
+        customSubmitText = `${planInfo.discountPercent}% introductory discount applied for your first ${planInfo.discountMonths} month${planInfo.discountMonths !== 1 ? 's' : ''}.`;
+      } else if (isTrialEligible) {
+        customSubmitText = "Your 14-day free trial starts today. You won't be charged until the trial ends.";
+      }
+
       // Create checkout session
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer: stripeCustomerId,
         line_items: [{ price: price.id, quantity: 1 }],
         ...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
+        ...(customSubmitText ? { custom_text: { submit: { message: customSubmitText } } } : {}),
         success_url: successUrl || `${req.headers.origin}/api/stripe/success?session_id={CHECKOUT_SESSION_ID}&boid=${businessOwnerId}`,
         cancel_url: cancelUrl || `${req.headers.origin}/api/stripe/cancel?boid=${businessOwnerId}`,
         metadata: {
