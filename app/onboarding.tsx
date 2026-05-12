@@ -1783,12 +1783,7 @@ export default function OnboardingScreen() {
             {/* Step Subscription: Plan Selection */}
             {displayStep === "subscription" && (
               <>
-                {/* Subscription header */}
-                <Animated.View style={[titleStyle, styles.subHeader]}>
-                  <Text style={styles.subTitle}>Choose Your Plan</Text>
-                  <Text style={styles.subSubtitle}>Start free · Upgrade anytime</Text>
-                </Animated.View>
-                {/* Carousel — break out of card horizontal padding */}
+                {/* Carousel — break out of card horizontal padding; header is now inside the card */}
                 <Animated.View style={[inputStyle, { marginHorizontal: -hp, flex: 1 }]}>
                   <PlanCarousel
                     key={planCarouselKey}

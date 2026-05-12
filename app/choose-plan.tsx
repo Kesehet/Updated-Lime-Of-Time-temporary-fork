@@ -230,18 +230,21 @@ export default function ChoosePlanScreen() {
       {/* Subtle cyan glow bottom-right */}
       <View style={{ position: "absolute", bottom: -60, right: -60, width: 200, height: 200, borderRadius: 100, backgroundColor: "rgba(34,211,238,0.05)" }} />
 
-      {/* Header */}
-      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: 4 }}>
+      {/* Back button only — title removed, it's now inside the card */}
+      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingTop: insets.top + 8, paddingBottom: 4 }}>
         <Pressable
           onPress={() => router.back()}
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginRight: 12, padding: 4 })}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.6 : 1,
+            padding: 8,
+            borderRadius: 12,
+            backgroundColor: "rgba(74,222,128,0.08)",
+            borderWidth: 1,
+            borderColor: "rgba(74,222,128,0.2)",
+          })}
         >
-          <IconSymbol name="arrow.left" size={24} color="#4ade80" />
+          <IconSymbol name="arrow.left" size={20} color="#4ade80" />
         </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 22, fontWeight: "900", color: "#4ade80", letterSpacing: -0.5 }}>{"Choose a Plan"}</Text>
-          <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 1 }}>{"Swipe to compare · Upgrade or downgrade anytime"}</Text>
-        </View>
       </View>
 
       {/* Trial eligibility banner */}
@@ -282,7 +285,7 @@ export default function ChoosePlanScreen() {
       )}
 
       {/* Full-page Carousel */}
-      <View style={{ flex: 1, paddingTop: 8 }}>
+      <View style={{ flex: 1, paddingTop: 4 }}>
         <PlanCarousel
           plans={(plans ?? []) as any}
           isLoading={isLoading}

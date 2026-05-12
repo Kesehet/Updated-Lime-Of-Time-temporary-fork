@@ -1,6 +1,7 @@
 /**
  * PlanCarousel — Professional subscription plan selector.
- * Full-page layout with centered cards, 14-day trial badge, compare modal.
+ * Full-page layout: billing toggle inside card header, pagination dots inside card,
+ * compare icon top-right of card. No external header/title — card fills all available space.
  */
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import * as Haptics from "expo-haptics";
@@ -146,6 +147,7 @@ const PLAN_FEATURES: Record<string, Array<{ text: string }>> = {
 function PlanSlide({
   plan,
   isYearly,
+  onToggleBilling,
   onSelect,
   isLoading,
   isCurrentPlan,
@@ -153,9 +155,15 @@ function PlanSlide({
   slideWidth,
   slideHeight,
   isTrialEligible,
+  activeIdx,
+  totalPlans,
+  onPrev,
+  onNext,
+  onCompare,
 }: {
   plan: PlanData;
   isYearly: boolean;
+  onToggleBilling: (yearly: boolean) => void;
   onSelect: () => void;
   isLoading: boolean;
   isCurrentPlan: boolean;
@@ -163,6 +171,11 @@ function PlanSlide({
   slideWidth: number;
   slideHeight?: number;
   isTrialEligible?: boolean;
+  activeIdx: number;
+  totalPlans: number;
+  onPrev: () => void;
+  onNext: () => void;
+  onCompare: () => void;
 }) {
   const cfg = PLAN_CONFIG[plan.planKey] ?? PLAN_CONFIG.solo;
   const features = PLAN_FEATURES[plan.planKey] ?? [];
@@ -212,7 +225,44 @@ function PlanSlide({
         {/* Top accent bar */}
         <View style={[ss.accentBar, { backgroundColor: cfg.accent }]} />
 
-        {/* Header: badge + plan name */}
+        {/* ── Card top row: billing toggle (left) + compare icon (right) ── */}
+        <View style={ss.cardTopRow}>
+          {/* Billing toggle — compact, inside card */}
+          <View style={[ss.toggleWrap, { borderColor: cfg.accent + "25" }]}>
+            <Pressable
+              onPress={() => onToggleBilling(false)}
+              style={[ss.toggleBtn, !isYearly && [ss.toggleBtnActive, { backgroundColor: cfg.accent }]]}
+            >
+              <Text style={[ss.toggleText, { color: !isYearly ? "#000" : "rgba(255,255,255,0.45)" }]}>
+                {"Monthly"}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => onToggleBilling(true)}
+              style={[ss.toggleBtn, isYearly && [ss.toggleBtnActive, { backgroundColor: cfg.accent }]]}
+            >
+              <Text style={[ss.toggleText, { color: isYearly ? "#000" : "rgba(255,255,255,0.45)" }]}>
+                {"Yearly"}
+              </Text>
+              {!isYearly && (
+                <View style={ss.savePill}>
+                  <Text style={ss.savePillText}>{"-20%"}</Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
+
+          {/* Compare icon button — top right */}
+          <Pressable
+            onPress={onCompare}
+            style={({ pressed }) => [ss.compareIconBtn, { borderColor: cfg.accent + "35", opacity: pressed ? 0.6 : 1 }]}
+            hitSlop={8}
+          >
+            <Text style={[ss.compareIconText, { color: cfg.accent }]}>{"⊞"}</Text>
+          </Pressable>
+        </View>
+
+        {/* Header: plan tier badge + popular badge */}
         <View style={ss.cardHeader}>
           <View style={[ss.badge, { backgroundColor: cfg.accent + "18", borderColor: cfg.accent + "40" }]}>
             <Text style={[ss.badgeText, { color: cfg.accent }]}>{cfg.label}</Text>
@@ -223,7 +273,7 @@ function PlanSlide({
             </View>
           )}
           {isPopular && !isCurrentPlan && (
-            <View style={[ss.popularBadge]}>
+            <View style={ss.popularBadge}>
               <Text style={ss.popularBadgeText}>{"Popular"}</Text>
             </View>
           )}
@@ -284,6 +334,45 @@ function PlanSlide({
           ))}
         </ScrollView>
 
+        {/* ── Pagination dots + arrows — inside card, above CTA ── */}
+        <View style={ss.inCardNavRow}>
+          <Pressable
+            onPress={onPrev}
+            disabled={activeIdx === 0}
+            style={({ pressed }) => [
+              ss.navArrow,
+              { borderColor: cfg.accent + "30", opacity: activeIdx === 0 ? 0.2 : pressed ? 0.6 : 1 },
+            ]}
+          >
+            <Text style={[ss.navArrowText, { color: cfg.accent }]}>{"‹"}</Text>
+          </Pressable>
+
+          <View style={ss.dotsRow}>
+            {Array.from({ length: totalPlans }).map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  ss.dot,
+                  i === activeIdx
+                    ? { backgroundColor: cfg.accent, width: 20 }
+                    : { backgroundColor: "rgba(255,255,255,0.18)", width: 6 },
+                ]}
+              />
+            ))}
+          </View>
+
+          <Pressable
+            onPress={onNext}
+            disabled={activeIdx === totalPlans - 1}
+            style={({ pressed }) => [
+              ss.navArrow,
+              { borderColor: cfg.accent + "30", opacity: activeIdx === totalPlans - 1 ? 0.2 : pressed ? 0.6 : 1 },
+            ]}
+          >
+            <Text style={[ss.navArrowText, { color: cfg.accent }]}>{"›"}</Text>
+          </Pressable>
+        </View>
+
         {/* CTA */}
         <Pressable
           onPress={isCurrentPlan ? undefined : onSelect}
@@ -325,13 +414,9 @@ export function PlanCarousel({
   const scrollRef = useRef<ScrollView>(null);
   const [carouselHeight, setCarouselHeight] = useState(0);
 
-  // Card width: full width minus side padding, centered
+  // Card width: 88% of available width, capped at 420px
   const availableWidth = containerWidth ?? SCREEN_W;
-  // Use 88% of available width for the card, capped at 420px
   const slideWidth = Math.min(Math.round(availableWidth * 0.88), 420);
-  // Center padding: each card centers on screen when scrolled to it
-  // With snapToAlignment="center", the snap point is the center of each item
-  // So we need sidePad = (availableWidth - slideWidth) / 2 for first/last card
   const sidePad = Math.max(0, Math.round((availableWidth - slideWidth) / 2));
 
   useEffect(() => {
@@ -341,11 +426,6 @@ export function PlanCarousel({
     }
   }, [isOnboarding]);
 
-  // snapToOffsets: each card's left edge position so that the card is centered in the viewport
-  // Card i starts at: sidePad + i * (slideWidth + 16)
-  // To center card i: scroll to sidePad + i*(slideWidth+16) - sidePad = i*(slideWidth+16)
-  // But with paddingHorizontal=sidePad, the first card's left edge is at x=0 in content coords
-  // The scroll offset to center card i = i * (slideWidth + 16)
   const snapOffsets = plans.map((_, i) => i * (slideWidth + 16));
 
   const handleScroll = useCallback(
@@ -361,14 +441,14 @@ export function PlanCarousel({
     [slideWidth, plans.length, activeIdx],
   );
 
-  const scrollTo = (idx: number) => {
+  const scrollTo = useCallback((idx: number) => {
     const clamped = Math.max(0, Math.min(idx, plans.length - 1));
     if (clamped !== activeIdx) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
     scrollRef.current?.scrollTo({ x: clamped * (slideWidth + 16), animated: true });
     setActiveIdx(clamped);
-  };
+  }, [activeIdx, plans.length, slideWidth]);
 
   if (isLoading) {
     return (
@@ -388,40 +468,13 @@ export function PlanCarousel({
   }
 
   const currentIdx = plans.findIndex((p) => p.planKey === currentPlanKey);
-  const activePlan = plans[activeIdx];
-  const activeCfg = activePlan ? (PLAN_CONFIG[activePlan.planKey] ?? PLAN_CONFIG.solo) : PLAN_CONFIG.solo;
 
-  // slideHeight: fill the carousel container minus the toggle + nav rows (~120px)
-  const slideHeight = carouselHeight > 200 ? carouselHeight - 120 : SCREEN_H * 0.60;
+  // slideHeight: fill the full carousel container — no external nav rows to subtract
+  const slideHeight = carouselHeight > 200 ? carouselHeight : SCREEN_H * 0.75;
 
   return (
     <View style={[ss.container, { flex: 1 }]} onLayout={(e) => setCarouselHeight(e.nativeEvent.layout.height)}>
-      {/* Billing Toggle */}
-      <View style={ss.toggleWrap}>
-        <Pressable
-          onPress={() => onToggleBilling(false)}
-          style={[ss.toggleBtn, !isYearly && [ss.toggleBtnActive, { backgroundColor: activeCfg.accent }]]}
-        >
-          <Text style={[ss.toggleText, { color: !isYearly ? "#000" : "rgba(255,255,255,0.5)" }]}>
-            {"Monthly"}
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => onToggleBilling(true)}
-          style={[ss.toggleBtn, isYearly && [ss.toggleBtnActive, { backgroundColor: activeCfg.accent }]]}
-        >
-          <Text style={[ss.toggleText, { color: isYearly ? "#000" : "rgba(255,255,255,0.5)" }]}>
-            {"Yearly"}
-          </Text>
-          {!isYearly && (
-            <View style={ss.savePill}>
-              <Text style={ss.savePillText}>{"-20%"}</Text>
-            </View>
-          )}
-        </Pressable>
-      </View>
-
-      {/* Carousel — centered */}
+      {/* Carousel — each card fills full height, no external header/footer */}
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -443,6 +496,7 @@ export function PlanCarousel({
             key={plan.planKey}
             plan={plan}
             isYearly={isYearly}
+            onToggleBilling={onToggleBilling}
             onSelect={() => onSelectPlan(plan.planKey, isYearly ? "yearly" : "monthly")}
             isLoading={loadingPlanKey === plan.planKey}
             isCurrentPlan={currentPlanKey === plan.planKey}
@@ -450,59 +504,14 @@ export function PlanCarousel({
             slideWidth={slideWidth}
             slideHeight={slideHeight}
             isTrialEligible={isTrialEligible}
+            activeIdx={activeIdx}
+            totalPlans={plans.length}
+            onPrev={() => scrollTo(activeIdx - 1)}
+            onNext={() => scrollTo(activeIdx + 1)}
+            onCompare={() => setShowCompare(true)}
           />
         ))}
       </ScrollView>
-
-      {/* Nav row */}
-      <View style={ss.navRow}>
-        <Pressable
-          onPress={() => scrollTo(activeIdx - 1)}
-          disabled={activeIdx === 0}
-          style={({ pressed }) => [
-            ss.navArrow,
-            { opacity: activeIdx === 0 ? 0.2 : pressed ? 0.6 : 1 },
-          ]}
-        >
-          <Text style={[ss.navArrowText, { color: activeCfg.accent }]}>{"‹"}</Text>
-        </Pressable>
-        <View style={ss.dotsRow}>
-          {plans.map((p, i) => {
-            const dotCfg = PLAN_CONFIG[p.planKey] ?? PLAN_CONFIG.solo;
-            const isActive = i === activeIdx;
-            return (
-              <Pressable key={i} onPress={() => scrollTo(i)}>
-                <View
-                  style={[
-                    ss.dot,
-                    isActive
-                      ? { backgroundColor: dotCfg.accent, width: 24 }
-                      : { backgroundColor: "rgba(255,255,255,0.2)", width: 8 },
-                  ]}
-                />
-              </Pressable>
-            );
-          })}
-        </View>
-        <Pressable
-          onPress={() => scrollTo(activeIdx + 1)}
-          disabled={activeIdx === plans.length - 1}
-          style={({ pressed }) => [
-            ss.navArrow,
-            { opacity: activeIdx === plans.length - 1 ? 0.2 : pressed ? 0.6 : 1 },
-          ]}
-        >
-          <Text style={[ss.navArrowText, { color: activeCfg.accent }]}>{"›"}</Text>
-        </Pressable>
-      </View>
-
-      {/* Compare link */}
-      <Pressable
-        onPress={() => setShowCompare(true)}
-        style={({ pressed }) => [ss.compareBtn, { opacity: pressed ? 0.6 : 1 }]}
-      >
-        <Text style={[ss.compareBtnText, { color: activeCfg.accent }]}>{"Compare all plans →"}</Text>
-      </Pressable>
 
       {/* Compare Modal */}
       <Modal
@@ -641,51 +650,75 @@ const ss = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 60, gap: 12 },
   loadingText: { fontSize: 14, color: "rgba(74,222,128,0.5)" },
 
-  // Billing toggle
-  toggleWrap: {
-    flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderRadius: 22,
-    padding: 4,
-    marginHorizontal: 16,
-    marginBottom: 16,
-  },
-  toggleBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 18,
-    gap: 6,
-  },
-  toggleBtnActive: {
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
-  },
-  toggleText: { fontSize: 14, fontWeight: "700", letterSpacing: 0.2 },
-  savePill: {
-    backgroundColor: "rgba(0,0,0,0.25)",
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  savePillText: { fontSize: 10, fontWeight: "800", color: "#000", letterSpacing: 0.3 },
-
   // Card
   card: {
     flex: 1,
     borderRadius: 40,
     borderWidth: 1,
     overflow: "hidden",
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
     paddingTop: 0,
   },
-  accentBar: { height: 3, marginHorizontal: -24, marginBottom: 18 },
-  cardHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 14 },
+  accentBar: { height: 3, marginHorizontal: -20, marginBottom: 14 },
+
+  // ── Card top row: billing toggle (left) + compare icon (right) ──
+  cardTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+    gap: 10,
+  },
+
+  // Billing toggle — compact, inside card
+  toggleWrap: {
+    flex: 1,
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.07)",
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 3,
+  },
+  toggleBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    borderRadius: 17,
+    gap: 5,
+  },
+  toggleBtnActive: {
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  toggleText: { fontSize: 13, fontWeight: "700", letterSpacing: 0.1 },
+  savePill: {
+    backgroundColor: "rgba(0,0,0,0.25)",
+    borderRadius: 7,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  savePillText: { fontSize: 9, fontWeight: "800", color: "#000", letterSpacing: 0.2 },
+
+  // Compare icon button — top right of card
+  compareIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  compareIconText: { fontSize: 18, lineHeight: 22 },
+
+  // Card header badges
+  cardHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
   badge: {
     borderRadius: 10,
     borderWidth: 1,
@@ -714,56 +747,77 @@ const ss = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 5,
     alignSelf: "flex-start",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   trialBadgeText: { fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
 
   // Plan name
-  planName: { fontSize: 30, fontWeight: "800", letterSpacing: -0.8, lineHeight: 34, marginBottom: 4 },
-  planTagline: { fontSize: 13, color: "rgba(255,255,255,0.45)", fontWeight: "500", marginBottom: 18 },
+  planName: { fontSize: 28, fontWeight: "800", letterSpacing: -0.8, lineHeight: 32, marginBottom: 3 },
+  planTagline: { fontSize: 12, color: "rgba(255,255,255,0.45)", fontWeight: "500", marginBottom: 14 },
 
   // Price
-  priceRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 4 },
-  priceCurrency: { fontSize: 20, fontWeight: "700", marginTop: 6, marginRight: 1 },
-  priceWhole: { fontSize: 56, fontWeight: "900", lineHeight: 60, letterSpacing: -2 },
-  priceRight: { flexDirection: "column", justifyContent: "flex-end", paddingBottom: 8, marginLeft: 2 },
-  priceCents: { fontSize: 18, fontWeight: "700", lineHeight: 22 },
-  pricePer: { fontSize: 12, fontWeight: "500", color: "rgba(255,255,255,0.35)", lineHeight: 16 },
+  priceRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 3 },
+  priceCurrency: { fontSize: 18, fontWeight: "700", marginTop: 5, marginRight: 1 },
+  priceWhole: { fontSize: 52, fontWeight: "900", lineHeight: 56, letterSpacing: -2 },
+  priceRight: { flexDirection: "column", justifyContent: "flex-end", paddingBottom: 7, marginLeft: 2 },
+  priceCents: { fontSize: 16, fontWeight: "700", lineHeight: 20 },
+  pricePer: { fontSize: 11, fontWeight: "500", color: "rgba(255,255,255,0.35)", lineHeight: 15 },
   savingsPill: {
     alignSelf: "flex-start",
-    marginTop: 10,
-    marginLeft: 10,
+    marginTop: 8,
+    marginLeft: 8,
     borderRadius: 8,
     borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
-  savingsPillText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.3 },
-  billedNote: { fontSize: 12, color: "rgba(255,255,255,0.35)", fontWeight: "500", marginBottom: 4, marginTop: 2 },
+  savingsPillText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.3 },
+  billedNote: { fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: "500", marginBottom: 3, marginTop: 1 },
 
   // Divider
-  divider: { height: 1, marginVertical: 14 },
+  divider: { height: 1, marginVertical: 12 },
 
   // Features
-  featureScroll: { flex: 1, marginBottom: 16 },
-  featureRow: { flexDirection: "row", alignItems: "center", paddingVertical: 7, gap: 12 },
+  featureScroll: { flex: 1, marginBottom: 10 },
+  featureRow: { flexDirection: "row", alignItems: "center", paddingVertical: 6, gap: 10 },
   checkCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
-  checkMark: { fontSize: 11, fontWeight: "900" },
-  featureText: { fontSize: 14, fontWeight: "500", color: "rgba(255,255,255,0.75)", flex: 1, lineHeight: 19 },
+  checkMark: { fontSize: 10, fontWeight: "900" },
+  featureText: { fontSize: 13, fontWeight: "500", color: "rgba(255,255,255,0.75)", flex: 1, lineHeight: 18 },
+
+  // In-card nav row (dots + arrows, above CTA)
+  inCardNavRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    marginBottom: 12,
+  },
+  navArrow: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  navArrowText: { fontSize: 22, fontWeight: "300", lineHeight: 26, marginTop: -1 },
+  dotsRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  dot: { height: 5, borderRadius: 3 },
 
   // CTA
   cta: {
     borderRadius: 28,
-    paddingVertical: 17,
+    paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -771,27 +825,9 @@ const ss = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1,
   },
-  ctaText: { fontSize: 16, fontWeight: "800", letterSpacing: 0.2 },
+  ctaText: { fontSize: 15, fontWeight: "800", letterSpacing: 0.2 },
 
-  // Navigation
-  navRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 14, gap: 16 },
-  navArrow: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  navArrowText: { fontSize: 24, fontWeight: "300", lineHeight: 28, marginTop: -1 },
-  dotsRow: { flexDirection: "row", alignItems: "center", gap: 7 },
-  dot: { height: 6, borderRadius: 3 },
-
-  // Compare
-  compareBtn: { alignSelf: "center", marginTop: 10, paddingVertical: 8, paddingHorizontal: 16 },
-  compareBtnText: { fontSize: 13, fontWeight: "600", letterSpacing: 0.2 },
+  // Compare modal
   compareHeader: {
     flexDirection: "row",
     alignItems: "center",
