@@ -19,6 +19,8 @@ import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { useStore } from "@/lib/store";
 import { FuturisticBackground } from "@/components/futuristic-background";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ChoosePlanScreen() {
   const colors = useColors();
@@ -203,21 +205,33 @@ export default function ChoosePlanScreen() {
     }
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <ScreenContainer>
-      <FuturisticBackground />
+    <View style={{ flex: 1, backgroundColor: "#000d05" }}>
+      {/* Dark deep-space background */}
+      <LinearGradient
+        colors={["#000d05", "#001208", "#000e1a", "#000d05"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+      />
+      {/* Subtle lime glow top-left */}
+      <View style={{ position: "absolute", top: -80, left: -80, width: 260, height: 260, borderRadius: 130, backgroundColor: "rgba(74,222,128,0.06)" }} />
+      {/* Subtle cyan glow bottom-right */}
+      <View style={{ position: "absolute", bottom: -60, right: -60, width: 200, height: 200, borderRadius: 100, backgroundColor: "rgba(34,211,238,0.05)" }} />
       {/* Header */}
-      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: 4 }}>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginRight: 12, padding: 4 })}
         >
-          <IconSymbol name="arrow.left" size={24} color={colors.foreground} />
+          <IconSymbol name="arrow.left" size={24} color="#4ade80" />
         </Pressable>
-        <Text style={{ fontSize: 22, fontWeight: "700", color: colors.foreground, flex: 1 }}>Choose a Plan</Text>
+        <Text style={{ fontSize: 22, fontWeight: "900", color: "#4ade80", flex: 1, letterSpacing: -0.5 }}>Choose a Plan</Text>
       </View>
-      <Text style={{ fontSize: 14, color: colors.muted, paddingHorizontal: 20, marginBottom: 8 }}>
-        Swipe to compare plans. Upgrade or downgrade anytime.
+      <Text style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", paddingHorizontal: 20, marginBottom: 8 }}>
+        Swipe to compare · Upgrade or downgrade anytime
       </Text>
 
       {/* Grace period / scheduled downgrade banner */}
@@ -244,7 +258,7 @@ export default function ChoosePlanScreen() {
       )}
 
       {/* Carousel */}
-      <View style={{ flex: 1, paddingHorizontal: 20 }}>
+      <View style={{ flex: 1 }}>
         <PlanCarousel
           plans={(plans ?? []) as any}
           isLoading={isLoading}
@@ -256,15 +270,15 @@ export default function ChoosePlanScreen() {
       </View>
 
       {/* Footer */}
-      <Text style={{ fontSize: 12, color: colors.muted, textAlign: "center", paddingBottom: 16, paddingHorizontal: 20 }}>
+      <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textAlign: "center", paddingBottom: Math.max(insets.bottom, 16), paddingHorizontal: 20 }}>
         Need a custom plan?{" "}
         <Text
-          style={{ color: colors.primary }}
+          style={{ color: "#4ade80" }}
           onPress={() => Linking.openURL("mailto:support@lime-of-time.com")}
         >
           Contact us
         </Text>
       </Text>
-    </ScreenContainer>
+    </View>
   );
 }

@@ -1138,7 +1138,7 @@ export default function OnboardingScreen() {
     <View style={{ flex: 1 }}>
       {/* ─── Animated Gradient Background ─────────────────────── */}
       <LinearGradient
-        colors={["#1A3A28", "#2D5A3D", "#4A7C59", "#3D6B4A"]}
+        colors={displayStep === "subscription" ? ["#000d05", "#001208", "#001a0a", "#000d05"] : ["#1A3A28", "#2D5A3D", "#4A7C59", "#3D6B4A"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -1148,34 +1148,35 @@ export default function OnboardingScreen() {
       {displayStep === 1 && particles.map((p, i) => (
         <FloatingParticle key={i} {...p} />
       ))}
-
-      {/* ─── Bottom Wave Decoration ────────────────────────────── */}
-      <View
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: height * 0.38,
-          backgroundColor: "rgba(255,255,255,0.06)",
-          borderTopLeftRadius: width * 0.5,
-          borderTopRightRadius: width * 0.5,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: height * 0.28,
-          backgroundColor: "rgba(255,255,255,0.05)",
-          borderTopLeftRadius: width * 0.6,
-          borderTopRightRadius: width * 0.6,
-        }}
-      />
-
-      {/* ─── Back to Portal Select ─────────────────────────── */}
+      {/* ─── Bottom Wave Decoration (hidden on subscription step) ──────────────────────────────────── */}
+      {displayStep !== "subscription" && (
+        <>
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: height * 0.38,
+              backgroundColor: "rgba(255,255,255,0.06)",
+              borderTopLeftRadius: width * 0.5,
+              borderTopRightRadius: width * 0.5,
+            }}
+          />
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: height * 0.28,
+              backgroundColor: "rgba(255,255,255,0.05)",
+              borderTopLeftRadius: width * 0.6,
+              borderTopRightRadius: width * 0.6,
+            }}
+          />
+        </>
+      )}     {/* ─── Back to Portal Select ─────────────────────────── */}
       {step === 1 && (
         <Pressable
           onPress={() => {
@@ -1210,8 +1211,8 @@ export default function OnboardingScreen() {
           ref={outerScrollRef}
           contentContainerStyle={{
             minHeight: height,
-            paddingHorizontal: hp,
-            paddingTop: 32,
+            paddingHorizontal: displayStep === "subscription" ? 0 : hp,
+            paddingTop: displayStep === "subscription" ? (insets.top + 16) : 32,
             paddingBottom: 100,
           }}
           showsVerticalScrollIndicator={false}
@@ -1219,7 +1220,7 @@ export default function OnboardingScreen() {
           scrollEnabled={true}
         >
           {/* ─── Logo + App Name ─────────────────────────────── */}
-          <Animated.View style={[styles.logoContainer, logoStyle]}>
+          {displayStep !== "subscription" && (<Animated.View style={[styles.logoContainer, logoStyle]}>
             <View style={styles.logoRing}>
               <Image
                 source={require("@/assets/images/icon.png")}
@@ -1235,17 +1236,17 @@ export default function OnboardingScreen() {
               <Text style={{ fontSize: fs.xs, color: "rgba(255,255,255,0.45)", letterSpacing: 1.5, textTransform: "uppercase" }}>by Innovancio</Text>
               <View style={{ width: 24, height: 1, backgroundColor: "rgba(255,255,255,0.3)" }} />
             </Animated.View>
-          </Animated.View>
+          </Animated.View>)}
 
           {/* ─── Progress Dots ──────────────────────────────────── */}
-          <ProgressDots step={displayStep} />
+          {displayStep !== "subscription" && <ProgressDots step={displayStep} />}
 
           {/* ─── White Card ──────────────────────────────────── */}
           {/* GestureDetector enables swipe-right to go back on applicable steps */}
           <GestureDetector gesture={swipeGesture}>
           {/* Clip container — no overflow:hidden so tall steps (Business Info) can scroll fully */}
           <View style={{ borderRadius: 24 }}>
-          <Animated.View style={[styles.card, slideStyle, { borderRadius: 24 }]}>
+          <Animated.View style={[displayStep === "subscription" ? styles.cardTransparent : styles.card, slideStyle, { borderRadius: 24 }]}>
             {/* Step 1: Phone */}
             {displayStep === 1 && (
               <>
@@ -1776,15 +1777,18 @@ export default function OnboardingScreen() {
             {/* Step Subscription: Plan Selection */}
             {displayStep === "subscription" && (
               <>
-                <Animated.View style={[titleStyle, { alignItems: "center" }]}>
-                  <View style={{ width: 72, height: 72, borderRadius: 20, backgroundColor: "rgba(74,124,89,0.12)", alignItems: "center", justifyContent: "center", marginBottom: 14, borderWidth: 2, borderColor: "rgba(74,124,89,0.2)" }}>
-                    <Text style={{ fontSize: fs.xxl }}>🚀</Text>
+                {/* Subscription header */}
+                <Animated.View style={[titleStyle, styles.subHeader]}>
+                  <View style={styles.subTitleRow}>
+                    <Text style={styles.subTitleEmoji}>🚀</Text>
+                    <View>
+                      <Text style={styles.subTitle}>Choose Your Plan</Text>
+                      <Text style={styles.subSubtitle}>Start free · Upgrade anytime</Text>
+                    </View>
                   </View>
-                  <Text style={[styles.stepTitle, { textAlign: "center" }]}>Choose Your Plan</Text>
-                  <Text style={[styles.stepSubtitle, { textAlign: "center" }]}>Start free, upgrade anytime</Text>
                 </Animated.View>
-
-                <Animated.View style={[inputStyle]}>
+                {/* Carousel — break out of card horizontal padding */}
+                <Animated.View style={[inputStyle, { marginHorizontal: -hp }]}>
                   <PlanCarousel
                     key={planCarouselKey}
                     plans={(publicPlans ?? []) as any}
@@ -1796,13 +1800,12 @@ export default function OnboardingScreen() {
                     isOnboarding
                   />
                 </Animated.View>
-
                 <Animated.View style={btnStyle}>
                   <Pressable
                     onPress={handleSkipSubscription}
-                    style={({ pressed }) => [styles.skipBtn, { opacity: pressed ? 0.6 : 1 }]}
+                    style={({ pressed }) => [styles.subSkipBtn, { opacity: pressed ? 0.5 : 1 }]}
                   >
-                    <Text style={styles.skipBtnText}>Skip for now</Text>
+                    <Text style={styles.subSkipText}>Skip for now</Text>
                   </Pressable>
                 </Animated.View>
               </>
@@ -1927,6 +1930,56 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 24,
     elevation: 8,
+  },
+  // Transparent card variant used for the subscription step (full-screen futuristic)
+  cardTransparent: {
+    backgroundColor: "transparent",
+    borderRadius: 0,
+    padding: 0,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  // Subscription step header
+  subHeader: {
+    paddingTop: 8,
+    paddingBottom: 14,
+    paddingHorizontal: 4,
+  },
+  subTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  subTitleEmoji: {
+    fontSize: 36,
+  },
+  subTitle: {
+    fontSize: 26,
+    fontWeight: "900",
+    color: "#4ade80",
+    letterSpacing: -0.6,
+    lineHeight: 30,
+    fontFamily: Platform.OS === "ios" ? "Inter_700Bold" : undefined,
+  },
+  subSubtitle: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.5)",
+    marginTop: 2,
+    fontWeight: "500",
+    fontFamily: Platform.OS === "ios" ? "Inter_400Regular" : undefined,
+  },
+  subSkipBtn: {
+    alignSelf: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    marginTop: 8,
+  },
+  subSkipText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.35)",
+    letterSpacing: 0.2,
+    fontFamily: Platform.OS === "ios" ? "Inter_600SemiBold" : undefined,
   },
   stepTitle: {
     fontSize: 17,
