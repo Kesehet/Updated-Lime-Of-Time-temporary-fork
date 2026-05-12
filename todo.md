@@ -2137,3 +2137,6 @@
 - [x] Remove Messages preview section from home screen (keep floating chat bubble only)
 - [x] Gift Cards redesign: two tabs (Issued / Sold), filter chips (All/Active/Redeemed/Unpaid/Expired), bottom sheet editor for owner edits on both tabs
 - [x] Redesign business onboarding subscription page: modern professional layout, all info visible, same colors, all functions intact
+- [x] Fix scroll-from-middle issue on Business Info onboarding page
+- [x] Fix scroll-from-middle issue on Subscription/choose-plan onboarding page
+- [x] Subscription page redesign v2: horizontal swipe carousel, full-gradient cards per plan, nav arrows, dots, compare modal (no auto-scroll, no free trial badge, no testimonials)

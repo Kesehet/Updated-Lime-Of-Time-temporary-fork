@@ -776,7 +776,8 @@ export default function OnboardingScreen() {
   // ─── Swipe-right pan gesture (back navigation) ────────────────────
   const swipeGesture = Gesture.Pan()
     .runOnJS(true)
-    .minDistance(10)
+    .activeOffsetX([-20, 20])   // only activate when horizontal movement dominates
+    .failOffsetY([-12, 12])     // fail (pass to ScrollView) if vertical movement comes first
     .onEnd((e) => {
       // Only trigger if swiping right with enough velocity or distance
       const canGoBack = displayStep === "otp" || displayStep === "socialPhone" || displayStep === 2;
