@@ -855,7 +855,7 @@ export async function incrementPromoCodeUsage(localId: string, businessOwnerId: 
 }
 
 export async function getFullBusinessData(businessOwnerId: number) {
-  const [owner, svcList, clientList, apptList, reviewList, discountList, giftCardList, scheduleList, productList, staffList, locationList, promoList, packageList] = await Promise.all([
+  const [owner, svcList, clientList, apptList, reviewList, discountList, giftCardList, scheduleList, productList, staffList, locationList, promoList, packageList, referralCode] = await Promise.all([
     getBusinessOwnerById(businessOwnerId),
     getServicesByOwner(businessOwnerId),
     getClientsByOwner(businessOwnerId),
@@ -869,6 +869,7 @@ export async function getFullBusinessData(businessOwnerId: number) {
     getLocationsByOwner(businessOwnerId),
     getPromoCodesByOwner(businessOwnerId),
     getServicePackagesByOwner(businessOwnerId),
+    getReferralCodeByOwner(businessOwnerId),
   ]);
   return {
     owner,
@@ -884,6 +885,7 @@ export async function getFullBusinessData(businessOwnerId: number) {
     locations: locationList,
     promoCodes: promoList,
     servicePackages: packageList,
+    referralCode: referralCode || null,
   };
 }
 

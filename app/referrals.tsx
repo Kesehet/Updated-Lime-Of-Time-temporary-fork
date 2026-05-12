@@ -203,7 +203,7 @@ export default function ReferralsScreen() {
 
           {/* Share Actions */}
           {code && (
-            <View>
+            <View style={{ gap: 10 }}>
               <Text style={ss.sectionTitle}>{"Share Your Code"}</Text>
               <View style={ss.actionRow}>
                 <TouchableOpacity style={[ss.actionBtn, ss.primaryBtn]} onPress={handleShare}>
@@ -213,6 +213,20 @@ export default function ReferralsScreen() {
                   <Text style={ss.secondaryBtnTxt}>{"Send SMS"}</Text>
                 </TouchableOpacity>
               </View>
+              {/* Copy Booking Link — URL only, no message text */}
+              <TouchableOpacity
+                style={[ss.actionBtn, { backgroundColor: colors.surface, borderWidth: 0.5, borderColor: colors.primary + "55", borderRadius: 14, paddingVertical: 13, flexDirection: "row", gap: 8 }]}
+                onPress={handleCopyLink}
+              >
+                <Text style={{ fontSize: 14, fontWeight: "600", color: colors.primary }}>
+                  {copied ? "✓ Booking Link Copied!" : "🔗 Copy Booking Link"}
+                </Text>
+                {bookingUrl && bookingUrl !== "https://lime-of-time.com" && (
+                  <Text style={{ fontSize: 11, color: colors.muted, flex: 1 }} numberOfLines={1}>
+                    {bookingUrl}
+                  </Text>
+                )}
+              </TouchableOpacity>
             </View>
           )}
 

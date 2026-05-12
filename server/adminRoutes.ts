@@ -3649,16 +3649,80 @@ function businessesPage(businesses: any[]): string {
 // --- Business Detail Page -------------------------------------------
 function businessDetailPage(data: any): string {
   const o = data.owner;
-  const slug = o.businessName.toLowerCase().replace(/\s+/g, "-");
+  const slug = (o.customSlug || o.businessName).toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const referralCode = data.referralCode;
+  const bookingUrlWithRef = referralCode ? `https://lime-of-time.com/book/${slug}?ref=${encodeURIComponent(referralCode.code)}` : `https://lime-of-time.com/book/${slug}`;
   return adminLayout(o.businessName, "businesses", `
     <div class="breadcrumb"><a href="/api/admin/businesses">Businesses</a> / ${o.businessName}</div>
     <div class="page-header">
       <h2>${o.businessName}</h2>
-      <div style="display:flex; gap:8px;">
-        <a href="https://lime-of-time.com/book/${slug}" target="_blank" class="btn btn-secondary btn-sm">View Booking Page</a>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="https://lime-of-time.com/book/${slug}" target="_blank" class="btn btn-secondary btn-sm">&#128197; View Booking Page</a>
+        <button onclick="document.getElementById('referModal').style.display='flex'" class="btn btn-primary btn-sm" style="background:#10B981;border-color:#10B981;">&#129309; Send Referral</button>
         <button onclick="document.getElementById('deleteDialog').classList.add('show')" class="btn btn-danger btn-sm">Delete Business</button>
       </div>
     </div>
+
+    <!-- Referral Modal -->
+    <div id="referModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+      <div style="background:var(--surface);border-radius:12px;padding:28px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <h3 style="margin:0;">&#129309; Send Referral to ${escHtml(o.businessName)}</h3>
+          <button onclick="document.getElementById('referModal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);">&times;</button>
+        </div>
+        ${referralCode ? `
+          <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:14px;margin-bottom:16px;">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">REFERRAL CODE</div>
+            <div style="font-size:22px;font-weight:700;color:#10B981;letter-spacing:2px;">${escHtml(referralCode.code)}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">50% off first 3 months for new signups</div>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Booking link with referral code:</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="referLinkInput" value="${escHtml(bookingUrlWithRef)}" readonly style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-secondary);font-size:12px;color:var(--text);">
+              <button onclick="copyReferLink()" class="btn btn-secondary btn-sm" id="copyReferBtn">&#128203; Copy</button>
+            </div>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Send via SMS to a phone number:</label>
+            <div style="display:flex;gap:8px;">
+              <input type="tel" id="referPhoneInput" placeholder="+1 (555) 000-0000" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-secondary);font-size:14px;color:var(--text);">
+              <button onclick="sendReferSMS(${o.id})" class="btn btn-primary btn-sm" style="background:#10B981;border-color:#10B981;">&#128241; Send SMS</button>
+            </div>
+            <div id="referSmsMsg" style="font-size:13px;margin-top:8px;display:none;"></div>
+          </div>
+        ` : `
+          <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:14px;margin-bottom:16px;">
+            <div style="color:#F59E0B;font-weight:600;margin-bottom:4px;">&#9888; No referral code yet</div>
+            <div style="font-size:13px;color:var(--muted);">This business doesn't have a referral code. Generate one first from the <a href="/api/admin/referrals" style="color:#10B981;">Referrals page</a>.</div>
+          </div>
+        `}
+        <div style="display:flex;justify-content:flex-end;">
+          <button onclick="document.getElementById('referModal').style.display='none'" class="btn btn-secondary btn-sm">Close</button>
+        </div>
+      </div>
+    </div>
+    <script>
+    function copyReferLink() {
+      const inp = document.getElementById('referLinkInput');
+      inp.select(); document.execCommand('copy');
+      const btn = document.getElementById('copyReferBtn');
+      btn.textContent = '\u2713 Copied!'; btn.style.color='#10B981';
+      setTimeout(() => { btn.textContent = '\u{1F4CB} Copy'; btn.style.color=''; }, 2000);
+    }
+    async function sendReferSMS(bizId) {
+      const phone = document.getElementById('referPhoneInput').value.trim();
+      const msg = document.getElementById('referSmsMsg');
+      if (!phone) { msg.style.display='block'; msg.style.color='#EF4444'; msg.textContent='Please enter a phone number.'; return; }
+      msg.style.display='block'; msg.style.color='var(--muted)'; msg.textContent='Sending...';
+      try {
+        const r = await fetch('/api/admin/referrals/send-sms', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ businessOwnerId: bizId, phone }) });
+        const d = await r.json();
+        if (d.ok) { msg.style.color='#10B981'; msg.textContent='\u2713 SMS sent successfully!'; }
+        else { msg.style.color='#EF4444'; msg.textContent='Error: ' + (d.error || 'Failed to send'); }
+      } catch(e) { msg.style.color='#EF4444'; msg.textContent='Network error. Please try again.'; }
+    }
+    </script>
 
     <div class="detail-grid" style="margin-bottom:24px;">
       <div class="card">
