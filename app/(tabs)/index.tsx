@@ -326,6 +326,9 @@ export default function HomeScreen() {
   // Which location is selected inside the QR modal (null = all/base URL)
   const [qrSelectedLocationId, setQrSelectedLocationId] = useState<string | null>(null);
 
+  // ─── Referral QR Modal ─────────────────────────────────────────
+  const [showReferralQrModal, setShowReferralQrModal] = useState(false);
+
   // ─── KPI Detail Sheet ─────────────────────────────────────────
   const [kpiDetailTab, setKpiDetailTab] = useState<KpiTab | null>(null);
   const [kpiDateRange, setKpiDateRange] = useState<KpiDateRange>("week");
@@ -2674,41 +2677,60 @@ export default function HomeScreen() {
         {referralData?.code && (() => {
           const joinUrl = `https://lime-of-time.com/join?ref=${referralData.code}`;
           return (
-            <Pressable
-              onPress={() => (router as any).push("/referrals")}
-              style={({ pressed }) => ({
-                marginTop: 12,
-                borderRadius: 18,
-                overflow: "hidden" as const,
-                opacity: pressed ? 0.88 : 1,
-                transform: [{ scale: pressed ? 0.99 : 1 }],
-              })}
-            >
+            <View style={{ marginTop: 12, borderRadius: 18, overflow: "hidden" as const }}>
               <LinearGradient
                 colors={["#16a34a", "#15803d"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={{ flexDirection: "row", alignItems: "center", padding: 16, gap: 14 }}
               >
-                {/* QR preview */}
-                <View style={{ width: 72, height: 72, borderRadius: 12, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", padding: 4, flexShrink: 0 }}>
+                {/* QR preview — tapping opens full QR modal */}
+                <Pressable
+                  onPress={() => setShowReferralQrModal(true)}
+                  style={({ pressed }) => ({ width: 72, height: 72, borderRadius: 12, backgroundColor: "#fff", alignItems: "center" as const, justifyContent: "center" as const, padding: 4, flexShrink: 0, opacity: pressed ? 0.8 : 1 })}
+                >
                   <QRCode value={joinUrl} size={60} color="#000" backgroundColor="#fff" />
-                </View>
-                {/* Text */}
+                </Pressable>
+                {/* Text + action pills */}
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: fs.md, fontWeight: "800", color: "#fff", marginBottom: 2 }}>Refer a Business</Text>
-                  <Text style={{ fontSize: fs.xs, color: "rgba(255,255,255,0.75)", lineHeight: 17 }}>Share this app with other businesses and earn 1 free month</Text>
+                  <Text style={{ fontSize: fs.xs, color: "rgba(255,255,255,0.75)", lineHeight: 17 }}>Share the app, earn 1 free month per conversion</Text>
                   <View style={{ flexDirection: "row", gap: 6, marginTop: 8 }}>
-                    {["Copy Link", "Share", "Full QR"].map((label) => (
-                      <View key={label} style={{ backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                        <Text style={{ fontSize: 10, fontWeight: "700", color: "#fff" }}>{label}</Text>
-                      </View>
-                    ))}
+                    {/* Copy Link */}
+                    <Pressable
+                      onPress={async () => {
+                        try {
+                          const { default: Clipboard } = await import("expo-clipboard");
+                          await Clipboard.setStringAsync(joinUrl);
+                          Alert.alert("Copied!", "Referral link copied to clipboard.");
+                        } catch { Alert.alert("Copied!", "Referral link copied."); }
+                      }}
+                      style={({ pressed }) => ({ backgroundColor: pressed ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.2)", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 })}
+                    >
+                      <Text style={{ fontSize: 10, fontWeight: "700", color: "#fff" }}>Copy Link</Text>
+                    </Pressable>
+                    {/* Share */}
+                    <Pressable
+                      onPress={async () => {
+                        try {
+                          await Share.share({ message: `Join me on Lime Of Time — the easiest way to manage your appointments, clients & payments. Get 50% off your first 3 months: ${joinUrl}`, title: "Try Lime Of Time" });
+                        } catch {}
+                      }}
+                      style={({ pressed }) => ({ backgroundColor: pressed ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.2)", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 })}
+                    >
+                      <Text style={{ fontSize: 10, fontWeight: "700", color: "#fff" }}>Share</Text>
+                    </Pressable>
+                    {/* Full QR */}
+                    <Pressable
+                      onPress={() => setShowReferralQrModal(true)}
+                      style={({ pressed }) => ({ backgroundColor: pressed ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.2)", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 })}
+                    >
+                      <Text style={{ fontSize: 10, fontWeight: "700", color: "#fff" }}>Full QR</Text>
+                    </Pressable>
                   </View>
                 </View>
-                <IconSymbol name="chevron.right" size={18} color="rgba(255,255,255,0.6)" />
               </LinearGradient>
-            </Pressable>
+            </View>
           );
         })()}
 
@@ -3007,7 +3029,70 @@ export default function HomeScreen() {
         </Pressable>
       </Modal>
 
-      {/* ─── KPI Detail Sheet ──────────────────────────────────────────── */}
+      {/* ─── Referral Full QR Modal ────────────────────────────────────────────────────────────────── */}
+      {referralData?.code && (
+        <Modal visible={showReferralQrModal} transparent animationType="fade" onRequestClose={() => setShowReferralQrModal(false)}>
+          <Pressable
+            style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", justifyContent: "center", padding: 24 }}
+            onPress={() => setShowReferralQrModal(false)}
+          >
+            <View
+              style={{ backgroundColor: colors.surface, borderRadius: 24, padding: 24, width: "100%", maxWidth: 340, alignItems: "center", gap: 16 }}
+              onStartShouldSetResponder={() => true}
+            >
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                <Text style={{ fontSize: fs.lg, fontWeight: "800", color: colors.foreground }}>Refer a Business</Text>
+                <Pressable onPress={() => setShowReferralQrModal(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.border, alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontSize: 16, color: colors.foreground }}>✕</Text>
+                </Pressable>
+              </View>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "center" }}>
+                Share this QR code with other business owners to earn 1 free month per conversion
+              </Text>
+              <View style={{ backgroundColor: "#fff", borderRadius: 16, padding: 16 }}>
+                <QRCode value={`https://lime-of-time.com/join?ref=${referralData.code}`} size={200} color="#000" backgroundColor="#fff" />
+              </View>
+              <View style={{ backgroundColor: "#16a34a15", borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8, borderWidth: 1, borderColor: "#16a34a40" }}>
+                <Text style={{ fontSize: fs.sm, fontWeight: "800", color: "#16a34a", textAlign: "center", letterSpacing: 2 }}>{referralData.code}</Text>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10, width: "100%" }}>
+                <Pressable
+                  onPress={async () => {
+                    const url = `https://lime-of-time.com/join?ref=${referralData.code}`;
+                    try {
+                      const { default: Clipboard } = await import("expo-clipboard");
+                      await Clipboard.setStringAsync(url);
+                      Alert.alert("Copied!", "Referral link copied to clipboard.");
+                    } catch { Alert.alert("Copied!", "Referral link copied."); }
+                  }}
+                  style={({ pressed }) => [{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, borderRadius: 12, opacity: pressed ? 0.8 : 1 }, { backgroundColor: colors.border }]}
+                >
+                  <IconSymbol name="doc.on.doc.fill" size={16} color={colors.foreground} />
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground }}>Copy Link</Text>
+                </Pressable>
+                <Pressable
+                  onPress={async () => {
+                    const url = `https://lime-of-time.com/join?ref=${referralData.code}`;
+                    try {
+                      await Share.share({ message: `Join me on Lime Of Time — manage appointments, clients & payments easily. Get 50% off your first 3 months: ${url}`, title: "Try Lime Of Time" });
+                    } catch {}
+                    setShowReferralQrModal(false);
+                  }}
+                  style={({ pressed }) => [{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, borderRadius: 12, opacity: pressed ? 0.8 : 1 }, { backgroundColor: "#16a34a" }]}
+                >
+                  <IconSymbol name="paperplane.fill" size={16} color="#fff" />
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#fff" }}>Share</Text>
+                </Pressable>
+              </View>
+              <Text style={{ fontSize: fs.xs, color: colors.muted, textAlign: "center" }}>
+                New businesses get 50% off their first 3 months after their free trial
+              </Text>
+            </View>
+          </Pressable>
+        </Modal>
+      )}
+
+      {/* ─── KPI Detail Sheet ────────────────────────────────────────────────────────────────── */}
       <KpiDetailSheet
         visible={kpiDetailTab !== null}
         tab={kpiDetailTab}

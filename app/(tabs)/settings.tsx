@@ -838,13 +838,6 @@ export default function SettingsScreen() {
           route: "/referrals",
           color: "#16a34a",
         },
-        {
-          title: "Promo Codes",
-          subtitle: "Create discount codes for clients",
-          icon: "tag.fill",
-          route: "/promo-codes",
-          color: "#F59E0B",
-        },
       ])}
 
       {/* Appearance */}
