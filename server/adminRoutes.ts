@@ -1881,6 +1881,152 @@ export function registerAdminRoutes(app: Express): void {
     }
   });
 
+  // -- Referrals Admin Page -----------------------------------------------
+  app.get("/api/admin/referrals", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const dbase = await getDb();
+      if (!dbase) { res.status(500).send(errorPage("DB unavailable")); return; }
+
+      const allCodes = await (dbase as any).select().from((await import('../drizzle/schema')).referralCodes).catch(() => [] as any[]);
+      const allRefs = await (dbase as any).select().from((await import('../drizzle/schema')).referrals).catch(() => [] as any[]);
+      const allBiz = await dbase.select().from(businessOwners);
+      const bizMap: Record<number, string> = {};
+      allBiz.forEach((b: any) => { bizMap[b.id] = b.businessName || b.name || String(b.id); });
+
+      const totalPending = allRefs.filter((r: any) => r.status === 'pending').length;
+      const totalConverted = allRefs.filter((r: any) => r.status === 'converted' || r.status === 'rewarded').length;
+      const totalRewarded = allRefs.filter((r: any) => r.status === 'rewarded').length;
+
+      res.send(adminLayout("Referrals", "referrals", `
+        <div class="page-header">
+          <h2>Referral Program</h2>
+          <span style="font-size:13px;color:var(--text-muted);">${allCodes.length} codes · ${allRefs.length} referrals</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
+          <div class="card" style="text-align:center;padding:20px;">
+            <div style="font-size:32px;font-weight:800;color:var(--primary);">${allRefs.length}</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Total Referrals</div>
+          </div>
+          <div class="card" style="text-align:center;padding:20px;">
+            <div style="font-size:32px;font-weight:800;color:#10B981;">${totalConverted}</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Converted</div>
+          </div>
+          <div class="card" style="text-align:center;padding:20px;">
+            <div style="font-size:32px;font-weight:800;color:#F59E0B;">${totalRewarded}</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Rewarded</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:24px;">
+          <h3 style="margin:0 0 16px;">Send Referral Code via SMS</h3>
+          <form method="POST" action="/api/admin/referrals/send-sms" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <label style="font-size:12px;color:var(--text-muted);">Phone Number</label>
+              <input name="phone" type="tel" placeholder="+1 555 000 0000" required style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;" />
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <label style="font-size:12px;color:var(--text-muted);">Referral Code (optional — leave blank to use a generic code)</label>
+              <input name="code" type="text" placeholder="e.g. JANES-4X2K" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;font-family:monospace;" />
+            </div>
+            <button type="submit" style="padding:8px 20px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Send SMS</button>
+          </form>
+        </div>
+
+        <div class="card" style="margin-bottom:24px;">
+          <h3 style="margin:0 0 16px;">Referral Codes</h3>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr><th>Code</th><th>Business</th><th>Discount</th><th>Months</th><th>Uses</th><th>Active</th><th>Created</th></tr></thead>
+              <tbody>
+                ${allCodes.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No referral codes yet</td></tr>' : allCodes.map((c: any) => `
+                  <tr>
+                    <td><strong style="font-family:monospace;">${c.code || '-'}</strong></td>
+                    <td>${bizMap[c.businessOwnerId] || c.businessOwnerId || '-'}</td>
+                    <td>${c.discountPercent ?? 50}%</td>
+                    <td>${c.discountMonths ?? 3}</td>
+                    <td>${c.usedCount ?? 0}</td>
+                    <td>${c.isActive ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-error">Inactive</span>'}</td>
+                    <td>${c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '-'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin:0 0 16px;">Referral History</h3>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr><th>ID</th><th>Referrer</th><th>Referred</th><th>Status</th><th>Created</th><th>Converted At</th></tr></thead>
+              <tbody>
+                ${allRefs.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No referrals yet</td></tr>' : allRefs.map((r: any) => `
+                  <tr>
+                    <td>${r.id}</td>
+                    <td>${bizMap[r.referrerBusinessOwnerId] || r.referrerBusinessOwnerId || '-'}</td>
+                    <td>${bizMap[r.referredBusinessOwnerId] || r.referredBusinessOwnerId || '-'}</td>
+                    <td>${r.status === 'rewarded' ? '<span class="badge badge-success">Rewarded</span>' : r.status === 'converted' ? '<span class="badge" style="background:#10B98122;color:#10B981;">Converted</span>' : r.status === 'expired' ? '<span class="badge badge-error">Expired</span>' : '<span class="badge" style="background:#F59E0B22;color:#F59E0B;">Pending</span>'}</td>
+                    <td>${r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '-'}</td>
+                    <td>${r.convertedAt ? new Date(r.convertedAt).toLocaleDateString() : '-'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `));
+    } catch (err) {
+      console.error("[Admin] Referrals error:", err);
+      res.status(500).send(errorPage("Failed to load referrals"));
+    }
+  });
+
+  app.post("/api/admin/referrals/send-sms", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { phone, code } = req.body as { phone: string; code?: string };
+      if (!phone) { res.status(400).send(errorPage("Phone number required")); return; }
+      const shareUrl = "https://lime-of-time.com";
+      const codeText = code ? ` Use referral code ${code.toUpperCase()} for 50% off your first 3 months!` : " Ask your contact for their referral code to get 50% off your first 3 months!";
+      const message = `You've been invited to try Lime of Time — the easiest way to manage your appointments.${codeText} Sign up at ${shareUrl}`;
+      // Use Twilio if configured
+      const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+      const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+      const twilioFrom = process.env.TWILIO_PHONE_NUMBER;
+      if (twilioSid && twilioToken && twilioFrom) {
+        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`;
+        const body = new URLSearchParams({ To: phone, From: twilioFrom, Body: message });
+        const resp = await fetch(twilioUrl, {
+          method: "POST",
+          headers: { "Authorization": "Basic " + Buffer.from(`${twilioSid}:${twilioToken}`).toString("base64"), "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString(),
+        });
+        const result = await resp.json() as any;
+        if (result.sid) {
+          res.redirect("/api/admin/referrals?success=sms_sent");
+        } else {
+          res.status(500).send(errorPage("Twilio error: " + (result.message || "Unknown error")));
+        }
+      } else {
+        // Twilio not configured — show what would be sent
+        res.send(adminLayout("Referrals", "referrals", `
+          <div class="card" style="padding:24px;">
+            <h3>SMS Preview (Twilio not configured)</h3>
+            <p style="color:var(--text-muted);">Configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER to send real SMS.</p>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px;">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">To: ${phone}</div>
+              <div style="font-size:14px;">${message}</div>
+            </div>
+            <a href="/api/admin/referrals" style="display:inline-block;margin-top:16px;color:var(--primary);">← Back to Referrals</a>
+          </div>
+        `));
+      }
+    } catch (err) {
+      console.error("[Admin] Send SMS error:", err);
+      res.status(500).send(errorPage("Failed to send SMS"));
+    }
+  });
+
   // -- Waitlist Admin Page -----------------------------------------------
   app.get("/api/admin/waitlist", requireAuth, async (_req: Request, res: Response) => {
     try {
@@ -2809,6 +2955,7 @@ function sidebarHtml(activePage: string): string {
       ${navItem('/api/admin/plans', '📋', 'Plan Pricing', a === 'plans')}
       ${navItem('/api/admin/stripe-connect', '💳', 'Stripe Connect', a === 'stripe-connect')}
       ${navItem('/api/admin/promo-codes', '🎟️', 'Promo Codes', a === 'promo-codes')}
+      ${navItem('/api/admin/referrals', '🤝', 'Referrals', a === 'referrals')}
       ${navItem('/api/admin/waitlist', '⏳', 'Waitlist', a === 'waitlist')}
 
       ${navSection('SYSTEM')}

@@ -357,6 +357,7 @@ function RootLayout() {
               <Stack.Screen name="social-links" options={{ presentation: "card" }} />
               <Stack.Screen name="note-templates" options={{ presentation: "card" }} />
               <Stack.Screen name="promo-codes" options={{ presentation: "card" }} />
+              <Stack.Screen name="referrals" options={{ presentation: "card" }} />
               <Stack.Screen name="category-management" options={{ presentation: "card" }} />
               <Stack.Screen name="usage-guide" options={{ presentation: "card" }} />
               <Stack.Screen name="onboarding-analytics" options={{ presentation: "card" }} />

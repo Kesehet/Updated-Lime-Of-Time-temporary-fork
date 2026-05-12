@@ -865,3 +865,57 @@ export const clientPackages = mysqlTable("client_packages", {
 });
 export type DbClientPackage = typeof clientPackages.$inferSelect;
 export type InsertClientPackage = typeof clientPackages.$inferInsert;
+
+// ─── Referral Codes ──────────────────────────────────────────────────────────
+export const referralCodes = mysqlTable("referral_codes", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Business owner who owns this referral code */
+  businessOwnerId: int("businessOwnerId").notNull(),
+  /** Human-readable code e.g. JANES-4X2K */
+  code: varchar("code", { length: 32 }).notNull().unique(),
+  /** Whether this code is active and can be used */
+  isActive: boolean("isActive").default(true).notNull(),
+  /** Total number of times this code has been successfully used (converted to paid) */
+  totalUses: int("totalUses").default(0).notNull(),
+  /** Discount percentage for referred user (default 50) */
+  discountPercent: int("discountPercent").default(50).notNull(),
+  /** Number of months the discount applies (default 3) */
+  discountMonths: int("discountMonths").default(3).notNull(),
+  /** Stripe coupon ID created for this referral (cached to avoid re-creation) */
+  stripeCouponId: varchar("stripeCouponId", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ReferralCode = typeof referralCodes.$inferSelect;
+export type InsertReferralCode = typeof referralCodes.$inferInsert;
+
+// ─── Referrals ───────────────────────────────────────────────────────────────
+export const referrals = mysqlTable("referrals", {
+  id: int("id").autoincrement().primaryKey(),
+  /** The referral code that was used */
+  referralCodeId: int("referralCodeId").notNull(),
+  /** Business owner who referred (code owner) */
+  referrerBusinessOwnerId: int("referrerBusinessOwnerId").notNull(),
+  /** Business owner who was referred (new user) */
+  referredBusinessOwnerId: int("referredBusinessOwnerId").notNull(),
+  /**
+   * Status lifecycle:
+   * pending   → code applied at signup, trial running
+   * converted → referred user completed first paid month
+   * rewarded  → referrer has received their free month
+   * expired   → referred user never converted (cancelled during trial)
+   */
+  status: mysqlEnum("status", ["pending", "converted", "rewarded", "expired"]).default("pending").notNull(),
+  /** Stripe coupon ID applied to referred user's subscription */
+  appliedCouponId: varchar("appliedCouponId", { length: 255 }),
+  /** Date when the referred user's first paid invoice was settled */
+  convertedAt: timestamp("convertedAt"),
+  /** Date when the referrer's free month credit was applied */
+  rewardedAt: timestamp("rewardedAt"),
+  /** Stripe credit note or invoice item ID for the referrer reward */
+  referrerRewardId: varchar("referrerRewardId", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Referral = typeof referrals.$inferSelect;
+export type InsertReferral = typeof referrals.$inferInsert;

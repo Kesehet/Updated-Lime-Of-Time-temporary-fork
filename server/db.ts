@@ -46,6 +46,12 @@ import {
   servicePackages,
   InsertServicePackage,
   DbServicePackage,
+  referralCodes,
+  InsertReferralCode,
+  ReferralCode,
+  referrals,
+  InsertReferral,
+  Referral,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1485,4 +1491,151 @@ export async function getAppointmentsByPackageBookingId(packageBookingId: string
     .select()
     .from(appointments)
     .where(and(eq(appointments.packageBookingId, packageBookingId), eq(appointments.businessOwnerId, businessOwnerId)));
+}
+
+// ─── Referral Helpers ─────────────────────────────────────────────────────────
+
+/** Generate a readable referral code from business name + 4 random chars */
+export function generateReferralCode(businessName: string): string {
+  const slug = businessName
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 5)
+    .padEnd(3, "X");
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let suffix = "";
+  for (let i = 0; i < 4; i++) {
+    suffix += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return `${slug}-${suffix}`;
+}
+
+/** Get or create a referral code for a business owner */
+export async function getOrCreateReferralCode(businessOwnerId: number, businessName: string): Promise<ReferralCode | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const existing = await db
+    .select()
+    .from(referralCodes)
+    .where(and(eq(referralCodes.businessOwnerId, businessOwnerId), eq(referralCodes.isActive, true)))
+    .limit(1);
+  if (existing.length > 0) return existing[0];
+  // Generate a unique code (retry up to 5 times on collision)
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = generateReferralCode(businessName);
+    try {
+      await db.insert(referralCodes).values({ businessOwnerId, code });
+      const created = await db.select().from(referralCodes).where(eq(referralCodes.code, code)).limit(1);
+      return created[0] ?? null;
+    } catch {
+      // Unique constraint violation — retry
+    }
+  }
+  return null;
+}
+
+/** Validate a referral code and return it if active */
+export async function validateReferralCode(code: string): Promise<ReferralCode | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(referralCodes)
+    .where(and(eq(referralCodes.code, code.toUpperCase().trim()), eq(referralCodes.isActive, true)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** Get referral code by business owner ID */
+export async function getReferralCodeByOwner(businessOwnerId: number): Promise<ReferralCode | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(referralCodes)
+    .where(eq(referralCodes.businessOwnerId, businessOwnerId))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** Create a referral record when a new user applies a code */
+export async function createReferral(
+  referralCodeId: number,
+  referrerBusinessOwnerId: number,
+  referredBusinessOwnerId: number,
+): Promise<Referral | null> {
+  const db = await getDb();
+  if (!db) return null;
+  await db.insert(referrals).values({ referralCodeId, referrerBusinessOwnerId, referredBusinessOwnerId });
+  const rows = await db
+    .select()
+    .from(referrals)
+    .where(eq(referrals.referredBusinessOwnerId, referredBusinessOwnerId))
+    .orderBy(referrals.createdAt)
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** Get referral record for a referred business owner */
+export async function getReferralByReferredOwner(referredBusinessOwnerId: number): Promise<Referral | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(referrals)
+    .where(eq(referrals.referredBusinessOwnerId, referredBusinessOwnerId))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** Get all referrals made by a referrer */
+export async function getReferralsByReferrer(referrerBusinessOwnerId: number): Promise<Referral[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(referrals)
+    .where(eq(referrals.referrerBusinessOwnerId, referrerBusinessOwnerId))
+    .orderBy(referrals.createdAt);
+}
+
+/** Update referral status and optional fields */
+export async function updateReferralStatus(
+  referralId: number,
+  updates: Partial<Pick<Referral, "status" | "appliedCouponId" | "convertedAt" | "rewardedAt" | "referrerRewardId">>,
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(referrals).set(updates as any).where(eq(referrals.id, referralId));
+}
+
+/** Increment totalUses on a referral code */
+export async function incrementReferralCodeUses(referralCodeId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(referralCodes)
+    .set({ totalUses: sql`${referralCodes.totalUses} + 1` })
+    .where(eq(referralCodes.id, referralCodeId));
+}
+
+/** Admin: get all referral codes with usage stats */
+export async function getAllReferralCodes(): Promise<ReferralCode[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(referralCodes).orderBy(referralCodes.createdAt);
+}
+
+/** Admin: get all referrals */
+export async function getAllReferrals(): Promise<Referral[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(referrals).orderBy(referrals.createdAt);
+}
+
+/** Update stripeCouponId on a referral code */
+export async function setReferralCodeCoupon(referralCodeId: number, stripeCouponId: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(referralCodes).set({ stripeCouponId }).where(eq(referralCodes.id, referralCodeId));
 }

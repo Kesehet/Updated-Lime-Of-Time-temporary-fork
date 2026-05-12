@@ -1796,6 +1796,67 @@ const packagesRouter = router({
     }),
 });
 
+// ─── Referral Router ─────────────────────────────────────────────────
+
+const referralRouter = router({
+  /** Get or create the referral code for the current business owner */
+  getMyCode: publicProcedure
+    .input(z.object({ businessOwnerId: z.number() }))
+    .query(async ({ input }) => {
+      const owner = await db.getBusinessOwnerById(input.businessOwnerId);
+      if (!owner) throw new Error("Business not found");
+      const code = await db.getOrCreateReferralCode(input.businessOwnerId, owner.businessName);
+      return code;
+    }),
+
+  validateCode: publicProcedure
+    .input(z.object({ code: z.string() }))
+    .query(async ({ input }) => {
+      const codeRow = await db.validateReferralCode(input.code);
+      if (!codeRow) return { valid: false, discountPercent: 0, discountMonths: 0 };
+      return {
+        valid: true,
+        discountPercent: codeRow.discountPercent,
+        discountMonths: codeRow.discountMonths,
+        referralCodeId: codeRow.id,
+        referrerBusinessOwnerId: codeRow.businessOwnerId,
+      };
+    }),
+
+  applyCode: publicProcedure
+    .input(z.object({ code: z.string(), referredBusinessOwnerId: z.number() }))
+    .mutation(async ({ input }) => {
+      const codeRow = await db.validateReferralCode(input.code);
+      if (!codeRow) throw new Error("Invalid or inactive referral code");
+      if (codeRow.businessOwnerId === input.referredBusinessOwnerId) throw new Error("You cannot use your own referral code");
+      const existing = await db.getReferralByReferredOwner(input.referredBusinessOwnerId);
+      if (existing) throw new Error("A referral code has already been applied to this account");
+      const referral = await db.createReferral(codeRow.id, codeRow.businessOwnerId, input.referredBusinessOwnerId);
+      return { success: true, referralId: referral?.id, discountPercent: codeRow.discountPercent, discountMonths: codeRow.discountMonths };
+    }),
+
+  getMyReferrals: publicProcedure
+    .input(z.object({ businessOwnerId: z.number() }))
+    .query(async ({ input }) => {
+      const code = await db.getReferralCodeByOwner(input.businessOwnerId);
+      const refs = await db.getReferralsByReferrer(input.businessOwnerId);
+      return {
+        code,
+        referrals: refs,
+        totalReferred: refs.length,
+        totalConverted: refs.filter((r) => r.status === "converted" || r.status === "rewarded").length,
+        totalRewarded: refs.filter((r) => r.status === "rewarded").length,
+      };
+    }),
+
+  adminGetAll: publicProcedure
+    .query(async () => {
+      const codes = await db.getAllReferralCodes();
+      const refs = await db.getAllReferrals();
+      return { codes, referrals: refs };
+    }),
+});
+
 // ─── Root Router ─────────────────────────────────────────────────────
 
 export const appRouter = router({
@@ -1825,6 +1886,7 @@ export const appRouter = router({
   promoCodes: promoCodesRouter,
   files: filesRouter,
   packages: packagesRouter,
+  referrals: referralRouter,
 });
 
 export type AppRouter = typeof appRouter;

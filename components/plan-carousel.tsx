@@ -447,7 +447,8 @@ export function PlanCarousel({
     }
   }, [isOnboarding]);
 
-  // snapToOffsets: scroll position that centers each card
+  // snapToOffsets: each card's left edge relative to scroll content start (after sidePad)
+  // The first card starts at x=0 inside the content (sidePad is handled by contentInset, not padding)
   const snapOffsets = plans.map((_, i) => i * (slideWidth + CARD_GAP));
 
   const handleScroll = useCallback(
@@ -504,8 +505,11 @@ export function PlanCarousel({
         snapToOffsets={snapOffsets}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
+        // contentInset centers first/last card without shifting snap positions
+        contentInset={{ left: sidePad, right: sidePad }}
+        contentOffset={{ x: -sidePad, y: 0 }}
+        automaticallyAdjustContentInsets={false}
         contentContainerStyle={{
-          paddingHorizontal: sidePad,
           gap: CARD_GAP,
           alignItems: "stretch",
         }}

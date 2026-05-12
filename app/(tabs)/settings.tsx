@@ -609,6 +609,13 @@ export default function SettingsScreen() {
             color: "#0EA5E9",
             status: activeCodes > 0 ? "ok" : undefined,
           },
+          {
+            title: "Referrals",
+            subtitle: "Share your code & earn free months",
+            icon: "person.2.fill",
+            route: "/referrals",
+            color: "#10B981",
+          },
         ])}
 
         <SectionHeader label="Client Portal" accentColor="#8B5CF6" colors={colors} />

@@ -10,7 +10,7 @@
  */
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import { View, Text, Pressable, Alert, Linking } from "react-native";
+import { View, Text, Pressable, Alert, Linking, TextInput, ActivityIndicator } from "react-native";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
@@ -26,7 +26,14 @@ export default function ChoosePlanScreen() {
   const router = useRouter();
   const [isYearly, setIsYearly] = useState(false);
   const [loadingPlanKey, setLoadingPlanKey] = useState<string | null>(null);
+  const [referralCode, setReferralCode] = useState("");
+  const [referralApplied, setReferralApplied] = useState(false);
+  const [referralError, setReferralError] = useState("");
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [referralDiscount, setReferralDiscount] = useState<{ percent: number; months: number } | null>(null);
   const { state } = useStore();
+
+  const applyReferralMutation = trpc.referrals.applyCode.useMutation();
 
   const { data: plans, isLoading } = trpc.subscription.getPublicPlans.useQuery(undefined, {
     staleTime: 0,
@@ -296,6 +303,71 @@ export default function ChoosePlanScreen() {
           currentPlanKey={planInfo?.planKey ?? null}
           isTrialEligible={isTrialEligible}
         />
+      </View>
+
+      {/* Referral Code Entry */}
+      <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 }}>
+        {!referralApplied ? (
+          <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+            <TextInput
+              style={{
+                flex: 1, height: 44, borderRadius: 12, paddingHorizontal: 14,
+                backgroundColor: "rgba(255,255,255,0.07)", color: "#fff",
+                borderWidth: 1, borderColor: referralError ? "#f87171" : "rgba(74,222,128,0.25)",
+                fontSize: 14, letterSpacing: 1,
+              }}
+              placeholder="Have a referral code?"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              value={referralCode}
+              onChangeText={(t) => { setReferralCode(t.toUpperCase()); setReferralError(""); }}
+              autoCapitalize="characters"
+              returnKeyType="done"
+            />
+            <Pressable
+              onPress={async () => {
+                if (!referralCode.trim() || !state.businessOwnerId) return;
+                setReferralLoading(true);
+                setReferralError("");
+                try {
+                  const result = await applyReferralMutation.mutateAsync({
+                    code: referralCode.trim(),
+                    referredBusinessOwnerId: state.businessOwnerId,
+                  });
+                  setReferralApplied(true);
+                  setReferralDiscount({ percent: result.discountPercent, months: result.discountMonths });
+                } catch (e: any) {
+                  setReferralError(e?.message ?? "Invalid code");
+                } finally {
+                  setReferralLoading(false);
+                }
+              }}
+              style={({ pressed }) => ({
+                height: 44, paddingHorizontal: 16, borderRadius: 12, justifyContent: "center",
+                backgroundColor: "rgba(74,222,128,0.15)", borderWidth: 1,
+                borderColor: "rgba(74,222,128,0.4)", opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              {referralLoading
+                ? <ActivityIndicator size="small" color="#4ade80" />
+                : <Text style={{ color: "#4ade80", fontWeight: "700", fontSize: 14 }}>Apply</Text>
+              }
+            </Pressable>
+          </View>
+        ) : (
+          <View style={{
+            flexDirection: "row", alignItems: "center", gap: 8, padding: 12,
+            backgroundColor: "rgba(74,222,128,0.1)", borderRadius: 12,
+            borderWidth: 1, borderColor: "rgba(74,222,128,0.3)",
+          }}>
+            <Text style={{ fontSize: 18 }}>🎉</Text>
+            <Text style={{ flex: 1, fontSize: 13, color: "#4ade80", fontWeight: "600" }}>
+              {`Referral applied! ${referralDiscount?.percent ?? 50}% off your first ${referralDiscount?.months ?? 3} months.`}
+            </Text>
+          </View>
+        )}
+        {!!referralError && (
+          <Text style={{ fontSize: 12, color: "#f87171", marginTop: 4, marginLeft: 4 }}>{referralError}</Text>
+        )}
       </View>
 
       {/* Footer */}
