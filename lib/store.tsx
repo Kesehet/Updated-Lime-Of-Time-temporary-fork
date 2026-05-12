@@ -848,6 +848,7 @@ export function dbGiftCardToLocal(g: any): GiftCard {
   let remainingBalance = 0;
   let hasGiftData = false;
   let bannerImageUri: string | undefined;
+  let ownerNotes: string | undefined;
   const msg = g.message ?? "";
   const jsonMatch = msg.match(/\n---GIFT_DATA---\n(.+)$/s);
   if (jsonMatch) {
@@ -858,6 +859,7 @@ export function dbGiftCardToLocal(g: any): GiftCard {
       originalValue = data.originalValue ?? 0;
       remainingBalance = data.remainingBalance ?? originalValue;
       bannerImageUri = data.bannerImageUri ?? undefined;
+      ownerNotes = data.ownerNotes ?? undefined;
       hasGiftData = true;
     } catch {}
   }
@@ -901,6 +903,7 @@ export function dbGiftCardToLocal(g: any): GiftCard {
       return (g.serviceLocalId ? "service" : "balance") as "service" | "balance";
     })(),
     bannerImageUri,
+    ownerNotes,
   };
 }
 export function dbPromoCodeToLocal(p: any): import("./types").PromoCode {

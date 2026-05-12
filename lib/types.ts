@@ -191,6 +191,8 @@ export interface GiftCard {
   giftType?: "service" | "balance";
   /** Optional banner image URI shown on gift confirmation and client home screen */
   bannerImageUri?: string;
+  /** Internal note visible only to the business owner */
+  ownerNotes?: string;
 }
 
 export interface Product {

@@ -970,12 +970,33 @@ const giftCardsRouter = router({
         redeemed: z.boolean().optional(),
         redeemedAt: z.string().optional(),
         message: z.string().optional(),
+        expiresAt: z.string().optional().nullable(),
+        paymentStatus: z.enum(["paid", "unpaid", "pending_cash"]).optional(),
+        recipientName: z.string().optional(),
+        recipientPhone: z.string().optional(),
+        remainingBalance: z.number().optional(),
+        ownerNotes: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
-      const { localId, businessOwnerId, ...data } = input;
+      const { localId, businessOwnerId, remainingBalance, ownerNotes, ...data } = input;
       const updateData: any = { ...data };
       if (data.redeemedAt) updateData.redeemedAt = new Date(data.redeemedAt);
+      // remainingBalance and ownerNotes are stored inside the ---GIFT_DATA--- JSON block in message
+      if (remainingBalance !== undefined || ownerNotes !== undefined) {
+        const existing = await db.getGiftCardsByOwner(businessOwnerId);
+        const card = existing.find((c: any) => c.localId === localId);
+        if (card) {
+          const msgStr = card.message || "";
+          const match = msgStr.match(/\n---GIFT_DATA---\n(.+)$/s);
+          let meta: any = {};
+          if (match) { try { meta = JSON.parse(match[1]); } catch (_) {} }
+          if (remainingBalance !== undefined) meta.remainingBalance = remainingBalance;
+          if (ownerNotes !== undefined) meta.ownerNotes = ownerNotes;
+          const cleanMsg = msgStr.replace(/\n---GIFT_DATA---\n.+$/s, "");
+          updateData.message = cleanMsg + "\n---GIFT_DATA---\n" + JSON.stringify(meta);
+        }
+      }
       await db.updateGiftCard(localId, businessOwnerId, updateData);
       return { success: true };
     }),
