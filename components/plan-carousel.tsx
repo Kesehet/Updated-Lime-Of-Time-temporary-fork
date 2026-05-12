@@ -101,45 +101,56 @@ const PLAN_CONFIG: Record<string, {
   },
 };
 
-const PLAN_FEATURES: Record<string, Array<{ text: string }>> = {
+// ─── Expanded feature lists with benefit context ──────────────────────────────
+const PLAN_FEATURES: Record<string, Array<{ text: string; sub?: string }>> = {
   solo: [
-    { text: "Up to 20 clients" },
-    { text: "Up to 5 services" },
-    { text: "50 appointments/month" },
-    { text: "1 location" },
-    { text: "Cash & P2P payments" },
-    { text: "Online booking page" },
-    { text: "Basic analytics" },
+    { text: "Up to 20 clients", sub: "Full client profiles & history" },
+    { text: "Up to 5 services", sub: "Custom pricing & duration per service" },
+    { text: "50 appointments/month", sub: "Calendar view + booking management" },
+    { text: "1 business location", sub: "Address, hours & contact info" },
+    { text: "Cash & P2P payments", sub: "Zelle, Venmo, CashApp tracking" },
+    { text: "Online booking page", sub: "Shareable link for clients to self-book" },
+    { text: "Basic analytics", sub: "Revenue & appointment summaries" },
+    { text: "Email confirmations", sub: "Auto-sent to clients on booking" },
   ],
   growth: [
-    { text: "Up to 100 clients" },
-    { text: "Up to 20 services" },
-    { text: "Up to 2 staff members" },
-    { text: "Unlimited appointments" },
-    { text: "1 location" },
-    { text: "SMS confirmations" },
-    { text: "Full analytics" },
+    { text: "Up to 100 clients", sub: "Full profiles, notes & visit history" },
+    { text: "Up to 20 services", sub: "Packages, bundles & custom pricing" },
+    { text: "Up to 2 staff members", sub: "Individual schedules & booking links" },
+    { text: "Unlimited appointments", sub: "No monthly cap — grow freely" },
+    { text: "1 business location", sub: "Full location management" },
+    { text: "SMS confirmations", sub: "Auto-reminders reduce no-shows" },
+    { text: "Full analytics", sub: "Revenue trends, top services & clients" },
+    { text: "Gift cards", sub: "Sell & redeem digital gift cards" },
+    { text: "Discount codes", sub: "Percentage or fixed-amount promos" },
+    { text: "Client portal", sub: "Clients view & manage their bookings" },
   ],
   studio: [
-    { text: "Unlimited clients" },
-    { text: "Unlimited services" },
-    { text: "Up to 10 staff members" },
-    { text: "Unlimited appointments" },
-    { text: "Up to 3 locations" },
-    { text: "Full SMS automation" },
-    { text: "Stripe payments" },
-    { text: "Staff analytics" },
+    { text: "Unlimited clients", sub: "No cap — scale as you grow" },
+    { text: "Unlimited services", sub: "Full catalog with categories" },
+    { text: "Up to 10 staff members", sub: "Roles, permissions & schedules" },
+    { text: "Unlimited appointments", sub: "Across all staff & services" },
+    { text: "Up to 3 locations", sub: "Separate calendars & settings per location" },
+    { text: "Full SMS automation", sub: "Reminders, follow-ups & confirmations" },
+    { text: "Stripe payments", sub: "Credit card, Apple Pay & Google Pay" },
+    { text: "Staff analytics", sub: "Performance & revenue per staff member" },
+    { text: "Waitlist management", sub: "Auto-fill cancellations from waitlist" },
+    { text: "Custom booking form", sub: "Collect intake info before appointments" },
+    { text: "Priority support", sub: "Faster response times" },
   ],
   enterprise: [
-    { text: "Unlimited clients" },
-    { text: "Unlimited services" },
-    { text: "Up to 100 staff members" },
-    { text: "Unlimited appointments" },
-    { text: "Up to 10 locations" },
-    { text: "Full SMS automation" },
-    { text: "Stripe payments" },
-    { text: "Multi-location analytics" },
-    { text: "Priority support" },
+    { text: "Unlimited clients", sub: "Enterprise-scale client database" },
+    { text: "Unlimited services", sub: "Full catalog across all locations" },
+    { text: "Up to 100 staff members", sub: "Full team management & permissions" },
+    { text: "Unlimited appointments", sub: "Across all staff, services & locations" },
+    { text: "Up to 10 locations", sub: "Unified dashboard for all branches" },
+    { text: "Full SMS automation", sub: "Bulk campaigns, reminders & follow-ups" },
+    { text: "Stripe payments", sub: "All payment methods + invoicing" },
+    { text: "Multi-location analytics", sub: "Compare performance across branches" },
+    { text: "Dedicated account manager", sub: "Onboarding & ongoing support" },
+    { text: "Custom integrations", sub: "API access & webhook support" },
+    { text: "White-label booking page", sub: "Your brand, no Lime Of Time branding" },
+    { text: "Priority 24/7 support", sub: "Phone, email & live chat" },
   ],
 };
 
@@ -222,9 +233,6 @@ function PlanSlide({
         end={{ x: 0, y: 1 }}
         style={[ss.card, { borderColor: cfg.accent + "22" }]}
       >
-        {/* Top accent bar */}
-        <View style={[ss.accentBar, { backgroundColor: cfg.accent }]} />
-
         {/* ── Card top row: billing toggle (left) + compare icon (right) ── */}
         <View style={ss.cardTopRow}>
           {/* Billing toggle — compact, inside card */}
@@ -244,9 +252,12 @@ function PlanSlide({
               <Text style={[ss.toggleText, { color: isYearly ? "#000" : "rgba(255,255,255,0.45)" }]}>
                 {"Yearly"}
               </Text>
-              {!isYearly && (
-                <View style={ss.savePill}>
-                  <Text style={ss.savePillText}>{"-20%"}</Text>
+              {/* Always show savings pill on Yearly tab so it's always visible */}
+              {!isFree && (
+                <View style={[ss.savePill, isYearly && { backgroundColor: "rgba(0,0,0,0.3)" }]}>
+                  <Text style={[ss.savePillText, { color: isYearly ? "#000" : cfg.accent }]}>
+                    {"-20%"}
+                  </Text>
                 </View>
               )}
             </Pressable>
@@ -286,7 +297,7 @@ function PlanSlide({
         {/* 14-day trial badge */}
         {isTrialEligible && !isFree && !isCurrentPlan && (
           <View style={[ss.trialBadge, { backgroundColor: cfg.accent + "18", borderColor: cfg.accent + "40" }]}>
-            <Text style={[ss.trialBadgeText, { color: cfg.accent }]}>{"14-day free trial included"}</Text>
+            <Text style={[ss.trialBadgeText, { color: cfg.accent }]}>{"🎁  14-day free trial included"}</Text>
           </View>
         )}
 
@@ -299,15 +310,17 @@ function PlanSlide({
             <Text style={ss.pricePer}>{isFree ? "forever" : "/mo"}</Text>
           </View>
           {isYearly && !isFree && savings > 0 && (
-            <View style={[ss.savingsPill, { backgroundColor: cfg.accent + "20", borderColor: cfg.accent + "40" }]}>
+            <View style={[ss.savingsPill, { backgroundColor: cfg.accent + "20", borderColor: cfg.accent + "60" }]}>
               <Text style={[ss.savingsPillText, { color: cfg.accent }]}>{"Save " + savings + "%"}</Text>
             </View>
           )}
         </View>
         {isYearly && !isFree && (
-          <Text style={ss.billedNote}>
-            {"Billed $" + effectiveYearly.toFixed(2) + "/year"}
-          </Text>
+          <View style={[ss.yearlyNote, { backgroundColor: cfg.accent + "12", borderColor: cfg.accent + "30" }]}>
+            <Text style={[ss.yearlyNoteText, { color: cfg.accent }]}>
+              {"Billed $" + effectiveYearly.toFixed(0) + "/year · saves $" + ((effectiveMonthly * 12) - effectiveYearly).toFixed(0) + " vs monthly"}
+            </Text>
+          </View>
         )}
         {hasDiscount && rawOriginal > rawPrice && (
           <Text style={[ss.billedNote, { textDecorationLine: "line-through", color: "rgba(255,255,255,0.25)" }]}>
@@ -318,7 +331,7 @@ function PlanSlide({
         {/* Divider */}
         <View style={[ss.divider, { backgroundColor: cfg.accent + "30" }]} />
 
-        {/* Features */}
+        {/* Features — expanded with sub-descriptions */}
         <ScrollView
           style={ss.featureScroll}
           showsVerticalScrollIndicator={false}
@@ -329,7 +342,12 @@ function PlanSlide({
               <View style={[ss.checkCircle, { backgroundColor: cfg.accent + "18" }]}>
                 <Text style={[ss.checkMark, { color: cfg.accent }]}>{"✓"}</Text>
               </View>
-              <Text style={ss.featureText}>{f.text}</Text>
+              <View style={ss.featureTextBlock}>
+                <Text style={ss.featureText}>{f.text}</Text>
+                {f.sub ? (
+                  <Text style={ss.featureSub}>{f.sub}</Text>
+                ) : null}
+              </View>
             </View>
           ))}
         </ScrollView>
@@ -414,10 +432,13 @@ export function PlanCarousel({
   const scrollRef = useRef<ScrollView>(null);
   const [carouselHeight, setCarouselHeight] = useState(0);
 
-  // Card width: 88% of available width, capped at 420px
+  // Card width: 90% of available width, capped at 420px
   const availableWidth = containerWidth ?? SCREEN_W;
-  const slideWidth = Math.min(Math.round(availableWidth * 0.88), 420);
+  const slideWidth = Math.min(Math.round(availableWidth * 0.90), 420);
+  // Side padding centers the first and last card
   const sidePad = Math.max(0, Math.round((availableWidth - slideWidth) / 2));
+  // Gap between cards
+  const CARD_GAP = 12;
 
   useEffect(() => {
     if (isOnboarding) {
@@ -426,12 +447,13 @@ export function PlanCarousel({
     }
   }, [isOnboarding]);
 
-  const snapOffsets = plans.map((_, i) => i * (slideWidth + 16));
+  // snapToOffsets: scroll position that centers each card
+  const snapOffsets = plans.map((_, i) => i * (slideWidth + CARD_GAP));
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const x = e.nativeEvent.contentOffset.x;
-      const idx = Math.round(x / (slideWidth + 16));
+      const idx = Math.round(x / (slideWidth + CARD_GAP));
       const clamped = Math.max(0, Math.min(idx, plans.length - 1));
       if (clamped !== activeIdx) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -446,7 +468,7 @@ export function PlanCarousel({
     if (clamped !== activeIdx) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
-    scrollRef.current?.scrollTo({ x: clamped * (slideWidth + 16), animated: true });
+    scrollRef.current?.scrollTo({ x: clamped * (slideWidth + CARD_GAP), animated: true });
     setActiveIdx(clamped);
   }, [activeIdx, plans.length, slideWidth]);
 
@@ -469,12 +491,12 @@ export function PlanCarousel({
 
   const currentIdx = plans.findIndex((p) => p.planKey === currentPlanKey);
 
-  // slideHeight: fill the full carousel container — no external nav rows to subtract
+  // slideHeight: fill the full carousel container
   const slideHeight = carouselHeight > 200 ? carouselHeight : SCREEN_H * 0.75;
 
   return (
     <View style={[ss.container, { flex: 1 }]} onLayout={(e) => setCarouselHeight(e.nativeEvent.layout.height)}>
-      {/* Carousel — each card fills full height, no external header/footer */}
+      {/* Carousel — each card fills full height */}
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -484,7 +506,7 @@ export function PlanCarousel({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: sidePad,
-          gap: 16,
+          gap: CARD_GAP,
           alignItems: "stretch",
         }}
         onMomentumScrollEnd={handleScroll}
@@ -650,7 +672,7 @@ const ss = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 60, gap: 12 },
   loadingText: { fontSize: 14, color: "rgba(74,222,128,0.5)" },
 
-  // Card
+  // Card — no top accent bar
   card: {
     flex: 1,
     borderRadius: 40,
@@ -658,16 +680,15 @@ const ss = StyleSheet.create({
     overflow: "hidden",
     paddingHorizontal: 20,
     paddingBottom: 20,
-    paddingTop: 0,
+    paddingTop: 18,
   },
-  accentBar: { height: 3, marginHorizontal: -20, marginBottom: 14 },
 
   // ── Card top row: billing toggle (left) + compare icon (right) ──
   cardTopRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 14,
+    marginBottom: 16,
     gap: 10,
   },
 
@@ -697,12 +718,12 @@ const ss = StyleSheet.create({
   },
   toggleText: { fontSize: 13, fontWeight: "700", letterSpacing: 0.1 },
   savePill: {
-    backgroundColor: "rgba(0,0,0,0.25)",
+    backgroundColor: "rgba(74,222,128,0.2)",
     borderRadius: 7,
     paddingHorizontal: 5,
     paddingVertical: 1,
   },
-  savePillText: { fontSize: 9, fontWeight: "800", color: "#000", letterSpacing: 0.2 },
+  savePillText: { fontSize: 9, fontWeight: "800", letterSpacing: 0.2 },
 
   // Compare icon button — top right of card
   compareIconBtn: {
@@ -755,10 +776,10 @@ const ss = StyleSheet.create({
 
   // Plan name
   planName: { fontSize: 28, fontWeight: "800", letterSpacing: -0.8, lineHeight: 32, marginBottom: 3 },
-  planTagline: { fontSize: 12, color: "rgba(255,255,255,0.45)", fontWeight: "500", marginBottom: 14 },
+  planTagline: { fontSize: 12, color: "rgba(255,255,255,0.45)", fontWeight: "500", marginBottom: 12 },
 
   // Price
-  priceRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 3 },
+  priceRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 4 },
   priceCurrency: { fontSize: 18, fontWeight: "700", marginTop: 5, marginRight: 1 },
   priceWhole: { fontSize: 52, fontWeight: "900", lineHeight: 56, letterSpacing: -2 },
   priceRight: { flexDirection: "column", justifyContent: "flex-end", paddingBottom: 7, marginLeft: 2 },
@@ -770,18 +791,30 @@ const ss = StyleSheet.create({
     marginLeft: 8,
     borderRadius: 8,
     borderWidth: 1,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
-  savingsPillText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.3 },
+  savingsPillText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.3 },
   billedNote: { fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: "500", marginBottom: 3, marginTop: 1 },
 
-  // Divider
-  divider: { height: 1, marginVertical: 12 },
+  // Yearly savings note — highlighted pill
+  yearlyNote: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    alignSelf: "flex-start",
+    marginBottom: 4,
+    marginTop: 2,
+  },
+  yearlyNoteText: { fontSize: 11, fontWeight: "700", letterSpacing: 0.2 },
 
-  // Features
+  // Divider
+  divider: { height: 1, marginVertical: 10 },
+
+  // Features — with sub-description
   featureScroll: { flex: 1, marginBottom: 10 },
-  featureRow: { flexDirection: "row", alignItems: "center", paddingVertical: 6, gap: 10 },
+  featureRow: { flexDirection: "row", alignItems: "flex-start", paddingVertical: 5, gap: 10 },
   checkCircle: {
     width: 20,
     height: 20,
@@ -789,9 +822,12 @@ const ss = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
+    marginTop: 1,
   },
   checkMark: { fontSize: 10, fontWeight: "900" },
-  featureText: { fontSize: 13, fontWeight: "500", color: "rgba(255,255,255,0.75)", flex: 1, lineHeight: 18 },
+  featureTextBlock: { flex: 1 },
+  featureText: { fontSize: 13, fontWeight: "600", color: "rgba(255,255,255,0.85)", lineHeight: 18 },
+  featureSub: { fontSize: 11, fontWeight: "400", color: "rgba(255,255,255,0.38)", lineHeight: 15, marginTop: 1 },
 
   // In-card nav row (dots + arrows, above CTA)
   inCardNavRow: {
@@ -799,7 +835,7 @@ const ss = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   navArrow: {
     width: 34,
