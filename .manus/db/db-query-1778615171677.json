@@ -1,0 +1,25 @@
+{
+  "query": "SELECT COUNT(*) as service_count FROM services WHERE businessOwnerId = 1650001;\nSELECT COUNT(*) as client_count FROM clients WHERE businessOwnerId = 1650001;\nSELECT COUNT(*) as appt_count FROM appointments WHERE businessOwnerId = 1650001;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT COUNT(*) as service_count FROM services WHERE businessOwnerId = 1650001;\nSELECT COUNT(*) as client_count FROM clients WHERE businessOwnerId = 1650001;\nSELECT COUNT(*) as appt_count FROM appointments WHERE businessOwnerId = 1650001;",
+  "rows": [
+    {
+      "service_count": "16"
+    },
+    {
+      "service_count": "client_count"
+    },
+    {
+      "service_count": "19"
+    },
+    {
+      "service_count": "appt_count"
+    },
+    {
+      "service_count": "18"
+    }
+  ],
+  "messages": [],
+  "stdout": "service_count\n16\nclient_count\n19\nappt_count\n18\n",
+  "stderr": "",
+  "execution_time_ms": 353
+}

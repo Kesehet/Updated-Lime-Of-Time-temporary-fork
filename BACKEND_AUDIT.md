@@ -41,7 +41,7 @@
 
 | Item | Action Required |
 |------|----------------|
-| `RESEND_API_KEY` | Set in Admin Panel → Platform Config. Without this, all transactional emails (booking confirmations, subscription receipts, reminders) are silently dropped. |
+| `RESEND_API_KEY` | ✅ **Confirmed working** — emails are being sent from `no-reply@lime-of-time.com`. No action needed. |
 | `STRIPE_SECRET_KEY` + `STRIPE_PUBLISHABLE_KEY` | Set in Admin Panel → Platform Config → Stripe. Use live keys for production. |
 | `STRIPE_WEBHOOK_SECRET` | Register your production webhook endpoint in the Stripe Dashboard (`https://your-domain.com/api/stripe/webhook`), then paste the signing secret into Admin Panel. Without this, webhook signature verification is skipped (events are still processed, but not verified). |
 | `DATABASE_URL` | Must be set as an environment variable. The server silently degrades to no-DB mode if missing. |
@@ -75,7 +75,7 @@
 
 ## Pre-Launch Checklist
 
-- [ ] Set `RESEND_API_KEY` in Admin Panel
+- [x] `RESEND_API_KEY` — confirmed working (emails sending from no-reply@lime-of-time.com)
 - [ ] Set `STRIPE_SECRET_KEY` + `STRIPE_PUBLISHABLE_KEY` (live keys) in Admin Panel
 - [ ] Register Stripe webhook endpoint and set `STRIPE_WEBHOOK_SECRET` in Admin Panel
 - [ ] Change `ADMIN_USERNAME` and `ADMIN_PASSWORD` from defaults

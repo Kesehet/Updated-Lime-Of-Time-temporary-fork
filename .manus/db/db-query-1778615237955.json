@@ -1,0 +1,31 @@
+{
+  "query": "SELECT COUNT(*) as clients FROM clients WHERE businessOwnerId = 1650001;\nSELECT COUNT(*) as appointments FROM appointments WHERE businessOwnerId = 1650001;\nSELECT SUM(totalPrice) as total_revenue FROM appointments WHERE businessOwnerId = 1650001 AND status = 'completed';\nSELECT COUNT(*) as this_week FROM appointments WHERE businessOwnerId = 1650001 AND date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT COUNT(*) as clients FROM clients WHERE businessOwnerId = 1650001;\nSELECT COUNT(*) as appointments FROM appointments WHERE businessOwnerId = 1650001;\nSELECT SUM(totalPrice) as total_revenue FROM appointments WHERE businessOwnerId = 1650001 AND status = 'completed';\nSELECT COUNT(*) as this_week FROM appointments WHERE businessOwnerId = 1650001 AND date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY);",
+  "rows": [
+    {
+      "clients": "49"
+    },
+    {
+      "clients": "appointments"
+    },
+    {
+      "clients": "472"
+    },
+    {
+      "clients": "total_revenue"
+    },
+    {
+      "clients": "15749.00"
+    },
+    {
+      "clients": "this_week"
+    },
+    {
+      "clients": "55"
+    }
+  ],
+  "messages": [],
+  "stdout": "clients\n49\nappointments\n472\ntotal_revenue\n15749.00\nthis_week\n55\n",
+  "stderr": "",
+  "execution_time_ms": 302
+}

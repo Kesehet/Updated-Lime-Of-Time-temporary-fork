@@ -154,11 +154,19 @@ function formatTime12(time: string): string {
 // ─── Register Public Routes ─────────────────────────────────────────
 
 export function registerPublicRoutes(app: Express) {
+  // ── Serve static assets (screenshots, lifestyle images, etc.) ─────
+  import("path").then((pathMod) => {
+    import("express").then((expressLib) => {
+      const assetsDir = pathMod.join(__dirname, "public/assets");
+      app.use("/assets", expressLib.default.static(assetsDir));
+    });
+  });
+
   // ── Landing page at root ──────────────────────────────────────────
   app.get("/", (_req: Request, res: Response) => {
     import("path").then((pathMod) => {
       import("fs").then((fsMod) => {
-        const landingPath = pathMod.join(process.cwd(), "public/landing.html");
+        const landingPath = pathMod.join(__dirname, "public/landing.html");
         try {
           const html = fsMod.readFileSync(landingPath, "utf-8");
           res.setHeader("Content-Type", "text/html");

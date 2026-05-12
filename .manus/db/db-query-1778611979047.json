@@ -1,0 +1,40 @@
+{
+  "query": "SELECT configKey, LENGTH(configValue) as len, LEFT(configValue, 10) as prefix, RIGHT(configValue, 4) as suffix FROM platform_config WHERE configKey IN ('TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_VERIFY_SERVICE_SID', 'TWILIO_FROM_NUMBER', 'TWILIO_TEST_MODE');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, LENGTH(configValue) as len, LEFT(configValue, 10) as prefix, RIGHT(configValue, 4) as suffix FROM platform_config WHERE configKey IN ('TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_VERIFY_SERVICE_SID', 'TWILIO_FROM_NUMBER', 'TWILIO_TEST_MODE');",
+  "rows": [
+    {
+      "configKey": "TWILIO_ACCOUNT_SID",
+      "len": "34",
+      "prefix": "AC0eb74aa2",
+      "suffix": "763e"
+    },
+    {
+      "configKey": "TWILIO_AUTH_TOKEN",
+      "len": "32",
+      "prefix": "81ee48751b",
+      "suffix": "dc74"
+    },
+    {
+      "configKey": "TWILIO_FROM_NUMBER",
+      "len": "12",
+      "prefix": "+185560745",
+      "suffix": "4585"
+    },
+    {
+      "configKey": "TWILIO_TEST_MODE",
+      "len": "5",
+      "prefix": "false",
+      "suffix": "alse"
+    },
+    {
+      "configKey": "TWILIO_VERIFY_SERVICE_SID",
+      "len": "34",
+      "prefix": "VA7348fcb2",
+      "suffix": "005b"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tlen\tprefix\tsuffix\nTWILIO_ACCOUNT_SID\t34\tAC0eb74aa2\t763e\nTWILIO_AUTH_TOKEN\t32\t81ee48751b\tdc74\nTWILIO_FROM_NUMBER\t12\t+185560745\t4585\nTWILIO_TEST_MODE\t5\tfalse\talse\nTWILIO_VERIFY_SERVICE_SID\t34\tVA7348fcb2\t005b\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}
