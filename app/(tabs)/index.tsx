@@ -1399,11 +1399,18 @@ export default function HomeScreen() {
     { businessOwnerId: state.businessOwnerId! },
     { enabled: !!state.businessOwnerId, staleTime: 5 * 60 * 1000 }
   );
-  // ─── Referral stats ──────────────────────────────────────────────
+  // ─── Referral stats ──────────────────────────────────────────────────────────────────
+  // Auto-create a referral code if the user doesn't have one yet
+  const { data: myCodeData } = trpc.referrals.getMyCode.useQuery(
+    { businessOwnerId: state.businessOwnerId! },
+    { enabled: !!state.businessOwnerId, staleTime: Infinity }
+  );
   const { data: referralData } = trpc.referrals.getMyReferrals.useQuery(
     { businessOwnerId: state.businessOwnerId! },
     { enabled: !!state.businessOwnerId, staleTime: 5 * 60 * 1000 }
   );
+  // Merge: prefer referralData.code, fall back to myCodeData.code so card shows immediately
+  const referralCode = referralData?.code ?? (myCodeData as any)?.code ?? null;
   // ─── Overview mode: "kpi" = 4-card grid, "dayweek" = Day/Week card ──
   const [overviewMode, setOverviewMode] = useState<"kpi" | "dayweek">("kpi");
   // Measured heights for each view (set via onLayout)
@@ -2492,7 +2499,7 @@ export default function HomeScreen() {
         )}
 
         {/* ─── Referral Stats Card ─────────────────────────────────────────── */}
-        {referralData?.code && (
+        {referralCode && (
           <Pressable
             onPress={() => (router as any).push("/referrals")}
             style={({ pressed }) => ({
@@ -2517,7 +2524,7 @@ export default function HomeScreen() {
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                   <View style={{ backgroundColor: "rgba(255,255,255,0.25)", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
-                    <Text style={{ fontSize: fs.xs, fontWeight: "800", color: "#FFF" }}>{referralData.code}</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "800", color: "#FFF" }}>{referralCode}</Text>
                   </View>
                   <IconSymbol name="chevron.right" size={14} color="rgba(255,255,255,0.7)" />
                 </View>
@@ -2674,8 +2681,8 @@ export default function HomeScreen() {
         </Pressable>
 
         {/* ─── Refer a Business Card ───────────────────────────────────────────────────────────────────── */}
-        {referralData?.code && (() => {
-          const joinUrl = `https://lime-of-time.com/join?ref=${referralData.code}`;
+        {referralCode && (() => {
+          const joinUrl = `https://lime-of-time.com/join?ref=${referralCode}`;
           return (
             <View style={{ marginTop: 12, borderRadius: 18, overflow: "hidden" as const }}>
               <LinearGradient
@@ -3030,7 +3037,7 @@ export default function HomeScreen() {
       </Modal>
 
       {/* ─── Referral Full QR Modal ────────────────────────────────────────────────────────────────── */}
-      {referralData?.code && (
+      {referralCode && (
         <Modal visible={showReferralQrModal} transparent animationType="fade" onRequestClose={() => setShowReferralQrModal(false)}>
           <Pressable
             style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", justifyContent: "center", padding: 24 }}
@@ -3050,15 +3057,15 @@ export default function HomeScreen() {
                 Share this QR code with other business owners to earn 1 free month per conversion
               </Text>
               <View style={{ backgroundColor: "#fff", borderRadius: 16, padding: 16 }}>
-                <QRCode value={`https://lime-of-time.com/join?ref=${referralData.code}`} size={200} color="#000" backgroundColor="#fff" />
+                <QRCode value={`https://lime-of-time.com/join?ref=${referralCode}`} size={200} color="#000" backgroundColor="#fff" />
               </View>
               <View style={{ backgroundColor: "#16a34a15", borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8, borderWidth: 1, borderColor: "#16a34a40" }}>
-                <Text style={{ fontSize: fs.sm, fontWeight: "800", color: "#16a34a", textAlign: "center", letterSpacing: 2 }}>{referralData.code}</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: "800", color: "#16a34a", textAlign: "center", letterSpacing: 2 }}>{referralCode}</Text>
               </View>
               <View style={{ flexDirection: "row", gap: 10, width: "100%" }}>
                 <Pressable
                   onPress={async () => {
-                    const url = `https://lime-of-time.com/join?ref=${referralData.code}`;
+                    const url = `https://lime-of-time.com/join?ref=${referralCode}`;
                     try {
                       const { default: Clipboard } = await import("expo-clipboard");
                       await Clipboard.setStringAsync(url);
@@ -3072,7 +3079,7 @@ export default function HomeScreen() {
                 </Pressable>
                 <Pressable
                   onPress={async () => {
-                    const url = `https://lime-of-time.com/join?ref=${referralData.code}`;
+                    const url = `https://lime-of-time.com/join?ref=${referralCode}`;
                     try {
                       await Share.share({ message: `Join me on Lime Of Time — manage appointments, clients & payments easily. Get 50% off your first 3 months: ${url}`, title: "Try Lime Of Time" });
                     } catch {}
