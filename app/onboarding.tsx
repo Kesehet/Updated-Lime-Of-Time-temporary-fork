@@ -1209,15 +1209,21 @@ export default function OnboardingScreen() {
       >
         <ScrollView
           ref={outerScrollRef}
-          contentContainerStyle={{
+          style={displayStep === "subscription" ? { flex: 1 } : undefined}
+          contentContainerStyle={displayStep === "subscription" ? {
+            flex: 1,
+            paddingHorizontal: 0,
+            paddingTop: insets.top + 16,
+            paddingBottom: 0,
+          } : {
             minHeight: height,
-            paddingHorizontal: displayStep === "subscription" ? 0 : hp,
-            paddingTop: displayStep === "subscription" ? (insets.top + 16) : 32,
+            paddingHorizontal: hp,
+            paddingTop: 32,
             paddingBottom: 100,
           }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          scrollEnabled={true}
+          scrollEnabled={displayStep !== "subscription"}
         >
           {/* ─── Logo + App Name ─────────────────────────────── */}
           {displayStep !== "subscription" && (<Animated.View style={[styles.logoContainer, logoStyle]}>
@@ -1245,7 +1251,7 @@ export default function OnboardingScreen() {
           {/* GestureDetector enables swipe-right to go back on applicable steps */}
           <GestureDetector gesture={swipeGesture}>
           {/* Clip container — no overflow:hidden so tall steps (Business Info) can scroll fully */}
-          <View style={{ borderRadius: 24 }}>
+          <View style={{ borderRadius: 24, flex: displayStep === "subscription" ? 1 : undefined }}>
           <Animated.View style={[displayStep === "subscription" ? styles.cardTransparent : styles.card, slideStyle, { borderRadius: 24 }]}>
             {/* Step 1: Phone */}
             {displayStep === 1 && (
@@ -1788,7 +1794,7 @@ export default function OnboardingScreen() {
                   </View>
                 </Animated.View>
                 {/* Carousel — break out of card horizontal padding */}
-                <Animated.View style={[inputStyle, { marginHorizontal: -hp }]}>
+                <Animated.View style={[inputStyle, { marginHorizontal: -hp, flex: 1 }]}>
                   <PlanCarousel
                     key={planCarouselKey}
                     plans={(publicPlans ?? []) as any}
@@ -1938,6 +1944,7 @@ const styles = StyleSheet.create({
     padding: 0,
     shadowOpacity: 0,
     elevation: 0,
+    flex: 1,
   },
   // Subscription step header
   subHeader: {

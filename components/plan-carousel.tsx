@@ -209,6 +209,7 @@ function PlanSlide({
   isCurrentPlan,
   isUpgrade,
   slideWidth,
+  slideHeight,
 }: {
   plan: PlanData;
   isYearly: boolean;
@@ -217,6 +218,7 @@ function PlanSlide({
   isCurrentPlan: boolean;
   isUpgrade?: boolean;
   slideWidth: number;
+  slideHeight?: number;
 }) {
   const cfg = PLAN_CONFIG[plan.planKey] ?? PLAN_CONFIG.solo;
   const features = PLAN_FEATURES[plan.planKey] ?? [];
@@ -262,7 +264,7 @@ function PlanSlide({
   }));
 
   return (
-    <Animated.View style={[{ width: slideWidth }, cardStyle]}>
+    <Animated.View style={[{ width: slideWidth, height: slideHeight || undefined }, cardStyle]}>
       <View style={[ss.glowShadow, { shadowColor: cfg.neon }]}>
         <LinearGradient
           colors={[...cfg.bg] as [string, string, string]}
@@ -312,30 +314,38 @@ function PlanSlide({
             </View>
           </View>
 
-          {/* Neon price block */}
+          {/* Neon price block — compact horizontal layout */}
           <View style={[ss.priceBlock, { borderColor: cfg.neon + "28", backgroundColor: cfg.neon + "07" }]}>
-            <View style={ss.glowRingWrap}>
-              <GlowRing color={cfg.neon + "60"} size={90} />
-              <GlowRing color={cfg.neon + "28"} size={120} />
+            {/* Subtle glow rings behind price */}
+            <View style={[ss.glowRingWrap, { width: 70, height: 70 }]}>
+              <GlowRing color={cfg.neon + "40"} size={60} />
+              <GlowRing color={cfg.neon + "20"} size={80} />
             </View>
-            <View style={ss.priceRow}>
-              <Text style={[ss.priceCurrency, { color: cfg.neon + "cc" }]}>$</Text>
-              <Text style={[ss.priceWhole, { color: "#ffffff" }]}>{priceWhole}</Text>
-              <View style={ss.priceRight}>
-                <Text style={[ss.priceCents, { color: cfg.neon + "cc" }]}>.{priceCents}</Text>
-                <Text style={ss.pricePer}>{isFree ? "forever" : "/mo"}</Text>
+            <View style={ss.priceMainRow}>
+              <View style={ss.priceRow}>
+                <Text style={[ss.priceCurrency, { color: cfg.neon + "cc" }]}>$</Text>
+                <Text style={[ss.priceWhole, { color: "#ffffff" }]}>{priceWhole}</Text>
+                <View style={ss.priceRight}>
+                  <Text style={[ss.priceCents, { color: cfg.neon + "cc" }]}>.{priceCents}</Text>
+                  <Text style={ss.pricePer}>{isFree ? "forever" : "/mo"}</Text>
+                </View>
+              </View>
+              <View style={ss.priceMeta}>
+                {isYearly && !isFree && (
+                  <Text style={[ss.billedNote, { color: cfg.neon + "99" }]}>
+                    Billed ${effectiveYearly.toFixed(2)}/yr{savings > 0 ? `  ·  Save ${savings}%` : ""}
+                  </Text>
+                )}
+                {hasDiscount && rawOriginal > rawPrice && (
+                  <Text style={[ss.billedNote, { color: "rgba(255,255,255,0.3)", textDecorationLine: "line-through" }]}>
+                    Was ${rawOriginal.toFixed(2)}/mo
+                  </Text>
+                )}
+                {!isYearly && !isFree && (
+                  <Text style={[ss.billedNote, { color: "rgba(255,255,255,0.25)" }]}>billed monthly</Text>
+                )}
               </View>
             </View>
-            {isYearly && !isFree && (
-              <Text style={[ss.billedNote, { color: cfg.neon + "99" }]}>
-                Billed ${effectiveYearly.toFixed(2)}/yr{savings > 0 ? `  ·  Save ${savings}%` : ""}
-              </Text>
-            )}
-            {hasDiscount && rawOriginal > rawPrice && (
-              <Text style={[ss.billedNote, { color: "rgba(255,255,255,0.3)", textDecorationLine: "line-through" }]}>
-                Was ${rawOriginal.toFixed(2)}/mo
-              </Text>
-            )}
           </View>
 
           {/* Neon divider */}
@@ -400,6 +410,7 @@ export function PlanCarousel({
   const [showCompare, setShowCompare] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const [carouselHeight, setCarouselHeight] = useState(0);
 
   const slideWidth = (containerWidth ?? SCREEN_W) - 40;
 
@@ -446,8 +457,11 @@ export function PlanCarousel({
   const activePlan = plans[activeIdx];
   const activeCfg = activePlan ? (PLAN_CONFIG[activePlan.planKey] ?? PLAN_CONFIG.solo) : PLAN_CONFIG.solo;
 
+  // slideHeight: fill the carousel container minus the toggle + nav rows (~130px)
+  const slideHeight = carouselHeight > 200 ? carouselHeight - 130 : SCREEN_H * 0.58;
+
   return (
-    <View style={ss.container}>
+    <View style={[ss.container, { flex: 1 }]} onLayout={(e) => setCarouselHeight(e.nativeEvent.layout.height)}>
       {/* Billing Toggle */}
       <View style={ss.toggleWrap}>
         <Pressable
@@ -496,6 +510,7 @@ export function PlanCarousel({
             isCurrentPlan={currentPlanKey === plan.planKey}
             isUpgrade={currentIdx !== -1 ? idx > currentIdx : true}
             slideWidth={slideWidth}
+            slideHeight={slideHeight}
           />
         ))}
       </ScrollView>
@@ -733,49 +748,52 @@ const ss = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 28,
     shadowOffset: { width: 0, height: 0 },
+    flex: 1,
   },
   cardGradient: {
     borderRadius: 28,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
     paddingHorizontal: 22,
-    paddingTop: 20,
-    paddingBottom: 22,
+    paddingTop: 18,
+    paddingBottom: 18,
     overflow: "hidden",
-    minHeight: 500,
+    flex: 1,
   },
   cornerTL: { position: "absolute", top: 14, left: 14, width: 20, height: 20, borderTopWidth: 2, borderLeftWidth: 2, borderRadius: 3 },
   cornerTR: { position: "absolute", top: 14, right: 14, width: 20, height: 20, borderTopWidth: 2, borderRightWidth: 2, borderRadius: 3 },
   cornerBL: { position: "absolute", bottom: 14, left: 14, width: 20, height: 20, borderBottomWidth: 2, borderLeftWidth: 2, borderRadius: 3 },
   cornerBR: { position: "absolute", bottom: 14, right: 14, width: 20, height: 20, borderBottomWidth: 2, borderRightWidth: 2, borderRadius: 3 },
-  topBadgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 16, minHeight: 26 },
+  topBadgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, minHeight: 24 },
   chip: { borderRadius: 20, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },
   chipText: { fontSize: 9, fontWeight: "900", letterSpacing: 1.2 },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 14 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
   planEmoji: { fontSize: 30 },
   planName: { fontSize: 28, fontWeight: "900", letterSpacing: -0.8, lineHeight: 32 },
   planTagline: { fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2, fontWeight: "500" },
   // Price block
   priceBlock: {
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    marginBottom: 14,
+    marginBottom: 12,
     alignItems: "center",
     overflow: "hidden",
   },
   glowRingWrap: { position: "absolute", alignItems: "center", justifyContent: "center", width: 120, height: 120 },
   priceRow: { flexDirection: "row", alignItems: "flex-start" },
-  priceCurrency: { fontSize: 22, fontWeight: "700", marginTop: 12, marginRight: 2 },
-  priceWhole: { fontSize: 78, fontWeight: "900", lineHeight: 82, letterSpacing: -4 },
+  priceMainRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", width: "100%" },
+  priceMeta: { alignItems: "flex-end", justifyContent: "center", gap: 2 },
+  priceCurrency: { fontSize: 18, fontWeight: "700", marginTop: 8, marginRight: 2 },
+  priceWhole: { fontSize: 52, fontWeight: "900", lineHeight: 56, letterSpacing: -2 },
   priceRight: { flexDirection: "column", justifyContent: "flex-end", paddingBottom: 9, marginLeft: 3 },
-  priceCents: { fontSize: 22, fontWeight: "700", lineHeight: 24 },
+  priceCents: { fontSize: 18, fontWeight: "700", lineHeight: 22 },
   pricePer: { fontSize: 12, fontWeight: "600", lineHeight: 15, color: "rgba(255,255,255,0.38)" },
   billedNote: { fontSize: 12, marginTop: 3, fontWeight: "600", letterSpacing: 0.2 },
   neonDivider: { height: 1.5, marginBottom: 12, opacity: 0.3, borderRadius: 1 },
   // Features
-  featureScroll: { maxHeight: 188, marginBottom: 14 },
+  featureScroll: { flex: 1, marginBottom: 12 },
   featureRow: { flexDirection: "row", alignItems: "center", paddingVertical: 6, gap: 10 },
   featureIconWrap: { width: 28, height: 28, borderRadius: 9, borderWidth: 1, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   featureIcon: { fontSize: 13 },
