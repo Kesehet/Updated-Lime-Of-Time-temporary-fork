@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 import { useAppLock, CLIENT_BIOMETRIC_ENABLED_KEY, recordClientActivity } from "@/hooks/use-app-lock";
 import { LockScreen } from "@/components/lock-screen";
+import { useStore } from "@/lib/store";
 
 type AppLockContextType = {
   isLocked: boolean;
@@ -15,8 +16,8 @@ const AppLockContext = createContext<AppLockContextType | null>(null);
 
 /**
  * Business portal app lock provider.
- * splashDone: when false, the Face ID prompt is deferred until the animated
- * splash finishes. Defaults to true (no deferral) so existing usages are safe.
+ * Reads businessName and businessLogoUri from the store so the lock screen
+ * shows the business branding above "App Locked".
  */
 export function AppLockProvider({
   children,
@@ -26,6 +27,10 @@ export function AppLockProvider({
   splashDone?: boolean;
 }) {
   const appLock = useAppLock(splashDone);
+  const { state } = useStore();
+
+  const businessName = state.settings.businessName || undefined;
+  const logoUri = state.settings.businessLogoUri || undefined;
 
   return (
     <AppLockContext.Provider value={appLock}>
@@ -34,6 +39,8 @@ export function AppLockProvider({
         <LockScreen
           biometricType={appLock.biometricType}
           onUnlock={appLock.authenticate}
+          businessName={businessName}
+          logoUri={logoUri}
         />
       )}
     </AppLockContext.Provider>
@@ -44,11 +51,6 @@ export function AppLockProvider({
  * Client portal app lock provider.
  * Uses a separate storage key so the client biometric setting is independent
  * from the business owner's biometric setting.
- *
- * splashDone: when false, the Face ID prompt is deferred until the animated
- * splash finishes AND the user has navigated into the client tabs.
- * Pass the root-level splashDone value so the biometric prompt never fires
- * before the user has tapped the Client Portal card on the portal selector.
  */
 export function ClientAppLockProvider({
   children,
@@ -60,7 +62,7 @@ export function ClientAppLockProvider({
   const appLock = useAppLock(
     splashDone,
     CLIENT_BIOMETRIC_ENABLED_KEY,
-    recordClientActivity, // resets the 24h timer after successful Face ID
+    recordClientActivity,
   );
 
   return (
@@ -87,7 +89,6 @@ export function useAppLockContext(): AppLockContextType {
 /**
  * Safe version of useAppLockContext that returns a no-op fallback instead of
  * throwing when the provider has been unmounted (e.g. during navigation away).
- * Use this in screens that may briefly render after their provider unmounts.
  */
 const FALLBACK_LOCK_CTX: AppLockContextType = {
   isLocked: false,
@@ -97,6 +98,7 @@ const FALLBACK_LOCK_CTX: AppLockContextType = {
   authenticate: async () => false,
   toggleBiometric: async () => false,
 };
+
 export function useAppLockContextSafe(): AppLockContextType {
   return useContext(AppLockContext) ?? FALLBACK_LOCK_CTX;
 }

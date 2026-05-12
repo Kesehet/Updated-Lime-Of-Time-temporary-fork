@@ -1115,7 +1115,11 @@ export default function SettingsScreen() {
       {/* Header */}
       <View style={[styles.headerRow, { paddingHorizontal: hp, paddingTop: 8 }]}>
         <Text style={{ fontSize: fs.xl, fontWeight: "700", color: colors.foreground }}>Settings</Text>
-        <Image source={require("@/assets/images/icon.png")} style={styles.headerLogo} resizeMode="contain" />
+        <Image
+          source={state.settings.businessLogoUri ? { uri: state.settings.businessLogoUri } : require("@/assets/images/icon.png")}
+          style={styles.headerLogo}
+          resizeMode="cover"
+        />
       </View>
 
       {/* Tab Bar */}
