@@ -7,10 +7,10 @@
  * Reminder windows:
  *   - 24 hours before appointment
  *   - 1 hour before appointment
- *   - 30 minutes before appointment
  *
  * Each reminder is sent only once per appointment (tracked via clientReminderFlags JSON column).
- * The message includes the service name, date, time, and location.
+ * The message uses the same full professional format as the manual "Send Reminder" feature:
+ * Dear {clientName}, service, date, time, location, pricing block, business name, phone, footer.
  */
 import { getDb, insertClientMessage, getClientAccountByPhone } from "./db";
 import {
@@ -20,20 +20,32 @@ import {
   services,
   locations,
 } from "../drizzle/schema";
-import { and, eq, inArray, gte, lte } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
-/** Format HH:MM → "10:30 AM" */
-function formatTime(time: string): string {
+// ─── Formatting helpers (mirrored from lib/types.ts — no React Native deps) ───
+
+function timeToMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number);
-  const ampm = h >= 12 ? "PM" : "AM";
-  const hour12 = h % 12 || 12;
-  return `${hour12}:${String(m).padStart(2, "0")} ${ampm}`;
+  return h * 60 + m;
 }
 
-/** Format YYYY-MM-DD → "Thursday, April 17, 2026" */
-function formatDate(date: string): string {
-  const d = new Date(date + "T12:00:00");
-  return d.toLocaleDateString("en-US", {
+function minutesToTime(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function formatTimeDisplay(time: string): string {
+  const [h, m] = time.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
+function formatDateLong(dateStr: string): string {
+  const [y, mo, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, mo - 1, d);
+  return date.toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -41,13 +53,164 @@ function formatDate(date: string): string {
   });
 }
 
+function formatFullAddress(address: string, city?: string, state?: string, zipCode?: string): string {
+  const streetPart = address?.trim() || "";
+  const stateZip = [state?.trim(), zipCode?.trim()].filter(Boolean).join(" ");
+  const cityStatePart = [city?.trim(), stateZip].filter(Boolean).join(", ");
+  return [streetPart, cityStatePart].filter(Boolean).join(", ");
+}
+
+function formatPhoneNumber(value: string): string {
+  let digits = value.replace(/\D/g, "");
+  const hasPlus1 = value.replace(/\s/g, "").startsWith("+1");
+  let prefix = "";
+  if (hasPlus1 || (digits.length === 11 && digits.startsWith("1"))) {
+    prefix = "+1 ";
+    if (digits.startsWith("1") && digits.length > 10) digits = digits.slice(1);
+  }
+  const limited = digits.slice(0, 10);
+  if (limited.length === 0) return prefix ? "+1" : "";
+  if (limited.length <= 3) return `${prefix}(${limited}`;
+  if (limited.length <= 6) return `${prefix}(${limited.slice(0, 3)}) ${limited.slice(3)}`;
+  return `${prefix}(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`;
+}
+
+function stripPhoneFormat(formatted: string): string {
+  return formatted.replace(/\D/g, "");
+}
+
+const LIME_OF_TIME_FOOTER = "\n\n— Powered by Lime Of Time";
+
+function appendLimeFooter(body: string): string {
+  const footer = LIME_OF_TIME_FOOTER.trim();
+  if (body.trimEnd().endsWith(footer)) return body;
+  return body.trimEnd() + LIME_OF_TIME_FOOTER;
+}
+
+/** Build the smart pricing block (subtotal / discount / gift / amount due) */
+function buildPriceLine(opts: {
+  totalPrice?: number | null;
+  discountAmount?: number | null;
+  discountName?: string | null;
+  giftUsedAmount?: number | null;
+  paymentStatus?: string | null;
+}): string {
+  const { totalPrice, discountAmount, discountName, giftUsedAmount, paymentStatus } = opts;
+  const hasDiscount = discountAmount != null && discountAmount > 0;
+  const hasGift = giftUsedAmount != null && giftUsedAmount > 0;
+  const isPaid = paymentStatus === "paid";
+  const totalLabel = isPaid ? "Total Paid" : "Amount Due";
+
+  if (!hasDiscount && !hasGift) {
+    if (totalPrice != null) return `💰 ${totalLabel}: $${Number(totalPrice).toFixed(2)}`;
+    return "💰 Total: See invoice";
+  }
+
+  const lines: string[] = [];
+  if (totalPrice != null) {
+    const subtotal = Number(totalPrice) + Number(discountAmount ?? 0) + Number(giftUsedAmount ?? 0);
+    lines.push(`💰 Subtotal: $${subtotal.toFixed(2)}`);
+    if (hasDiscount) {
+      const label = discountName ? `Discount (${discountName})` : "Discount";
+      lines.push(`🏷️ ${label}: -$${Number(discountAmount).toFixed(2)}`);
+    }
+    if (hasGift) {
+      lines.push(`🎁 Gift Card Applied: -$${Number(giftUsedAmount).toFixed(2)}`);
+    }
+    lines.push(`✅ ${totalLabel}: $${Number(totalPrice).toFixed(2)}`);
+  } else {
+    lines.push("💰 Total: See invoice");
+  }
+  return lines.join("\n");
+}
+
+/** Replace {variable} placeholders in a template string */
+function applyTemplate(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${key}}`);
+}
+
+/**
+ * Build the full professional reminder message body.
+ * Mirrors the logic in send-reminder.tsx / generateReminderMessage in lib/types.ts.
+ */
+function buildReminderMessage(opts: {
+  clientName: string;
+  serviceName: string;
+  serviceDuration: number;
+  date: string;
+  time: string;
+  locationLine: string;
+  priceLine: string;
+  businessName: string;
+  phoneFormatted: string;
+  windowKey: "sent24h" | "sent1h";
+  customReminderTemplate?: string | null;
+}): string {
+  const {
+    clientName, serviceName, serviceDuration, date, time,
+    locationLine, priceLine, businessName, phoneFormatted,
+    windowKey, customReminderTemplate,
+  } = opts;
+
+  const endTime = formatTimeDisplay(minutesToTime(timeToMinutes(time) + serviceDuration));
+  const dateStr = formatDateLong(date);
+  const timeStr = formatTimeDisplay(time);
+  const timeRange = `${timeStr} – ${endTime}`;
+
+  // If the business has a custom smsTemplates.reminder, use it
+  if (customReminderTemplate) {
+    const vars: Record<string, string> = {
+      clientName,
+      service: serviceName,
+      serviceName,
+      date: dateStr,
+      time: timeRange,
+      location: locationLine,
+      priceLine,
+      businessName,
+      phone: phoneFormatted,
+    };
+    return appendLimeFooter(applyTemplate(customReminderTemplate, vars));
+  }
+
+  // Default templates matching the DEFAULT_REMINDER_TEMPLATES in lib/types.ts
+  let body: string;
+  if (windowKey === "sent24h") {
+    body =
+      `Dear ${clientName},\n\n` +
+      `This is your 24-hour reminder for your appointment tomorrow. We look forward to seeing you!\n\n` +
+      `📋 Service: ${serviceName}\n` +
+      `📅 Date: ${dateStr}\n` +
+      `⏰ Time: ${timeRange}\n` +
+      `📍 Location: ${locationLine}\n` +
+      `${priceLine}\n` +
+      `🏢 ${businessName}\n` +
+      `📞 ${phoneFormatted}\n\n` +
+      `Please arrive 5 minutes early. If you need to reschedule or cancel, contact us as soon as possible.`;
+  } else {
+    // sent1h
+    body =
+      `Dear ${clientName},\n\n` +
+      `Your appointment is in 1 hour. Please start making your way over.\n\n` +
+      `📋 Service: ${serviceName}\n` +
+      `📅 Date: ${dateStr}\n` +
+      `⏰ Time: ${timeRange}\n` +
+      `📍 Location: ${locationLine}\n` +
+      `${priceLine}\n` +
+      `🏢 ${businessName}\n` +
+      `📞 ${phoneFormatted}\n\n` +
+      `Please arrive a few minutes early. If you need to reschedule, contact us right away.`;
+  }
+  return appendLimeFooter(body);
+}
+
 /** Reminder windows: [key, minutes before appointment, label]
  *  windowMinutes = ±15 min (cron runs every 30 min, so we fire within 15 min of the exact time)
  */
 const REMINDER_WINDOWS = [
-  { key: "sent24h", minutesBefore: 24 * 60, label: "24 hours", windowMinutes: 30 },
-  { key: "sent1h",  minutesBefore: 60,       label: "1 hour",   windowMinutes: 30 },
-] as const;
+  { key: "sent24h" as const, minutesBefore: 24 * 60, label: "24 hours", windowMinutes: 30 },
+  { key: "sent1h"  as const, minutesBefore: 60,       label: "1 hour",   windowMinutes: 30 },
+];
 
 async function sendClientReminders() {
   const db = await getDb();
@@ -78,14 +241,16 @@ async function sendClientReminders() {
     const serviceLocalIds = [...new Set(rangeAppts.map((a) => a.serviceLocalId))];
     const locationIds = [...new Set(rangeAppts.map((a) => a.locationId).filter(Boolean))] as string[];
 
-    // Batch fetch all related data
+    // Batch fetch all related data — include phone + smsTemplates for owner
     const [ownerRows, clientRows, serviceRows] = await Promise.all([
       db.select({
         id: businessOwners.id,
         businessName: businessOwners.businessName,
+        phone: businessOwners.phone,
         address: businessOwners.address,
         notificationsEnabled: businessOwners.notificationsEnabled,
         notificationPreferences: businessOwners.notificationPreferences,
+        smsTemplates: businessOwners.smsTemplates,
       }).from(businessOwners).where(inArray(businessOwners.id, ownerIds)),
       db.select().from(clients).where(inArray(clients.localId, clientLocalIds)),
       db.select().from(services).where(inArray(services.localId, serviceLocalIds)),
@@ -129,27 +294,37 @@ async function sendClientReminders() {
       const apptDateTime = new Date(`${appt.date}T${appt.time}:00`);
       const minutesUntil = (apptDateTime.getTime() - now.getTime()) / (1000 * 60);
 
-      // Build location line (full address + zip for in-store services)
+      // ── Build location line ──────────────────────────────────────────
       const locName = location?.name ?? "";
-      const locAddrParts = [location?.address, location?.city, location?.state, location?.zipCode].filter(Boolean);
-      const locAddr = locAddrParts.join(", ");
-      const ownerAddrParts = [(owner as any).address, (owner as any).city, (owner as any).state].filter(Boolean);
-      const ownerAddr = ownerAddrParts.join(", ");
-      const locLine = locName || locAddr
-        ? `\n📍 ${locName}${locAddr ? (locName ? " — " : "") + locAddr : ""}`
-        : (ownerAddr ? `\n📍 ${ownerAddr}` : "");
-      // Build phone line
-      const locPhone = (location as any)?.phone || (owner as any)?.phone || "";
-      const phoneDigits = locPhone.replace(/\D/g, "");
-      const phoneFormatted = phoneDigits.length === 10
-        ? `(${phoneDigits.slice(0,3)}) ${phoneDigits.slice(3,6)}-${phoneDigits.slice(6)}`
-        : locPhone;
-      const phoneLine = phoneFormatted ? `\n📞 ${phoneFormatted}` : "";
+      const locAddr = formatFullAddress(
+        location?.address ?? "",
+        location?.city ?? "",
+        location?.state ?? "",
+        location?.zipCode ?? "",
+      );
+      const ownerAddr = (owner as any).address ?? "";
+      const locationLine = locName || locAddr
+        ? locName
+          ? (locAddr ? `${locName} — ${locAddr}` : locName)
+          : locAddr
+        : ownerAddr;
 
-      const serviceName = service?.name ?? "appointment";
-      const dateStr = formatDate(appt.date);
-      const timeStr = formatTime(appt.time);
-      const bName = owner.businessName;
+      // ── Build phone ──────────────────────────────────────────────────
+      const rawPhone = (location as any)?.phone || (owner as any)?.phone || "";
+      const phoneFormatted = formatPhoneNumber(stripPhoneFormat(rawPhone));
+
+      // ── Build pricing block ──────────────────────────────────────────
+      const priceLine = buildPriceLine({
+        totalPrice: (appt as any).totalPrice != null ? Number((appt as any).totalPrice) : null,
+        discountAmount: (appt as any).discountAmount != null ? Number((appt as any).discountAmount) : null,
+        discountName: (appt as any).discountName ?? null,
+        giftUsedAmount: (appt as any).giftUsedAmount != null ? Number((appt as any).giftUsedAmount) : null,
+        paymentStatus: (appt as any).paymentStatus ?? null,
+      });
+
+      const serviceName = service?.name ?? "your appointment";
+      const serviceDuration = service?.duration ?? appt.duration ?? 60;
+      const customReminderTpl = ((owner as any).smsTemplates as any)?.reminder ?? null;
 
       // Check each reminder window
       for (const window of REMINDER_WINDOWS) {
@@ -160,35 +335,39 @@ async function sendClientReminders() {
 
         // Check if appointment falls within this reminder window
         if (minutesUntil <= windowStart && minutesUntil > windowEnd) {
-          // Build the message
-          let msgBody = "";
-          if (window.key === "sent24h") {
-            msgBody = `⏰ Gentle Reminder: Your ${serviceName} appointment is tomorrow!\n\n📅 ${dateStr}\n🕐 ${timeStr}${locLine}${phoneLine}\n\nPlease reply here if you need to make any changes. We look forward to seeing you! — ${bName}`;
-          } else if (window.key === "sent1h") {
-            msgBody = `⏰ Your ${serviceName} appointment is in 1 hour!\n\n📅 Today, ${timeStr}${locLine}${phoneLine}\n\nWe're looking forward to seeing you! — ${bName}`;
-          }
+          const msgBody = buildReminderMessage({
+            clientName: client.name,
+            serviceName,
+            serviceDuration,
+            date: appt.date,
+            time: appt.time,
+            locationLine,
+            priceLine,
+            businessName: owner.businessName,
+            phoneFormatted,
+            windowKey: window.key,
+            customReminderTemplate: customReminderTpl,
+          });
 
-          if (msgBody) {
-            try {
-              await insertClientMessage({
-                businessOwnerId: appt.businessOwnerId,
-                clientAccountId: clientAcc.id,
-                senderType: "business",
-                body: msgBody,
-              });
+          try {
+            await insertClientMessage({
+              businessOwnerId: appt.businessOwnerId,
+              clientAccountId: clientAcc.id,
+              senderType: "business",
+              body: msgBody,
+            });
 
-              // Update flags in DB
-              const newFlags = { ...flags, [window.key]: true };
-              await db.update(appointments)
-                .set({ clientReminderFlags: newFlags } as any)
-                .where(eq(appointments.localId, appt.localId));
+            // Update flags in DB
+            const newFlags = { ...flags, [window.key]: true };
+            await db.update(appointments)
+              .set({ clientReminderFlags: newFlags } as any)
+              .where(eq(appointments.localId, appt.localId));
 
-              flags[window.key] = true;
-              msgSent++;
-              console.log(`[ClientReminderCron] Sent ${window.label} reminder to client ${clientAcc.id} for appt ${appt.localId}`);
-            } catch (err) {
-              console.warn(`[ClientReminderCron] Failed to send ${window.label} reminder for appt ${appt.localId}:`, err);
-            }
+            flags[window.key] = true;
+            msgSent++;
+            console.log(`[ClientReminderCron] Sent ${window.label} reminder to client ${clientAcc.id} for appt ${appt.localId}`);
+          } catch (err) {
+            console.warn(`[ClientReminderCron] Failed to send ${window.label} reminder for appt ${appt.localId}:`, err);
           }
         }
       }

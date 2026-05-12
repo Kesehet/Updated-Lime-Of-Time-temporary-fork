@@ -348,6 +348,50 @@ export default function BookingsScreen() {
                   </View>
                 )}
               </View>
+              {/* 📦 Package progress pill */}
+              {item.packageGroupId && item.sessionIndex != null && item.sessionTotal != null && (() => {
+                // Build mini dot timeline using packageSiblings if available, else use sessionTotal
+                const siblings = item.packageSiblings ?? [];
+                const total = siblings.length > 0 ? siblings.length : item.sessionTotal;
+                const dots = Array.from({ length: total }, (_, i) => {
+                  const sib = siblings[i];
+                  const isThis = sib ? sib.id === item.id : i === item.sessionIndex;
+                  const isDone = sib ? sib.status === 'completed' : i < (item.sessionIndex ?? 0);
+                  const isCancelled = sib ? sib.status === 'cancelled' : false;
+                  return { isThis, isDone, isCancelled };
+                });
+                const completedCount = siblings.length > 0
+                  ? siblings.filter(s => s.status === 'completed').length
+                  : item.sessionIndex ?? 0;
+                return (
+                  <View style={{ marginTop: 8, paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: CARD_BORDER }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                      <Text style={{ fontSize: 10, color: '#0891b2', fontWeight: '700', marginRight: 4 }}>
+                        {item.packageName ?? 'Package'}
+                      </Text>
+                      {dots.map((dot, di) => (
+                        <View
+                          key={di}
+                          style={{
+                            width: 18, height: 18, borderRadius: 9,
+                            backgroundColor: dot.isDone ? '#22c55e' : dot.isCancelled ? '#ef444430' : dot.isThis ? '#0891b2' : '#0891b215',
+                            borderWidth: dot.isThis ? 1.5 : 1,
+                            borderColor: dot.isDone ? '#16a34a' : dot.isCancelled ? '#ef4444' : '#0891b2',
+                            alignItems: 'center', justifyContent: 'center',
+                          }}
+                        >
+                          <Text style={{ fontSize: 9, color: dot.isDone ? '#fff' : dot.isThis ? '#fff' : '#0891b2' }}>
+                            {dot.isDone ? '✓' : dot.isCancelled ? '✕' : `${di + 1}`}
+                          </Text>
+                        </View>
+                      ))}
+                      <Text style={{ fontSize: 10, color: TEXT_MUTED, marginLeft: 4 }}>
+                        {completedCount}/{total} done
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })()}
               {/* 🎁 Free / Gift badge — shown when appointment was fully covered by a gift */}
               {item.giftCode && (parseFloat(item.totalPrice ?? "1") <= 0 || item.paymentMethod === "free") && (
                 <View style={[s.requestBadge, { backgroundColor: "rgba(74,222,128,0.12)", borderColor: "rgba(74,222,128,0.3)", borderWidth: 1, marginTop: 6 }]}>

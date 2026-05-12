@@ -651,6 +651,18 @@ const appointmentsRouter = router({
                 await db.insertClientMessage({ businessOwnerId, clientAccountId: clientAccPkg.id, senderType: "business", body: progressMsg }).catch(() => {});
                 // Also send via SMS if Twilio is enabled
                 await sendStatusSms(enrichedPkg.clientPhone, progressMsg, "confirmation").catch(() => {});
+                // On final session: send a package-aware "How was your visit?" push notification
+                if (remainingCount === 0 && clientAccPkg.expoPushToken) {
+                  const owner3 = await db.getBusinessOwnerById(businessOwnerId);
+                  const bName3 = owner3?.businessName ?? "us";
+                  await sendExpoPush(clientAccPkg.expoPushToken, {
+                    title: `⭐ How was your ${pkgDisplayName}?`,
+                    body: `You’ve completed all ${sessionTotal} sessions with ${bName3}. We’d love to hear your feedback — tap to leave a review!`,
+                    data: { type: "appointment_completed" as any, appointmentId: localId, businessOwnerId },
+                    channelId: "appointments",
+                    sound: "default",
+                  }).catch(() => {});
+                }
               }
             }
           }

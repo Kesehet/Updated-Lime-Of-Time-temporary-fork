@@ -1067,8 +1067,54 @@ Would you also like to charge a no-show fee via Stripe?`,
         {appointment.packageGroupId && (() => {
           const completedCount = packageSiblings.filter(s => s.status === 'completed').length;
           const remainingCount = packageSiblings.length - completedCount;
+          // Build timeline dots — use packageSiblings if loaded, else fall back to sessionTotal
+          const totalSessions = packageSiblings.length > 0
+            ? packageSiblings.length
+            : (appointment.sessionTotal ?? 1);
+          const timelineDots = Array.from({ length: totalSessions }, (_, i) => {
+            const sibling = packageSiblings[i];
+            const isThis = sibling?.id === appointment.id || (!sibling && i === (appointment.sessionIndex ?? 0));
+            const isDone = sibling ? sibling.status === 'completed' : false;
+            const isCancelled = sibling ? sibling.status === 'cancelled' : false;
+            return { isThis, isDone, isCancelled, idx: i };
+          });
           return (
             <View style={{ borderRadius: 14, borderWidth: 1.5, borderColor: '#0891b2', backgroundColor: '#0891b215', marginBottom: 16, overflow: 'hidden' }}>
+              {/* Session timeline strip */}
+              <View style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 }}>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: '#0891b2', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  {appointment.packageName ?? 'Package'} — Session Progress
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                  {timelineDots.map(({ isThis, isDone, isCancelled, idx: dotIdx }) => (
+                    <View key={dotIdx} style={{ alignItems: 'center', gap: 3 }}>
+                      {/* Connector line between dots */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        {dotIdx > 0 && (
+                          <View style={{ width: 14, height: 2, backgroundColor: timelineDots[dotIdx - 1]?.isDone ? '#22c55e' : '#0891b230', marginRight: 6 }} />
+                        )}
+                        <View style={{
+                          width: 30, height: 30, borderRadius: 15,
+                          backgroundColor: isDone ? '#22c55e' : isCancelled ? '#ef444430' : isThis ? '#0891b2' : '#0891b215',
+                          borderWidth: isThis ? 2 : 1,
+                          borderColor: isDone ? '#16a34a' : isCancelled ? '#ef4444' : '#0891b2',
+                          alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <Text style={{ fontSize: 13 }}>
+                            {isDone ? '✅' : isCancelled ? '✕' : isThis ? '▶' : `${dotIdx + 1}`}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={{ fontSize: 9, color: isDone ? '#16a34a' : isThis ? '#0891b2' : '#9BA1A6', fontWeight: isThis ? '700' : '400' }}>
+                        {isDone ? 'Done' : isCancelled ? 'Canc.' : isThis ? 'Now' : `S${dotIdx + 1}`}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                <Text style={{ fontSize: 10, color: '#0891b2', marginTop: 6 }}>
+                  {completedCount} of {totalSessions} sessions completed{remainingCount > 0 ? ` · ${remainingCount} remaining` : ' · All done! 🎉'}
+                </Text>
+              </View>
               {/* Header row */}
               <Pressable
                 onPress={() => setShowSessionsAccordion(v => !v)}

@@ -2123,3 +2123,7 @@
 
 - [x] Package progress pill ("2/3") on appointment cards in the calendar/list view (business portal)
 - [x] Auto-SMS via Messaging system when business owner marks a package session as "Completed" — pre-generated message like "Session 1 of 3 complete — 2 sessions remaining on your Glow & Go Bundle."
+- [x] Fix auto-reminder messages to use full professional format (Dear {clientName}, service, date, time, location, pricing, business name, phone, footer) matching manual send
+- [x] Package session timeline strip (visual dots ✅ ✅ ⬜) at top of appointment detail screen (owner portal)
+- [x] Client portal package progress dots on appointment cards (bookings tab)
+- [x] Package-aware review push notification on final session completion ("How was your Glow & Go Bundle?")
