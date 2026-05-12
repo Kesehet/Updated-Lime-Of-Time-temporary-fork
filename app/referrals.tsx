@@ -21,6 +21,7 @@ import {
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { ScreenContainer } from "@/components/screen-container";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { trpc } from "@/lib/trpc";
 import { useColors } from "@/hooks/use-colors";
 import { useStore } from "@/lib/store";
@@ -94,8 +95,8 @@ export default function ReferralsScreen() {
 
   const ss = StyleSheet.create({
     header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 0.5, borderBottomColor: colors.border },
-    backBtn: { paddingRight: 12, paddingVertical: 4 },
-    backTxt: { fontSize: 16, color: colors.primary },
+    backBtn: { flexDirection: "row", alignItems: "center", paddingRight: 12, paddingVertical: 4, gap: 2 },
+    backTxt: { fontSize: 17, color: colors.primary },
     title: { fontSize: 20, fontWeight: "700", color: colors.foreground },
     body: { padding: 20, gap: 20 },
     heroCard: { backgroundColor: colors.surface, borderRadius: 20, padding: 24, alignItems: "center", gap: 12, borderWidth: 0.5, borderColor: colors.border },
@@ -151,9 +152,10 @@ export default function ReferralsScreen() {
       {/* Header */}
       <View style={ss.header}>
         <TouchableOpacity style={ss.backBtn} onPress={() => router.back()}>
-          <Text style={ss.backTxt}>{"< Back"}</Text>
+          <IconSymbol name="chevron.left" size={22} color={colors.primary} />
+          <Text style={ss.backTxt}>Back</Text>
         </TouchableOpacity>
-        <Text style={ss.title}>{"Referrals"}</Text>
+        <Text style={ss.title}>Referrals</Text>
       </View>
 
       {isLoading ? (

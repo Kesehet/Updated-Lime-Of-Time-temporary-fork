@@ -1409,8 +1409,9 @@ export default function HomeScreen() {
     { businessOwnerId: state.businessOwnerId! },
     { enabled: !!state.businessOwnerId, staleTime: 5 * 60 * 1000 }
   );
-  // Merge: prefer referralData.code, fall back to myCodeData.code so card shows immediately
-  const referralCode = referralData?.code ?? (myCodeData as any)?.code ?? null;
+  // referralData.code is a full ReferralCode object (not a string) — extract .code string
+  // myCodeData is also a full ReferralCode object — extract .code string
+  const referralCode: string | null = (referralData?.code as any)?.code ?? (myCodeData as any)?.code ?? null;
   // ─── Overview mode: "kpi" = 4-card grid, "dayweek" = Day/Week card ──
   const [overviewMode, setOverviewMode] = useState<"kpi" | "dayweek">("kpi");
   // Measured heights for each view (set via onLayout)

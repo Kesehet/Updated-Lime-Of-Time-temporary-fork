@@ -253,12 +253,22 @@ export default function SettingsScreen() {
       syncToDb(action);
     }
   }, [dispatch, syncToDb, settings.businessCategory]);
-  const setPortalCategory = useCallback((cat: string) => {
-    const action = { type: "UPDATE_SETTINGS" as const, payload: { businessCategory: cat } };
+  // Multi-select: businessCategory stored as comma-separated string e.g. "Hair,Nails,Skin"
+  const selectedCategories: string[] = settings.businessCategory
+    ? settings.businessCategory.split(",").map((c: string) => c.trim()).filter(Boolean)
+    : [];
+  const togglePortalCategory = useCallback((cat: string) => {
+    const current = settings.businessCategory
+      ? settings.businessCategory.split(",").map((c: string) => c.trim()).filter(Boolean)
+      : [];
+    const next = current.includes(cat)
+      ? current.filter((c: string) => c !== cat)
+      : [...current, cat];
+    const newValue = next.join(",");
+    const action = { type: "UPDATE_SETTINGS" as const, payload: { businessCategory: newValue } };
     dispatch(action);
     syncToDb(action);
-    setShowCategoryPicker(false);
-  }, [dispatch, syncToDb]);
+  }, [dispatch, syncToDb, settings.businessCategory]);
 
   const handleLogout = useCallback(() => {
     Alert.alert("Log Out", "Are you sure you want to log out?", [
@@ -651,28 +661,31 @@ export default function SettingsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Business Category</Text>
                   <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
-                    {settings.businessCategory ?? "Tap to select a category"}
+                    {selectedCategories.length > 0 ? selectedCategories.join(", ") : "Tap to select categories"}
                   </Text>
                 </View>
                 <IconSymbol name="chevron.right" size={16} color={colors.muted} />
               </Pressable>
               {showCategoryPicker && (
                 <View style={{ marginTop: 10, flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                  {PORTAL_CATEGORIES.map((cat) => (
-                    <Pressable
-                      key={cat}
-                      onPress={() => setPortalCategory(cat)}
-                      style={({ pressed }) => ({
-                        paddingHorizontal: 14,
-                        paddingVertical: 8,
-                        borderRadius: 20,
-                        backgroundColor: settings.businessCategory === cat ? "#8B5CF6" : colors.border,
-                        opacity: pressed ? 0.75 : 1,
-                      })}
-                    >
-                      <Text style={{ fontSize: fs.xs, fontWeight: "600", color: settings.businessCategory === cat ? "#fff" : colors.foreground }}>{cat}</Text>
-                    </Pressable>
-                  ))}
+                  {PORTAL_CATEGORIES.map((cat) => {
+                    const isSelected = selectedCategories.includes(cat);
+                    return (
+                      <Pressable
+                        key={cat}
+                        onPress={() => togglePortalCategory(cat)}
+                        style={({ pressed }) => ({
+                          paddingHorizontal: 14,
+                          paddingVertical: 8,
+                          borderRadius: 20,
+                          backgroundColor: isSelected ? "#8B5CF6" : colors.border,
+                          opacity: pressed ? 0.75 : 1,
+                        })}
+                      >
+                        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: isSelected ? "#fff" : colors.foreground }}>{cat}</Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
               )}
             </>
