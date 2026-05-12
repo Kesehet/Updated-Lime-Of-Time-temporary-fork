@@ -570,21 +570,31 @@ export function registerStripeRoutes(app: Express): void {
                         console.log(`[Referral] Push notification sent to referrer ${referral.referrerBusinessOwnerId}`);
                       }
 
-                      // ── Apply referrer reward: 1 free month via Stripe credit ──
+                      // ── Apply referrer reward: 1 free month via Stripe customer balance credit ──
                       try {
                         if (referrer?.stripeCustomerId) {
-                          const creditItem = await stripe.invoiceItems.create({
-                            customer: referrer.stripeCustomerId,
-                            amount: -1, // Stripe requires a non-zero amount; actual credit applied via subscription
-                            currency: "usd",
-                            description: `Referral reward: 1 free month for referring ${bizName}`,
-                          });
+                          // Look up the referrer's current plan price to credit the right amount
+                          const referrerPlanKey = referrer.subscriptionPlan ?? "growth";
+                          const referrerPeriod = (referrer as any).subscriptionPeriod ?? "monthly";
+                          const referrerPlanInfo = await getPlanPrice(referrerPlanKey).catch(() => null);
+                          const creditAmountCents = referrerPeriod === "yearly"
+                            ? (referrerPlanInfo?.yearly ?? FALLBACK_PRICES[referrerPlanKey]?.yearly ?? 1900)
+                            : (referrerPlanInfo?.monthly ?? FALLBACK_PRICES[referrerPlanKey]?.monthly ?? 1900);
+                          // Apply as a negative customer balance — automatically deducted on next invoice
+                          const balanceTx = await stripe.customers.createBalanceTransaction(
+                            referrer.stripeCustomerId,
+                            {
+                              amount: -creditAmountCents,
+                              currency: "usd",
+                              description: `Referral reward: 1 free month for referring ${bizName}`,
+                            }
+                          );
                           await updateReferralStatus(referral.id, {
                             status: "rewarded",
                             rewardedAt: new Date(),
-                            referrerRewardId: creditItem.id,
+                            referrerRewardId: balanceTx.id,
                           });
-                          console.log(`[Referral] Referrer ${referral.referrerBusinessOwnerId} rewarded with credit ${creditItem.id}`);
+                          console.log(`[Referral] Referrer ${referral.referrerBusinessOwnerId} credited $${(creditAmountCents / 100).toFixed(2)} via balance tx ${balanceTx.id}`);
                         } else {
                           // No Stripe customer yet — mark rewarded without credit (manual follow-up)
                           await updateReferralStatus(referral.id, {
