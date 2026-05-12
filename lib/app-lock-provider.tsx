@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import { useAppLock, CLIENT_BIOMETRIC_ENABLED_KEY, recordClientActivity } from "@/hooks/use-app-lock";
+import { useAppLock, CLIENT_BIOMETRIC_ENABLED_KEY, CLIENT_LAST_ACTIVE_KEY, CLIENT_REAUTH_MS, recordClientActivity } from "@/hooks/use-app-lock";
 import { LockScreen } from "@/components/lock-screen";
 import { useStore } from "@/lib/store";
 
@@ -62,7 +62,9 @@ export function ClientAppLockProvider({
   const appLock = useAppLock(
     splashDone,
     CLIENT_BIOMETRIC_ENABLED_KEY,
-    recordClientActivity,
+    recordClientActivity, // resets the 24h timer after successful Face ID
+    CLIENT_LAST_ACTIVE_KEY,
+    CLIENT_REAUTH_MS,
   );
 
   return (

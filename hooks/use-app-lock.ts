@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Platform } from "react-native";
+import { Platform, AppState, AppStateStatus } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -100,11 +100,17 @@ export async function clientNeedsLogout(): Promise<boolean> {
  *                     Defaults to the business key; pass CLIENT_BIOMETRIC_ENABLED_KEY for client portal.
  * @param onUnlocked   Optional callback invoked after a successful biometric unlock.
  *                     Use it to record activity for the correct portal.
+ * @param lastActiveKey  AsyncStorage key for the last-active timestamp used for the 24h re-lock check.
+ *                       Defaults to BUSINESS_LAST_ACTIVE_KEY.
+ * @param reauthMs       How long the app can be in the background before re-locking.
+ *                       Defaults to BUSINESS_REAUTH_MS (24 hours).
  */
 export function useAppLock(
   splashDone: boolean = true,
   storageKey: string = BIOMETRIC_ENABLED_KEY,
   onUnlocked?: () => Promise<void>,
+  lastActiveKey: string = BUSINESS_LAST_ACTIVE_KEY,
+  reauthMs: number = BUSINESS_REAUTH_MS,
 ) {
   const [isLocked, setIsLocked] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
@@ -114,8 +120,17 @@ export function useAppLock(
 
   const hasRunInitialAuth = useRef(false);
   const isAuthenticating = useRef(false);
+  // Track when the app went to background so we can measure elapsed time
+  const backgroundedAtRef = useRef<number | null>(null);
+  // Keep a stable ref to biometricEnabled so the AppState listener can read it
+  const biometricEnabledRef = useRef(false);
 
-  // Check biometric hardware availability AND load saved preference
+  // Keep biometricEnabledRef in sync
+  useEffect(() => {
+    biometricEnabledRef.current = biometricEnabled;
+  }, [biometricEnabled]);
+
+  // ── Check biometric hardware availability AND load saved preference ────────────
   useEffect(() => {
     if (Platform.OS === "web") {
       setSettingsLoaded(true);
@@ -141,6 +156,7 @@ export function useAppLock(
         const saved = await AsyncStorage.getItem(storageKey);
         if (saved === "true" && hasHardware && isEnrolled) {
           setBiometricEnabled(true);
+          biometricEnabledRef.current = true;
           // Set locked immediately so the lock screen shows before auth prompt
           setIsLocked(true);
         }
@@ -152,7 +168,7 @@ export function useAppLock(
     })();
   }, [storageKey]);
 
-  // Authenticate with biometrics
+  // ── Authenticate with biometrics ──────────────────────────────────────────────
   const authenticate = useCallback(async (): Promise<boolean> => {
     if (Platform.OS === "web") return true;
 
@@ -203,7 +219,53 @@ export function useAppLock(
     }
   }, [biometricType, onUnlocked]);
 
-  // Toggle biometric lock on/off
+  // ── AppState listener: re-lock when returning from background after timeout ────
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+
+    const handleAppStateChange = async (nextState: AppStateStatus) => {
+      if (nextState === "background" || nextState === "inactive") {
+        // Record when we went to background
+        backgroundedAtRef.current = Date.now();
+        return;
+      }
+
+      if (nextState === "active") {
+        // App came back to foreground
+        if (!biometricEnabledRef.current) return; // lock not enabled
+
+        // Check 1: how long were we in the background?
+        const backgroundedAt = backgroundedAtRef.current;
+        if (backgroundedAt !== null) {
+          const elapsed = Date.now() - backgroundedAt;
+          if (elapsed >= reauthMs) {
+            // Been away long enough — re-lock
+            setIsLocked(true);
+            setTimeout(() => authenticate(), 300);
+            return;
+          }
+        }
+
+        // Check 2: check the persisted last-active timestamp (covers cold launches
+        // and cases where the OS killed the app while backgrounded)
+        try {
+          const lastActive = await AsyncStorage.getItem(lastActiveKey);
+          if (lastActive) {
+            const elapsed = Date.now() - parseInt(lastActive, 10);
+            if (elapsed >= reauthMs) {
+              setIsLocked(true);
+              setTimeout(() => authenticate(), 300);
+            }
+          }
+        } catch { /* ignore */ }
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    return () => subscription.remove();
+  }, [authenticate, lastActiveKey, reauthMs]);
+
+  // ── Toggle biometric lock on/off ──────────────────────────────────────────────
   const toggleBiometric = useCallback(
     async (enabled: boolean) => {
       if (enabled) {
@@ -211,12 +273,14 @@ export function useAppLock(
         const success = await authenticate();
         if (success) {
           setBiometricEnabled(true);
+          biometricEnabledRef.current = true;
           await AsyncStorage.setItem(storageKey, "true");
           return true;
         }
         return false;
       } else {
         setBiometricEnabled(false);
+        biometricEnabledRef.current = false;
         await AsyncStorage.setItem(storageKey, "false");
         setIsLocked(false);
         return true;
@@ -225,7 +289,8 @@ export function useAppLock(
     [authenticate, storageKey]
   );
 
-  // Initial authentication on first mount AFTER settings are loaded AND splash is done.
+  // ── Initial authentication on first mount ─────────────────────────────────────
+  // Fires after settings are loaded AND splash is done.
   useEffect(() => {
     if (Platform.OS === "web") return;
     if (!settingsLoaded) return;
