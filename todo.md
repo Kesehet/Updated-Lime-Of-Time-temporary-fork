@@ -2136,3 +2136,4 @@
 - [x] KPI sublabel font size 10→11px
 - [x] Remove Messages preview section from home screen (keep floating chat bubble only)
 - [x] Gift Cards redesign: two tabs (Issued / Sold), filter chips (All/Active/Redeemed/Unpaid/Expired), bottom sheet editor for owner edits on both tabs
+- [x] Redesign business onboarding subscription page: modern professional layout, all info visible, same colors, all functions intact

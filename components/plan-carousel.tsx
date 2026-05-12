@@ -1,14 +1,6 @@
 /**
- * PlanCarousel
- * ─────────────────────────────────────────────────────────────────────────────
- * Vertical scrollable list of plan cards — modern, compact, no white box.
- *
- * Design:
- *  - Full-width cards with gradient accent strip on left + header
- *  - No white background box — transparent card with subtle border
- *  - Compact feature grid (2 columns)
- *  - Billing toggle at top
- *  - Compare all plans modal preserved
+ * PlanCarousel — Modern subscription plan cards
+ * Hero price, gradient banner, feature checklist, prominent CTA.
  */
 import React, { useState, useRef, useEffect } from "react";
 import {
@@ -22,25 +14,19 @@ import {
   Modal,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { formatPrice } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
 export type PlanData = {
   planKey: string;
   displayName: string;
   monthlyPrice: number;
   yearlyPrice: number;
-  /** Effective price after admin discount (same as monthlyPrice when no discount) */
   effectiveMonthlyPrice?: number;
   effectiveYearlyPrice?: number;
-  /** Admin-set discount percentage 0-100 */
   discountPercent?: number;
-  /** Admin-set discount label shown as badge (e.g. "Launch Special") */
   discountLabel?: string | null;
-  /** ISO date string when discount auto-expires (null = no expiry) */
   discountExpiresAt?: string | null;
   maxClients: number;
   maxAppointments: number;
@@ -62,12 +48,10 @@ type PlanCarouselProps = {
   loadingPlanKey?: string | null;
   currentPlanKey?: string | null;
   containerWidth?: number;
-  /** When true (onboarding), show in onboarding context — no auto-scroll or pre-selection */
   isOnboarding?: boolean;
 };
 
 // ─── Plan Config ──────────────────────────────────────────────────────────────
-
 const PLAN_GRADIENTS: Record<string, [string, string, string]> = {
   solo:       ["#6B7280", "#4B5563", "#374151"],
   growth:     ["#2563EB", "#1D4ED8", "#1E40AF"],
@@ -83,26 +67,65 @@ const PLAN_EMOJIS: Record<string, string> = {
 };
 
 const PLAN_TAGLINES: Record<string, string> = {
-  solo:       "Solo practitioners",
-  growth:     "Growing businesses",
-  studio:     "Established studios",
-  enterprise: "Multi-location brands",
+  solo:       "Perfect for solo practitioners just getting started",
+  growth:     "For growing businesses ready to scale up",
+  studio:     "For established studios with a full team",
+  enterprise: "For multi-location brands at scale",
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const fmt = (n: number) => (n === -1 || n >= 9999 ? "∞" : String(n));
-const isIncluded = (n: number) => n !== 0;
+const PLAN_FEATURES: Record<string, string[]> = {
+  solo: [
+    "Up to 20 clients",
+    "Up to 5 services",
+    "1 staff member (you)",
+    "Up to 50 appointments/month",
+    "1 location",
+    "Online booking page",
+    "Cash & P2P payments",
+    "Basic analytics",
+  ],
+  growth: [
+    "Up to 100 clients",
+    "Up to 20 services",
+    "Up to 2 staff members",
+    "Unlimited appointments",
+    "1 location",
+    "Online booking page",
+    "SMS confirmations",
+    "Full analytics",
+  ],
+  studio: [
+    "Unlimited clients",
+    "Unlimited services",
+    "Up to 10 staff members",
+    "Unlimited appointments",
+    "Up to 3 locations",
+    "Online booking page",
+    "Full SMS automation",
+    "Stripe payments",
+    "Staff analytics",
+  ],
+  enterprise: [
+    "Unlimited clients",
+    "Unlimited services",
+    "Up to 100 staff members",
+    "Unlimited appointments",
+    "Up to 10 locations",
+    "Online booking page",
+    "Full SMS automation",
+    "Stripe payments",
+    "Multi-location analytics",
+    "Priority support",
+  ],
+};
 
 // ─── Plan Card ────────────────────────────────────────────────────────────────
-
 function PlanCard({
   plan,
   isYearly,
   onSelect,
   isLoading,
   isCurrentPlan,
-  isHighlighted = false,
   isUpgrade,
 }: {
   plan: PlanData;
@@ -117,138 +140,135 @@ function PlanCard({
   const gradients = (PLAN_GRADIENTS[plan.planKey] ?? PLAN_GRADIENTS.solo) as [string, string, string];
   const emoji = PLAN_EMOJIS[plan.planKey] ?? "✨";
   const tagline = PLAN_TAGLINES[plan.planKey] ?? "";
+  const features = PLAN_FEATURES[plan.planKey] ?? [];
   const isPopular = plan.planKey === "growth";
   const isFree = plan.monthlyPrice === 0;
-  // Use effective prices (after admin discount) for display and Stripe
+
   const effectiveMonthly = plan.effectiveMonthlyPrice ?? plan.monthlyPrice;
   const effectiveYearly = plan.effectiveYearlyPrice ?? plan.yearlyPrice;
-  // Show exact price with 2 decimal places always
   const rawPrice = isYearly ? effectiveYearly / 12 : effectiveMonthly;
   const rawOriginal = isYearly ? plan.yearlyPrice / 12 : plan.monthlyPrice;
   const hasDiscount = (plan.discountPercent ?? 0) > 0;
-  // Compute days until discount expires (null = no expiry)
+
   const discExpiresAt = plan.discountExpiresAt ? new Date(plan.discountExpiresAt) : null;
   const discDaysLeft = discExpiresAt
     ? Math.max(0, Math.ceil((discExpiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
+
   const savings =
     isYearly && !isFree && effectiveMonthly > 0
       ? Math.round(((effectiveMonthly * 12 - effectiveYearly) / (effectiveMonthly * 12)) * 100)
       : 0;
-  const accent = gradients[0];
 
-  const featureGrid: { label: string; value: string; included: boolean }[] = [
-    { label: "Clients",      value: fmt(plan.maxClients),      included: isIncluded(plan.maxClients) },
-    { label: "Services",     value: fmt(plan.maxServices),     included: isIncluded(plan.maxServices) },
-    { label: "Staff",        value: fmt(plan.maxStaff),        included: isIncluded(plan.maxStaff) },
-    { label: "Locations",    value: fmt(plan.maxLocations),    included: isIncluded(plan.maxLocations) },
-    { label: "Products",     value: fmt(plan.maxProducts),     included: isIncluded(plan.maxProducts) },
-    {
-      label: "SMS",
-      value: plan.smsLevel === "full" ? "Full" : plan.smsLevel === "confirmations" ? "Confirm" : "None",
-      included: plan.smsLevel !== "none" && plan.smsLevel !== "",
-    },
-    { label: "Appts",        value: fmt(plan.maxAppointments), included: isIncluded(plan.maxAppointments) },
-    {
-      label: "Payments",
-      value: plan.paymentLevel === "full" ? "Full" : plan.paymentLevel === "basic" ? "Basic" : "None",
-      included: plan.paymentLevel !== "none" && plan.paymentLevel !== "",
-    },
-  ];
+  const accent = gradients[0];
+  const priceInt = isFree ? "0" : Math.floor(rawPrice).toString();
+  const priceDec = isFree ? ".00" : ("." + (rawPrice % 1).toFixed(2).slice(2));
 
   return (
     <View style={[
       styles.card,
-      { borderColor: accent, borderWidth: 2 },
+      { borderColor: isPopular ? accent : colors.border },
+      isPopular && {
+        shadowColor: accent,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 10,
+      },
     ]}>
-      {/* ── Gradient accent strip on left ── */}
+      {/* Gradient Hero Banner */}
       <LinearGradient
         colors={gradients}
         start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.accentStrip}
-      />
-
-      {/* ── Card content ── */}
-      <View style={styles.cardContent}>
-        {/* Header row: emoji + name/tagline + price */}
-        <View style={styles.headerRow}>
-          {/* Left: emoji + name */}
-          <View style={styles.headerLeft}>
-            <View style={styles.headerTopRow}>
-              <Text style={styles.planEmoji}>{emoji}</Text>
-              <Text style={[styles.planName, { color: accent }]}>{plan.displayName}</Text>
-              {isPopular && (
-                <View style={[styles.badge, { backgroundColor: accent, borderColor: accent }]}>
-                  <Text style={[styles.badgeText, { color: "#fff" }]}>⭐ MOST POPULAR</Text>
-                </View>
-              )}
-              {isCurrentPlan && (
-                <View style={[styles.badge, { backgroundColor: "#22C55E22", borderColor: "#22C55E44" }]}>
-                  <Text style={[styles.badgeText, { color: "#22C55E" }]}>✓ ACTIVE</Text>
-                </View>
-              )}
-              {hasDiscount && (
-                <View style={[styles.badge, { backgroundColor: "#F59E0B22", borderColor: "#F59E0B55" }]}>
-                  <Text style={[styles.badgeText, { color: "#F59E0B" }]}>
-                    🏷️ {plan.discountLabel ?? `${plan.discountPercent}% OFF`}
-                  </Text>
-                </View>
-              )}
-              {hasDiscount && discDaysLeft !== null && (
-                <View style={[styles.badge, { backgroundColor: "#EF444422", borderColor: "#EF444455" }]}>
-                  <Text style={[styles.badgeText, { color: "#EF4444" }]}>
-                    ⏰ {discDaysLeft === 0 ? "Expires today" : `${discDaysLeft}d left`}
-                  </Text>
-                </View>
-              )}
-            </View>
-            <Text style={[styles.planTagline, { color: colors.muted }]}>{tagline}</Text>
+        end={{ x: 1, y: 1 }}
+        style={styles.heroBanner}
+      >
+        {isPopular && (
+          <View style={[styles.heroBadgeAbsolute, { backgroundColor: "#F59E0B" }]}>
+            <Text style={styles.heroBadgeAbsoluteText}>⭐ MOST POPULAR</Text>
           </View>
+        )}
+        {isCurrentPlan && (
+          <View style={[styles.heroBadgeAbsolute, { backgroundColor: "#22C55E" }]}>
+            <Text style={styles.heroBadgeAbsoluteText}>✓ YOUR PLAN</Text>
+          </View>
+        )}
 
-          {/* Right: price */}
-          <View style={styles.priceBlock}>
-            {isFree ? (
-              <Text style={[styles.priceMain, { color: accent }]}>Free</Text>
-            ) : (
-              <View style={{ alignItems: "flex-end" }}>
-                {hasDiscount && (
-                  <Text style={{ fontSize: 11, color: colors.muted, textDecorationLine: "line-through", marginBottom: 1 }}>
-                    {formatPrice(rawOriginal)}
-                  </Text>
-                )}
-                <View style={styles.priceRow}>
-                  <Text style={[styles.priceCurrency, { color: accent }]}>$</Text>
-                  <Text style={[styles.priceMain, { color: accent }]}>{rawPrice.toFixed(2)}</Text>
-                </View>
-              </View>
-            )}
-            {isFree ? (
-              <Text style={[styles.priceNote, { color: colors.muted }]}>forever</Text>
-            ) : isYearly && savings > 0 ? (
-              <Text style={[styles.priceNote, { color: "#22C55E" }]}>−{savings}%/yr</Text>
-            ) : (
-              <Text style={[styles.priceNote, { color: colors.muted }]}>/mo</Text>
-            )}
+        <View style={styles.heroNameRow}>
+          <Text style={styles.heroEmoji}>{emoji}</Text>
+          <Text style={styles.heroPlanName}>{plan.displayName}</Text>
+        </View>
+
+        <View style={styles.heroPriceRow}>
+          <Text style={styles.heroCurrency}>$</Text>
+          <Text style={styles.heroPriceInt}>{priceInt}</Text>
+          <View style={styles.heroPriceRight}>
+            <Text style={styles.heroPriceDec}>{priceDec}</Text>
+            <Text style={styles.heroPricePer}>{isFree ? "forever" : "/mo"}</Text>
           </View>
         </View>
 
-        {/* Divider */}
-        <View style={[styles.divider, { backgroundColor: accent + "22" }]} />
+        <Text style={styles.heroTagline}>{tagline}</Text>
 
-        {/* Feature grid (2 columns) */}
-        <View style={styles.featureGrid}>
-          {featureGrid.map((f) => (
-            <View key={f.label} style={styles.featureCell}>
-              <Text style={[styles.featureCellValue, { color: f.included ? accent : colors.muted }]}>
-                {f.value}
+        <View style={styles.heroBadgesRow}>
+          {hasDiscount && (
+            <View style={[styles.heroBadge, { backgroundColor: "#F59E0B30" }]}>
+              <Text style={[styles.heroBadgeText, { color: "#FCD34D" }]}>
+                🏷️ {plan.discountLabel ?? (plan.discountPercent + "% OFF")}
               </Text>
-              <Text style={[styles.featureCellLabel, { color: colors.muted }]}>{f.label}</Text>
             </View>
-          ))}
+          )}
+          {hasDiscount && discDaysLeft !== null && (
+            <View style={[styles.heroBadge, { backgroundColor: "#EF444430" }]}>
+              <Text style={[styles.heroBadgeText, { color: "#FCA5A5" }]}>
+                ⏰ {discDaysLeft === 0 ? "Expires today" : (discDaysLeft + "d left")}
+              </Text>
+            </View>
+          )}
+          {isYearly && savings > 0 && (
+            <View style={[styles.heroBadge, { backgroundColor: "#22C55E30" }]}>
+              <Text style={[styles.heroBadgeText, { color: "#86EFAC" }]}>
+                💰 Save {savings}% yearly
+              </Text>
+            </View>
+          )}
+          {isYearly && !isFree && (
+            <View style={[styles.heroBadge, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
+              <Text style={[styles.heroBadgeText, { color: "rgba(255,255,255,0.85)" }]}>
+                Billed ${effectiveYearly.toFixed(2)}/yr
+              </Text>
+            </View>
+          )}
+          {hasDiscount && rawOriginal > rawPrice && (
+            <View style={[styles.heroBadge, { backgroundColor: "rgba(255,255,255,0.1)" }]}>
+              <Text style={[styles.heroBadgeText, { color: "rgba(255,255,255,0.55)", textDecorationLine: "line-through" }]}>
+                Was ${rawOriginal.toFixed(2)}/mo
+              </Text>
+            </View>
+          )}
         </View>
+      </LinearGradient>
 
-        {/* CTA */}
+      {/* Feature List */}
+      <View style={[styles.featureSection, { backgroundColor: colors.surface }]}>
+        {features.map((feat, i) => (
+          <View
+            key={i}
+            style={[
+              styles.featureRow,
+              i < features.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+            ]}
+          >
+            <View style={[styles.checkCircle, { backgroundColor: accent + "20" }]}>
+              <Text style={[styles.checkMark, { color: accent }]}>✓</Text>
+            </View>
+            <Text style={[styles.featureText, { color: colors.foreground }]}>{feat}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* CTA */}
+      <View style={[styles.ctaSection, { backgroundColor: colors.surface }]}>
         <Pressable
           onPress={onSelect}
           disabled={isLoading || isCurrentPlan}
@@ -265,7 +285,13 @@ function PlanCard({
             <ActivityIndicator color="#fff" size="small" />
           ) : (
             <Text style={[styles.ctaText, { color: isCurrentPlan ? colors.muted : "#fff" }]}>
-              {isCurrentPlan ? "Current Plan" : isFree ? "Downgrade to Free" : isUpgrade ? "Upgrade" : "Downgrade"}
+              {isCurrentPlan
+                ? "✓ Current Plan"
+                : isFree
+                ? "Downgrade to Free"
+                : isUpgrade
+                ? ("Upgrade to " + plan.displayName)
+                : ("Downgrade to " + plan.displayName)}
             </Text>
           )}
         </Pressable>
@@ -275,7 +301,6 @@ function PlanCard({
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-
 export function PlanCarousel({
   plans,
   isLoading = false,
@@ -290,7 +315,6 @@ export function PlanCarousel({
   const [showCompare, setShowCompare] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  // When used in onboarding, always reset scroll to top so Solo plan is visible first
   useEffect(() => {
     if (isOnboarding && scrollRef.current) {
       scrollRef.current.scrollTo({ y: 0, animated: false });
@@ -322,13 +346,8 @@ export function PlanCarousel({
       nestedScrollEnabled
       scrollEnabled={!isOnboarding}
     >
-      {/* ── Billing Toggle ── */}
-      <View
-        style={[
-          styles.toggleWrap,
-          { backgroundColor: colors.surface, borderColor: colors.border },
-        ]}
-      >
+      {/* Billing Toggle */}
+      <View style={[styles.toggleWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Pressable
           onPress={() => onToggleBilling(false)}
           style={[styles.toggleBtn, !isYearly && { backgroundColor: "#2563EB" }]}
@@ -345,17 +364,16 @@ export function PlanCarousel({
             Yearly
           </Text>
           <View style={styles.savePill}>
-            <Text style={styles.savePillText}>SAVE</Text>
+            <Text style={styles.savePillText}>SAVE 20%</Text>
           </View>
         </Pressable>
       </View>
 
-      {/* ── Vertical plan list ── */}
+      {/* Plan list */}
       {(() => {
-        // Determine sort order of current plan to know if a plan is upgrade or downgrade
         const currentIdx = plans.findIndex((p) => p.planKey === currentPlanKey);
         return plans.map((plan, idx) => (
-          <View key={plan.planKey} style={{ marginBottom: 20 }}>
+          <View key={plan.planKey} style={{ marginBottom: 24 }}>
             <PlanCard
               plan={plan}
               isYearly={isYearly}
@@ -369,17 +387,28 @@ export function PlanCarousel({
         ));
       })()}
 
-      {/* Compare all plans link */}
+      {/* Compare link */}
       <Pressable
         onPress={() => setShowCompare(true)}
-        style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, alignSelf: "center", marginTop: 4, marginBottom: 8, padding: 6 })}
+        style={({ pressed }) => ({
+          opacity: pressed ? 0.6 : 1,
+          alignSelf: "center",
+          marginTop: 4,
+          marginBottom: 16,
+          paddingVertical: 10,
+          paddingHorizontal: 20,
+          borderRadius: 10,
+          borderWidth: 1,
+          borderColor: "#2563EB40",
+          backgroundColor: "#2563EB10",
+        })}
       >
-        <Text style={{ fontSize: 13, color: "#2563EB", fontWeight: "600", textDecorationLine: "underline" }}>
-          Compare all plans
+        <Text style={{ fontSize: 13, color: "#2563EB", fontWeight: "600" }}>
+          📊 Compare all plans
         </Text>
       </Pressable>
 
-      {/* ── Plan Comparison Modal ── */}
+      {/* Plan Comparison Modal */}
       <Modal
         visible={showCompare}
         animationType="slide"
@@ -396,7 +425,6 @@ export function PlanCarousel({
               <Text style={{ fontSize: 15, fontWeight: "600", color: "#2563EB" }}>Done</Text>
             </Pressable>
           </View>
-
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -412,22 +440,21 @@ export function PlanCarousel({
                     <View style={[styles.comparePlanDot, { backgroundColor: p.color }]} />
                     <Text style={{ fontSize: 13, fontWeight: "700", color: p.color }} numberOfLines={1}>{p.displayName}</Text>
                     <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>
-                      {p.monthlyPrice === 0 ? "Free" : `${formatPrice(p.monthlyPrice)}/mo`}
+                      {p.monthlyPrice === 0 ? "Free" : (formatPrice(p.monthlyPrice) + "/mo")}
                     </Text>
                   </View>
                 ))}
               </View>
-
-              {COMPARE_FEATURE_ROWS.map((row, ri) => (
-                <View key={row} style={{ flexDirection: "row", backgroundColor: ri % 2 === 0 ? colors.surface : colors.background }}>
-                  <View style={[styles.compareCell, styles.compareLabelCol]}>
-                    <Text style={{ fontSize: 12, color: colors.foreground, fontWeight: "500" }}>{row}</Text>
+              {COMPARE_FEATURE_ROWS.map((row) => (
+                <View key={row} style={{ flexDirection: "row" }}>
+                  <View style={[styles.compareCell, styles.compareLabelCol, { backgroundColor: colors.background }]}>
+                    <Text style={{ fontSize: 12, fontWeight: "600", color: colors.foreground }}>{row}</Text>
                   </View>
                   {COMPARE_PLANS.map((p) => {
                     const feat = p.features.find((f) => f.label === row);
-                    const isDim = (feat as any)?.dim;
+                    const isDim = (feat as any)?.dim === true;
                     return (
-                      <View key={p.planKey} style={[styles.compareCell, styles.comparePlanCol, { backgroundColor: ri % 2 === 0 ? p.color + "08" : "transparent" }]}>
+                      <View key={p.planKey} style={[styles.compareCell, styles.comparePlanCol, { backgroundColor: p.color + "08" }]}>
                         <Text style={{ fontSize: 12, color: isDim ? colors.muted : colors.foreground, textAlign: "center" }} numberOfLines={2}>
                           {feat?.value ?? "—"}
                         </Text>
@@ -445,7 +472,6 @@ export function PlanCarousel({
 }
 
 // ─── Comparison Data ──────────────────────────────────────────────────────────
-
 const COMPARE_PLANS = [
   {
     planKey: "solo", displayName: "Solo", monthlyPrice: 0, color: "#6B7280",
@@ -515,11 +541,9 @@ const COMPARE_FEATURE_ROWS = [
 ];
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    gap: 12,
     paddingHorizontal: 2,
   },
   center: {
@@ -530,33 +554,31 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 14,
   },
-
-  // Billing toggle
   toggleWrap: {
     flexDirection: "row",
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
     padding: 3,
-    marginBottom: 4,
+    marginBottom: 20,
     alignSelf: "center",
   },
   toggleBtn: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 18,
-    paddingVertical: 7,
-    borderRadius: 10,
-    gap: 5,
+    paddingHorizontal: 20,
+    paddingVertical: 9,
+    borderRadius: 11,
+    gap: 6,
   },
   toggleText: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 14,
+    fontWeight: "700",
   },
   savePill: {
     backgroundColor: "#22C55E",
     borderRadius: 8,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
   savePillText: {
     fontSize: 9,
@@ -564,148 +586,152 @@ const styles = StyleSheet.create({
     color: "#fff",
     letterSpacing: 0.5,
   },
-
-  // Card — no background, just border + accent strip
-  cardPopular: {
-    borderWidth: 2,
-    shadowColor: "#2563EB",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 6,
-  },
   card: {
-    flexDirection: "row",
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1.5,
     overflow: "hidden",
     marginHorizontal: 2,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  accentStrip: {
-    width: 4,
-    flexShrink: 0,
+  heroBanner: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 22,
   },
-  cardContent: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-
-  // Header row
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  headerLeft: {
-    flex: 1,
-    gap: 2,
-  },
-  headerTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    flexWrap: "wrap",
-  },
-  planEmoji: {
-    fontSize: 18,
-  },
-  planName: {
-    fontSize: 17,
-    fontWeight: "800",
-    letterSpacing: -0.3,
-  },
-  planTagline: {
-    fontSize: 11,
-    marginLeft: 24,
-  },
-  badge: {
+  heroBadgeAbsolute: {
+    position: "absolute",
+    top: 14,
+    right: 14,
     borderRadius: 20,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
-  badgeText: {
-    fontSize: 8,
+  heroBadgeAbsoluteText: {
+    fontSize: 9,
     fontWeight: "800",
+    color: "#fff",
     letterSpacing: 0.5,
   },
-
-  // Price block
-  priceBlock: {
-    alignItems: "flex-end",
-    flexShrink: 0,
-    marginLeft: 8,
-  },
-  priceRow: {
+  heroNameRow: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 1,
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
   },
-  priceCurrency: {
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 3,
+  heroEmoji: {
+    fontSize: 22,
   },
-  priceMain: {
-    fontSize: 28,
+  heroPlanName: {
+    fontSize: 20,
     fontWeight: "800",
-    lineHeight: 32,
+    color: "#fff",
+    letterSpacing: -0.3,
   },
-  priceNote: {
-    fontSize: 10,
-    fontWeight: "600",
-    marginTop: 1,
-  },
-
-  // Divider
-  divider: {
-    height: 1,
+  heroPriceRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
     marginBottom: 8,
   },
-
-  // Feature grid (4 columns × 2 rows)
-  featureGrid: {
+  heroCurrency: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "rgba(255,255,255,0.85)",
+    marginTop: 8,
+    marginRight: 2,
+  },
+  heroPriceInt: {
+    fontSize: 64,
+    fontWeight: "900",
+    color: "#fff",
+    lineHeight: 68,
+    letterSpacing: -2,
+  },
+  heroPriceRight: {
+    flexDirection: "column",
+    justifyContent: "flex-end",
+    paddingBottom: 6,
+    marginLeft: 2,
+  },
+  heroPriceDec: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "rgba(255,255,255,0.85)",
+    lineHeight: 22,
+  },
+  heroPricePer: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.65)",
+    lineHeight: 16,
+  },
+  heroTagline: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.75)",
+    marginBottom: 10,
+    lineHeight: 18,
+  },
+  heroBadgesRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginBottom: 10,
-    gap: 0,
+    gap: 6,
   },
-  featureCell: {
-    width: "25%",
-    alignItems: "center",
-    paddingVertical: 5,
+  heroBadge: {
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  featureCellValue: {
-    fontSize: 13,
+  heroBadgeText: {
+    fontSize: 10,
     fontWeight: "700",
   },
-  featureCellLabel: {
-    fontSize: 9,
-    fontWeight: "500",
-    marginTop: 1,
-    textAlign: "center",
+  featureSection: {
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 4,
   },
-
-  // CTA
-  cta: {
-    borderRadius: 10,
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
+    gap: 12,
+  },
+  checkCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  checkMark: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  featureText: {
+    fontSize: 14,
+    fontWeight: "500",
+    flex: 1,
+    lineHeight: 20,
+  },
+  ctaSection: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+  },
+  cta: {
+    borderRadius: 14,
+    paddingVertical: 15,
     alignItems: "center",
   },
   ctaText: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "700",
     letterSpacing: 0.2,
   },
-
-  // Comparison modal
   compareHeader: {
     flexDirection: "row",
     alignItems: "center",
