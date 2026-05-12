@@ -124,17 +124,13 @@ function RootLayout() {
       }
     };
     try {
-      // ── Business portal ──────────────────────────────────────────────────
-      // Always land on Portal Selector first. If a valid business session exists,
-      // the user still taps "Business Portal" — but we skip the onboarding flow
-      // and go straight to the dashboard (handled in profile-select.tsx).
-      // Exception: if biometric lock is enabled AND the owner was away < 24 h,
-      // we auto-route to the dashboard (Face ID lock overlay will appear on top).
+      // ── Business portal: validate session, clear if expired ──────────────
+      // Always land on Portal Selector — Face ID fires when the user taps a portal card.
       const storedOwnerId = await AsyncStorage.getItem("@bookease_business_owner_id");
       if (storedOwnerId) {
         const businessToken = await Auth.getSessionToken();
         if (!businessToken || isTokenExpired(businessToken)) {
-          // JWT expired — clear stale session, fall through to portal selector
+          // JWT expired — clear stale session so portal selector shows clean
           await Auth.removeSessionToken();
           await AsyncStorage.multiRemove([
             "@bookease_business_owner_id",
@@ -142,25 +138,12 @@ function RootLayout() {
             "@bookease_settings",
             BUSINESS_LAST_ACTIVE_KEY,
           ]);
-        } else {
-          // Valid session. Check if biometric is enabled and owner was away > 24 h.
-          // If so, auto-route to dashboard — the AppLockProvider will show Face ID.
-          // If biometric is NOT enabled, always show portal selector (user must tap).
-          const biometricEnabled = await AsyncStorage.getItem("@bookease_biometric_enabled");
-          const needsReauth = await businessNeedsReauth();
-          if (biometricEnabled === "true" && !needsReauth) {
-            // Recently used AND biometric enabled → auto-route, Face ID will guard
-            router.replace("/(tabs)" as any);
-            // Remove splash overlay after navigation commits
-            setTimeout(() => setSplashDone(true), 80);
-            return;
-          }
-          // Otherwise: show portal selector. User taps Business Portal → goes to dashboard.
-          // (profile-select.tsx already handles the "storedOwnerId exists" fast-path)
         }
+        // Valid session: fall through to portal selector.
+        // profile-select.tsx will skip onboarding and go straight to dashboard.
       }
 
-      // ── Client portal ────────────────────────────────────────────────────
+      // ── Client portal: validate session, clear if expired ────────────────
       const clientToken = await AsyncStorage.getItem("client_session_token");
       if (clientToken) {
         if (isTokenExpired(clientToken)) {
@@ -170,28 +153,14 @@ function RootLayout() {
           // Check 30-day inactivity
           const needsLogout = await clientNeedsLogout();
           if (needsLogout) {
-            // Inactive for > 30 days — clear session and show portal selector
             await AsyncStorage.multiRemove(["client_session_token", "client_account_info", CLIENT_LAST_ACTIVE_KEY]);
-            // Fall through to portal selector — do NOT check biometrics for a cleared session
-          } else {
-            // Session is valid and active. Check if client biometric is enabled
-            // and the client was active within the last 24 hours.
-            // If so, auto-route to client tabs — ClientAppLockProvider will show Face ID.
-            const clientBiometricEnabled = await AsyncStorage.getItem(CLIENT_BIOMETRIC_ENABLED_KEY);
-            const clientNeedsReauthResult = await clientNeedsReauth();
-            if (clientBiometricEnabled === "true" && !clientNeedsReauthResult) {
-              // Recently used AND client biometric enabled → auto-route, Face ID will guard
-              router.replace("/(client-tabs)/discover" as any);
-              setTimeout(() => setSplashDone(true), 80);
-              return;
-            }
-            // Biometric not enabled or needs re-auth → show portal selector.
-            // User taps Client Portal → goes to discover.
           }
+          // Valid session: fall through to portal selector.
+          // profile-select.tsx will trigger Face ID then navigate to client tabs.
         }
       }
     } catch { /* ignore */ }
-    // Always show portal selector on cold launch
+    // Always show portal selector — Face ID fires on portal card tap
     router.replace("/profile-select" as any);
     // Small delay to let the navigation commit before removing the splash overlay
     setTimeout(() => setSplashDone(true), 80);

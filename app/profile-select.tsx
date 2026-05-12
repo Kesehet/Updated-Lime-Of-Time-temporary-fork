@@ -31,7 +31,8 @@ import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { setProfileMode } from "@/lib/client-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { recordBusinessActivity, recordClientActivity } from "@/hooks/use-app-lock";
+import { recordBusinessActivity, recordClientActivity, CLIENT_BIOMETRIC_ENABLED_KEY } from "@/hooks/use-app-lock";
+import * as LocalAuthentication from "expo-local-authentication";
 
 const { width, height } = Dimensions.get("window");
 
@@ -251,26 +252,63 @@ export default function ProfileSelectScreen() {
   const byLineStyle = useAnimatedStyle(() => ({ opacity: byLineOpacity.value }));
   const footerStyle = useAnimatedStyle(() => ({ opacity: footerOpacity.value }));
 
+  /**
+   * Attempt biometric authentication if the device supports it and the given
+   * storage key has biometric enabled. Returns true if auth passed or is not
+   * required; returns false if the user cancelled / failed.
+   */
+  const tryBiometric = async (enabledKey: string, promptLabel: string): Promise<boolean> => {
+    if (Platform.OS === "web") return true;
+    try {
+      const enabled = await AsyncStorage.getItem(enabledKey);
+      if (enabled !== "true") return true; // biometric not enabled — no gate
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) return true; // no hardware — no gate
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: promptLabel,
+        disableDeviceFallback: false,
+        cancelLabel: "Cancel",
+      });
+      return result.success;
+    } catch {
+      return true; // on error, don't block the user
+    }
+  };
+
   const handleSelect = async (mode: "business" | "client") => {
     await setProfileMode(mode);
     if (mode === "business") {
-      // If a business owner ID is already saved, go straight to the dashboard
-      // instead of the onboarding flow (handles post-logout re-entry)
       try {
         const storedOwnerId = await AsyncStorage.getItem("@bookease_business_owner_id");
         if (storedOwnerId) {
-          // Record activity so the 24h re-auth timer resets on each portal entry
+          // Existing session — gate with Face ID if enabled
+          const passed = await tryBiometric(
+            "@bookease_biometric_enabled",
+            "Unlock Business Portal",
+          );
+          if (!passed) return; // user cancelled — stay on portal selector
           await recordBusinessActivity();
           router.replace("/(tabs)" as any);
           return;
         }
       } catch { /* ignore */ }
+      // No existing session — go to onboarding (no biometric gate needed)
       router.push("/onboarding");
     } else {
-      // Record client activity on portal entry
+      // Client portal
+      try {
+        const clientToken = await AsyncStorage.getItem("client_session_token");
+        if (clientToken) {
+          // Existing client session — gate with Face ID if enabled
+          const passed = await tryBiometric(
+            CLIENT_BIOMETRIC_ENABLED_KEY,
+            "Unlock Client Portal",
+          );
+          if (!passed) return; // user cancelled — stay on portal selector
+        }
+      } catch { /* ignore */ }
       await recordClientActivity();
-      // Go directly to the Discover tab — location permission is requested on mount there.
-      // Clients can sign in later when they try to book.
       router.replace("/(client-tabs)/discover" as any);
     }
   };

@@ -157,8 +157,9 @@ export function useAppLock(
         if (saved === "true" && hasHardware && isEnrolled) {
           setBiometricEnabled(true);
           biometricEnabledRef.current = true;
-          // Set locked immediately so the lock screen shows before auth prompt
-          setIsLocked(true);
+          // NOTE: Do NOT set isLocked = true here on initial mount.
+          // Face ID is now triggered in profile-select.tsx when the user taps a portal card.
+          // The AppLockProvider only re-locks when the app returns from background (AppState listener).
         }
       } catch (err) {
         console.warn("[AppLock] Error checking biometrics:", err);
@@ -288,24 +289,6 @@ export function useAppLock(
     },
     [authenticate, storageKey]
   );
-
-  // ── Initial authentication on first mount ─────────────────────────────────────
-  // Fires after settings are loaded AND splash is done.
-  useEffect(() => {
-    if (Platform.OS === "web") return;
-    if (!settingsLoaded) return;
-    if (!biometricEnabled) return;
-    if (!splashDone) return; // wait for animated splash to finish
-    if (hasRunInitialAuth.current) return;
-    hasRunInitialAuth.current = true;
-
-    // isLocked was already set to true during load, now prompt
-    const timer = setTimeout(async () => {
-      await authenticate();
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [settingsLoaded, biometricEnabled, splashDone, authenticate]);
 
   return {
     isLocked,
