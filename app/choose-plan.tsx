@@ -8,8 +8,9 @@
  * - Centered plan cards
  * - Proper downgrade flow with usage checks
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { View, Text, Pressable, Alert, Linking, TextInput, ActivityIndicator } from "react-native";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
@@ -28,6 +29,14 @@ export default function ChoosePlanScreen() {
   const [loadingPlanKey, setLoadingPlanKey] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState("");
   const [referralApplied, setReferralApplied] = useState(false);
+  // Pre-fill referral code from deep link (stored by onboarding or booking page)
+  useEffect(() => {
+    AsyncStorage.getItem("@lot_pending_ref").then((val) => {
+      if (val && !referralApplied) {
+        setReferralCode(val);
+      }
+    }).catch(() => {});
+  }, []);
   const [referralError, setReferralError] = useState("");
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralDiscount, setReferralDiscount] = useState<{ percent: number; months: number } | null>(null);

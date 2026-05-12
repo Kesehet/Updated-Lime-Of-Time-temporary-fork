@@ -1396,6 +1396,11 @@ export default function HomeScreen() {
     { businessOwnerId: state.businessOwnerId! },
     { enabled: !!state.businessOwnerId, staleTime: 5 * 60 * 1000 }
   );
+  // ─── Referral stats ──────────────────────────────────────────────
+  const { data: referralData } = trpc.referrals.getMyReferrals.useQuery(
+    { businessOwnerId: state.businessOwnerId! },
+    { enabled: !!state.businessOwnerId, staleTime: 5 * 60 * 1000 }
+  );
   // ─── Overview mode: "kpi" = 4-card grid, "dayweek" = Day/Week card ──
   const [overviewMode, setOverviewMode] = useState<"kpi" | "dayweek">("kpi");
   // Measured heights for each view (set via onLayout)
@@ -2479,6 +2484,59 @@ export default function HomeScreen() {
                   {stripeBalanceLoading ? "Loading balance..." : "Tap to view payment history"}
                 </Text>
               )}
+            </LinearGradient>
+          </Pressable>
+        )}
+
+        {/* ─── Referral Stats Card ─────────────────────────────────────────── */}
+        {referralData?.code && (
+          <Pressable
+            onPress={() => (router as any).push("/referrals")}
+            style={({ pressed }) => ({
+              marginTop: 14,
+              borderRadius: 16,
+              overflow: "hidden" as const,
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <LinearGradient
+              colors={["#16a34a", "#15803d"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ padding: 16, borderRadius: 16 }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ fontSize: 16 }}>🤝</Text>
+                  </View>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#FFF" }}>Your Referrals</Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <View style={{ backgroundColor: "rgba(255,255,255,0.25)", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "800", color: "#FFF" }}>{referralData.code}</Text>
+                  </View>
+                  <IconSymbol name="chevron.right" size={14} color="rgba(255,255,255,0.7)" />
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, padding: 10 }}>
+                  <Text style={{ fontSize: fs.xs, color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>Shared</Text>
+                  <Text style={{ fontSize: fs.md, fontWeight: "800", color: "#FFF" }}>{referralData.referrals?.length ?? 0}</Text>
+                </View>
+                <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, padding: 10 }}>
+                  <Text style={{ fontSize: fs.xs, color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>Converted</Text>
+                  <Text style={{ fontSize: fs.md, fontWeight: "800", color: "#FFF" }}>
+                    {referralData.referrals?.filter((r: any) => r.status === "converted").length ?? 0}
+                  </Text>
+                </View>
+                <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, padding: 10 }}>
+                  <Text style={{ fontSize: fs.xs, color: "rgba(255,255,255,0.7)", marginBottom: 2 }}>Free Months</Text>
+                  <Text style={{ fontSize: fs.md, fontWeight: "800", color: "#FFF" }}>
+                    {referralData.referrals?.filter((r: any) => r.status === "rewarded").length ?? 0}
+                  </Text>
+                </View>
+              </View>
             </LinearGradient>
           </Pressable>
         )}

@@ -1932,6 +1932,27 @@ export function registerAdminRoutes(app: Express): void {
           </div>
         </div>
 
+        <!-- Generate Code for a Business -->
+        <div class="card" style="margin-bottom:24px;border:1px solid rgba(16,185,129,0.3);">
+          <h3 style="margin:0 0 8px;color:#10B981;">&#10133; Generate Referral Code for a Business</h3>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px;">Create a referral code for any business that doesn't have one yet. The code will appear in their app immediately.</p>
+          <form method="POST" action="/api/admin/referrals/generate-code" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+            <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px;">
+              <label style="font-size:12px;color:var(--text-muted);">Business</label>
+              <select name="businessOwnerId" required style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;">
+                <option value="">Select a business...</option>
+                ${allBiz.filter((b: any) => !allCodes.some((c: any) => c.businessOwnerId === b.id)).map((b: any) => `<option value="${b.id}">${escHtml(b.businessName || String(b.id))}</option>`).join('')}
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <label style="font-size:12px;color:var(--text-muted);">Custom Code (optional)</label>
+              <input name="customCode" type="text" placeholder="e.g. JANES-4X2K" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;font-family:monospace;width:160px;" />
+            </div>
+            <button type="submit" style="padding:9px 20px;background:#10B981;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">&#9889; Generate Code</button>
+          </form>
+          ${allBiz.filter((b: any) => !allCodes.some((c: any) => c.businessOwnerId === b.id)).length === 0 ? '<p style="font-size:13px;color:#10B981;margin:12px 0 0;">&#10003; All businesses already have referral codes.</p>' : `<p style="font-size:12px;color:var(--text-muted);margin:12px 0 0;">${allBiz.filter((b: any) => !allCodes.some((c: any) => c.businessOwnerId === b.id)).length} business(es) without a code</p>`}
+        </div>
+
         <div class="card" style="margin-bottom:24px;">
           <h3 style="margin:0 0 16px;">Send Referral Code via SMS</h3>
           <form method="POST" action="/api/admin/referrals/send-sms" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
@@ -2051,6 +2072,46 @@ export function registerAdminRoutes(app: Express): void {
     } catch (err) {
       console.error("[Admin] Set referral expiry error:", err);
       res.status(500).send(errorPage("Failed to set expiry"));
+    }
+  });
+
+  app.post("/api/admin/referrals/generate-code", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { businessOwnerId, customCode } = req.body as { businessOwnerId: string; customCode?: string };
+      const bizId = parseInt(businessOwnerId);
+      if (!bizId) { res.status(400).send(errorPage("Invalid business ID")); return; }
+      const dbase = await getDb();
+      if (!dbase) { res.status(500).send(errorPage("DB unavailable")); return; }
+      const { referralCodes } = await import("../drizzle/schema");
+      // Check if code already exists
+      const existing = await (dbase as any).select().from(referralCodes).where((await import("drizzle-orm")).eq(referralCodes.businessOwnerId, bizId));
+      if (existing && existing.length > 0) {
+        res.redirect("/api/admin/referrals?error=code_exists");
+        return;
+      }
+      // Generate code from business name or use custom
+      let code: string;
+      if (customCode && customCode.trim()) {
+        code = customCode.trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
+      } else {
+        const biz = await dbase.select().from(businessOwners).where((await import("drizzle-orm")).eq(businessOwners.id, bizId));
+        const name = (biz[0]?.businessName || "BIZ").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+        const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+        code = `${name}-${suffix}`;
+      }
+      await (dbase as any).insert(referralCodes).values({
+        businessOwnerId: bizId,
+        code,
+        discountPercent: 50,
+        discountMonths: 3,
+        isActive: true,
+        totalUses: 0,
+      });
+      await writeAuditLog("admin", "referral", "generate_code", { businessOwnerId: bizId, code });
+      res.redirect("/api/admin/referrals?success=code_generated");
+    } catch (err: any) {
+      console.error("[Admin] Generate referral code error:", err);
+      res.status(500).send(errorPage("Failed to generate code: " + err.message));
     }
   });
 

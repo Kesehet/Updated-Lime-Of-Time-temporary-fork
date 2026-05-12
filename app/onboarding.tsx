@@ -268,8 +268,10 @@ export default function OnboardingScreen() {
   const { isTablet, hp, width, height, fs, buttonHeight, iconButtonSize } = useResponsive();
   const insets = useSafeAreaInsets();
 
-  const socialParams = useLocalSearchParams<{ socialLogin?: string; socialName?: string; socialEmail?: string }>();
+  const socialParams = useLocalSearchParams<{ socialLogin?: string; socialName?: string; socialEmail?: string; ref?: string }>();
   const isSocialFlow = socialParams.socialLogin === "1";
+  // Pre-fill referral code from deep link ?ref= param (e.g. from booking page share link)
+  const deepLinkRef = socialParams.ref ?? null;
   const [step, setStep] = useState<Step>(isSocialFlow ? "socialPhone" : 1);
   const prevStepRef = useRef<Step>(isSocialFlow ? "socialPhone" : 1);
   const outerScrollRef = useRef<ScrollView>(null);
@@ -605,6 +607,18 @@ export default function OnboardingScreen() {
 
   // ─── Subscription step state ─────────────────────────────────────
   const [subIsYearly, setSubIsYearly] = useState(false);
+  const [subPrefilledRef, setSubPrefilledRef] = useState<string | null>(null);
+  // On mount: check AsyncStorage for a stored ref code (set by booking page web-to-app redirect)
+  useEffect(() => {
+    if (deepLinkRef) {
+      setSubPrefilledRef(deepLinkRef);
+      AsyncStorage.setItem("@lot_pending_ref", deepLinkRef).catch(() => {});
+    } else {
+      AsyncStorage.getItem("@lot_pending_ref").then((val) => {
+        if (val) setSubPrefilledRef(val);
+      }).catch(() => {});
+    }
+  }, [deepLinkRef]);
   const [subLoading, setSubLoading] = useState(false);
   const [subSelectedPlan, setSubSelectedPlan] = useState<string | null>(null);
   const { data: publicPlans, isLoading: plansLoading } = trpc.subscription.getPublicPlans.useQuery(undefined, { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true });
