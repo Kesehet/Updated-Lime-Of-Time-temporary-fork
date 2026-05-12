@@ -2140,3 +2140,6 @@
 - [x] Fix scroll-from-middle issue on Business Info onboarding page
 - [x] Fix scroll-from-middle issue on Subscription/choose-plan onboarding page
 - [x] Subscription page redesign v2: horizontal swipe carousel, full-gradient cards per plan, nav arrows, dots, compare modal (no auto-scroll, no free trial badge, no testimonials)
+- [x] Fix Text strings outside Text component console error (bare $ in billedNote JSX)
+- [x] Redesign plan-carousel.tsx: clean professional dark cards, no glow rings/scan lines/corner brackets, full-height layout, CTA always visible
+- [x] Update choose-plan.tsx to use dark futuristic full-screen background (forced dark regardless of system theme)
