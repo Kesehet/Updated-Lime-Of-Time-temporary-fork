@@ -547,6 +547,13 @@
       "when": 1778602791168,
       "tag": "0077_fuzzy_pet_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "5",
+      "when": 1778604302809,
+      "tag": "0078_freezing_ikaris",
+      "breakpoints": true
     }
   ]
 }

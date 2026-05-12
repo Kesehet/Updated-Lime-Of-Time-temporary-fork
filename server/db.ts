@@ -1534,7 +1534,7 @@ export async function getOrCreateReferralCode(businessOwnerId: number, businessN
   return null;
 }
 
-/** Validate a referral code and return it if active */
+/** Validate a referral code and return it if active and not expired */
 export async function validateReferralCode(code: string): Promise<ReferralCode | null> {
   const db = await getDb();
   if (!db) return null;
@@ -1543,7 +1543,18 @@ export async function validateReferralCode(code: string): Promise<ReferralCode |
     .from(referralCodes)
     .where(and(eq(referralCodes.code, code.toUpperCase().trim()), eq(referralCodes.isActive, true)))
     .limit(1);
-  return rows[0] ?? null;
+  if (!rows[0]) return null;
+  // Check expiry
+  const rc = rows[0] as any;
+  if (rc.expiresAt && new Date(rc.expiresAt) < new Date()) return null;
+  return rows[0];
+}
+
+/** Admin: set expiry date on a referral code */
+export async function setReferralCodeExpiry(referralCodeId: number, expiresAt: Date | null) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(referralCodes).set({ expiresAt } as any).where(eq(referralCodes.id, referralCodeId));
 }
 
 /** Get referral code by business owner ID */

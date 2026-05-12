@@ -1937,19 +1937,32 @@ export function registerAdminRoutes(app: Express): void {
           <h3 style="margin:0 0 16px;">Referral Codes</h3>
           <div style="overflow-x:auto;">
             <table class="data-table">
-              <thead><tr><th>Code</th><th>Business</th><th>Discount</th><th>Months</th><th>Uses</th><th>Active</th><th>Created</th></tr></thead>
+              <thead><tr><th>Code</th><th>Business</th><th>Discount</th><th>Months</th><th>Uses</th><th>Active</th><th>Expires</th><th>Created</th><th>Action</th></tr></thead>
               <tbody>
-                ${allCodes.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No referral codes yet</td></tr>' : allCodes.map((c: any) => `
+                ${allCodes.length === 0 ? '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);">No referral codes yet</td></tr>' : allCodes.map((c: any) => {
+                  const isExpired = c.expiresAt && new Date(c.expiresAt) < new Date();
+                  const expiresLabel = c.expiresAt ? (isExpired ? `<span class="badge badge-error">${new Date(c.expiresAt).toLocaleDateString()} (expired)</span>` : `<span style="color:var(--text-muted);font-size:12px;">${new Date(c.expiresAt).toLocaleDateString()}</span>`) : '<span style="color:var(--text-muted);font-size:12px;">No expiry</span>';
+                  const currentExpiry = c.expiresAt ? new Date(c.expiresAt).toISOString().split('T')[0] : '';
+                  return `
                   <tr>
                     <td><strong style="font-family:monospace;">${c.code || '-'}</strong></td>
                     <td>${bizMap[c.businessOwnerId] || c.businessOwnerId || '-'}</td>
                     <td>${c.discountPercent ?? 50}%</td>
                     <td>${c.discountMonths ?? 3}</td>
-                    <td>${c.usedCount ?? 0}</td>
-                    <td>${c.isActive ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-error">Inactive</span>'}</td>
+                    <td>${c.totalUses ?? 0}</td>
+                    <td>${c.isActive && !isExpired ? '<span class="badge badge-success">Active</span>' : isExpired ? '<span class="badge badge-error">Expired</span>' : '<span class="badge badge-error">Inactive</span>'}</td>
+                    <td>${expiresLabel}</td>
                     <td>${c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '-'}</td>
+                    <td>
+                      <form method="POST" action="/api/admin/referrals/set-expiry" style="display:flex;gap:6px;align-items:center;">
+                        <input type="hidden" name="referralCodeId" value="${c.id}" />
+                        <input type="date" name="expiresAt" value="${currentExpiry}" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:12px;" />
+                        <button type="submit" style="padding:4px 10px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;">Set</button>
+                        ${currentExpiry ? `<button type="submit" name="clear" value="1" style="padding:4px 10px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;">Clear</button>` : ''}
+                      </form>
+                    </td>
                   </tr>
-                `).join('')}
+                `}).join('')}
               </tbody>
             </table>
           </div>
@@ -1979,6 +1992,24 @@ export function registerAdminRoutes(app: Express): void {
     } catch (err) {
       console.error("[Admin] Referrals error:", err);
       res.status(500).send(errorPage("Failed to load referrals"));
+    }
+  });
+
+  app.post("/api/admin/referrals/set-expiry", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { referralCodeId, expiresAt, clear } = req.body as { referralCodeId: string; expiresAt?: string; clear?: string };
+      const id = parseInt(referralCodeId);
+      if (!id) { res.status(400).send(errorPage("Invalid referral code ID")); return; }
+      const { setReferralCodeExpiry } = await import("./db");
+      if (clear === "1" || !expiresAt) {
+        await setReferralCodeExpiry(id, null);
+      } else {
+        await setReferralCodeExpiry(id, new Date(expiresAt));
+      }
+      res.redirect("/api/admin/referrals?success=expiry_set");
+    } catch (err) {
+      console.error("[Admin] Set referral expiry error:", err);
+      res.status(500).send(errorPage("Failed to set expiry"));
     }
   });
 

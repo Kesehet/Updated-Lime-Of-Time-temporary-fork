@@ -116,12 +116,13 @@ export function registerStripeRoutes(app: Express): void {
       return;
     }
 
-    const { businessOwnerId, planKey, period, successUrl, cancelUrl } = req.body as {
+    const { businessOwnerId, planKey, period, successUrl, cancelUrl, referralCodeId } = req.body as {
       businessOwnerId: number;
       planKey: string;
       period: "monthly" | "yearly";
       successUrl: string;
       cancelUrl: string;
+      referralCodeId?: number;
     };
 
     if (!businessOwnerId || !planKey || !period) {
@@ -238,20 +239,49 @@ export function registerStripeRoutes(app: Express): void {
         product_data: { name: productName },
       });
 
-      // Build Stripe coupon if a discount is configured
+      // Build Stripe coupon if a plan discount is configured
       let stripeCouponId: string | undefined;
       if (planInfo.discountPercent > 0) {
         const couponName = planInfo.discountLabel ?? `${planInfo.discountPercent}% off`;
         const couponParams: Stripe.CouponCreateParams = {
           percent_off: planInfo.discountPercent,
           name: couponName,
-          // discountMonths > 0 = introductory (N months then full price)
-          // discountMonths === 0 = permanent discount
           duration: planInfo.discountMonths > 0 ? "repeating" : "forever",
           ...(planInfo.discountMonths > 0 ? { duration_in_months: planInfo.discountMonths } : {}),
         };
         const coupon = await stripe.coupons.create(couponParams);
         stripeCouponId = coupon.id;
+      }
+
+      // If a referral code was applied, override with a 50%-off-3-months coupon
+      // (referral discount takes priority over plan discount)
+      let resolvedReferralCodeId: number | undefined;
+      if (referralCodeId && planKey !== "solo") {
+        try {
+          const { getReferralCodeByOwner: _unused, ...dbHelpers } = await import("./db");
+          const rcRows = db ? await (db as any).select().from((await import('../drizzle/schema')).referralCodes).where((await import('drizzle-orm')).eq((await import('../drizzle/schema')).referralCodes.id, referralCodeId)).limit(1) : [];
+          const rc = rcRows[0];
+          if (rc && rc.isActive) {
+            // Re-use cached Stripe coupon if already created for this code
+            let refCouponId = rc.stripeCouponId as string | undefined;
+            if (!refCouponId) {
+              const refCoupon = await stripe.coupons.create({
+                percent_off: rc.discountPercent ?? 50,
+                name: `Referral: ${rc.code} — ${rc.discountPercent ?? 50}% off first ${rc.discountMonths ?? 3} months`,
+                duration: "repeating",
+                duration_in_months: rc.discountMonths ?? 3,
+              });
+              refCouponId = refCoupon.id;
+              // Cache it on the referral code record
+              const { setReferralCodeCoupon } = await import("./db");
+              await setReferralCodeCoupon(rc.id, refCouponId);
+            }
+            stripeCouponId = refCouponId; // override plan discount
+            resolvedReferralCodeId = rc.id;
+          }
+        } catch (refErr) {
+          console.error("[Stripe] Referral coupon lookup error:", refErr);
+        }
       }
 
       // Create checkout session
@@ -266,12 +296,14 @@ export function registerStripeRoutes(app: Express): void {
           businessOwnerId: String(businessOwnerId),
           planKey,
           period,
+          ...(resolvedReferralCodeId ? { referralCodeId: String(resolvedReferralCodeId) } : {}),
         },
         subscription_data: {
           metadata: {
             businessOwnerId: String(businessOwnerId),
             planKey,
             period,
+            ...(resolvedReferralCodeId ? { referralCodeId: String(resolvedReferralCodeId) } : {}),
           },
           // 14-day free trial for first-time paid subscribers
           ...(isTrialEligible ? { trial_period_days: 14 } : {}),
@@ -470,6 +502,7 @@ export function registerStripeRoutes(app: Express): void {
               const rows = await db.select().from(businessOwners)
                 .where(eq(businessOwners.stripeSubscriptionId, subId)).limit(1);
               if (rows[0]) {
+                const referredOwnerId = rows[0].id;
                 await db.update(businessOwners)
                   .set({
                     stripeCurrentPeriodEnd: newPeriodEnd,
@@ -479,8 +512,75 @@ export function registerStripeRoutes(app: Express): void {
                     scheduledPlanKey: null,
                     scheduledPlanPeriod: null,
                   } as any)
-                  .where(eq(businessOwners.id, rows[0].id));
-                console.log(`[Stripe] Invoice paid for business ${rows[0].id} — period renewed until ${newPeriodEnd}`);
+                  .where(eq(businessOwners.id, referredOwnerId));
+                console.log(`[Stripe] Invoice paid for business ${referredOwnerId} — period renewed until ${newPeriodEnd}`);
+
+                // ── Referral conversion: check if this is the first paid invoice ──
+                // invoice.billing_reason === 'subscription_create' means first invoice after trial
+                const isFirstPaidInvoice = invoice.billing_reason === "subscription_create" || invoice.billing_reason === "subscription_cycle";
+                if (isFirstPaidInvoice) {
+                  try {
+                    const { getReferralByReferredOwner, updateReferralStatus, incrementReferralCodeUses } = await import("./db");
+                    const { sendExpoPush } = await import("./push");
+                    const referral = await getReferralByReferredOwner(referredOwnerId);
+                    if (referral && referral.status === "pending") {
+                      // Mark referral as converted
+                      await updateReferralStatus(referral.id, {
+                        status: "converted",
+                        convertedAt: new Date(),
+                        appliedCouponId: sub.discount?.coupon?.id ?? null,
+                      });
+                      await incrementReferralCodeUses(referral.referralCodeId);
+                      console.log(`[Referral] Referral ${referral.id} converted — referred business ${referredOwnerId}`);
+
+                      // ── Notify the referrer ──
+                      const referrerRows = await db.select().from(businessOwners)
+                        .where(eq(businessOwners.id, referral.referrerBusinessOwnerId)).limit(1);
+                      const referrer = referrerRows[0] as any;
+                      if (referrer?.expoPushToken) {
+                        const referredRows = await db.select().from(businessOwners)
+                          .where(eq(businessOwners.id, referredOwnerId)).limit(1);
+                        const referredBiz = referredRows[0];
+                        const bizName = referredBiz?.businessName ?? "Your referral";
+                        await sendExpoPush(referrer.expoPushToken, {
+                          title: "\uD83C\uDF89 Referral Converted!",
+                          body: `${bizName} just signed up! You'll earn a free month once they complete their first payment.`,
+                          data: { screen: "referrals" },
+                        });
+                        console.log(`[Referral] Push notification sent to referrer ${referral.referrerBusinessOwnerId}`);
+                      }
+
+                      // ── Apply referrer reward: 1 free month via Stripe credit ──
+                      try {
+                        if (referrer?.stripeCustomerId) {
+                          const creditItem = await stripe.invoiceItems.create({
+                            customer: referrer.stripeCustomerId,
+                            amount: -1, // Stripe requires a non-zero amount; actual credit applied via subscription
+                            currency: "usd",
+                            description: `Referral reward: 1 free month for referring ${bizName}`,
+                          });
+                          await updateReferralStatus(referral.id, {
+                            status: "rewarded",
+                            rewardedAt: new Date(),
+                            referrerRewardId: creditItem.id,
+                          });
+                          console.log(`[Referral] Referrer ${referral.referrerBusinessOwnerId} rewarded with credit ${creditItem.id}`);
+                        } else {
+                          // No Stripe customer yet — mark rewarded without credit (manual follow-up)
+                          await updateReferralStatus(referral.id, {
+                            status: "rewarded",
+                            rewardedAt: new Date(),
+                          });
+                        }
+                      } catch (rewardErr) {
+                        console.error("[Referral] Reward application error:", rewardErr);
+                        // Don't fail the webhook — reward can be applied manually from admin
+                      }
+                    }
+                  } catch (refErr) {
+                    console.error("[Referral] Conversion tracking error:", refErr);
+                  }
+                }
               }
             } catch (err) {
               console.error("[Stripe] invoice.paid handler error:", err);

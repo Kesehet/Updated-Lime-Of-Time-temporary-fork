@@ -1,0 +1,1 @@
+ALTER TABLE `referral_codes` ADD `expiresAt` timestamp;

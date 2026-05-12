@@ -883,6 +883,8 @@ export const referralCodes = mysqlTable("referral_codes", {
   discountMonths: int("discountMonths").default(3).notNull(),
   /** Stripe coupon ID created for this referral (cached to avoid re-creation) */
   stripeCouponId: varchar("stripeCouponId", { length: 255 }),
+  /** Optional expiry date — code cannot be used after this date */
+  expiresAt: timestamp("expiresAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

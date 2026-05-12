@@ -31,6 +31,7 @@ export default function ChoosePlanScreen() {
   const [referralError, setReferralError] = useState("");
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralDiscount, setReferralDiscount] = useState<{ percent: number; months: number } | null>(null);
+  const [appliedReferralCodeId, setAppliedReferralCodeId] = useState<number | null>(null);
   const { state } = useStore();
 
   const applyReferralMutation = trpc.referrals.applyCode.useMutation();
@@ -200,7 +201,12 @@ export default function ChoosePlanScreen() {
       const res = await fetch(`${getApiBaseUrl()}/api/stripe/create-checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessOwnerId, planKey, period }),
+        body: JSON.stringify({
+          businessOwnerId,
+          planKey,
+          period,
+          ...(appliedReferralCodeId ? { referralCodeId: appliedReferralCodeId } : {}),
+        }),
       });
       const data = await res.json();
       if (data.url) {
@@ -335,6 +341,7 @@ export default function ChoosePlanScreen() {
                   });
                   setReferralApplied(true);
                   setReferralDiscount({ percent: result.discountPercent, months: result.discountMonths });
+                  setAppliedReferralCodeId((result as any).referralCodeId ?? null);
                 } catch (e: any) {
                   setReferralError(e?.message ?? "Invalid code");
                 } finally {
