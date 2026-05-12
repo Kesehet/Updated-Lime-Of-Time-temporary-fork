@@ -1945,13 +1945,32 @@ export function registerPublicRoutes(app: Express) {
       const locs = await db.getLocationsByOwner(owner.id);
       const rawFee = await getPlatformConfig("STRIPE_PLATFORM_FEE_PERCENT");
       const feePercent = rawFee ? parseFloat(rawFee) : 1.5;
+      // Look up referrer name from ref= query param (referral code)
+      let referredByName: string | null = null;
+      const refCode = (req.query.ref as string) || null;
+      if (refCode) {
+        try {
+          const { referralCodes: rcTable, businessOwners: boTable } = await import('../drizzle/schema');
+          const { eq } = await import('drizzle-orm');
+          const dbaseRef = await db.getDb();
+          if (dbaseRef) {
+            const rcRows = await dbaseRef.select().from(rcTable).where(eq(rcTable.code, refCode.toUpperCase())).limit(1);
+            if (rcRows?.[0]) {
+              const boRows = await dbaseRef.select({ businessName: boTable.businessName }).from(boTable).where(eq(boTable.id, rcRows[0].businessOwnerId)).limit(1);
+              referredByName = boRows?.[0]?.businessName || null;
+            }
+          }
+        } catch (refErr) {
+          console.error('[Public] Referral lookup error:', refErr);
+        }
+      }
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       res.setHeader('Surrogate-Control', 'no-store');
       res.setHeader('CDN-Cache-Control', 'no-store');
       res.setHeader('Cloudflare-CDN-Cache-Control', 'no-store');
-      res.send(bookingPage(req.params.slug, owner, locationId, locs, feePercent));
+      res.send(bookingPage(req.params.slug, owner, locationId, locs, feePercent, referredByName));
     } catch (err) {
       console.error("[Public] Error serving booking page:", err);
       res.status(500).send(errorPage());
@@ -1970,13 +1989,32 @@ export function registerPublicRoutes(app: Express) {
       const locs = await db.getLocationsByOwner(owner.id);
       const rawFee2 = await getPlatformConfig("STRIPE_PLATFORM_FEE_PERCENT");
       const feePercent2 = rawFee2 ? parseFloat(rawFee2) : 1.5;
+      // Look up referrer name from ref= query param (referral code)
+      let referredByName2: string | null = null;
+      const refCode2 = (req.query.ref as string) || null;
+      if (refCode2) {
+        try {
+          const { referralCodes: rcTable2, businessOwners: boTable2 } = await import('../drizzle/schema');
+          const { eq: eq2 } = await import('drizzle-orm');
+          const dbaseRef2 = await db.getDb();
+          if (dbaseRef2) {
+            const rcRows2 = await dbaseRef2.select().from(rcTable2).where(eq2(rcTable2.code, refCode2.toUpperCase())).limit(1);
+            if (rcRows2?.[0]) {
+              const boRows2 = await dbaseRef2.select({ businessName: boTable2.businessName }).from(boTable2).where(eq2(boTable2.id, rcRows2[0].businessOwnerId)).limit(1);
+              referredByName2 = boRows2?.[0]?.businessName || null;
+            }
+          }
+        } catch (refErr2) {
+          console.error('[Public] Referral lookup error (location route):', refErr2);
+        }
+      }
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       res.setHeader('Surrogate-Control', 'no-store');
       res.setHeader('CDN-Cache-Control', 'no-store');
       res.setHeader('Cloudflare-CDN-Cache-Control', 'no-store');
-      res.send(bookingPage(req.params.slug, owner, req.params.locationId, locs, feePercent2));
+      res.send(bookingPage(req.params.slug, owner, req.params.locationId, locs, feePercent2, referredByName2));
     } catch (err) {
       console.error("[Public] Error serving booking page:", err);
       res.status(500).send(errorPage());
@@ -5295,7 +5333,7 @@ function errorPage(): string {
 </html>`;
 }
 
-function bookingPage(slug: string, owner: any, preselectedLocationId?: string | null, prefetchedLocations?: any[], platformFeePercent: number = 1.5): string {
+function bookingPage(slug: string, owner: any, preselectedLocationId?: string | null, prefetchedLocations?: any[], platformFeePercent: number = 1.5, referredByName?: string | null): string {
   // Compute the initial full address for server-side rendering
   // Use preselected location if provided, or the only active location if there's just one
   const activeLocs = (prefetchedLocations || []).filter((l: any) => l.active !== false);
@@ -5345,6 +5383,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663347678319/rvonQNLXSNYbyBpY.png" alt="Lime Of Time" class="biz-logo" style="border-radius:0;object-fit:contain;background:transparent;">
       <h1>Book with ${escHtml(owner.businessName)}</h1>
       <div class="subtitle">Powered by Lime Of Time</div>
+      ${referredByName ? `<div style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:6px 14px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:20px;font-size:13px;color:#10B981;font-weight:500;"><span style="font-size:15px;">🤝</span> Referred by <strong style="margin-left:3px;">${escHtml(referredByName)}</strong></div>` : ''}
     </div>
 
     <div id="step-indicator" class="step-indicator" role="navigation" aria-label="Booking steps">

@@ -39,12 +39,18 @@ export default function ReferralsScreen() {
   );
 
   const code = data?.code?.code ?? null;
+  const bookingSlug = data?.bookingSlug ?? null;
   const totalReferred = data?.totalReferred ?? 0;
   const totalConverted = data?.totalConverted ?? 0;
   const totalRewarded = data?.totalRewarded ?? 0;
 
+  // Build a booking URL with the ref= param so the badge shows on the booking page
+  const bookingUrl = bookingSlug && code
+    ? `https://lime-of-time.com/book/${bookingSlug}?ref=${encodeURIComponent(code)}`
+    : REFERRAL_SHARE_URL;
+
   const shareMessage = code
-    ? `Hey! I use Lime of Time to manage my business appointments. Sign up with my referral code ${code} and get 50% off your first 3 months! ${REFERRAL_SHARE_URL}`
+    ? `Hey! I use Lime of Time to manage my business appointments. Sign up with my referral code ${code} and get 50% off your first 3 months!\n\nBook directly here: ${bookingUrl}`
     : "";
 
   async function handleShare() {
@@ -64,6 +70,16 @@ export default function ReferralsScreen() {
     Linking.openURL(smsUrl).catch(() =>
       Alert.alert("SMS not available", "Please use the Share button instead."),
     );
+  }
+
+  function handleCopyLink() {
+    if (!bookingUrl) return;
+    Clipboard.setString(bookingUrl);
+    setCopied(true);
+    if (Platform.OS !== "web") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    setTimeout(() => setCopied(false), 2000);
   }
 
   function handleCopy() {

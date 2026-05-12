@@ -1840,12 +1840,25 @@ const referralRouter = router({
     .query(async ({ input }) => {
       const code = await db.getReferralCodeByOwner(input.businessOwnerId);
       const refs = await db.getReferralsByReferrer(input.businessOwnerId);
+      // Fetch the business owner's booking slug for constructing the referral share URL
+      const { businessOwners: boTable } = await import('../drizzle/schema');
+      const { eq } = await import('drizzle-orm');
+      const dbase = await db.getDb();
+      let bookingSlug: string | null = null;
+      if (dbase) {
+        const boRows = await dbase.select({ businessName: boTable.businessName, customSlug: (boTable as any).customSlug }).from(boTable).where(eq(boTable.id, input.businessOwnerId)).limit(1);
+        if (boRows?.[0]) {
+          const bo = boRows[0] as any;
+          bookingSlug = bo.customSlug || bo.businessName?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || null;
+        }
+      }
       return {
         code,
         referrals: refs,
         totalReferred: refs.length,
         totalConverted: refs.filter((r) => r.status === "converted" || r.status === "rewarded").length,
         totalRewarded: refs.filter((r) => r.status === "rewarded").length,
+        bookingSlug,
       };
     }),
 
