@@ -885,36 +885,48 @@ export default function NewBookingScreen() {
                         borderColor: isSelected ? colors.primary : colors.border,
                         borderWidth: 1.5,
                         borderRadius: 14,
-                        padding: 14,
+                        overflow: "hidden",
+                        padding: 0,
                         marginBottom: 10,
                         opacity: pressed ? 0.75 : 1,
                       })}
                     >
-                      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
-                        <View style={{ flex: 1 }}>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>{pkg.name}</Text>
+                      {/* Package image — package photo or first included service photo */}
+                      {(() => {
+                        const imgUri = pkg.photoUri ?? includedSvcs.find((sv) => sv.photoUri)?.photoUri ?? null;
+                        return imgUri ? (
+                          <Image source={{ uri: imgUri }} style={{ width: "100%", height: 120, resizeMode: "cover" }} />
+                        ) : null;
+                      })()}
+                      <View style={{ padding: 14 }}>
+                        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground, marginBottom: 2 }}>{pkg.name}</Text>
+                            {pkg.description ? (
+                              <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 6 }} numberOfLines={2}>{pkg.description}</Text>
+                            ) : null}
+                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                              {includedSvcs.map((sv) => (
+                                <View key={sv.id} style={{ backgroundColor: colors.border, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
+                                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>{sv.name}</Text>
+                                </View>
+                              ))}
+                            </View>
+                            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>{totalDuration} min total</Text>
+                          </View>
+                          {/* Price column — fixed min-width so it never gets clipped */}
+                          <View style={{ alignItems: "flex-end", gap: 4, minWidth: 90 }}>
+                            <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>${pkg.price.toFixed(2)}</Text>
                             {savings > 0 && (
-                              <View style={{ backgroundColor: "#22C55E20", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 }}>
-                                <Text style={{ fontSize: fs.xs, color: "#22C55E", fontWeight: "700" }}>Save ${savings.toFixed(2)}</Text>
-                              </View>
+                              <>
+                                <Text style={{ fontSize: fs.xs, color: colors.muted, textDecorationLine: "line-through" }}>${retailTotal.toFixed(2)}</Text>
+                                <View style={{ backgroundColor: "#22C55E20", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 }}>
+                                  <Text style={{ fontSize: fs.xs, color: "#22C55E", fontWeight: "700" }}>Save ${savings.toFixed(2)}</Text>
+                                </View>
+                              </>
                             )}
+                            <IconSymbol name="chevron.right" size={16} color={colors.muted} />
                           </View>
-                          {pkg.description ? (
-                            <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 6 }} numberOfLines={2}>{pkg.description}</Text>
-                          ) : null}
-                          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-                            {includedSvcs.map((sv) => (
-                              <View key={sv.id} style={{ backgroundColor: colors.border, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
-                                <Text style={{ fontSize: fs.xs, color: colors.muted }}>{sv.name}</Text>
-                              </View>
-                            ))}
-                          </View>
-                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>{totalDuration} min total</Text>
-                        </View>
-                        <View style={{ alignItems: "flex-end", gap: 6 }}>
-                          <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.primary }}>${pkg.price.toFixed(2)}</Text>
-                          <IconSymbol name="chevron.right" size={16} color={colors.muted} />
                         </View>
                       </View>
                     </Pressable>

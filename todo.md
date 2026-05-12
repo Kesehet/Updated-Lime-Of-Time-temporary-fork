@@ -2127,3 +2127,6 @@
 - [x] Package session timeline strip (visual dots ✅ ✅ ⬜) at top of appointment detail screen (owner portal)
 - [x] Client portal package progress dots on appointment cards (bookings tab)
 - [x] Package-aware review push notification on final session completion ("How was your Glow & Go Bundle?")
+- [x] Fix package card price clipping (check circle badge was overlapping the price text)
+- [x] Add service images to package cards (package photoUri + fallback to first service photo)
+- [x] Fix owner-side booking package cards: same image + price layout fix

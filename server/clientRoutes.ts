@@ -1247,12 +1247,15 @@ export function registerClientRoutes(app: Express) {
             ...item,
             serviceName: svcMap[item.serviceLocalId]?.name || item.serviceLocalId,
             serviceCategory: svcMap[item.serviceLocalId]?.category || null,
+            servicePhotoUri: svcMap[item.serviceLocalId]?.photoUri || null,
           })),
           totalSessions: pkg.totalSessions,
           sessionDurationMinutes: pkg.sessionDurationMinutes,
           originalPrice: parseFloat(String(pkg.originalPrice)),
           packagePrice: parseFloat(String(pkg.packagePrice)),
           photoUri: pkg.photoUri || null,
+          // Fallback: use the first service's photo if the package has no photo
+          firstServicePhotoUri: pkg.photoUri ? null : (items.map((item: any) => svcMap[item.serviceLocalId]?.photoUri).filter(Boolean)[0] ?? null),
           category: pkg.category || null,
         };
       });

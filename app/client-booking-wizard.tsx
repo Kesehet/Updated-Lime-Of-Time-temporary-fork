@@ -70,12 +70,13 @@ interface PublicPackage {
   localId: string;
   name: string;
   description: string | null;
-  packageItems: { serviceLocalId: string; sessions: number; daysPerSession?: number; serviceName?: string; serviceCategory?: string | null }[];
+  packageItems: { serviceLocalId: string; sessions: number; daysPerSession?: number; serviceName?: string; serviceCategory?: string | null; servicePhotoUri?: string | null }[];
   totalSessions: number;
   sessionDurationMinutes: number;
   originalPrice: number;
   packagePrice: number;
   photoUri: string | null;
+  firstServicePhotoUri?: string | null;
   category: string | null;
 }
 interface PublicStaff {
@@ -1102,11 +1103,17 @@ export default function ClientBookingWizardScreen() {
                           }
                         }}
                       >
-                        {pkg.photoUri ? (
-                          <Image source={{ uri: pkg.photoUri }} style={{ width: "100%", height: 120 }} contentFit="cover" />
+                        {/* Package image — use package photo, fallback to first service photo */}
+                        {(pkg.photoUri || pkg.firstServicePhotoUri) ? (
+                          <Image
+                            source={{ uri: (pkg.photoUri || pkg.firstServicePhotoUri)! }}
+                            style={{ width: "100%", height: 130 }}
+                            contentFit="cover"
+                          />
                         ) : null}
                         <View style={{ padding: 14, gap: 6 }}>
-                          <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
+                          {/* Top row: name + price side by side, no overlap */}
+                          <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
                             <View style={{ flex: 1, gap: 4 }}>
                               <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700" }}>{pkg.name}</Text>
                               {pkg.description ? <Text style={{ color: TEXT_MUTED, fontSize: 13, lineHeight: 18 }} numberOfLines={2}>{pkg.description}</Text> : null}
@@ -1121,7 +1128,8 @@ export default function ClientBookingWizardScreen() {
                                 ) : null}
                               </View>
                             </View>
-                            <View style={{ alignItems: "flex-end", gap: 4, marginLeft: 12 }}>
+                            {/* Price column — no absolute-positioned badge overlapping it */}
+                            <View style={{ alignItems: "flex-end", gap: 4, minWidth: 80 }}>
                               <Text style={{ color: LIME_GREEN, fontSize: 18, fontWeight: "800" }}>${pkg.packagePrice.toFixed(2)}</Text>
                               {savings > 0 ? (
                                 <>
@@ -1143,9 +1151,12 @@ export default function ClientBookingWizardScreen() {
                               ))}
                             </View>
                           )}
-                        </View>
-                        <View style={[s.checkCircle, { position: "absolute", top: 12, right: 12, flexShrink: 0, backgroundColor: isSelected ? LIME_GREEN : "rgba(255,255,255,0.12)", borderWidth: isSelected ? 0 : 1.5, borderColor: "rgba(255,255,255,0.30)" }]}>
-                          {isSelected && <IconSymbol name="checkmark" size={14} color="#FFFFFF" />}
+                          {/* Check circle — bottom-right, inside the content area, never overlaps price */}
+                          <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 4 }}>
+                            <View style={[s.checkCircle, { backgroundColor: isSelected ? LIME_GREEN : "rgba(255,255,255,0.12)", borderWidth: isSelected ? 0 : 1.5, borderColor: "rgba(255,255,255,0.30)" }]}>
+                              {isSelected && <IconSymbol name="checkmark" size={14} color="#FFFFFF" />}
+                            </View>
+                          </View>
                         </View>
                       </Pressable>
                     );
