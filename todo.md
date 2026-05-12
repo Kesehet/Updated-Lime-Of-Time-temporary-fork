@@ -2132,3 +2132,6 @@
 - [x] Fix owner-side booking package cards: same image + price layout fix
 - [x] Enlarge KPI numbers on business portal home screen (make main stat numbers bigger and bolder)
 - [x] Restore animated logo splash screen (currently showing solid green screen, no animation)
+- [x] KPI card minHeight 155→170 for breathing room on smaller phones
+- [x] KPI sublabel font size 10→11px
+- [x] Remove Messages preview section from home screen (keep floating chat bubble only)
