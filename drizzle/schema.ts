@@ -99,6 +99,8 @@ export const businessOwners = mysqlTable("business_owners", {
   subscriptionPeriod: mysqlEnum("subscriptionPeriod", ["monthly", "yearly"]).default("monthly").notNull(),
   /** Trial end date (ISO string) */
   trialEndsAt: timestamp("trialEndsAt"),
+  /** Whether this business has already used their 14-day free trial (one per customer) */
+  hasUsedTrial: boolean("hasUsedTrial").default(false).notNull(),
   /** Stripe customer ID */
   stripeCustomerId: varchar("stripeCustomerId", { length: 255 }),
   /** Stripe subscription ID */

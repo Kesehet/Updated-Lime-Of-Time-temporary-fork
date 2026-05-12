@@ -1963,6 +1963,33 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         )}
+        {/* ─── Trial Countdown Banner ─────────────────────────── */}
+        {planInfo?.subscriptionStatus === "trial" && (planInfo as any)?.trialDaysRemaining !== null && (
+          <Pressable
+            onPress={() => router.push("/subscription" as any)}
+            style={({ pressed }) => ({
+              backgroundColor: "#FFF9E6",
+              borderRadius: 14,
+              padding: 14,
+              marginBottom: 12,
+              borderWidth: 1,
+              borderColor: "#F59E0B",
+              flexDirection: "row",
+              alignItems: "center",
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#92400E", marginBottom: 2 }}>
+                {`Free Trial — ${(planInfo as any).trialDaysRemaining} day${(planInfo as any).trialDaysRemaining !== 1 ? "s" : ""} remaining`}
+              </Text>
+              <Text style={{ fontSize: fs.xs, color: "#78350F", lineHeight: 16 }}>
+                {`You're on the ${planInfo.displayName} plan. Tap to manage your subscription.`}
+              </Text>
+            </View>
+            <IconSymbol name="chevron.right" size={16} color="#92400E" style={{ marginLeft: 8 }} />
+          </Pressable>
+        )}
         {/* ─── KPI Cards (swipeable groups) ─────────────────── */}
         {/* Overview header with mode toggle */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 32, marginBottom: 2 }}>

@@ -29,6 +29,11 @@ import { LocationSwitcher } from "@/components/location-switcher";
 import { useActiveLocation } from "@/hooks/use-active-location";
 import { useResponsive } from "@/hooks/use-responsive";
 import { useScrollToTopOnFocus } from "@/hooks/use-scroll-to-top-on-focus";
+import {
+  requestCalendarPermission,
+  bulkSyncConfirmedAppointments,
+  removeAllCalendarEvents,
+} from "@/lib/calendar-sync";
 
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 
@@ -103,6 +108,73 @@ export default function SettingsScreen() {
   const [activeTab, setActiveTab] = useState<TabKey>("business");
   const [devTapCount, setDevTapCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // ── Calendar Sync ─────────────────────────────────────────────────────────────
+  const CALENDAR_SYNC_KEY = "@limeofttime_calendar_sync_enabled";
+  const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(false);
+  React.useEffect(() => {
+    AsyncStorage.getItem(CALENDAR_SYNC_KEY).then((v) => {
+      if (v === "true") setCalendarSyncEnabled(true);
+    });
+  }, []);
+
+  const handleCalendarSyncToggle = useCallback(async (enabled: boolean) => {
+    if (enabled) {
+      const granted = await requestCalendarPermission();
+      if (!granted) {
+        Alert.alert(
+          "Calendar Permission Required",
+          "Please allow calendar access in Settings to sync appointments.",
+        );
+        return;
+      }
+      setCalendarSyncEnabled(true);
+      await AsyncStorage.setItem(CALENDAR_SYNC_KEY, "true");
+      const today = new Date().toISOString().slice(0, 10);
+      const confirmed = state.appointments.filter(
+        (a) => a.status === "confirmed" && a.date >= today,
+      );
+      const events = confirmed.map((a) => {
+        const client = state.clients.find((c) => c.id === a.clientId);
+        const svc = state.services.find((s) => s.id === a.serviceId);
+        const loc = (state.locations ?? []).find((l) => l.id === a.locationId);
+        return {
+          appointmentId: a.id,
+          clientName: client?.name ?? "Client",
+          serviceName: svc?.name ?? "Appointment",
+          date: a.date,
+          time: a.time,
+          duration: a.duration,
+          notes: a.notes,
+          clientPhone: client?.phone,
+          locationAddress: loc?.address ?? state.settings.profile.address,
+          locationCity: loc?.city ?? state.settings.profile.city,
+          locationState: loc?.state ?? state.settings.profile.state,
+          locationZip: loc?.zipCode ?? state.settings.profile.zipCode,
+        };
+      });
+      await bulkSyncConfirmedAppointments(events);
+      Alert.alert(
+        "Calendar Synced",
+        `${events.length} appointment${events.length !== 1 ? "s" : ""} added to your Lime Of Time calendar.`,
+      );
+    } else {
+      setCalendarSyncEnabled(false);
+      await AsyncStorage.setItem(CALENDAR_SYNC_KEY, "false");
+      Alert.alert(
+        "Remove Calendar Events?",
+        "Do you want to remove all Lime Of Time events from your device calendar?",
+        [
+          { text: "Keep Events", style: "cancel" },
+          {
+            text: "Remove All",
+            style: "destructive",
+            onPress: async () => { await removeAllCalendarEvents(); },
+          },
+        ],
+      );
+    }
+  }, [state.appointments, state.clients, state.services, state.locations, state.settings]);
 
   // Business Name editing
   const [editingName, setEditingName] = useState(false);
@@ -682,7 +754,38 @@ export default function SettingsScreen() {
           color: "#00897B",
           status: state.settings.twilioEnabled ? "ok" : "warn",
         },
-      ])}
+        ])}
+
+      <SectionHeader label="Calendar Sync" accentColor="#22C55E" colors={colors} />
+      <View style={{ backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.border, padding: 14, marginBottom: 10 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: "#22C55E20", alignItems: "center", justifyContent: "center" }}>
+            <IconSymbol name="calendar" size={20} color="#22C55E" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>Sync to Device Calendar</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2, lineHeight: 17 }}>
+              {calendarSyncEnabled
+                ? "Accepted appointments sync to Lime Of Time calendar"
+                : "Tap to sync accepted appointments to your device calendar"}
+            </Text>
+          </View>
+          <Switch
+            value={calendarSyncEnabled}
+            onValueChange={handleCalendarSyncToggle}
+            trackColor={{ false: colors.border, true: "#22C55E" }}
+            thumbColor="#fff"
+          />
+        </View>
+        {calendarSyncEnabled && (
+          <>
+            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 10 }} />
+            <Text style={{ fontSize: fs.xs, color: colors.muted, lineHeight: 17 }}>
+              New accepted appointments are automatically added to your device calendar. Cancelled appointments are removed.
+            </Text>
+          </>
+        )}
+      </View>
     </>
   );
 

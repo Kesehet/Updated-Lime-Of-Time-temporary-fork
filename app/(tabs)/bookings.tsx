@@ -54,6 +54,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SwipeableRequestCard } from "@/components/swipeable-request-card";
 import { useScrollToTopOnFocus } from "@/hooks/use-scroll-to-top-on-focus";
+import { addCalendarEvent, removeCalendarEvent } from "@/lib/calendar-sync";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -292,6 +293,25 @@ export default function BookingsScreen() {
     );
     if (client?.phone) openSmsWithMessage(client.phone, message);
     else Alert.alert("Appointment Confirmed", message);
+    // Calendar sync — add event if enabled
+    AsyncStorage.getItem("@limeofttime_calendar_sync_enabled").then((v) => {
+      if (v === "true") {
+        addCalendarEvent({
+          appointmentId: appt.id,
+          clientName: client?.name ?? "Client",
+          serviceName: svc ? getServiceDisplayName(svc) : "Appointment",
+          date: appt.date,
+          time: appt.time,
+          duration: appt.duration,
+          notes: appt.notes,
+          clientPhone: client?.phone,
+          locationAddress: apptLoc?.address ?? state.settings.profile.address,
+          locationCity: apptLoc?.city ?? state.settings.profile.city,
+          locationState: apptLoc?.state ?? state.settings.profile.state,
+          locationZip: apptLoc?.zipCode ?? state.settings.profile.zipCode,
+        }).catch(() => {});
+      }
+    });
   }, [getClientById, getServiceById, getLocationById, dispatch, state.settings, openSmsWithMessage, syncToDb]);
 
   const handleReject = useCallback((appt: Appointment) => {
@@ -314,6 +334,10 @@ export default function BookingsScreen() {
           );
           if (client?.phone) openSmsWithMessage(client.phone, message);
           else Alert.alert("Appointment Rejected", message);
+          // Calendar sync — remove event if enabled
+          AsyncStorage.getItem("@limeofttime_calendar_sync_enabled").then((v) => {
+            if (v === "true") removeCalendarEvent(appt.id).catch(() => {});
+          });
         },
       },
     ]);

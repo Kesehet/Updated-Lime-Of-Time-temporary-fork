@@ -2143,3 +2143,25 @@
 - [x] Fix Text strings outside Text component console error (bare $ in billedNote JSX)
 - [x] Redesign plan-carousel.tsx: clean professional dark cards, no glow rings/scan lines/corner brackets, full-height layout, CTA always visible
 - [x] Update choose-plan.tsx to use dark futuristic full-screen background (forced dark regardless of system theme)
+- [ ] Fix subscription onboarding: same green gradient background, no rocket emoji, clean centred professional cards
+- [ ] Add haptic feedback on plan carousel swipe
+- [ ] Device calendar sync service (lib/calendar-sync.ts): get-or-create Lime Of Time calendar, add/delete events
+- [ ] Calendar Sync toggle in Settings screen with bulk-sync on enable
+- [ ] Wire calendar sync to appointment accept/cancel flows
+- [ ] Add expo-calendar plugin to app.config.ts
+- [ ] 14-day Stripe trial for paid plans (Growth, Studio, Enterprise): trial_period_days:14 in checkout
+- [ ] Detect existing trial on re-subscription (one trial per customer, no repeat)
+- [ ] Trial countdown banner on dashboard (amber, tappable to subscription settings)
+- [ ] Auto-downgrade to Solo on payment failure after trial ends with push notification
+- [x] Fix subscription onboarding: same green gradient as other steps, no rocket emoji, clean professional header
+- [x] Add haptic feedback on plan carousel swipe (Light impact)
+- [x] Implement device calendar sync service (lib/calendar-sync.ts) — Lime Of Time calendar, add/delete events
+- [x] Add Calendar Sync toggle to Settings screen (Comms tab)
+- [x] Wire calendar sync to appointment accept/cancel flows in bookings.tsx
+- [x] Add expo-calendar plugin to app.config.ts (already present)
+- [x] Add hasUsedTrial column to businessOwners DB table
+- [x] Stripe 14-day trial: trial_period_days:14 for first-time paid subscribers
+- [x] Stripe webhook: set subscriptionStatus=trial + trialEndsAt on checkout complete
+- [x] Stripe webhook: trial→active transition on customer.subscription.updated
+- [x] Stripe webhook: auto-downgrade to Solo after 3 failed payment retries
+- [x] Trial countdown banner on dashboard (amber, tappable, shows days remaining)

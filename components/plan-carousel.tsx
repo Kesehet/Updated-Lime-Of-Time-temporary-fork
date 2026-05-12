@@ -4,6 +4,7 @@
  * Full-height layout, CTA always visible, compare modal preserved.
  */
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import * as Haptics from "expo-haptics";
 import {
   View,
   Text,
@@ -319,17 +320,23 @@ export function PlanCarousel({
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const x = e.nativeEvent.contentOffset.x;
       const idx = Math.round(x / (slideWidth + 16));
-      setActiveIdx(Math.max(0, Math.min(idx, plans.length - 1)));
+      const clamped = Math.max(0, Math.min(idx, plans.length - 1));
+      if (clamped !== activeIdx) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      }
+      setActiveIdx(clamped);
     },
-    [slideWidth, plans.length],
+    [slideWidth, plans.length, activeIdx],
   );
 
   const scrollTo = (idx: number) => {
     const clamped = Math.max(0, Math.min(idx, plans.length - 1));
+    if (clamped !== activeIdx) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
     scrollRef.current?.scrollTo({ x: clamped * (slideWidth + 16), animated: true });
     setActiveIdx(clamped);
   };
-
   if (isLoading) {
     return (
       <View style={ss.center}>

@@ -1138,7 +1138,7 @@ export default function OnboardingScreen() {
     <View style={{ flex: 1 }}>
       {/* ─── Animated Gradient Background ─────────────────────── */}
       <LinearGradient
-        colors={displayStep === "subscription" ? ["#000d05", "#001208", "#001a0a", "#000d05"] : ["#1A3A28", "#2D5A3D", "#4A7C59", "#3D6B4A"]}
+        colors={["#1A3A28", "#2D5A3D", "#4A7C59", "#3D6B4A"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -1785,13 +1785,8 @@ export default function OnboardingScreen() {
               <>
                 {/* Subscription header */}
                 <Animated.View style={[titleStyle, styles.subHeader]}>
-                  <View style={styles.subTitleRow}>
-                    <Text style={styles.subTitleEmoji}>🚀</Text>
-                    <View>
-                      <Text style={styles.subTitle}>Choose Your Plan</Text>
-                      <Text style={styles.subSubtitle}>Start free · Upgrade anytime</Text>
-                    </View>
-                  </View>
+                  <Text style={styles.subTitle}>Choose Your Plan</Text>
+                  <Text style={styles.subSubtitle}>Start free · Upgrade anytime</Text>
                 </Animated.View>
                 {/* Carousel — break out of card horizontal padding */}
                 <Animated.View style={[inputStyle, { marginHorizontal: -hp, flex: 1 }]}>
@@ -1948,32 +1943,22 @@ const styles = StyleSheet.create({
   },
   // Subscription step header
   subHeader: {
-    paddingTop: 8,
-    paddingBottom: 14,
+    paddingTop: 4,
+    paddingBottom: 10,
     paddingHorizontal: 4,
   },
-  subTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  subTitleEmoji: {
-    fontSize: 36,
-  },
   subTitle: {
-    fontSize: 26,
-    fontWeight: "900",
-    color: "#4ade80",
-    letterSpacing: -0.6,
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#ffffff",
+    letterSpacing: -0.3,
     lineHeight: 30,
-    fontFamily: Platform.OS === "ios" ? "Inter_700Bold" : undefined,
   },
   subSubtitle: {
     fontSize: 13,
-    color: "rgba(255,255,255,0.5)",
-    marginTop: 2,
-    fontWeight: "500",
-    fontFamily: Platform.OS === "ios" ? "Inter_400Regular" : undefined,
+    color: "rgba(255,255,255,0.55)",
+    marginTop: 3,
+    fontWeight: "400",
   },
   subSkipBtn: {
     alignSelf: "center",

@@ -209,6 +209,9 @@ export function registerStripeRoutes(app: Express): void {
       if (db) {
         const rows = await db.select().from(businessOwners).where(eq(businessOwners.id, businessOwnerId)).limit(1);
         const owner = rows[0];
+        // Determine if this owner is eligible for a 14-day trial
+        // Eligible: paid plan (not solo), has NOT used trial before
+        const isTrialEligible = planKey !== "solo" && !(owner as any)?.hasUsedTrial;
         if (owner?.stripeCustomerId) {
           stripeCustomerId = owner.stripeCustomerId;
         } else {
@@ -270,10 +273,12 @@ export function registerStripeRoutes(app: Express): void {
             planKey,
             period,
           },
+          // 14-day free trial for first-time paid subscribers
+          ...(isTrialEligible ? { trial_period_days: 14 } : {}),
         },
       });
 
-      res.json({ url: session.url, sessionId: session.id });
+      res.json({ url: session.url, sessionId: session.id, trialEligible: isTrialEligible });
     } catch (err) {
       console.error("[Stripe] create-checkout error:", err);
       res.status(500).json({ error: "Failed to create checkout session" });
@@ -341,10 +346,20 @@ export function registerStripeRoutes(app: Express): void {
                 actualPeriodEnd = sub.current_period_end ?? sub.billing_cycle_anchor ?? periodEnd;
               } catch {}
             }
+            // Check if the subscription is in trial
+            let isTrial = false;
+            if (subscriptionId) {
+              try {
+                const subCheck = await stripe.subscriptions.retrieve(subscriptionId) as any;
+                isTrial = subCheck.status === "trialing";
+              } catch {}
+            }
             await db.update(businessOwners)
               .set({
                 subscriptionPlan: planKey,
-                subscriptionStatus: "active",
+                subscriptionStatus: isTrial ? "trial" : "active",
+                trialEndsAt: isTrial ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) : null,
+                hasUsedTrial: true,
                 subscriptionPeriod: period ?? "monthly",
                 stripeSubscriptionId: subscriptionId ?? null,
                 stripeCurrentPeriodEnd: actualPeriodEnd,
@@ -415,25 +430,31 @@ export function registerStripeRoutes(app: Express): void {
           break;
         }
         case "customer.subscription.updated": {
-          // Fired when subscription changes: cancel_at_period_end set, plan changed, period renewed, etc.
+          // Fired when subscription changes: cancel_at_period_end set, plan changed, period renewed, trial→active, etc.
           const subscription = event.data.object as Stripe.Subscription & {
             cancel_at_period_end: boolean;
             current_period_end: number;
             metadata: Record<string, string>;
+            status: string;
+            trial_end: number | null;
           };
           const businessOwnerId = parseInt(subscription.metadata?.businessOwnerId ?? "0");
           if (businessOwnerId) {
             const cancelAtPeriodEnd = subscription.cancel_at_period_end ?? false;
             const currentPeriodEnd = subscription.current_period_end ?? null;
+            const isNowActive = subscription.status === "active";
+            const hadTrial = !!subscription.trial_end;
             await db.update(businessOwners)
               .set({
                 stripeCurrentPeriodEnd: currentPeriodEnd,
                 cancelAtPeriodEnd: cancelAtPeriodEnd,
                 // If cancellation is reversed (user re-enabled auto-renew), clear scheduled downgrade
                 ...(cancelAtPeriodEnd === false ? { scheduledPlanKey: null, scheduledPlanPeriod: null } : {}),
+                // If trial just converted to active, update status and clear trialEndsAt
+                ...(isNowActive && hadTrial ? { subscriptionStatus: "active", trialEndsAt: null } : {}),
               } as any)
               .where(eq(businessOwners.id, businessOwnerId));
-            console.log(`[Stripe] Subscription updated for business ${businessOwnerId}: cancelAtPeriodEnd=${cancelAtPeriodEnd}, periodEnd=${currentPeriodEnd}`);
+            console.log(`[Stripe] Subscription updated for business ${businessOwnerId}: status=${subscription.status}, cancelAtPeriodEnd=${cancelAtPeriodEnd}, periodEnd=${currentPeriodEnd}`);
           }
           break;
         }
@@ -475,9 +496,28 @@ export function registerStripeRoutes(app: Express): void {
             const rows = await db.select().from(businessOwners)
               .where(eq(businessOwners.stripeSubscriptionId, subId)).limit(1);
             if (rows[0]) {
-              await db.update(businessOwners)
-                .set({ subscriptionStatus: "expired" })
-                .where(eq(businessOwners.id, rows[0].id));
+              // After 3 Stripe retries, auto-downgrade to Solo free plan
+              const invoiceObj = event.data.object as any;
+              const attemptCount = invoiceObj.attempt_count ?? 0;
+              if (attemptCount >= 3) {
+                // Final failure — downgrade to Solo
+                await db.update(businessOwners)
+                  .set({
+                    subscriptionPlan: "solo",
+                    subscriptionStatus: "free",
+                    stripeSubscriptionId: null,
+                    scheduledPlanKey: null,
+                    scheduledPlanPeriod: null,
+                    cancelAtPeriodEnd: false,
+                    trialEndsAt: null,
+                  } as any)
+                  .where(eq(businessOwners.id, rows[0].id));
+                console.log(`[Stripe] Payment failed 3x for business ${rows[0].id} — auto-downgraded to Solo`);
+              } else {
+                await db.update(businessOwners)
+                  .set({ subscriptionStatus: "expired" })
+                  .where(eq(businessOwners.id, rows[0].id));
+              }
             }
           }
           break;
