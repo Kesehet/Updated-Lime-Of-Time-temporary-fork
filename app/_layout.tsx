@@ -203,17 +203,18 @@ function RootLayout() {
 
   // Hide the native splash screen after the first render so our AnimatedSplash
   // is guaranteed to be on screen before the native splash disappears.
-  // On production builds (TestFlight) the JS bundle takes longer to parse;
-  // we wait 150 ms after the first two rAFs to ensure the AnimatedSplash
-  // view is fully composited on the native layer before the native splash
-  // is dismissed — preventing a black/white flash between the two.
+  // On production builds the JS bundle takes longer to parse;
+  // we wait 800 ms after mount to ensure the AnimatedSplash view is fully
+  // composited on the native layer before the native splash is dismissed —
+  // preventing a blank/green flash between the two.
   useEffect(() => {
     let cancelled = false;
     const hide = async () => {
+      // Wait for 2 rAFs (ensures React has committed + painted) then an
+      // extra 800 ms buffer for production bundle parse + native compositing.
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (cancelled) return;
-          // Extra 150 ms for production bundle parse + native compositing
           setTimeout(async () => {
             if (cancelled) return;
             try {
@@ -221,7 +222,7 @@ function RootLayout() {
             } catch {
               // Ignore — harmless Expo Go timing issue
             }
-          }, 150);
+          }, 800);
         });
       });
     };

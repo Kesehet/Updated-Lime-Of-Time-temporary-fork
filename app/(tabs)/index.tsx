@@ -190,10 +190,10 @@ function GradientKpiCard({
         </View>
 
         {/* Value */}
-        <Text style={{ fontSize: fs.xl, fontWeight: "800", color: "#FFFFFF", lineHeight: 32, letterSpacing: -0.8 }} numberOfLines={1}>
+        <Text style={{ fontSize: fs.xxl, fontWeight: "900", color: "#FFFFFF", lineHeight: fs.xxl + 6, letterSpacing: -1.2 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {displayValue}
         </Text>
-        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "rgba(255,255,255,0.82)", marginTop: 1 }}>{label}</Text>
+        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: "rgba(255,255,255,0.88)", marginTop: 2 }}>{label}</Text>
         {sublabel ? <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>{sublabel}</Text> : null}
         {miniStats}
 

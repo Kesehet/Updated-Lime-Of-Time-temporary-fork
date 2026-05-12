@@ -2,17 +2,18 @@
  * AnimatedSplash — branded launch screen.
  *
  * Shows the app logo, "Lime Of Time" name, and tagline with a
- * scale+fade-in animation, then fades out the entire overlay after
- * a short pause and calls onFinish.
+ * scale+fade-in animation, a subtle logo pulse, then fades out the
+ * entire overlay after a short pause and calls onFinish.
  *
  * Timing:
- *   0 ms    → logo + text fade/scale in (400 ms)
- *   1 600 ms → entire screen fades out (350 ms)
- *   1 950 ms → onFinish() called
+ *   0 ms    → logo + text fade/scale in (420 ms)
+ *   500 ms  → logo pulse: 1.0 → 1.06 → 1.0 (400 ms)
+ *   1 800 ms → entire screen fades out (380 ms)
+ *   2 180 ms → onFinish() called
  */
 
 import { useEffect, useRef } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 
 const BRAND_BG = "#0D2318";
@@ -28,12 +29,18 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
   // Overall screen opacity (used for the fade-out exit)
   const screenOpacity = useRef(new Animated.Value(1)).current;
 
-  // Logo: scale from 0.75 → 1.0 + fade in
-  const logoScale = useRef(new Animated.Value(0.75)).current;
+  // Logo: scale from 0.72 → 1.0 + fade in
+  const logoScale = useRef(new Animated.Value(0.72)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
+
+  // Pulse scale (applied on top of the entry scale)
+  const pulseScale = useRef(new Animated.Value(1)).current;
 
   // Text: fade in slightly after logo
   const textOpacity = useRef(new Animated.Value(0)).current;
+
+  // Accent line width: grows from 0 → 40
+  const accentWidth = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Step 1: logo appears (scale + fade)
@@ -41,48 +48,90 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
       Animated.timing(logoScale, {
         toValue: 1,
         duration: 420,
+        easing: Easing.out(Easing.back(1.5)),
         useNativeDriver: true,
       }),
       Animated.timing(logoOpacity, {
         toValue: 1,
-        duration: 380,
+        duration: 360,
         useNativeDriver: true,
       }),
     ]).start();
 
-    // Step 2: text fades in 150 ms after logo starts
+    // Step 2: text fades in 180 ms after logo starts
     const textTimer = setTimeout(() => {
       Animated.timing(textOpacity, {
         toValue: 1,
-        duration: 350,
+        duration: 380,
         useNativeDriver: true,
       }).start();
-    }, 150);
+    }, 180);
 
-    // Step 3: after 1 600 ms total, fade the whole screen out
+    // Step 3: accent line grows in 250 ms after logo
+    const accentTimer = setTimeout(() => {
+      Animated.timing(accentWidth, {
+        toValue: 40,
+        duration: 350,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false, // width is not supported by native driver
+      }).start();
+    }, 250);
+
+    // Step 4: logo pulse at 500 ms (1.0 → 1.06 → 1.0)
+    const pulseTimer = setTimeout(() => {
+      Animated.sequence([
+        Animated.timing(pulseScale, {
+          toValue: 1.06,
+          duration: 200,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseScale, {
+          toValue: 1,
+          duration: 220,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 500);
+
+    // Step 5: after 1 800 ms total, fade the whole screen out
     const exitTimer = setTimeout(() => {
       Animated.timing(screenOpacity, {
         toValue: 0,
-        duration: 350,
+        duration: 380,
+        easing: Easing.in(Easing.quad),
         useNativeDriver: true,
       }).start(() => {
         onFinish();
       });
-    }, 1600);
+    }, 1800);
 
     return () => {
       clearTimeout(textTimer);
+      clearTimeout(accentTimer);
+      clearTimeout(pulseTimer);
       clearTimeout(exitTimer);
     };
-  }, [logoScale, logoOpacity, textOpacity, screenOpacity, onFinish]);
+  }, [logoScale, logoOpacity, pulseScale, textOpacity, accentWidth, screenOpacity, onFinish]);
 
   return (
     <Animated.View style={[styles.container, { opacity: screenOpacity }]} pointerEvents="none">
+      {/* Decorative background circles */}
+      <View style={styles.bgCircle1} />
+      <View style={styles.bgCircle2} />
+
       {/* Logo */}
       <Animated.View
         style={[
           styles.logoWrapper,
-          { opacity: logoOpacity, transform: [{ scale: logoScale }] },
+          {
+            opacity: logoOpacity,
+            transform: [
+              { scale: logoScale },
+              { scale: pulseScale },
+            ],
+          },
         ]}
       >
         <Image
@@ -103,8 +152,8 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
         </View>
       </Animated.View>
 
-      {/* Subtle bottom accent line */}
-      <View style={styles.accentLine} />
+      {/* Animated bottom accent line */}
+      <Animated.View style={[styles.accentLine, { width: accentWidth }]} />
     </Animated.View>
   );
 }
@@ -117,29 +166,47 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 9999,
   },
+  bgCircle1: {
+    position: "absolute",
+    top: -80,
+    right: -80,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: "rgba(143,191,106,0.06)",
+  },
+  bgCircle2: {
+    position: "absolute",
+    bottom: -60,
+    left: -60,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "rgba(143,191,106,0.04)",
+  },
   logoWrapper: {
-    width: 96,
-    height: 96,
-    borderRadius: 24,
+    width: 104,
+    height: 104,
+    borderRadius: 26,
     overflow: "hidden",
-    marginBottom: 24,
+    marginBottom: 28,
     // Soft glow ring
     shadowColor: BRAND_ACCENT,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.45,
-    shadowRadius: 18,
-    elevation: 12,
+    shadowOpacity: 0.5,
+    shadowRadius: 22,
+    elevation: 14,
   },
   logo: {
-    width: 96,
-    height: 96,
+    width: 104,
+    height: 104,
   },
   textBlock: {
     alignItems: "center",
     gap: 6,
   },
   appName: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "700",
     color: BRAND_TEXT,
     letterSpacing: 0.5,
@@ -153,7 +220,7 @@ const styles = StyleSheet.create({
   byLineRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 12,
     gap: 8,
   },
   byLineDash: {
@@ -171,11 +238,10 @@ const styles = StyleSheet.create({
   },
   accentLine: {
     position: "absolute",
-    bottom: 48,
-    width: 40,
+    bottom: 52,
     height: 3,
     borderRadius: 2,
     backgroundColor: BRAND_ACCENT,
-    opacity: 0.6,
+    opacity: 0.7,
   },
 });

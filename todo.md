@@ -2130,3 +2130,5 @@
 - [x] Fix package card price clipping (check circle badge was overlapping the price text)
 - [x] Add service images to package cards (package photoUri + fallback to first service photo)
 - [x] Fix owner-side booking package cards: same image + price layout fix
+- [x] Enlarge KPI numbers on business portal home screen (make main stat numbers bigger and bolder)
+- [x] Restore animated logo splash screen (currently showing solid green screen, no animation)
