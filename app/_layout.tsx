@@ -302,7 +302,7 @@ function RootLayout() {
         <AnimatedSplash onFinish={handleSplashFinish} />
       </View>
     )}
-    <StripeProvider publishableKey={stripePublishableKey}>
+    <StripeProvider publishableKey={stripePublishableKey || "pk_test_placeholder"}>
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>

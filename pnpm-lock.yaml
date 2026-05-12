@@ -30,8 +30,8 @@ importers:
         specifier: ^8.7.0
         version: 8.7.0(expo@54.0.29)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       '@stripe/stripe-react-native':
-        specifier: ^0.65.0
-        version: 0.65.0(expo@54.0.29)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+        specifier: ^0.65.1
+        version: 0.65.1(expo@54.0.29)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       '@tanstack/react-query':
         specifier: ^5.90.12
         version: 5.90.12(react@19.1.0)
@@ -2312,8 +2312,8 @@ packages:
   '@stablelib/base64@1.0.1':
     resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
 
-  '@stripe/stripe-react-native@0.65.0':
-    resolution: {integrity: sha512-oE45FXoS38eZmD37HuiSZpA1n3gzzriKH4aBJBxgztNuZTh8NVK2PEoemg7473Q5edpQYIjjB/XkSLTN3iytdw==}
+  '@stripe/stripe-react-native@0.65.1':
+    resolution: {integrity: sha512-h2Zj0zu4ddf1lnyTM6Qchs8fXpkgvZ7zKMXku5QuFuJIYldDuxu8GMCNDvvqzx7lGa0WU74a47lD4KFhS48NVQ==}
     peerDependencies:
       expo: '>=46.0.9'
       react: '*'
@@ -8550,7 +8550,7 @@ snapshots:
 
   '@stablelib/base64@1.0.1': {}
 
-  '@stripe/stripe-react-native@0.65.0(expo@54.0.29)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)':
+  '@stripe/stripe-react-native@0.65.1(expo@54.0.29)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)':
     dependencies:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)

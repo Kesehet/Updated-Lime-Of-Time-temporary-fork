@@ -327,9 +327,12 @@ export function PlanCarousel({
 
   // Card width: full width minus side padding, centered
   const availableWidth = containerWidth ?? SCREEN_W;
-  const slideWidth = Math.min(availableWidth - 40, 420);
-  // Center padding so single card is always centered
-  const sidePad = (availableWidth - slideWidth) / 2;
+  // Use 88% of available width for the card, capped at 420px
+  const slideWidth = Math.min(Math.round(availableWidth * 0.88), 420);
+  // Center padding: each card centers on screen when scrolled to it
+  // With snapToAlignment="center", the snap point is the center of each item
+  // So we need sidePad = (availableWidth - slideWidth) / 2 for first/last card
+  const sidePad = Math.max(0, Math.round((availableWidth - slideWidth) / 2));
 
   useEffect(() => {
     if (isOnboarding) {
@@ -337,6 +340,13 @@ export function PlanCarousel({
       scrollRef.current?.scrollTo({ x: 0, animated: false });
     }
   }, [isOnboarding]);
+
+  // snapToOffsets: each card's left edge position so that the card is centered in the viewport
+  // Card i starts at: sidePad + i * (slideWidth + 16)
+  // To center card i: scroll to sidePad + i*(slideWidth+16) - sidePad = i*(slideWidth+16)
+  // But with paddingHorizontal=sidePad, the first card's left edge is at x=0 in content coords
+  // The scroll offset to center card i = i * (slideWidth + 16)
+  const snapOffsets = plans.map((_, i) => i * (slideWidth + 16));
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -416,13 +426,13 @@ export function PlanCarousel({
         ref={scrollRef}
         horizontal
         pagingEnabled={false}
-        snapToInterval={slideWidth + 16}
+        snapToOffsets={snapOffsets}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: sidePad,
           gap: 16,
-          alignItems: "center",
+          alignItems: "stretch",
         }}
         onMomentumScrollEnd={handleScroll}
         onScrollEndDrag={handleScroll}
@@ -634,14 +644,11 @@ const ss = StyleSheet.create({
   // Billing toggle
   toggleWrap: {
     flexDirection: "row",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    backgroundColor: "rgba(255,255,255,0.05)",
-    padding: 3,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    borderRadius: 22,
+    padding: 4,
+    marginHorizontal: 16,
     marginBottom: 16,
-    marginHorizontal: 20,
-    alignSelf: "stretch",
   },
   toggleBtn: {
     flex: 1,
@@ -649,7 +656,7 @@ const ss = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 10,
-    borderRadius: 11,
+    borderRadius: 18,
     gap: 6,
   },
   toggleBtnActive: {
@@ -670,17 +677,17 @@ const ss = StyleSheet.create({
   // Card
   card: {
     flex: 1,
-    borderRadius: 24,
+    borderRadius: 40,
     borderWidth: 1,
     overflow: "hidden",
-    paddingHorizontal: 22,
-    paddingBottom: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
     paddingTop: 0,
   },
-  accentBar: { height: 3, marginHorizontal: -22, marginBottom: 18 },
+  accentBar: { height: 3, marginHorizontal: -24, marginBottom: 18 },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 14 },
   badge: {
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: 9,
     paddingVertical: 4,
@@ -704,7 +711,7 @@ const ss = StyleSheet.create({
 
   // Trial badge
   trialBadge: {
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -755,8 +762,8 @@ const ss = StyleSheet.create({
 
   // CTA
   cta: {
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: 28,
+    paddingVertical: 17,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -769,9 +776,9 @@ const ss = StyleSheet.create({
   // Navigation
   navRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 14, gap: 16 },
   navArrow: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: "rgba(255,255,255,0.07)",
     alignItems: "center",
     justifyContent: "center",
