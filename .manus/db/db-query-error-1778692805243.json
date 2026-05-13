@@ -1,0 +1,8 @@
+{
+  "query": "UPDATE business_settings \nSET workingHours = '{\"monday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"tuesday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"wednesday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"thursday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"friday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"saturday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"15:00\"},\"sunday\":{\"enabled\":false,\"start\":\"09:00\",\"end\":\"17:00\"}}'\nWHERE businessId = (SELECT id FROM business_owners WHERE phone = '4124827733' LIMIT 1);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute UPDATE business_settings \nSET workingHours = '{\"monday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"tuesday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"wednesday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"thursday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"friday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"saturday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"15:00\"},\"sunday\":{\"enabled\":false,\"start\":\"09:00\",\"end\":\"17:00\"}}'\nWHERE businessId = (SELECT id FROM business_owners WHERE phone = '4124827733' LIMIT 1);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'dw4mhfnuurfcnilsqjlpwn.business_settings' doesn't exist"
+  ]
+}

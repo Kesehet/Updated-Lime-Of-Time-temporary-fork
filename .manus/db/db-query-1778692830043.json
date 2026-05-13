@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, phone, workingHours FROM business_owners WHERE phone = '4124827733' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, phone, workingHours FROM business_owners WHERE phone = '4124827733' LIMIT 1;",
+  "rows": [
+    {
+      "id": "1920001",
+      "phone": "4124827733",
+      "workingHours": "{\"friday\": {\"enabled\": true, \"end\": \"17:00\", \"start\": \"09:00\"}, \"monday\": {\"enabled\": true, \"end\": \"17:00\", \"start\": \"09:00\"}, \"saturday\": {\"enabled\": false, \"end\": \"14:00\", \"start\": \"10:00\"}, \"sunday\": {\"enabled\": false, \"end\": \"14:00\", \"start\": \"10:00\"}, \"thursday\": {\"enabled\": true, \"end\": \"17:00\", \"start\": \"09:00\"}, \"tuesday\": {\"enabled\": true, \"end\": \"17:00\", \"start\": \"09:00\"}, \"wednesday\": {\"enabled\": true, \"end\": \"17:00\", \"start\": \"09:00\"}}"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tphone\tworkingHours\n1920001\t4124827733\t{\"friday\": {\"enabled\": true, \"end\": \"17:00\", \"start\": \"09:00\"}, \"monday\": {\"enabled\": true, \"end\": \"17:00\", \"start\": \"09:00\"}, \"saturday\": {\"enabled\": false, \"end\": \"14:00\", \"start\": \"10:00\"}, \"sunday\": {\"enabled\": false, \"end\": \"14:00\", \"start\": \"10:00\"}, \"thursday\": {\"enabled\": true, \"end\": \"17:00\", \"start\": \"09:00\"}, \"tuesday\": {\"enabled\": true, \"end\": \"17:00\", \"start\": \"09:00\"}, \"wednesday\": {\"enabled\": true, \"end\": \"17:00\", \"start\": \"09:00\"}}\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}

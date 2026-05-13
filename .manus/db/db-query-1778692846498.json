@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE business_owners SET workingHours = '{\"monday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"tuesday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"wednesday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"thursday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"friday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"saturday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"15:00\"},\"sunday\":{\"enabled\":false,\"start\":\"09:00\",\"end\":\"17:00\"}}' WHERE phone = '4124827733';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute UPDATE business_owners SET workingHours = '{\"monday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"tuesday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"wednesday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"thursday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"friday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"17:00\"},\"saturday\":{\"enabled\":true,\"start\":\"09:00\",\"end\":\"15:00\"},\"sunday\":{\"enabled\":false,\"start\":\"09:00\",\"end\":\"17:00\"}}' WHERE phone = '4124827733';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 271
+}

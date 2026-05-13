@@ -1,0 +1,100 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "admin_audit_log"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "admin_expenses"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "appointments"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "business_owners"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "client_accounts"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "client_messages"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "client_packages"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "client_saved_businesses"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "clients"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "custom_schedule"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "data_deletion_requests"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "discounts"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "gift_cards"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "gift_certificate_recipients"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "locations"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "otp_send_log"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "platform_config"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "products"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "promo_codes"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "referral_codes"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "referrals"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "reviews"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "service_packages"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "service_photos"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "services"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "staff_members"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "subscription_plans"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "users"
+    },
+    {
+      "Tables_in_Dw4mhfnuurFcniLsqjLpWN": "waitlist"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_Dw4mhfnuurFcniLsqjLpWN\n__drizzle_migrations\nadmin_audit_log\nadmin_expenses\nappointments\nbusiness_owners\nclient_accounts\nclient_messages\nclient_packages\nclient_saved_businesses\nclients\ncustom_schedule\ndata_deletion_requests\ndiscounts\ngift_cards\ngift_certificate_recipients\nlocations\notp_send_log\nplatform_config\nproducts\npromo_codes\nreferral_codes\nreferrals\nreviews\nservice_packages\nservice_photos\nservices\nstaff_members\nsubscription_plans\nusers\nwaitlist\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}

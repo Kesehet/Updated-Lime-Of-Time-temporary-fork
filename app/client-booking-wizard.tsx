@@ -250,6 +250,8 @@ export default function ClientBookingWizardScreen() {
   const [loadingMonthAvail, setLoadingMonthAvail] = useState(false);
   // Tracks the month we last fetched availability for ("YYYY-MM")
   const lastAvailFetchKey = useRef<string>("");
+  // Guard: only auto-select the first available date once per service/staff/location combo
+  const hasAutoSelectedDate = useRef<string>("");
 
   // Location step is always shown when there is at least 1 location (step 2 after Service)
   const showLocationStep = locations.length >= 1;
@@ -543,7 +545,12 @@ export default function ClientBookingWizardScreen() {
         const res = await fetch(`${apiBase}/api/public/business/${effectiveSlug}/working-days${locParam}`);
         if (res.ok) {
           const data = await res.json();
-          setWeeklyDays(data.weeklyDays ?? {});
+          // Normalize weeklyDays keys to lowercase — server may return "Monday", "Tuesday", etc.
+          // but the booking wizard looks up keys as "monday", "tuesday", etc.
+          const rawWeekly: Record<string, boolean> = data.weeklyDays ?? {};
+          const normalizedWeekly: Record<string, boolean> = {};
+          Object.entries(rawWeekly).forEach(([k, v]) => { normalizedWeekly[k.toLowerCase()] = v; });
+          setWeeklyDays(normalizedWeekly);
           setCustomDays(data.customDays ?? {});
         }
       } catch (err) {
@@ -637,6 +644,34 @@ export default function ClientBookingWizardScreen() {
       fetchMonthAvailability(calYear, calMonth, selectedService, selectedLocation, selectedStaffId);
     }
   }, [calYear, calMonth, selectedService, selectedLocation, selectedStaffId, fetchMonthAvailability]);
+
+  // Auto-select the first available date once month availability is loaded
+  useEffect(() => {
+    if (loadingMonthAvail) return;
+    if (!selectedService) return;
+    const autoKey = `${selectedService.localId}-${selectedStaffId}-${selectedLocation?.localId ?? "any"}`;
+    if (hasAutoSelectedDate.current === autoKey) return;
+    if (selectedDate) {
+      hasAutoSelectedDate.current = autoKey;
+      return;
+    }
+    const availDates = Object.keys(slotCounts).sort();
+    if (availDates.length === 0) return;
+    const firstDateStr = availDates[0];
+    const [fy, fm, fd] = firstDateStr.split("-").map(Number);
+    const firstDate = new Date(fy, fm - 1, fd);
+    hasAutoSelectedDate.current = autoKey;
+    setSelectedDate(firstDate);
+    setCalYear(fy);
+    setCalMonth(fm - 1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingMonthAvail, slotCounts]);
+
+  // Reset auto-select guard when service/staff/location changes
+  useEffect(() => {
+    hasAutoSelectedDate.current = "";
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedService?.localId, selectedStaffId, selectedLocation?.localId]);
 
   // Manual refresh: re-fetch slots for the currently selected date
   const handleRefreshSlots = useCallback(() => {
@@ -1677,7 +1712,7 @@ export default function ClientBookingWizardScreen() {
                   </Pressable>
                 </View>
                 {/* Interval picker */}
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, marginTop: 2 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10, marginTop: 2 }} contentContainerStyle={{ flexDirection: "row", gap: 6, paddingHorizontal: 2 }}>
                   {([0, 5, 10, 15, 20, 25, 30] as const).map((mins) => {
                     const isActive = slotStep === mins;
                     return (
@@ -1702,7 +1737,7 @@ export default function ClientBookingWizardScreen() {
                       </Pressable>
                     );
                   })}
-                </View>
+                </ScrollView>
                 {loadingSlots ? (
                   <ActivityIndicator color={LIME_GREEN} style={{ marginTop: 16 }} />
                 ) : slots.length === 0 ? (
@@ -1720,7 +1755,7 @@ export default function ClientBookingWizardScreen() {
                           style={({ pressed }) => [
                             s.slotBtn,
                             { backgroundColor: isSelected ? LIME_GREEN : CARD_BG, borderColor: isSelected ? LIME_GREEN : CARD_BORDER },
-                            pressed && { opacity: 0.8 },
+                            pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] },
                           ]}
                           onPress={() => {
                             if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1745,7 +1780,7 @@ export default function ClientBookingWizardScreen() {
                             }
                           }}
                         >
-                          <Text style={{ color: isSelected ? "#FFFFFF" : TEXT_PRIMARY, fontSize: 14, fontWeight: "600" }}>
+                          <Text style={{ color: isSelected ? "#FFFFFF" : TEXT_PRIMARY, fontSize: 14, fontWeight: "600", letterSpacing: 0.3 }}>
                             {slot.time}
                           </Text>
                         </Pressable>
@@ -2765,8 +2800,8 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     timeSectionTitle: { fontSize: 15, fontWeight: "700" as const },
     noSlots: { alignItems: "center", paddingTop: 40, gap: 12 },
     noSlotsText: { fontSize: 14 },
-    slotsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-    slotBtn: { borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 12, alignItems: "center", minWidth: 90 },
+    slotsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    slotBtn: { borderRadius: 20, borderWidth: 1.5, paddingVertical: 10, alignItems: "center", width: "23%" as any, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 1 },
     confirmCard: { borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, paddingTop: 4, marginBottom: 16 },
     discountBanner: { flexDirection: "row", alignItems: "center", borderRadius: 12, borderWidth: 1, padding: 12, gap: 10 },
     discountName: { fontSize: 14, fontWeight: "600" },
