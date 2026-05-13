@@ -38,15 +38,15 @@ export function getApiBaseUrl(): string {
   // On web, derive from current hostname
   if (ReactNative.Platform.OS === "web" && typeof window !== "undefined" && window.location) {
     const { protocol, hostname } = window.location;
-    // Pattern 1: 8081-sandboxid.region.domain -> 3000-sandboxid.region.domain (dev tunnel)
+    // Manus-hosted domains (dev preview or production): always use the deployed API
+    // This covers 8081-xxx.manus.computer (dev preview), manussched-xxx.manus.space (published)
+    if (hostname.includes("manus.space") || hostname.includes("manus.computer")) {
+      return "https://lime-of-time.com";
+    }
+    // Pattern: 8081-sandboxid.region.domain -> 3000-sandboxid.region.domain (local dev tunnel)
     const apiHostname = hostname.replace(/^8081-/, "3000-");
     if (apiHostname !== hostname) {
       return `${protocol}//${apiHostname}`;
-    }
-    // Pattern 2: production/published Manus domain (e.g. manussched-xxx.manus.space)
-    // The API server is deployed at lime-of-time.com (Cloudflare Worker → cloud PC).
-    if (hostname.includes("manus.space") || hostname.includes("manus.computer")) {
-      return "https://lime-of-time.com";
     }
   }
 

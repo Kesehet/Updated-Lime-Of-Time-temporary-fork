@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, businessName, clientPortalVisible, address, lat, lng FROM business_owners WHERE clientPortalVisible = 1 LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, businessName, clientPortalVisible, address, lat, lng FROM business_owners WHERE clientPortalVisible = 1 LIMIT 20;",
+  "rows": [
+    {
+      "id": "1650001",
+      "businessName": "Wellness Suite",
+      "clientPortalVisible": "1",
+      "address": "134 Locust Ct, Pittsburgh, PA 15237",
+      "lat": "40.5534000",
+      "lng": "-80.0076000"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbusinessName\tclientPortalVisible\taddress\tlat\tlng\n1650001\tWellness Suite\t1\t134 Locust Ct, Pittsburgh, PA 15237\t40.5534000\t-80.0076000\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}
