@@ -9,6 +9,7 @@ import { sendAppointmentConfirmationEmail, sendPaymentReceiptEmail, sendDeletion
 import { sendExpoPush } from "./push";
 import {
   getPlatformConfig,
+  getBatchPlatformConfig,
   getPublicPlans,
   getBusinessSubscriptionInfo,
   isSmsAllowed,
@@ -1398,12 +1399,12 @@ const twilioRouter = router({
 // Falls back to in-memory test mode (code = TWILIO_TEST_OTP or "123456") when not.
 const otpStore = new Map<string, { code: string; expiresAt: number }>();
 
-/** Get Twilio Verify credentials from env or platform_config (env takes priority) */
+/** Get Twilio Verify credentials from env or platform_config (single batch DB query) */
 async function getTwilioVerifyCredentials() {
-  // Always read from DB (platform_config) — env vars may be stale from previous sessions
-  const accountSid = await getPlatformConfig("TWILIO_ACCOUNT_SID") || process.env.TWILIO_ACCOUNT_SID;
-  const authToken = await getPlatformConfig("TWILIO_AUTH_TOKEN") || process.env.TWILIO_AUTH_TOKEN;
-  const serviceSid = await getPlatformConfig("TWILIO_VERIFY_SERVICE_SID") || process.env.TWILIO_VERIFY_SERVICE_SID;
+  const cfg = await getBatchPlatformConfig(["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_VERIFY_SERVICE_SID"]);
+  const accountSid = cfg["TWILIO_ACCOUNT_SID"] || process.env.TWILIO_ACCOUNT_SID;
+  const authToken = cfg["TWILIO_AUTH_TOKEN"] || process.env.TWILIO_AUTH_TOKEN;
+  const serviceSid = cfg["TWILIO_VERIFY_SERVICE_SID"] || process.env.TWILIO_VERIFY_SERVICE_SID;
   return { accountSid, authToken, serviceSid };
 }
 
@@ -1417,15 +1418,26 @@ async function sendOtpViaTwilioVerify(toNumber: string): Promise<{ ok: boolean; 
     params.append("To", toNumber);
     params.append("Channel", "sms");
     const credentials = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { Authorization: `Basic ${credentials}`, "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
-    });
-    const data = await response.json() as { status?: string; message?: string };
-    if (response.ok && (data.status === "pending" || data.status === "approved")) return { ok: true };
-    return { ok: false, error: data.message ?? `Twilio error ${response.status}` };
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000); // 10s timeout
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Basic ${credentials}`, "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      const data = await response.json() as { status?: string; message?: string };
+      if (response.ok && (data.status === "pending" || data.status === "approved")) return { ok: true };
+      return { ok: false, error: data.message ?? `Twilio error ${response.status}` };
+    } finally {
+      clearTimeout(timeout);
+    }
   } catch (e: unknown) {
+    if (e instanceof Error && e.name === "AbortError") {
+      return { ok: false, error: "SMS service timed out. Please try again." };
+    }
     return { ok: false, error: e instanceof Error ? e.message : "Network error" };
   }
 }
@@ -1458,12 +1470,14 @@ const otpRouter = router({
   send: publicProcedure
     .input(z.object({ phone: z.string().min(7) }))
     .mutation(async ({ input }) => {
-      const globalTestMode = (await getPlatformConfig("TWILIO_TEST_MODE")) === "true";
-      const testOtp = (await getPlatformConfig("TWILIO_TEST_OTP")) || "123456";
+      // Fetch all OTP config in a single DB query (avoids 3 sequential round-trips)
+      const cfg = await getBatchPlatformConfig(["TWILIO_TEST_MODE", "TWILIO_TEST_OTP", "TWILIO_PER_PHONE_OTP"]);
+      const globalTestMode = cfg["TWILIO_TEST_MODE"] === "true";
+      const testOtp = cfg["TWILIO_TEST_OTP"] || "123456";
 
       // Check per-phone override first — no SMS sent, static code stored
       let perPhoneOverrides: Record<string, string> = {};
-      try { perPhoneOverrides = JSON.parse((await getPlatformConfig("TWILIO_PER_PHONE_OTP")) || "{}"); } catch {}
+      try { perPhoneOverrides = JSON.parse(cfg["TWILIO_PER_PHONE_OTP"] || "{}"); } catch {}
       const normalizedInput = input.phone.replace(/\D/g, "").slice(-10);
       const perPhoneCode = Object.entries(perPhoneOverrides).find(
         ([p]) => p.replace(/\D/g, "").slice(-10) === normalizedInput

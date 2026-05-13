@@ -2185,3 +2185,4 @@
 - [x] Add daily deletion cron job that auto-executes account deletion when 30-day grace period expires
 - [x] Add admin dashboard at /admin/pending-deletions with secret token protection, listing grace-period accounts with manual cancel/execute override buttons
 - [x] Add audit log entries to adminAuditLog table when admin manually cancels or executes deletion from pending-deletions dashboard
+- [x] Fix 20+ second delay when submitting phone number on Business Portal onboarding/login (OTP send bottleneck: batch DB config reads + 10s Twilio timeout + 5min config cache TTL)

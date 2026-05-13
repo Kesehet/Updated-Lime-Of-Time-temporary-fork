@@ -11,7 +11,7 @@
  * - getBusinessSubscriptionInfo(id): returns plan + usage + trial info for mobile app
  */
 
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { getDb } from "./db";
 import {
   businessOwners,
@@ -207,7 +207,7 @@ export async function getBusinessSubscriptionInfo(businessOwnerId: number) {
 // ─── Config Cache ─────────────────────────────────────────────────────────────
 
 const configCache = new Map<string, { value: string | null; time: number }>();
-const CONFIG_CACHE_TTL = 30 * 1000; // 30 seconds (admin changes take effect quickly)
+const CONFIG_CACHE_TTL = 5 * 60 * 1000; // 5 minutes (config rarely changes; admin saves call invalidateConfigCache)
 
 export async function getPlatformConfig(key: string): Promise<string | null> {
   const cached = configCache.get(key);
@@ -228,6 +228,56 @@ export async function getPlatformConfig(key: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Fetch multiple platform config keys in a single DB query.
+ * Returns a Record<key, value|null> and populates the cache for each key.
+ */
+export async function getBatchPlatformConfig(keys: string[]): Promise<Record<string, string | null>> {
+  const result: Record<string, string | null> = {};
+  const uncached: string[] = [];
+  const now = Date.now();
+
+  // Serve from cache where possible
+  for (const key of keys) {
+    const cached = configCache.get(key);
+    if (cached && now - cached.time < CONFIG_CACHE_TTL) {
+      result[key] = cached.value;
+    } else {
+      uncached.push(key);
+    }
+  }
+
+  if (uncached.length > 0) {
+    const db = await getDb();
+    if (db) {
+      try {
+        const rows = await db
+          .select()
+          .from(platformConfig)
+          .where(inArray(platformConfig.configKey, uncached));
+        // Populate result and cache for found keys
+        for (const row of rows) {
+          result[row.configKey] = row.configValue ?? null;
+          configCache.set(row.configKey, { value: row.configValue ?? null, time: now });
+        }
+        // Keys not found in DB → null
+        for (const key of uncached) {
+          if (!(key in result)) {
+            result[key] = null;
+            configCache.set(key, { value: null, time: now });
+          }
+        }
+      } catch {
+        for (const key of uncached) result[key] = null;
+      }
+    } else {
+      for (const key of uncached) result[key] = null;
+    }
+  }
+
+  return result;
 }
 
 export async function setPlatformConfig(
