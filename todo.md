@@ -2182,3 +2182,4 @@
 - [x] Add emoji picker for custom service name creation in service form
 - [x] Implement 30-day grace period for account deletion (pending deletion state, confirmation email, cancel option)
 - [x] Add admin notification email when a business account is deleted
+- [x] Add daily deletion cron job that auto-executes account deletion when 30-day grace period expires

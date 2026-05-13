@@ -19,6 +19,7 @@ import { startAppointmentReminderCron } from "../appointmentReminderCron";
 import { startReferralExpiryCron } from "../referralExpiryCron";
 import { startRequestExpiryCron } from "../requestExpiryCron";
 import { startClientReminderCron } from "../clientReminderCron";
+import { startAccountDeletionCron } from "../accountDeletionCron";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -126,3 +127,4 @@ startAppointmentReminderCron();
 startReferralExpiryCron();
 startRequestExpiryCron();
 startClientReminderCron();
+startAccountDeletionCron();
