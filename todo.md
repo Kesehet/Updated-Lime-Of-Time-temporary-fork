@@ -2171,3 +2171,5 @@
 - [x] Client messages: tappable address (opens Maps), phone (opens dialer), date/time (adds to calendar)
 - [x] Client messages: tappable address (opens Maps), phone (opens dialer), date/time (adds to calendar)
 - [x] Package booking confirmation: add summary card showing package name, sessions count, and total price
+- [x] Remaining sessions badge on package confirmation card (Session X of Y)
+- [x] My Packages tab in client portal with session history per package

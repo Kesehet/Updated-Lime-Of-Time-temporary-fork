@@ -230,6 +230,8 @@ export default function ClientBookingWizardScreen() {
   }, [wizardProducts, productCart]);
   // Full-screen photo preview state
   const [previewUri, setPreviewUri] = useState<string | null>(null);
+  // Package session info for confirmation badge (fetched when reaching confirm step)
+  const [pkgSessionInfo, setPkgSessionInfo] = useState<{ sessionsCompleted: number; totalSessions: number } | null>(null);
 
   const today = new Date();
   const [calYear, setCalYear] = useState(today.getFullYear());
@@ -508,6 +510,29 @@ export default function ClientBookingWizardScreen() {
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, STEP_PROMO]);
+
+  // Fetch package session info when reaching the confirm step (for "Session X of Y" badge)
+  useEffect(() => {
+    if (!packageLocalId || !state.sessionToken) return;
+    // Only fetch when on the confirm step
+    if (step !== STEP_CONFIRM) return;
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/client/my-packages/${packageLocalId}/use-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
+          body: JSON.stringify({ dryRun: true }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setPkgSessionInfo({ sessionsCompleted: data.sessionsCompleted ?? 0, totalSessions: data.totalSessions ?? selectedPackage?.totalSessions ?? 0 });
+        }
+      } catch {
+        // Non-blocking
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, STEP_CONFIRM, packageLocalId, state.sessionToken]);
 
   // Fetch working-days info (weeklyDays + customDays) whenever slug/location changes
   useEffect(() => {
@@ -2405,6 +2430,14 @@ export default function ClientBookingWizardScreen() {
                         <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>🔁</Text>
                         <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: "600" }}>{selectedPackage.totalSessions} session{selectedPackage.totalSessions !== 1 ? "s" : ""}</Text>
                       </View>
+                      {pkgSessionInfo && (
+                        <>
+                          <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: TEXT_MUTED }} />
+                          <View style={{ backgroundColor: `${LIME_GREEN}28`, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2, borderWidth: 1, borderColor: `${LIME_GREEN}55` }}>
+                            <Text style={{ color: LIME_GREEN, fontSize: 11, fontWeight: "700" }}>Session {pkgSessionInfo.sessionsCompleted + 1} of {pkgSessionInfo.totalSessions}</Text>
+                          </View>
+                        </>
+                      )}
                       <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: TEXT_MUTED }} />
                       {selectedPackage.originalPrice > selectedPackage.packagePrice && (
                         <Text style={{ color: TEXT_MUTED, fontSize: 12, textDecorationLine: "line-through" }}>${parseFloat(String(selectedPackage.originalPrice)).toFixed(2)}</Text>
