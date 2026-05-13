@@ -14,8 +14,8 @@ import {
   Modal,
   TouchableOpacity,
   useWindowDimensions,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import {
@@ -2234,7 +2234,7 @@ export default function CalendarBookingScreen() {
 
       {/* ─── Step 2: Client Selection ─── */}
       {step === 2 && (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <View style={{ flex: 1, paddingHorizontal: hp }}>
           <View className="flex-row items-center justify-between mb-3">
             <Pressable
@@ -2764,7 +2764,7 @@ export default function CalendarBookingScreen() {
 
       {/* ─── Step 5: Review & Add More ─── */}
       {step === 5 && (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"

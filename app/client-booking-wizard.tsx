@@ -24,9 +24,9 @@ import {
   Modal,
   TouchableOpacity,
   Linking,
-  KeyboardAvoidingView,
   Keyboard,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ScreenContainer } from "@/components/screen-container";
@@ -1103,7 +1103,7 @@ export default function ClientBookingWizardScreen() {
       </View>
       <Text style={[s.stepLabel, { color: TEXT_PRIMARY }]}>{STEPS[step]}</Text>
 
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+            <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
 <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}

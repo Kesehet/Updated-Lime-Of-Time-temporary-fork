@@ -481,6 +481,15 @@ export default function ClientMessageThreadScreen() {
             )}
           </Pressable>
         </View>
+        {/* Character counter */}
+        {draft.length > 0 && (
+          <Text style={[
+            { fontSize: 11, textAlign: "right", paddingHorizontal: 12, paddingTop: 2, paddingBottom: 4 },
+            { color: draft.length > 900 ? "#EF4444" : draft.length > 750 ? "#F59E0B" : TEXT_MUTED }
+          ]}>
+            {draft.length}/1000
+          </Text>
+        )}
       </KeyboardAvoidingView>
     </View>
   );

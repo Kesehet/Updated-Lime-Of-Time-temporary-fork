@@ -20,8 +20,8 @@ import {
   Modal,
   TextInput,
   Linking,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ClientPortalBackground } from "@/components/client-portal-background";
@@ -596,7 +596,7 @@ export default function ClientAppointmentDetailScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => !submittingReview && setReviewModalVisible(false)}
       >
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: GREEN_DARK, padding: 24 }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: GREEN_DARK, padding: 24 }}>
           <ClientPortalBackground />
 
           {/* Modal Header */}

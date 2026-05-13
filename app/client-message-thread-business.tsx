@@ -842,6 +842,15 @@ export default function ClientMessageThreadBusinessScreen() {
               {sending ? <ActivityIndicator size="small" color="#FFFFFF" /> : <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />}
             </Pressable>
           </View>
+          {/* Character counter - only show when user has typed something */}
+          {draft.length > 0 && (
+            <Text style={[
+              { fontSize: 11, textAlign: "right", paddingHorizontal: 4, paddingTop: 2, paddingBottom: 2 },
+              { color: draft.length > 900 ? colors.error : draft.length > 750 ? colors.warning : colors.muted }
+            ]}>
+              {draft.length}/1000
+            </Text>
+          )}
         </View>
       </RNKCKeyboardAvoidingView>
 

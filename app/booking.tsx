@@ -9,8 +9,8 @@ import {
   Platform,
   Image,
   Modal,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId, formatDateStr, formatTime, formatDateDisplay } from "@/lib/store";
@@ -546,7 +546,7 @@ export default function PublicBookingScreen() {
         </View>
       )}
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={{ paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}>
         {/* Closed message */}
         {isClosed && step !== "location" && (

@@ -8,9 +8,9 @@ import {
   ScrollView,
   TextInput,
   Modal,
-  KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore } from "@/lib/store";
@@ -249,7 +249,7 @@ function EditMessageModal({
           </Pressable>
         </View>
 
-              <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+              <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
 <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}

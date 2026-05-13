@@ -9,9 +9,9 @@ import {
   Alert,
   Modal,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId } from "@/lib/store";
@@ -209,7 +209,7 @@ export default function NoteTemplatesScreen() {
 
       {/* Create / Edit Modal */}
       <Modal visible={showForm} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowForm(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           <View style={[styles.modal, { backgroundColor: colors.background }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Pressable onPress={() => setShowForm(false)} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>

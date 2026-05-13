@@ -11,8 +11,8 @@ import {
   Alert,
   Modal,
   Image,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId, formatDateStr, formatTime, formatDateDisplay } from "@/lib/store";
@@ -853,7 +853,7 @@ export default function NewBookingScreen() {
 
       {/* Step 1: Select Service — category drill-down */}
       {step === 1 && (
-              <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+              <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: hp, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
@@ -1066,7 +1066,7 @@ export default function NewBookingScreen() {
 
       {/* Step 2: Select Client */}
       {step === 2 && (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <View style={{ flex: 1, paddingHorizontal: hp }}>
           <View className="flex-row items-center justify-between mb-3">
             <Pressable onPress={() => setStep(1)} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>

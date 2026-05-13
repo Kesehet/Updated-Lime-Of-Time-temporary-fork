@@ -24,8 +24,8 @@ import {
   Platform,
   Modal,
   Dimensions,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ClientPortalBackground } from "@/components/client-portal-background";
@@ -615,7 +615,7 @@ export default function ClientBuyGiftScreen() {
       </View>
       <Text style={s.stepLabel}>{STEPS[step]}</Text>
 
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+            <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
 <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}

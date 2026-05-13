@@ -8,9 +8,9 @@ import {
   Alert,
   TextInput,
   Modal,
-  KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ScreenContainer } from "@/components/screen-container";
@@ -193,7 +193,7 @@ export default function TemplateLibraryScreen() {
         <View style={{ width: 60 }} />
       </View>
 
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+            <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
 <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}

@@ -9,8 +9,8 @@ import {
   Linking,
   Alert,
   Platform,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Svg, { Path, Rect, Circle, G } from "react-native-svg";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore } from "@/lib/store";
@@ -169,7 +169,7 @@ export default function SocialLinksScreen() {
         <View style={styles.backBtn} />
       </View>
 
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+            <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
 <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Section heading */}
         <View style={[styles.sectionHeadingRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>

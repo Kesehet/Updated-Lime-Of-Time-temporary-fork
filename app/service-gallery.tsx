@@ -12,8 +12,8 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId } from "@/lib/store";
@@ -386,7 +386,7 @@ export default function ServiceGalleryScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setEditingPhoto(null)}
       >
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: colors.background, padding: 20 }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.background, padding: 20 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
             <Pressable onPress={() => setEditingPhoto(null)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
               <Text style={{ fontSize: 16, color: colors.primary }}>Cancel</Text>

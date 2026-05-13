@@ -17,9 +17,9 @@ import {
   Alert,
   Linking,
   Switch,
-  KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore } from "@/lib/store";
@@ -162,7 +162,7 @@ export default function TwilioSetupScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+            <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
 <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}

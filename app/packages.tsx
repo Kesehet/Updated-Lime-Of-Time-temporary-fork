@@ -10,10 +10,10 @@ import {
   Switch,
   Modal,
   Image,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
@@ -408,7 +408,7 @@ export default function PackagesScreen() {
             </Pressable>
           </View>
 
-                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+                <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
 <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}

@@ -10,9 +10,9 @@ import {
   Alert,
   Image,
   Platform,
-  KeyboardAvoidingView,
   Modal,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { ScreenContainer } from "@/components/screen-container";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { useStore } from "@/lib/store";
@@ -1215,7 +1215,7 @@ export default function SettingsScreen() {
       </View>
 
       {/* Tab Content */}
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
@@ -1235,7 +1235,7 @@ export default function SettingsScreen() {
         onRequestClose={() => !isDeleting && setShowDeleteModal(false)}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior="padding"
           style={{ flex: 1 }}
         >
           <Pressable

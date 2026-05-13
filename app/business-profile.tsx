@@ -8,11 +8,11 @@ import {
   StyleSheet,
   Alert,
   Linking,
-  KeyboardAvoidingView,
   Platform,
   Image,
   ActivityIndicator,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { trpc } from "@/lib/trpc";
@@ -222,7 +222,7 @@ export default function BusinessProfileScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior="padding"
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >

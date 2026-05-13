@@ -12,8 +12,8 @@ import {
   ScrollView,
   Share,
   ActivityIndicator,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { Image } from "expo-image";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId } from "@/lib/store";
@@ -158,7 +158,7 @@ function EditBottomSheet({
   return (
     <Modal visible={visible} transparent animationType="slide">
       <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ width: "100%" }}>
+        <KeyboardAvoidingView behavior="padding" style={{ width: "100%" }}>
           <View style={[styles.bottomSheet, { backgroundColor: colors.surface }]} onStartShouldSetResponder={() => true}>
             {/* Handle */}
             <View style={{ alignItems: "center", marginBottom: 12 }}>
@@ -940,7 +940,7 @@ export default function GiftCardsScreen() {
       )}
 
       {/* Lists */}
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         {mainTab === "issued" ? (
           filteredIssued.length === 0 && !showForm ? (
             <View style={styles.empty}>

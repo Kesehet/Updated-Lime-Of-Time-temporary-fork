@@ -7,9 +7,9 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
-  KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore } from "@/lib/store";
 import { useColors } from "@/hooks/use-colors";
@@ -72,7 +72,7 @@ export default function PaymentMethodCashAppScreen() {
   return (
     <ScreenContainer>
       <FuturisticBackground />
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}

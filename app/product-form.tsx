@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import {
   ScrollView, Text, View, TextInput, Pressable, StyleSheet,
-  Alert, Switch, KeyboardAvoidingView, Platform, Image,
+  Alert, Switch, Platform, Image,
   Modal, TouchableOpacity, ActivityIndicator,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScreenContainer } from "@/components/screen-container";
@@ -167,7 +168,7 @@ export default function ProductFormScreen() {
   return (
     <ScreenContainer edges={["left", "right"]} tabletMaxWidth={680}>
       <FuturisticBackground />
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
 
         {/* ── Header ── */}
         <View style={[styles.header, { paddingTop: insets.top + 12, paddingHorizontal: hp, borderBottomColor: colors.border }]}>

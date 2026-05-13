@@ -1,4 +1,5 @@
-import { Text, View, Pressable, StyleSheet, ScrollView, Alert, Platform, Linking, Modal, TextInput, TouchableOpacity, Image, FlatList, KeyboardAvoidingView } from "react-native";
+import { Text, View, Pressable, StyleSheet, ScrollView, Alert, Platform, Linking, Modal, TextInput, TouchableOpacity, Image, FlatList } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, formatTime, formatDateDisplay } from "@/lib/store";
@@ -1016,7 +1017,7 @@ Would you also like to charge a no-show fee via Stripe?`,
         )}
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}>
         {/* Service Card — multi-service aware */}
         {(() => {
@@ -2083,7 +2084,7 @@ Would you also like to charge a no-show fee via Stripe?`,
 
       {/* Payment Confirmation Modal */}
       <Modal visible={showPaymentModal} transparent animationType="slide">
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end' }}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             <Text style={{ fontSize: fs.md, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>
@@ -2148,7 +2149,7 @@ Would you also like to charge a no-show fee via Stripe?`,
       </Modal>
       {/* Edit Payment Sheet */}
       <Modal visible={showEditPaymentSheet} transparent animationType="slide" onRequestClose={() => setShowEditPaymentSheet(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end' }}>
           <View style={{ backgroundColor: 'rgba(0,0,0,0.45)', ...StyleSheet.absoluteFillObject }} />
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '90%', width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
@@ -3003,7 +3004,7 @@ Would you also like to charge a no-show fee via Stripe?`,
       </Modal>
       {/* ── Partial Gift Redemption Sheet ── */}
       <Modal visible={showGiftRedeemSheet} transparent animationType="slide" onRequestClose={() => setShowGiftRedeemSheet(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end' }}>
           <View style={{ backgroundColor: 'rgba(0,0,0,0.45)', ...StyleSheet.absoluteFillObject }} />
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             {/* Handle bar */}

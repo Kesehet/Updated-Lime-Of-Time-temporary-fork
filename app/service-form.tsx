@@ -1,7 +1,7 @@
 import {
   Text, View, Pressable, StyleSheet, TextInput, ScrollView,
-  Alert, Platform, Image, ActivityIndicator, Modal, TouchableOpacity, KeyboardAvoidingView,
-} from "react-native";
+  Alert, Platform, Image, ActivityIndicator, Modal, TouchableOpacity, } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId } from "@/lib/store";
@@ -222,7 +222,7 @@ export default function ServiceFormScreen() {
         </Pressable>
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"

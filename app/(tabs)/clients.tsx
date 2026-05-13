@@ -1,7 +1,8 @@
 import React from "react";
 import { FlatList, Text, View, Pressable, StyleSheet, TextInput, Alert, Platform, ActivityIndicator, Image,
-  KeyboardAvoidingView, ScrollView, Modal,
+  ScrollView, Modal,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { FuturisticBackground } from "@/components/futuristic-background";
@@ -497,7 +498,7 @@ export default function ClientsScreen() {
   return (
     <ScreenContainer tabletMaxWidth={0}>
       <FuturisticBackground />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <View style={{ flex: 1, alignSelf: "center", width: "100%", maxWidth: maxContentWidth }}>
         <View style={{ paddingHorizontal: hp }}>
           {/* Header */}

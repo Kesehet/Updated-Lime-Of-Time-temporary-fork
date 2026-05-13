@@ -9,9 +9,9 @@ import {
   ScrollView,
   Switch,
   Modal,
-  KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId } from "@/lib/store";
@@ -869,7 +869,7 @@ export default function DiscountsScreen() {
           </Pressable>
         </View>
       ) : (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <FlatList
           data={sortedDiscounts}
           keyExtractor={(item) => item.id}

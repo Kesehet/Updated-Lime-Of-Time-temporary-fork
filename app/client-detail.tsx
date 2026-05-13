@@ -10,8 +10,8 @@ import {
   Linking,
   Platform,
   Image,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { PhotoLightbox } from "@/components/photo-lightbox";
@@ -479,7 +479,7 @@ export default function ClientDetailScreen() {
 
   return (
     <ScreenContainer edges={["top", "bottom", "left", "right"]} tabletMaxWidth={720}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+            <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}

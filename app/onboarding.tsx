@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
   Image,
   ActivityIndicator,
@@ -13,6 +12,7 @@ import {
   NativeSyntheticEvent,
   TextInputKeyPressEventData,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useStore } from "@/lib/store";
 import { useColors } from "@/hooks/use-colors";

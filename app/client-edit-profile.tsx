@@ -20,8 +20,8 @@ import {
   Image,
   Platform,
   Alert,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ClientPortalBackground } from "@/components/client-portal-background";
@@ -236,7 +236,7 @@ export default function ClientEditProfileScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior="padding"
         style={{ flex: 1 }}
         keyboardVerticalOffset={0}
       >

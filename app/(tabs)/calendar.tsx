@@ -12,10 +12,10 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
-  KeyboardAvoidingView,
   PanResponder,
   Animated,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { ScreenContainer } from "@/components/screen-container";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { useStore, formatTime, formatDateStr, formatDateDisplay } from "@/lib/store";
@@ -2307,7 +2307,7 @@ export default function CalendarScreen() {
   return (
     <ScreenContainer tabletMaxWidth={0}>
       <FuturisticBackground />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <ScrollView ref={mainScrollRef} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} contentContainerStyle={{ paddingBottom: 100, alignSelf: "center", width: "100%", maxWidth: maxContentWidth }}>
         {/* Header */}
         <View style={{ paddingHorizontal: hp, paddingTop: 4 }}>
@@ -2582,7 +2582,7 @@ export default function CalendarScreen() {
         animationType="slide"
         onRequestClose={() => setCalRefundAppt(null)}
       >
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)" }} onPress={() => setCalRefundAppt(null)} />
           <View style={[styles.payModal, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
             <Text style={[styles.payModalTitle, { color: colors.foreground }]}>Issue Refund</Text>

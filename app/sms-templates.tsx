@@ -6,11 +6,11 @@ import {
   TextInput,
   Pressable,
   Alert,
-  KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Modal,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -316,7 +316,7 @@ export default function SmsTemplatesScreen() {
       <Modal visible={editingKey !== null} animationType="slide" presentationStyle="pageSheet">
         <KeyboardAvoidingView
           style={{ flex: 1, backgroundColor: colors.background }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior="padding"
         >
           {/* Modal header */}
           <View style={[styles.modalHeader, { borderBottomColor: colors.border, backgroundColor: colors.background }]}>

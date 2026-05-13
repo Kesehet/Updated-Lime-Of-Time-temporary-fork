@@ -7,8 +7,8 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   View, Text, ScrollView, Pressable, StyleSheet, TextInput,
   ActivityIndicator, Alert, Platform, Linking, Dimensions, FlatList, Modal,
-  NativeScrollEvent, NativeSyntheticEvent, KeyboardAvoidingView,
-} from "react-native";
+  NativeScrollEvent, NativeSyntheticEvent, } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -923,7 +923,7 @@ export default function ClientBusinessDetailScreen() {
 
       {/* ── Write a Review Modal ── */}
       <Modal visible={detailReviewVisible} transparent animationType="slide" onRequestClose={() => setDetailReviewVisible(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
           <View style={[s.reviewModal, { backgroundColor: "#1E3D2F" }]}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <Text style={[s.reviewModalTitle, { color: TEXT_PRIMARY }]}>Write a Review</Text>

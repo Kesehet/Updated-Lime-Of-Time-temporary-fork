@@ -10,8 +10,8 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, formatDateDisplay, formatTime } from "@/lib/store";
 import { useColors } from "@/hooks/use-colors";
@@ -680,7 +680,7 @@ export default function AnalyticsDetailScreen() {
           animationType="fade"
           onRequestClose={() => setShowCustomModal(false)}
         >
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
             <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 24, width: "100%", maxWidth: 360, borderWidth: 1, borderColor: colors.border }}>
               <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground, marginBottom: 16 }}>Custom Date Range</Text>
               {/* Quick presets */}

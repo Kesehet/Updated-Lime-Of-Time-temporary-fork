@@ -17,11 +17,11 @@ import {
   ActivityIndicator,
   Platform,
   Image,
-  KeyboardAvoidingView,
   Linking,
   Alert,
   RefreshControl,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useColors } from "@/hooks/use-colors";
@@ -788,7 +788,7 @@ export default function DiscoverScreen() {
 
   const s = styles(colors);
    return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+    <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
     <View style={{ flex: 1, backgroundColor: GREEN_DARK }}>
       <ClientPortalBackground />
       {/* Search Bar + Radius */}

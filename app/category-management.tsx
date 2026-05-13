@@ -8,10 +8,10 @@ import {
   TextInput,
   Alert,
   Modal,
-  KeyboardAvoidingView,
   Platform,
   FlatList,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore } from "@/lib/store";
@@ -175,7 +175,7 @@ function RenameModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onShow={handleOpen}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior="padding"
         style={renameStyles.overlay}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />

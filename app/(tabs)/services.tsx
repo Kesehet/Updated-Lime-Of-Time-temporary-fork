@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useCallback } from "react";
 import { FlatList, Text, View, Pressable, StyleSheet, TextInput, LayoutAnimation, Platform, UIManager, Image,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore } from "@/lib/store";
@@ -196,7 +196,7 @@ export default function ServicesScreen() {
       </View>
 
       {/* ── Services Tab ── */}
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       {activeTab === "services" && (
         <View style={{ flex: 1 }}>
           {/* Search bar */}
