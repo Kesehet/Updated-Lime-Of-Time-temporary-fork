@@ -2168,3 +2168,5 @@
 - [x] Fix calendar-to-Available-Times spacing in client booking wizard date/time step
 - [x] Fix "Book This Package" button to open booking wizard at Location tab (step 2) instead of Service step
 - [x] Fix staff members not visible in booking wizard Staff step (step 3) even when they have availability
+- [x] Client messages: tappable address (opens Maps), phone (opens dialer), date/time (adds to calendar)
+- [x] Client messages: tappable address (opens Maps), phone (opens dialer), date/time (adds to calendar)

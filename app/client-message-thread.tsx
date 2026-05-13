@@ -7,7 +7,7 @@
  * Design: dark forest-green portal aesthetic matching all other client portal screens.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import {
   ActivityIndicator,
   Image,
   Alert,
+  Linking,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -29,6 +30,8 @@ import { useClientStore } from "@/lib/client-store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import * as Calendar from "expo-calendar";
+import { getMapUrl } from "@/lib/types";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
 const GREEN_ACCENT = "#8FBF6A";
@@ -57,6 +60,128 @@ interface Message {
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+// ─── Calendar helper ─────────────────────────────────────────────────────────
+async function addDateToCalendar(dateStr: string, timeStr: string, title: string, locationStr?: string) {
+  if (Platform.OS === "web") {
+    Alert.alert("Not supported", "Calendar integration is not available on web.");
+    return;
+  }
+  const { status } = await Calendar.requestCalendarPermissionsAsync();
+  if (status !== "granted") {
+    Alert.alert("Permission needed", "Please allow calendar access to add this appointment.");
+    return;
+  }
+  try {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const [h, m] = (timeStr ?? "09:00").split(":").map(Number);
+    const startDate = new Date(year, month - 1, day, h, m);
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+    let calendarId: string;
+    if (Platform.OS === "ios") {
+      const defaultCal = await Calendar.getDefaultCalendarAsync();
+      calendarId = defaultCal.id;
+    } else {
+      const cals = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+      const primary = cals.find(c => c.isPrimary) ?? cals.find(c => c.allowsModifications) ?? cals[0];
+      if (!primary) { Alert.alert("No calendar", "No calendar found on this device."); return; }
+      calendarId = primary.id;
+    }
+    await Calendar.createEventAsync(calendarId, {
+      title,
+      startDate,
+      endDate,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      location: locationStr,
+      alarms: [{ relativeOffset: -60 }, { relativeOffset: -1440 }],
+    });
+    Alert.alert("Added!", "Appointment added to your calendar.");
+  } catch {
+    Alert.alert("Error", "Could not add to calendar.");
+  }
+}
+
+// ─── Clickable message segment types ─────────────────────────────────────────
+type MsgSegment =
+  | { kind: "text"; text: string }
+  | { kind: "phone"; text: string; digits: string }
+  | { kind: "address"; text: string; address: string }
+  | { kind: "date"; text: string; dateStr: string; timeStr: string };
+
+function parseMessageSegments(body: string): MsgSegment[] {
+  const segments: MsgSegment[] = [];
+  const lines = body.split("\n");
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
+    const lineWithNL = li < lines.length - 1 ? line + "\n" : line;
+    if (line.startsWith("\u{1F4CD}") || line.startsWith("📍")) {
+      const addr = line.replace(/^📍\s*/, "").trim();
+      if (addr) { segments.push({ kind: "address", text: lineWithNL, address: addr }); continue; }
+    }
+    if (line.startsWith("\u{1F4DE}") || line.startsWith("📞") || line.startsWith("☎") || line.startsWith("☏")) {
+      const raw = line.replace(/^[📞☎☏]\s*/, "").trim();
+      const digits = raw.replace(/\D/g, "");
+      if (digits.length >= 10) { segments.push({ kind: "phone", text: lineWithNL, digits }); continue; }
+    }
+    if (line.startsWith("\u{1F4C5}") || line.startsWith("📅")) {
+      const raw = line.replace(/^📅\s*/, "").trim();
+      const isoMatch = raw.match(/(\d{4})-(\d{2})-(\d{2})/);
+      const timeMatch = raw.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      if (isoMatch) {
+        const timeStr = timeMatch ? (() => {
+          let h = parseInt(timeMatch[1]);
+          const min = timeMatch[2];
+          const ampm = timeMatch[3].toUpperCase();
+          if (ampm === "PM" && h < 12) h += 12;
+          if (ampm === "AM" && h === 12) h = 0;
+          return `${String(h).padStart(2, "0")}:${min}`;
+        })() : "09:00";
+        segments.push({ kind: "date", text: lineWithNL, dateStr: isoMatch[0], timeStr }); continue;
+      }
+    }
+    const phoneRegex = /(\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4})/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    let hasPhone = false;
+    while ((match = phoneRegex.exec(lineWithNL)) !== null) {
+      hasPhone = true;
+      if (match.index > lastIndex) segments.push({ kind: "text", text: lineWithNL.slice(lastIndex, match.index) });
+      const digits = match[1].replace(/\D/g, "");
+      segments.push({ kind: "phone", text: match[1], digits });
+      lastIndex = match.index + match[1].length;
+    }
+    if (hasPhone) {
+      if (lastIndex < lineWithNL.length) segments.push({ kind: "text", text: lineWithNL.slice(lastIndex) });
+    } else {
+      segments.push({ kind: "text", text: lineWithNL });
+    }
+  }
+  return segments;
+}
+
+function RichMessageBody({ body, textColor, linkColor, msgTitle }: { body: string; textColor: string; linkColor: string; msgTitle: string }) {
+  const segments = useMemo(() => parseMessageSegments(body), [body]);
+  const addrSeg = segments.find((s): s is Extract<MsgSegment, { kind: "address" }> => s.kind === "address");
+  return (
+    <Text style={{ fontSize: 14, lineHeight: 20, color: textColor }}>
+      {segments.map((seg, i) => {
+        if (seg.kind === "phone") return (
+          <Text key={i} style={{ color: linkColor, textDecorationLine: "underline", fontWeight: "600" }}
+            onPress={() => Linking.openURL(`tel:${seg.digits}`)}>{seg.text}</Text>
+        );
+        if (seg.kind === "address") return (
+          <Text key={i} style={{ color: linkColor, textDecorationLine: "underline", fontWeight: "600" }}
+            onPress={() => Linking.openURL(getMapUrl(seg.address))}>{seg.text}</Text>
+        );
+        if (seg.kind === "date") return (
+          <Text key={i} style={{ color: linkColor, textDecorationLine: "underline", fontWeight: "600" }}
+            onPress={() => addDateToCalendar(seg.dateStr, seg.timeStr, msgTitle, addrSeg?.address)}>{seg.text}</Text>
+        );
+        return <Text key={i} style={{ color: textColor }}>{seg.text}</Text>;
+      })}
+    </Text>
+  );
 }
 
 function formatDay(dateStr: string): string {
@@ -305,12 +430,12 @@ export default function ClientMessageThreadScreen() {
                       styles.msgBubble,
                       isClient ? styles.msgBubbleClient : styles.msgBubbleBusiness,
                     ]}>
-                      <Text style={[
-                        styles.msgBody,
-                        { color: isClient ? CLIENT_BUBBLE_TEXT : TEXT_PRIMARY },
-                      ]}>
-                        {msg.body}
-                      </Text>
+                      <RichMessageBody
+                        body={msg.body}
+                        textColor={isClient ? CLIENT_BUBBLE_TEXT : TEXT_PRIMARY}
+                        linkColor={isClient ? "#1A5C2A" : GREEN_ACCENT}
+                        msgTitle={params.businessName ?? "Appointment"}
+                      />
                       <Text style={[
                         styles.msgTime,
                         { color: isClient ? "rgba(26,58,40,0.6)" : TEXT_MUTED },
