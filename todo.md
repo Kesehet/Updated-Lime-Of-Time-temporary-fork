@@ -2184,3 +2184,4 @@
 - [x] Add admin notification email when a business account is deleted
 - [x] Add daily deletion cron job that auto-executes account deletion when 30-day grace period expires
 - [x] Add admin dashboard at /admin/pending-deletions with secret token protection, listing grace-period accounts with manual cancel/execute override buttons
+- [x] Add audit log entries to adminAuditLog table when admin manually cancels or executes deletion from pending-deletions dashboard

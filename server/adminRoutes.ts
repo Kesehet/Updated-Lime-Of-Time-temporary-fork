@@ -2818,9 +2818,30 @@ export function registerAdminRoutes(app: Express): void {
       if (!dbase) { res.json({ ok: false, error: "DB unavailable" }); return; }
       const id = Number(req.body?.id);
       if (!id) { res.json({ ok: false, error: "id required" }); return; }
+
+      // Fetch business info before clearing for audit log
+      const [owner] = await dbase
+        .select({ businessName: businessOwners.businessName, email: businessOwners.email, phone: businessOwners.phone, deletionScheduledFor: businessOwners.deletionScheduledFor })
+        .from(businessOwners)
+        .where(eq(businessOwners.id, id));
+
       await dbase.update(businessOwners)
         .set({ pendingDeletionAt: null, deletionScheduledFor: null })
         .where(eq(businessOwners.id, id));
+
+      // Write audit log entry
+      const _cancelSessionId = getSessionFromCookie(req);
+      const _cancelSession = _cancelSessionId ? sessions.get(_cancelSessionId) : null;
+      const _cancelActor = _cancelSession?.user || "admin";
+      await writeAuditLog(_cancelActor, "account_deletion", `Admin cancelled pending deletion for business #${id}`, {
+        businessId: id,
+        businessName: owner?.businessName ?? null,
+        email: owner?.email ?? null,
+        phone: owner?.phone ?? null,
+        originalDeletionDate: owner?.deletionScheduledFor ?? null,
+        action: "cancel_deletion",
+      });
+
       res.json({ ok: true });
     } catch (err: any) {
       res.json({ ok: false, error: String(err?.message || err) });
@@ -2831,7 +2852,34 @@ export function registerAdminRoutes(app: Express): void {
     try {
       const id = Number(req.body?.id);
       if (!id) { res.json({ ok: false, error: "id required" }); return; }
+
+      // Fetch business info before deletion for audit log
+      const dbase = await getDb();
+      let ownerInfo: { businessName: string | null; email: string | null; phone: string; deletionScheduledFor: Date | null } | undefined;
+      if (dbase) {
+        const [row] = await dbase
+          .select({ businessName: businessOwners.businessName, email: businessOwners.email, phone: businessOwners.phone, deletionScheduledFor: businessOwners.deletionScheduledFor })
+          .from(businessOwners)
+          .where(eq(businessOwners.id, id));
+        ownerInfo = row;
+      }
+
       await db.deleteBusinessOwner(id);
+
+      // Write audit log entry
+      const _execSessionId = getSessionFromCookie(req);
+      const _execSession = _execSessionId ? sessions.get(_execSessionId) : null;
+      const _execActor = _execSession?.user || "admin";
+      await writeAuditLog(_execActor, "account_deletion", `Admin manually executed deletion for business #${id}`, {
+        businessId: id,
+        businessName: ownerInfo?.businessName ?? null,
+        email: ownerInfo?.email ?? null,
+        phone: ownerInfo?.phone ?? null,
+        originalDeletionDate: ownerInfo?.deletionScheduledFor ?? null,
+        action: "execute_deletion",
+        override: true,
+      });
+
       res.json({ ok: true });
     } catch (err: any) {
       res.json({ ok: false, error: String(err?.message || err) });
