@@ -1314,6 +1314,11 @@ export default function OnboardingScreen() {
                     )}
                   </Pressable>
 
+                  {/* ─── Swipe Up Hint (only shown when phone is fully entered) ─── */}
+                  {!loading && stripPhoneFormat(phone).length === (selectedCountry.dial === "+1" ? 10 : 8) && (
+                    <SwipeUpHint visible={true} />
+                  )}
+
                   {/* ─── Back to Portal Selection ─────────────────── */}
                   <Pressable
                     onPress={() => {
@@ -1321,20 +1326,23 @@ export default function OnboardingScreen() {
                       router.back();
                     }}
                     style={({ pressed }) => ({
+                      flexDirection: "row",
                       alignItems: "center",
-                      paddingVertical: 10,
-                      opacity: pressed ? 0.6 : 1,
+                      justifyContent: "center",
+                      gap: 6,
+                      borderWidth: 1.5,
+                      borderColor: "#D1D5DB",
+                      borderRadius: 12,
+                      paddingVertical: 13,
+                      paddingHorizontal: 20,
+                      backgroundColor: pressed ? "#F9FAFB" : "transparent",
+                      opacity: pressed ? 0.85 : 1,
                     })}
                   >
-                    <Text style={{ fontSize: fs.sm, color: "#6B7280", fontWeight: "500" }}>
-                      ‹ Back to Portal Selection
+                    <Text style={{ fontSize: 14, color: "#374151", fontWeight: "600", letterSpacing: 0.2 }}>
+                      ← Back to Portal Selection
                     </Text>
                   </Pressable>
-
-                  {/* ─── Swipe Up Hint (only shown when phone is fully entered) ─── */}
-                  {!loading && stripPhoneFormat(phone).length === (selectedCountry.dial === "+1" ? 10 : 8) && (
-                    <SwipeUpHint visible={true} />
-                  )}
 
                   {/* ─── Social Login Divider ─────────────────── */}
                   <View style={styles.dividerRow}>
