@@ -12,9 +12,11 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId } from "@/lib/store";
 import { useColors } from "@/hooks/use-colors";
@@ -23,6 +25,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useState, useCallback, useMemo } from "react";
 import { ServicePackage } from "@/lib/types";
 import { FuturisticBackground } from "@/components/futuristic-background";
+import { trpc } from "@/lib/trpc";
 
 
 const EMPTY_FORM = {
@@ -43,6 +46,8 @@ export default function PackagesScreen() {
   const colors = useColors();
   const router = useRouter();
   const { isTablet, hp, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
+  const uploadImageMut = trpc.files.uploadImage.useMutation();
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -181,9 +186,24 @@ export default function PackagesScreen() {
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
-      setForm((f) => ({ ...f, photoUri: result.assets[0].uri }));
+      const localUri = result.assets[0].uri;
+      if (Platform.OS !== "web") {
+        try {
+          setUploadingPhoto(true);
+          const base64 = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+          const mimeType = result.assets[0].mimeType ?? "image/jpeg";
+          const { url } = await uploadImageMut.mutateAsync({ base64, mimeType, folder: "packages" });
+          setForm((f) => ({ ...f, photoUri: url }));
+        } catch {
+          setForm((f) => ({ ...f, photoUri: localUri }));
+        } finally {
+          setUploadingPhoto(false);
+        }
+      } else {
+        setForm((f) => ({ ...f, photoUri: localUri }));
+      }
     }
-  }, []);
+  }, [uploadImageMut]);
 
   // Derive package usage from appointments (same logic as bookings.tsx)
   const packageUsageMap = useMemo(() => {
@@ -403,7 +423,12 @@ export default function PackagesScreen() {
                 marginBottom: 16, overflow: "hidden", opacity: pressed ? 0.8 : 1,
               })}
             >
-              {form.photoUri ? (
+              {uploadingPhoto ? (
+                <View style={{ alignItems: "center", gap: 8 }}>
+                  <ActivityIndicator color={colors.primary} size="small" />
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, fontWeight: "600" }}>Uploading photo…</Text>
+                </View>
+              ) : form.photoUri ? (
                 <>
                   <Image source={{ uri: form.photoUri }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
                   <View style={{ position: "absolute", bottom: 8, right: 8, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>

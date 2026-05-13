@@ -1330,6 +1330,7 @@ export default function OnboardingScreen() {
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 6,
+                      marginTop: 10,
                       borderWidth: 1.5,
                       borderColor: "#D1D5DB",
                       borderRadius: 12,
