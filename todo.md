@@ -2170,3 +2170,4 @@
 - [x] Fix staff members not visible in booking wizard Staff step (step 3) even when they have availability
 - [x] Client messages: tappable address (opens Maps), phone (opens dialer), date/time (adds to calendar)
 - [x] Client messages: tappable address (opens Maps), phone (opens dialer), date/time (adds to calendar)
+- [x] Package booking confirmation: add summary card showing package name, sessions count, and total price

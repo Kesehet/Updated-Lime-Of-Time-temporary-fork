@@ -2383,6 +2383,37 @@ export default function ClientBookingWizardScreen() {
           return (
             <View style={s.stepContent}>
               <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Confirm Booking</Text>
+              {/* 📦 Package summary banner — shown when booking via a package */}
+              {selectedPackage && (
+                <View style={{
+                  backgroundColor: `${LIME_GREEN}18`,
+                  borderRadius: 14,
+                  borderWidth: 1.5,
+                  borderColor: `${LIME_GREEN}55`,
+                  padding: 14,
+                  marginBottom: 10,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                }}>
+                  <Text style={{ fontSize: 28, lineHeight: 32 }}>📦</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: LIME_GREEN, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 2 }}>Package Booking</Text>
+                    <Text style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "700", marginBottom: 3 }}>{selectedPackage.name}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>🔁</Text>
+                        <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: "600" }}>{selectedPackage.totalSessions} session{selectedPackage.totalSessions !== 1 ? "s" : ""}</Text>
+                      </View>
+                      <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: TEXT_MUTED }} />
+                      {selectedPackage.originalPrice > selectedPackage.packagePrice && (
+                        <Text style={{ color: TEXT_MUTED, fontSize: 12, textDecorationLine: "line-through" }}>${parseFloat(String(selectedPackage.originalPrice)).toFixed(2)}</Text>
+                      )}
+                      <Text style={{ color: LIME_GREEN, fontSize: 13, fontWeight: "700" }}>${parseFloat(String(selectedPackage.packagePrice)).toFixed(2)}</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
               {/* 🚗 Comes to You banner — shown for mobile services */}
               {isMobileService && effectiveAddress.trim() ? (
                 <View style={{ backgroundColor: "rgba(74,124,89,0.18)", borderRadius: 12, borderWidth: 1, borderColor: `${LIME_GREEN}50`, padding: 14, flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 4 }}>
