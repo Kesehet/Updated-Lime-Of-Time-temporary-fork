@@ -75,7 +75,7 @@ interface ApiPackage {
   packageItems: Array<{ serviceLocalId: string; sessions: number; serviceName: string; serviceCategory: string | null }>;
   totalSessions: number; sessionDurationMinutes: number;
   originalPrice: number; packagePrice: number;
-  photoUri: string | null; category: string | null;
+  photoUri: string | null; firstServicePhotoUri?: string | null; category: string | null;
 }
 interface ApiBusiness {
   id: number; businessName: string; ownerName: string; description: string | null;
@@ -712,8 +712,8 @@ export default function ClientBusinessDetailScreen() {
               <Text style={[s.emptyText, { color: TEXT_MUTED }]}>No packages available.</Text>
             ) : packages.map((pkg) => (
               <View key={pkg.localId} style={[s.serviceCard, { backgroundColor: CARD_BG, borderColor: CARD_BORDER, flexDirection: "column", padding: 0, overflow: "hidden" }]}>
-                {pkg.photoUri ? (
-                  <Image source={{ uri: pkg.photoUri }} style={{ width: "100%", height: 160 }} contentFit="cover" />
+                {(pkg.photoUri || pkg.firstServicePhotoUri) ? (
+                  <Image source={{ uri: (pkg.photoUri || pkg.firstServicePhotoUri)! }} style={{ width: "100%", height: 160 }} contentFit="cover" />
                 ) : (
                   <View style={{ width: "100%", height: 80, backgroundColor: `${LIME_GREEN}25`, alignItems: "center", justifyContent: "center" }}>
                     <Text style={{ fontSize: 28 }}>📦</Text>
@@ -789,8 +789,8 @@ export default function ClientBusinessDetailScreen() {
       <Modal visible={packageDetailVisible} transparent animationType="slide" onRequestClose={() => setPackageDetailVisible(false)}>
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.75)", justifyContent: "flex-end" }}>
           <View style={{ backgroundColor: "#1A3A28", borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "88%", overflow: "hidden" }}>
-            {selectedPackageDetail?.photoUri ? (
-              <Image source={{ uri: selectedPackageDetail.photoUri }} style={{ width: "100%", height: 200 }} contentFit="cover" />
+            {(selectedPackageDetail?.photoUri || selectedPackageDetail?.firstServicePhotoUri) ? (
+              <Image source={{ uri: (selectedPackageDetail.photoUri || selectedPackageDetail.firstServicePhotoUri)! }} style={{ width: "100%", height: 200 }} contentFit="cover" />
             ) : null}
             <ScrollView contentContainerStyle={{ padding: 20 }}>
               {selectedPackageDetail?.category ? <Text style={{ color: ACCENT, fontSize: fs.xs, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>{selectedPackageDetail.category}</Text> : null}

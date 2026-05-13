@@ -265,7 +265,7 @@ export default function OnboardingScreen() {
   const { dispatch, syncToDb, state: appState } = useStore();
   const colors = useColors();
   const router = useRouter();
-  const { isTablet, hp, width, height, fs, buttonHeight, iconButtonSize } = useResponsive();
+  const { isTablet, hp, width, height, fs, buttonHeight, iconButtonSize, formMaxWidth } = useResponsive();
   const insets = useSafeAreaInsets();
 
   const socialParams = useLocalSearchParams<{ socialLogin?: string; socialName?: string; socialEmail?: string; ref?: string }>();
@@ -1200,30 +1200,6 @@ export default function OnboardingScreen() {
             }}
           />
         </>
-      )}     {/* ─── Back to Portal Select ─────────────────────────── */}
-      {step === 1 && (
-        <Pressable
-          onPress={() => {
-            if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.back();
-          }}
-          style={({ pressed }) => ({
-            position: "absolute",
-            top: insets.top + 8,
-            left: 16,
-            zIndex: 100,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 4,
-            paddingVertical: 8,
-            paddingHorizontal: 10,
-            borderRadius: 20,
-            backgroundColor: pressed ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.12)",
-          })}
-        >
-          <Text style={{ fontSize: fs.md, color: "rgba(255,255,255,0.85)", lineHeight: 20 }}>‹</Text>
-          <Text style={{ fontSize: fs.xs, color: "rgba(255,255,255,0.85)", fontWeight: "600", letterSpacing: 0.2 }}>Portals</Text>
-        </Pressable>
       )}
 
       <KeyboardAvoidingView
@@ -1275,7 +1251,7 @@ export default function OnboardingScreen() {
           {/* GestureDetector enables swipe-right to go back on applicable steps */}
           <GestureDetector gesture={swipeGesture}>
           {/* Clip container — no overflow:hidden so tall steps (Business Info) can scroll fully */}
-          <View style={{ borderRadius: 24, flex: displayStep === "subscription" ? 1 : undefined }}>
+          <View style={{ borderRadius: 24, flex: displayStep === "subscription" ? 1 : undefined, maxWidth: formMaxWidth > 0 ? formMaxWidth : undefined, alignSelf: formMaxWidth > 0 ? "center" : undefined, width: "100%" }}>
           <Animated.View style={[displayStep === "subscription" ? styles.cardTransparent : styles.card, slideStyle, { borderRadius: 24 }]}>
             {/* Step 1: Phone */}
             {displayStep === 1 && (
@@ -1336,6 +1312,23 @@ export default function OnboardingScreen() {
                     ) : (
                       <Text style={styles.primaryBtnText}>Continue</Text>
                     )}
+                  </Pressable>
+
+                  {/* ─── Back to Portal Selection ─────────────────── */}
+                  <Pressable
+                    onPress={() => {
+                      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      router.back();
+                    }}
+                    style={({ pressed }) => ({
+                      alignItems: "center",
+                      paddingVertical: 10,
+                      opacity: pressed ? 0.6 : 1,
+                    })}
+                  >
+                    <Text style={{ fontSize: fs.sm, color: "#6B7280", fontWeight: "500" }}>
+                      ‹ Back to Portal Selection
+                    </Text>
                   </Pressable>
 
                   {/* ─── Swipe Up Hint (only shown when phone is fully entered) ─── */}
@@ -1464,22 +1457,6 @@ export default function OnboardingScreen() {
             {/* Step OTP: Verification — 6-box animated input */}
             {displayStep === "otp" && (
               <>
-                {/* ─── Back Chevron Header ─── */}
-                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-                  <Pressable
-                    onPress={handleGoBack}
-                    disabled={loading}
-                    style={({ pressed }) => ({
-                      opacity: pressed ? 0.5 : 1,
-                      padding: 4,
-                      marginRight: 4,
-                    })}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Text style={{ fontSize: fs.lg, color: "#4A7C59", fontWeight: "600" }}>‹</Text>
-                  </Pressable>
-                  <Text style={{ fontSize: fs.xs, color: "#4A7C59", fontWeight: "600" }}>Back</Text>
-                </View>
                 <Animated.View style={[titleStyle, { alignItems: "center" }]}>
                   {/* Lock icon with green glow */}
                   <View style={styles.otpIconWrap}>
@@ -1563,7 +1540,13 @@ export default function OnboardingScreen() {
                 <Animated.View style={btnStyle}>
                   <View style={styles.buttonRow}>
                     <Pressable
-                      onPress={() => { navigateToStep(1); setOtpValue(""); setOtpError(""); setOtpDigits(["","","","","",""]); }}
+                      onPress={() => {
+                        setOtpValue(""); setOtpError(""); setOtpDigits(["","","","","",""]);
+                        userIsTypingPhoneRef.current = false;
+                        if (autoAdvanceRef.current) { clearTimeout(autoAdvanceRef.current); autoAdvanceRef.current = null; }
+                        if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        navigateToStep(1);
+                      }}
                       style={({ pressed }) => [styles.secondaryBtn, { opacity: pressed ? 0.7 : 1 }]}
                       disabled={loading}
                     >

@@ -1277,9 +1277,14 @@ export function registerClientRoutes(app: Express) {
           sessionDurationMinutes: pkg.sessionDurationMinutes,
           originalPrice: parseFloat(String(pkg.originalPrice)),
           packagePrice: parseFloat(String(pkg.packagePrice)),
-          photoUri: pkg.photoUri || null,
+          photoUri: (pkg.photoUri && /^https?:\/\//i.test(pkg.photoUri)) ? pkg.photoUri : null,
           // Fallback: use the first service's photo if the package has no photo
-          firstServicePhotoUri: pkg.photoUri ? null : (items.map((item: any) => svcMap[item.serviceLocalId]?.photoUri).filter(Boolean)[0] ?? null),
+          firstServicePhotoUri: (() => {
+            const pkgPhoto = (pkg.photoUri && /^https?:\/\//i.test(pkg.photoUri)) ? pkg.photoUri : null;
+            if (pkgPhoto) return null;
+            const fallback = items.map((item: any) => svcMap[item.serviceLocalId]?.photoUri).find((u: any) => u && /^https?:\/\//i.test(u));
+            return fallback ?? null;
+          })(),
           category: pkg.category || null,
         };
       });
