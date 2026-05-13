@@ -54,6 +54,7 @@ import {
   Referral,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { storageDeleteMany } from "./storage";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -187,10 +188,23 @@ export async function updateBusinessOwner(
 export async function deleteBusinessOwner(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+
+  // ── Collect all image URLs before deletion for cloud storage cleanup ──
+  const [ownerRows, serviceRows, staffRows, locationRows, pkgRows, photoRows] = await Promise.all([
+    db.select({ businessLogoUri: businessOwners.businessLogoUri, coverPhotoUri: businessOwners.coverPhotoUri })
+      .from(businessOwners).where(eq(businessOwners.id, id)),
+    db.select({ photoUri: services.photoUri }).from(services).where(eq(services.businessOwnerId, id)),
+    db.select({ photoUri: staffMembers.photoUri }).from(staffMembers).where(eq(staffMembers.businessOwnerId, id)),
+    db.select({ photoUri: locations.photoUri }).from(locations).where(eq(locations.businessOwnerId, id)),
+    db.select({ photoUri: servicePackages.photoUri }).from(servicePackages).where(eq(servicePackages.businessOwnerId, id)),
+    db.select({ uri: servicePhotos.uri }).from(servicePhotos).where(eq(servicePhotos.businessOwnerId, id)),
+  ]);
+
   // Delete all related data first (cascade)
   await db.delete(reviews).where(eq(reviews.businessOwnerId, id));
   await db.delete(appointments).where(eq(appointments.businessOwnerId, id));
   await db.delete(clients).where(eq(clients.businessOwnerId, id));
+  await db.delete(servicePhotos).where(eq(servicePhotos.businessOwnerId, id));
   await db.delete(services).where(eq(services.businessOwnerId, id));
   await db.delete(discounts).where(eq(discounts.businessOwnerId, id));
   await db.delete(giftCards).where(eq(giftCards.businessOwnerId, id));
@@ -200,8 +214,20 @@ export async function deleteBusinessOwner(id: number): Promise<void> {
   await db.delete(locations).where(eq(locations.businessOwnerId, id));
   await db.delete(waitlist).where(eq(waitlist.businessOwnerId, id));
   await db.delete(promoCodes).where(eq(promoCodes.businessOwnerId, id));
+  await db.delete(servicePackages).where(eq(servicePackages.businessOwnerId, id));
   // Finally delete the business owner itself
   await db.delete(businessOwners).where(eq(businessOwners.id, id));
+
+  // ── Best-effort: delete all images from cloud storage ──
+  const allImageUrls: (string | null | undefined)[] = [
+    ...ownerRows.flatMap((r) => [r.businessLogoUri, r.coverPhotoUri]),
+    ...serviceRows.map((r) => r.photoUri),
+    ...staffRows.map((r) => r.photoUri),
+    ...locationRows.map((r) => r.photoUri),
+    ...pkgRows.map((r) => r.photoUri),
+    ...photoRows.map((r) => r.uri),
+  ];
+  await storageDeleteMany(allImageUrls);
 }
 
 // ─── Admin: Delete individual record by DB id ───────────────────────

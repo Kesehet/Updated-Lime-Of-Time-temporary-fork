@@ -93,3 +93,43 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
     url: await buildDownloadUrl(baseUrl, key, apiKey),
   };
 }
+
+/**
+ * Delete a file from storage by its relative key or full URL.
+ * Extracts the storage key from CloudFront/CDN URLs automatically.
+ * Silently ignores errors (e.g. if the file is already gone or the endpoint is unavailable).
+ */
+export async function storageDelete(relKeyOrUrl: string): Promise<void> {
+  try {
+    const { baseUrl, apiKey } = getStorageConfig();
+    // Extract relative key from full URLs (CloudFront or proxy URLs)
+    let key = relKeyOrUrl;
+    if (relKeyOrUrl.startsWith("http://") || relKeyOrUrl.startsWith("https://")) {
+      try {
+        const parsed = new URL(relKeyOrUrl);
+        // Remove leading slash from pathname
+        key = parsed.pathname.replace(/^\/+/, "");
+      } catch {
+        key = relKeyOrUrl;
+      }
+    }
+    key = normalizeKey(key);
+    const deleteUrl = new URL("v1/storage/delete", ensureTrailingSlash(baseUrl));
+    deleteUrl.searchParams.set("path", key);
+    await fetch(deleteUrl, {
+      method: "DELETE",
+      headers: buildAuthHeaders(apiKey),
+    });
+  } catch {
+    // Silently ignore — storage cleanup is best-effort
+  }
+}
+
+/**
+ * Delete multiple files from storage in parallel.
+ * Silently ignores individual failures.
+ */
+export async function storageDeleteMany(relKeysOrUrls: (string | null | undefined)[]): Promise<void> {
+  const valid = relKeysOrUrls.filter((u): u is string => !!u && u.startsWith("http"));
+  await Promise.allSettled(valid.map((u) => storageDelete(u)));
+}

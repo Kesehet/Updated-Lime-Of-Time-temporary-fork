@@ -11,6 +11,7 @@ import {
   Image,
   Platform,
   KeyboardAvoidingView,
+  Modal,
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { FuturisticBackground } from "@/components/futuristic-background";
@@ -108,6 +109,13 @@ export default function SettingsScreen() {
   const [activeTab, setActiveTab] = useState<TabKey>("business");
   const [devTapCount, setDevTapCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // ── Delete Business Modal ─────────────────────────────────────────────────────
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<1 | 2>(1);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteConfirmMatch = deleteConfirmText.trim().toUpperCase() === "DELETE";
 
   // ── Calendar Sync ─────────────────────────────────────────────────────────────
   const CALENDAR_SYNC_KEY = "@limeofttime_calendar_sync_enabled";
@@ -307,40 +315,40 @@ export default function SettingsScreen() {
   }, [dispatch, router]);
 
   const handleDeleteBusiness = useCallback(() => {
-    Alert.alert(
-      "Delete Business",
-      "This will permanently delete all your business data from our servers and remove all app data from this device. This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete Everything",
-          style: "destructive",
-          onPress: async () => {
-            if (state.businessOwnerId) {
-              try { await deleteBusinessMut.mutateAsync({ id: state.businessOwnerId }); } catch {}
-            }
-            dispatch({ type: "RESET_ALL_DATA" });
-            try {
-              await AsyncStorage.multiRemove([
-                "@bookease_services","@bookease_clients","@bookease_appointments",
-                "@bookease_reviews","@bookease_settings","@bookease_business_owner_id",
-                "@bookease_discounts","@bookease_gift_cards","@bookease_custom_schedule",
-                "@bookease_location_custom_schedule","@bookease_products","@bookease_staff",
-                "@bookease_locations","@bookease_active_location_id",
-                "@bookease_client_photos","@bookease_packages","@bookease_service_photos",
-              "@bookease_biometric_enabled",
-              "@bookease_business_name",
-              "@lime_tutorial_seen","@lime_tour_analytics","@lime_first_action_shown",
-            ]);
-            } catch {}
-            try { await removeSessionToken(); } catch {}
-            try { await clearUserInfo(); } catch {}
-            router.replace("/profile-select" as any);
-          },
-        },
-      ]
-    );
-  }, [dispatch, router, state.businessOwnerId, deleteBusinessMut]);
+    setDeleteStep(1);
+    setDeleteConfirmText("");
+    setShowDeleteModal(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteConfirmMatch || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      if (state.businessOwnerId) {
+        try { await deleteBusinessMut.mutateAsync({ id: state.businessOwnerId }); } catch {}
+      }
+      dispatch({ type: "RESET_ALL_DATA" });
+      try {
+        await AsyncStorage.multiRemove([
+          "@bookease_services","@bookease_clients","@bookease_appointments",
+          "@bookease_reviews","@bookease_settings","@bookease_business_owner_id",
+          "@bookease_discounts","@bookease_gift_cards","@bookease_custom_schedule",
+          "@bookease_location_custom_schedule","@bookease_products","@bookease_staff",
+          "@bookease_locations","@bookease_active_location_id",
+          "@bookease_client_photos","@bookease_packages","@bookease_service_photos",
+          "@bookease_biometric_enabled",
+          "@bookease_business_name",
+          "@lime_tutorial_seen","@lime_tour_analytics","@lime_first_action_shown",
+        ]);
+      } catch {}
+      try { await removeSessionToken(); } catch {}
+      try { await clearUserInfo(); } catch {}
+      setShowDeleteModal(false);
+      router.replace("/profile-select" as any);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [deleteConfirmMatch, isDeleting, state.businessOwnerId, deleteBusinessMut, dispatch, router]);
 
   const reviewAvg = useMemo(() => {
     if (state.reviews.length === 0) return null;
@@ -1177,6 +1185,178 @@ export default function SettingsScreen() {
         {searchQuery.trim() ? renderSearchResults() : tabContent[activeTab]()}
       </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* ─── Delete Business Confirmation Modal ─────────────────────────────── */}
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => !isDeleting && setShowDeleteModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <Pressable
+            style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}
+            onPress={() => !isDeleting && setShowDeleteModal(false)}
+          >
+            <Pressable
+              style={[
+                {
+                  backgroundColor: colors.surface,
+                  borderTopLeftRadius: 24,
+                  borderTopRightRadius: 24,
+                  borderTopWidth: 1,
+                  borderTopColor: colors.error + "40",
+                  paddingHorizontal: 24,
+                  paddingTop: 20,
+                  paddingBottom: 40,
+                  maxHeight: "90%",
+                },
+              ]}
+              onPress={() => {}}
+            >
+              {/* Handle */}
+              <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: "center", marginBottom: 20 }} />
+
+              {deleteStep === 1 ? (
+                <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+                  {/* Header */}
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                    <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: colors.error + "15", alignItems: "center", justifyContent: "center" }}>
+                      <IconSymbol name="trash.fill" size={24} color={colors.error} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.error }}>Delete Business</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>This action is permanent and irreversible</Text>
+                    </View>
+                  </View>
+
+                  {/* Warning Banner */}
+                  <View style={{ backgroundColor: colors.error + "12", borderRadius: 14, borderWidth: 1, borderColor: colors.error + "30", padding: 14, marginBottom: 16 }}>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.error, marginBottom: 6 }}>⚠️ You cannot undo this action</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.foreground, lineHeight: 18 }}>
+                      Once deleted, your business account, all data, and all uploaded files will be permanently removed from our servers. There is no way to recover your account, history, or any information after deletion.
+                    </Text>
+                  </View>
+
+                  {/* What gets deleted */}
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>Everything that will be deleted:</Text>
+                  {[
+                    { icon: "building.2.fill",        label: "Business profile",                    detail: "Name, description, logo, contact info" },
+                    { icon: "calendar",               label: "All appointments",                    detail: "Past and upcoming bookings" },
+                    { icon: "person.2.fill",           label: "All clients",                         detail: "Client profiles, notes, and history" },
+                    { icon: "wrench.fill",             label: "All services",                        detail: "Service names, pricing, and durations" },
+                    { icon: "bag.fill",                label: "Packages & bundles",                  detail: "All session packages and client package usage" },
+                    { icon: "person.fill",             label: "Staff members",                       detail: "Staff profiles and schedules" },
+                    { icon: "mappin.and.ellipse",      label: "Locations",                           detail: "All business locations and working hours" },
+                    { icon: "tag.fill",                label: "Discounts & gift cards",              detail: "All active and expired promotions" },
+                    { icon: "star.fill",               label: "Reviews",                             detail: "All client reviews and ratings" },
+                    { icon: "photo.fill",              label: "All uploaded images",                 detail: "Service photos, client photos, business logo — deleted from cloud storage" },
+                    { icon: "bell.fill",               label: "Notification settings",               detail: "All reminder and alert preferences" },
+                    { icon: "creditcard.fill",         label: "Payment & subscription data",         detail: "Billing history and plan information" },
+                  ].map((item) => (
+                    <View key={item.label} style={{ flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+                      <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: colors.error + "10", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                        <IconSymbol name={item.icon as any} size={16} color={colors.error} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{item.label}</Text>
+                        <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 1, lineHeight: 16 }}>{item.detail}</Text>
+                      </View>
+                    </View>
+                  ))}
+
+                  {/* Buttons */}
+                  <View style={{ flexDirection: "row", gap: 10, marginTop: 8 }}>
+                    <Pressable
+                      onPress={() => setShowDeleteModal(false)}
+                      style={({ pressed }) => [{ flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: "center", backgroundColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
+                    >
+                      <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setDeleteStep(2)}
+                      style={({ pressed }) => [{ flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: "center", backgroundColor: colors.error, opacity: pressed ? 0.8 : 1 }]}
+                    >
+                      <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#fff" }}>I Understand →</Text>
+                    </Pressable>
+                  </View>
+                </ScrollView>
+              ) : (
+                <View>
+                  {/* Step 2 header */}
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                    <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: colors.error + "15", alignItems: "center", justifyContent: "center" }}>
+                      <IconSymbol name="exclamationmark.triangle.fill" size={24} color={colors.error} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fs.lg, fontWeight: "700", color: colors.error }}>Final Confirmation</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>Type DELETE to confirm</Text>
+                    </View>
+                  </View>
+
+                  <Text style={{ fontSize: fs.sm, color: colors.foreground, lineHeight: 20, marginBottom: 20 }}>
+                    You are about to permanently delete{" "}
+                    <Text style={{ fontWeight: "700" }}>{state.settings.businessName || "your business"}</Text>
+                    {" "}and all associated data. This includes all appointments, clients, services, packages, staff, locations, images, and account settings.{"\n\n"}
+                    <Text style={{ color: colors.error, fontWeight: "600" }}>This cannot be undone. There is no recovery option.</Text>
+                  </Text>
+
+                  <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>
+                    Type DELETE to confirm
+                  </Text>
+                  <TextInput
+                    value={deleteConfirmText}
+                    onChangeText={setDeleteConfirmText}
+                    placeholder="Type DELETE here"
+                    placeholderTextColor={colors.muted}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    editable={!isDeleting}
+                    style={[
+                      styles.editInput,
+                      {
+                        color: colors.foreground,
+                        backgroundColor: colors.background,
+                        borderColor: deleteConfirmMatch ? colors.error : colors.border,
+                        marginBottom: 20,
+                        fontSize: fs.md,
+                        fontWeight: "700",
+                        letterSpacing: 2,
+                      },
+                    ]}
+                    returnKeyType="done"
+                  />
+
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    <Pressable
+                      onPress={() => { setDeleteStep(1); setDeleteConfirmText(""); }}
+                      style={({ pressed }) => [{ flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: "center", backgroundColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
+                    >
+                      <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>← Back</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={handleConfirmDelete}
+                      disabled={!deleteConfirmMatch || isDeleting}
+                      style={({ pressed }) => [{
+                        flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: "center",
+                        backgroundColor: deleteConfirmMatch ? colors.error : colors.error + "40",
+                        opacity: pressed ? 0.8 : 1,
+                      }]}
+                    >
+                      <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#fff" }}>
+                        {isDeleting ? "Deleting..." : "Delete Everything"}
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+            </Pressable>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </Modal>
     </ScreenContainer>
   );
 }
