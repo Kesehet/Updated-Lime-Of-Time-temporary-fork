@@ -2173,3 +2173,5 @@
 - [x] Package booking confirmation: add summary card showing package name, sessions count, and total price
 - [x] Remaining sessions badge on package confirmation card (Session X of Y)
 - [x] My Packages tab in client portal with session history per package
+- [x] Fix duration display in booking page (show "1 hr 30 min" instead of decimal hours)
+- [x] Fix package/bundle images not showing in booking service selection step

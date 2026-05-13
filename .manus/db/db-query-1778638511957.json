@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, businessName, customSlug FROM business_owners LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, businessName, customSlug FROM business_owners LIMIT 5",
+  "rows": [
+    {
+      "id": "1650001",
+      "businessName": "Wellness Suite",
+      "customSlug": "NULL"
+    },
+    {
+      "id": "1890001",
+      "businessName": "Summer View",
+      "customSlug": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbusinessName\tcustomSlug\n1650001\tWellness Suite\tNULL\n1890001\tSummer View\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 269
+}

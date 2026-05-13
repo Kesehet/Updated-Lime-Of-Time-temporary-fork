@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, email, businessName FROM business_owners LIMIT 3",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, email, businessName FROM business_owners LIMIT 3",
+  "rows": [
+    {
+      "id": "1650001",
+      "email": "",
+      "businessName": "Wellness Suite"
+    },
+    {
+      "id": "1890001",
+      "email": "Summerview@mail.com",
+      "businessName": "Summer View"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tbusinessName\n1650001\t\tWellness Suite\n1890001\tSummerview@mail.com\tSummer View\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

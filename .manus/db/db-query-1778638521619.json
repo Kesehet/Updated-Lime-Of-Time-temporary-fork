@@ -1,0 +1,22 @@
+{
+  "query": "SELECT localId, name, photoUri, packageItems FROM service_packages WHERE name LIKE '%Wrapping%' LIMIT 2",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT localId, name, photoUri, packageItems FROM service_packages WHERE name LIKE '%Wrapping%' LIMIT 2",
+  "rows": [
+    {
+      "localId": "mp3en2o0b1zx3ga",
+      "name": "Hot/Cool Wrapping",
+      "photoUri": "file:///var/mobile/Containers/Data/Application/A114FCCB-0AAE-4A12-BDF1-2390591FB94F/Library/Caches/ImagePicker/4F895775-7969-4800-BA56-640789E92666.jpg",
+      "packageItems": "\"[{\\\"serviceLocalId\\\":\\\"mokwabuc18hzfos\\\",\\\"sessions\\\":3}]\""
+    },
+    {
+      "localId": "mp3ffphnyabltsp",
+      "name": "Hot/Cool Wrapping",
+      "photoUri": "file:///var/mobile/Containers/Data/Application/A114FCCB-0AAE-4A12-BDF1-2390591FB94F/Library/Caches/ImagePicker/0CED5A53-E665-4088-9A29-FC82D64E12D7.jpg",
+      "packageItems": "\"[{\\\"serviceLocalId\\\":\\\"mokwabuc18hzfos\\\",\\\"sessions\\\":5}]\""
+    }
+  ],
+  "messages": [],
+  "stdout": "localId\tname\tphotoUri\tpackageItems\nmp3en2o0b1zx3ga\tHot/Cool Wrapping\tfile:///var/mobile/Containers/Data/Application/A114FCCB-0AAE-4A12-BDF1-2390591FB94F/Library/Caches/ImagePicker/4F895775-7969-4800-BA56-640789E92666.jpg\t\"[{\\\"serviceLocalId\\\":\\\"mokwabuc18hzfos\\\",\\\"sessions\\\":3}]\"\nmp3ffphnyabltsp\tHot/Cool Wrapping\tfile:///var/mobile/Containers/Data/Application/A114FCCB-0AAE-4A12-BDF1-2390591FB94F/Library/Caches/ImagePicker/0CED5A53-E665-4088-9A29-FC82D64E12D7.jpg\t\"[{\\\"serviceLocalId\\\":\\\"mokwabuc18hzfos\\\",\\\"sessions\\\":5}]\"\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

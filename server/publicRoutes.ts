@@ -739,20 +739,53 @@ export function registerPublicRoutes(app: Express) {
       const owner = await db.getBusinessOwnerBySlug(req.params.slug);
       if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
       const pkgList = await db.getServicePackagesByOwner(owner.id);
-      res.json(pkgList.filter((p) => p.isActive).map((p) => ({
-        localId: p.localId,
-        name: p.name,
-        description: p.description || null,
-        packagePrice: p.packagePrice,
-        originalPrice: p.originalPrice,
-        totalSessions: p.totalSessions,
-        sessionDurationMinutes: p.sessionDurationMinutes,
-        photoUri: p.photoUri || null,
-        category: p.category || null,
-        packageItems: p.packageItems,
-        bufferDays: p.bufferDays ?? 0,
-        isActive: p.isActive,
-      })));
+      // Build a map of serviceLocalId -> photoUri for fallback
+      const allSvcs = await db.getServicesByOwner(owner.id);
+      const svcPhotoMap: Record<string, string> = {};
+      for (const sv of allSvcs) {
+        if (sv.localId && sv.photoUri && !sv.photoUri.startsWith('file://')) {
+          svcPhotoMap[sv.localId] = sv.photoUri;
+        }
+      }
+      const isWebSafeUri = (uri: string | null | undefined): boolean => {
+        if (!uri) return false;
+        return uri.startsWith('http://') || uri.startsWith('https://');
+      };
+      res.json(pkgList.filter((p) => p.isActive).map((p) => {
+        // Use package photoUri if it's a web-safe URL, otherwise fall back to first service photo
+        const pkgPhoto = isWebSafeUri(p.photoUri) ? p.photoUri : null;
+        let firstServicePhotoUri: string | null = null;
+        if (!pkgPhoto) {
+          let items: Array<{ serviceLocalId?: string }> = [];
+          try {
+            let raw = p.packageItems;
+            // Handle double-encoded JSON strings (e.g. "\"[{...}]\"") 
+            if (typeof raw === 'string') raw = JSON.parse(raw);
+            if (typeof raw === 'string') raw = JSON.parse(raw); // second parse for double-encoded
+            if (Array.isArray(raw)) items = raw as Array<{ serviceLocalId?: string }>;
+          } catch (_) { /* ignore parse errors */ }
+          for (const item of items) {
+            if (item.serviceLocalId && svcPhotoMap[item.serviceLocalId]) {
+              firstServicePhotoUri = svcPhotoMap[item.serviceLocalId];
+              break;
+            }
+          }
+        }
+        return {
+          localId: p.localId,
+          name: p.name,
+          description: p.description || null,
+          packagePrice: p.packagePrice,
+          originalPrice: p.originalPrice,
+          totalSessions: p.totalSessions,
+          sessionDurationMinutes: p.sessionDurationMinutes,
+          photoUri: pkgPhoto || firstServicePhotoUri || null,
+          category: p.category || null,
+          packageItems: p.packageItems,
+          bufferDays: p.bufferDays ?? 0,
+          isActive: p.isActive,
+        };
+      }));
     } catch (err) {
       console.error("[Public API] Error fetching packages:", err);
       res.status(500).json({ error: "Internal server error" });
@@ -6000,7 +6033,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         var isSelected = selectedPackage && selectedPackage.localId === pkg.localId;
         var savings = parseFloat(pkg.originalPrice) - parseFloat(pkg.packagePrice);
         var totalDurMin = (pkg.sessionDurationMinutes || 60) * (pkg.totalSessions || 1);
-        var durStr = totalDurMin >= 60 ? (totalDurMin / 60).toFixed(1).replace(/\.0$/, '') + ' hr' + (totalDurMin > 60 ? 's' : '') : totalDurMin + ' min';
+        var durStr = formatDur(totalDurMin);
         var savingsHtml = savings > 0 ? '<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px;">Save $' + savings.toFixed(0) + '</span>' : '';
         var photoHtml = pkg.photoUri ? '<img src="' + esc(pkg.photoUri) + '" style="width:60px;height:60px;object-fit:cover;border-radius:10px;flex-shrink:0;" />' : '<div style="width:60px;height:60px;border-radius:10px;background:var(--accent-bg-light);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">&#127800;</div>';
         html += '<div class="pkg-card" data-pkg-id="' + esc(pkg.localId) + '" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;border:2px solid ' + (isSelected ? 'var(--accent)' : 'var(--border)') + ';background:' + (isSelected ? 'var(--accent-bg-light)' : 'var(--bg-card)') + ';cursor:pointer;transition:all .15s;">' +
@@ -6113,6 +6146,14 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
 
     function escText(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
     var Q = "'"; // single-quote helper for onclick attribute strings
+    function formatDur(min) {
+      min = Math.round(min || 0);
+      var h = Math.floor(min / 60);
+      var m = min % 60;
+      if (h === 0) return m + ' min';
+      if (m === 0) return h + ' hr' + (h > 1 ? 's' : '');
+      return h + ' hr' + (h > 1 ? 's' : '') + ' ' + m + ' min';
+    }
     function formatPhoneNumber(phone) {
       if (!phone) return phone;
       var digits = phone.replace(/\\D/g, '');
@@ -6334,7 +6375,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       var popularList = document.getElementById('svcPopularList');
       var html = '';
       top.forEach(function(s) {
-        var dur = s.duration >= 60 ? (s.duration / 60) + ' hr' + (s.duration > 60 ? 's' : '') : s.duration + ' min';
+        var dur = formatDur(s.duration);
         var photoEl = s.photoUri
           ? '<img src="' + esc(s.photoUri) + '" style="width:100%;height:72px;object-fit:cover;" />'
           : '<div style="width:100%;height:72px;background:' + (s.color || '#4a8c3f') + '20;display:flex;align-items:center;justify-content:center;">' +
@@ -6426,7 +6467,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         '<button onclick="resetSvcDrillDown()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--accent);font-weight:600;padding:0;">&#8592; ' + esc(catLabel) + '</button></div>';
       html += '<div class="service-list">';
       filtered.forEach(function(s) {
-        var dur = s.duration >= 60 ? (s.duration / 60) + ' hr' + (s.duration > 60 ? 's' : '') : s.duration + ' min';
+        var dur = formatDur(s.duration);
         var isChecked = selectedServices.some(function(x) { return x.localId === s.localId; });
         var svcThumb = s.photoUri
           ? '<div class="service-dot"><img src="' + esc(s.photoUri) + '" /></div>'
@@ -6459,7 +6500,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     function openSvcDetail(id) {
       var s = services.find(function(x) { return x.localId === id; });
       if (!s) return;
-      var dur = s.duration >= 60 ? (s.duration / 60) + ' hr' + (s.duration > 60 ? 's' : '') : s.duration + ' min';
+      var dur = formatDur(s.duration);
       var isSelected = selectedServices.some(function(x) { return x.localId === id; });
       var html = '';
       if (s.photoUri) html += '<img src="' + esc(s.photoUri) + '" style="width:100%;height:180px;object-fit:cover;border-radius:12px;margin-bottom:14px;">';
@@ -6519,7 +6560,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       } else {
         var html = '<div class="service-list">';
         matches.forEach(function(s) {
-          var dur = s.duration >= 60 ? (s.duration / 60) + ' hr' + (s.duration > 60 ? 's' : '') : s.duration + ' min';
+          var dur = formatDur(s.duration);
           var isChecked = selectedServices.some(function(x) { return x.localId === s.localId; });
           var svcThumbS = s.photoUri
             ? '<div class="service-dot"><img src="' + esc(s.photoUri) + '" /></div>'
@@ -6611,9 +6652,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           html += '<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px;">' + esc(cat) + '</div>';
         }
         svcs.forEach(function(s) {
-          var dur = (s.duration || 0) >= 60
-            ? ((s.duration / 60).toFixed(1).replace(/\.0$/, '') + ' hr')
-            : (s.duration + ' min');
+          var dur = formatDur(s.duration || 0);
           html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--bg-card);border:1.5px solid var(--accent);border-radius:10px;margin-bottom:6px;gap:8px;">' +
             '<div style="flex:1;min-width:0;">' +
             '<div style="font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(s.name) + '</div>' +
@@ -6627,9 +6666,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       // Totals row
       var totalDurSel = selectedServices.reduce(function(a, s) { return a + (s.duration || 0); }, 0);
       var totalPriceSel = selectedServices.reduce(function(a, s) { return a + parseFloat(s.price || 0); }, 0);
-      var durStr = totalDurSel >= 60
-        ? (totalDurSel / 60).toFixed(1).replace(/\.0$/, '') + ' hr'
-        : totalDurSel + ' min';
+      var durStr = formatDur(totalDurSel);
       totalsEl.innerHTML = '<span>&#128337; ' + durStr + '</span><span>$' + totalPriceSel.toFixed(2) + ' total</span>';
       panelEl.style.display = 'block';
     }
@@ -7613,7 +7650,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       if (matchedSvcs.length > 0) {
         html += '<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Services</div>';
         matchedSvcs.forEach(s => {
-          const dur = s.duration >= 60 ? (s.duration/60) + " hr" : s.duration + " min";
+          const dur = formatDur(s.duration);
           var addThumbS = s.photoUri
             ? '<div class="service-dot"><img src="' + esc(s.photoUri) + '" /></div>'
             : '<div class="service-dot" style="background:' + (s.color||'#4a8c3f') + '20;color:' + (s.color||'#4a8c3f') + ';">' + esc((s.name||'?')[0].toUpperCase()) + '</div>';
@@ -7754,7 +7791,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
           html += '<div style="text-align:center;color:#888;padding:16px;font-size:13px;">No services in this category</div>';
         } else {
           catServices.forEach(s => {
-            const dur = s.duration >= 60 ? (s.duration/60) + " hr" : s.duration + " min";
+            const dur = formatDur(s.duration);
             var addThumbC = s.photoUri
               ? '<div class="service-dot"><img src="' + esc(s.photoUri) + '" /></div>'
               : '<div class="service-dot" style="background:' + (s.color||'#4a8c3f') + '20;color:' + (s.color||'#4a8c3f') + ';">' + esc((s.name||'?')[0].toUpperCase()) + '</div>';
@@ -7786,7 +7823,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     function openServiceDetail(id) {
       const s = services.find(sv => sv.localId === id);
       if (!s) return;
-      const dur = s.duration >= 60 ? (s.duration/60) + " hr" : s.duration + " min";
+      const dur = formatDur(s.duration);
       const inCart = cart.some(c => c.type === 'service' && c.id === id);
       let html = '';
       if (s.photoUri) {
@@ -8072,9 +8109,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       let itemsHtml = '';
       var svcsToShow = selectedServices.length > 0 ? selectedServices : (selectedService ? [selectedService] : []);
       svcsToShow.forEach(function(sv, si) {
-        var svDur = (sv.duration || 0) >= 60
-          ? ((sv.duration / 60).toFixed(1).replace(/\.0$/, '') + ' hr')
-          : (sv.duration + ' min');
+        var svDur = formatDur(sv.duration || 0);
         var svMeta = (sv.category ? esc(sv.category) + ' \u00b7 ' : '') + svDur;
         itemsHtml += '<div class="confirm-row" style="align-items:flex-start;">' +
           '<div style="display:flex;flex-direction:column;flex:1;">' +
@@ -8094,9 +8129,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
             '<span class="confirm-value" style="font-weight:600;">$' + c.price.toFixed(2) + '</span>' +
             '</div>';
         } else {
-          var cDur = (c.duration || 0) >= 60
-            ? ((c.duration / 60).toFixed(1).replace(/\.0$/, '') + ' hr')
-            : ((c.duration || 0) + ' min');
+          var cDur = formatDur(c.duration || 0);
           itemsHtml += '<div class="confirm-row" style="align-items:flex-start;">' +
             '<div style="display:flex;flex-direction:column;flex:1;">' +
             '<span class="confirm-label" style="font-weight:600;color:var(--text);">' + esc(c.name) + '</span>' +

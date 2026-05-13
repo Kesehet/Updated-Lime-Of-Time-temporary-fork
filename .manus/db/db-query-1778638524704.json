@@ -1,0 +1,15 @@
+{
+  "query": "SELECT localId, name, photoUri FROM services WHERE localId = 'mokwabuc18hzfos'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT localId, name, photoUri FROM services WHERE localId = 'mokwabuc18hzfos'",
+  "rows": [
+    {
+      "localId": "mokwabuc18hzfos",
+      "name": "Hot/Cool Body Wrapping -Slimming",
+      "photoUri": "https://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777572531460-fd3d5sgdab4.jpg"
+    }
+  ],
+  "messages": [],
+  "stdout": "localId\tname\tphotoUri\nmokwabuc18hzfos\tHot/Cool Body Wrapping -Slimming\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777572531460-fd3d5sgdab4.jpg\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}
