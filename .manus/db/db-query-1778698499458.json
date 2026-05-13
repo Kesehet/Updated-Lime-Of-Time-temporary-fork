@@ -1,0 +1,60 @@
+{
+  "query": "SELECT localId, name, photoUri FROM services WHERE businessOwnerId = 1650001 AND photoUri IS NOT NULL LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT localId, name, photoUri FROM services WHERE businessOwnerId = 1650001 AND photoUri IS NOT NULL LIMIT 10;",
+  "rows": [
+    {
+      "localId": "mobh0t717ycxsli",
+      "name": "Lifting Facial Massage",
+      "photoUri": "https://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777695282423-1dc25zv8g32.png"
+    },
+    {
+      "localId": "mobh57kq5rg2j5c",
+      "name": "Full Body Swedish Massage",
+      "photoUri": "https://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777695664120-95ty3ehkoud.png"
+    },
+    {
+      "localId": "mobh8bo5mnv50rm",
+      "name": "Upper Body Therapeutic Massage",
+      "photoUri": "https://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777694757046-o7gyhzy2nt.png"
+    },
+    {
+      "localId": "mobh9zbh01x1vtk",
+      "name": "Hot Stone Massage",
+      "photoUri": "https://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777694442305-pnwjei5j6i.png"
+    },
+    {
+      "localId": "mobhbxhixde4wv6",
+      "name": "Deep Tissue/ Therapeutic Massage",
+      "photoUri": "https://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777694620802-5vv7bexavk5.png"
+    },
+    {
+      "localId": "mokwabuc18hzfos",
+      "name": "Hot/Cool Body Wrapping -Slimming",
+      "photoUri": "https://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777572531460-fd3d5sgdab4.jpg"
+    },
+    {
+      "localId": "mokz0z23avfoqav",
+      "name": "NOT AVAILABLE - Wiskey Wrap- Body Contouring",
+      "photoUri": "https://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777574777682-o3smn47rjsm.jpg"
+    },
+    {
+      "localId": "mokzoq01j7efg7o",
+      "name": "AddOn:Lymphatic Drainage Massage",
+      "photoUri": "https://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777695749439-f6qjtzm7tj.png"
+    },
+    {
+      "localId": "mokzq31enkvefv6",
+      "name": "AddOn: Anti-Cellulite Cupping Massage (one area)",
+      "photoUri": "https://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777676439094-ympgtdkd6b.png"
+    },
+    {
+      "localId": "mokzruguxjndyzw",
+      "name": "AddOn: Lifting Facial Massage",
+      "photoUri": "https://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777695319086-y6vr2gssk5r.png"
+    }
+  ],
+  "messages": [],
+  "stdout": "localId\tname\tphotoUri\nmobh0t717ycxsli\tLifting Facial Massage\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777695282423-1dc25zv8g32.png\nmobh57kq5rg2j5c\tFull Body Swedish Massage\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777695664120-95ty3ehkoud.png\nmobh8bo5mnv50rm\tUpper Body Therapeutic Massage\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777694757046-o7gyhzy2nt.png\nmobh9zbh01x1vtk\tHot Stone Massage\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777694442305-pnwjei5j6i.png\nmobhbxhixde4wv6\tDeep Tissue/ Therapeutic Massage\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777694620802-5vv7bexavk5.png\nmokwabuc18hzfos\tHot/Cool Body Wrapping -Slimming\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777572531460-fd3d5sgdab4.jpg\nmokz0z23avfoqav\tNOT AVAILABLE - Wiskey Wrap- Body Contouring\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777574777682-o3smn47rjsm.jpg\nmokzoq01j7efg7o\tAddOn:Lymphatic Drainage Massage\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777695749439-f6qjtzm7tj.png\nmokzq31enkvefv6\tAddOn: Anti-Cellulite Cupping Massage (one area)\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777676439094-ympgtdkd6b.png\nmokzruguxjndyzw\tAddOn: Lifting Facial Massage\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663347678319/Dw4mhfnuurFcniLsqjLpWN/services/1777695319086-y6vr2gssk5r.png\n",
+  "stderr": "",
+  "execution_time_ms": 330
+}

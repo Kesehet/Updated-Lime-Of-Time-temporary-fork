@@ -1,0 +1,20 @@
+{
+  "query": "SELECT localId, name, photoUri FROM service_packages WHERE businessOwnerId = 1650001 LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT localId, name, photoUri FROM service_packages WHERE businessOwnerId = 1650001 LIMIT 10;",
+  "rows": [
+    {
+      "localId": "mp3en2o0b1zx3ga",
+      "name": "Hot/Cool Wrapping",
+      "photoUri": "NULL"
+    },
+    {
+      "localId": "mp3ffphnyabltsp",
+      "name": "Hot/Cool Wrapping",
+      "photoUri": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "localId\tname\tphotoUri\nmp3en2o0b1zx3ga\tHot/Cool Wrapping\tNULL\nmp3ffphnyabltsp\tHot/Cool Wrapping\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 305
+}

@@ -713,7 +713,15 @@ export default function ClientBusinessDetailScreen() {
             ) : packages.map((pkg) => (
               <View key={pkg.localId} style={[s.serviceCard, { backgroundColor: CARD_BG, borderColor: CARD_BORDER, flexDirection: "column", padding: 0, overflow: "hidden" }]}>
                 {(pkg.photoUri || pkg.firstServicePhotoUri) ? (
-                  <Image source={{ uri: (pkg.photoUri || pkg.firstServicePhotoUri)! }} style={{ width: "100%", height: 160 }} contentFit="cover" />
+                  <Pressable
+                    onPress={() => setServiceLightboxUri((pkg.photoUri || pkg.firstServicePhotoUri)!)}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1, width: "100%", height: 180 })}
+                  >
+                    <Image source={{ uri: (pkg.photoUri || pkg.firstServicePhotoUri)! }} style={{ width: "100%", height: 180 }} contentFit="cover" />
+                    <View style={{ position: "absolute", bottom: 8, right: 8, backgroundColor: "rgba(0,0,0,0.45)", borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3, flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Text style={{ color: "#fff", fontSize: 10, fontWeight: "600" }}>Tap to preview</Text>
+                    </View>
+                  </Pressable>
                 ) : (
                   <View style={{ width: "100%", height: 80, backgroundColor: `${LIME_GREEN}25`, alignItems: "center", justifyContent: "center" }}>
                     <Text style={{ fontSize: 28 }}>📦</Text>
@@ -790,7 +798,15 @@ export default function ClientBusinessDetailScreen() {
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.75)", justifyContent: "flex-end" }}>
           <View style={{ backgroundColor: "#1A3A28", borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "88%", overflow: "hidden" }}>
             {(selectedPackageDetail?.photoUri || selectedPackageDetail?.firstServicePhotoUri) ? (
-              <Image source={{ uri: (selectedPackageDetail.photoUri || selectedPackageDetail.firstServicePhotoUri)! }} style={{ width: "100%", height: 200 }} contentFit="cover" />
+              <Pressable
+                onPress={() => setServiceLightboxUri((selectedPackageDetail.photoUri || selectedPackageDetail.firstServicePhotoUri)!)}
+                style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1, width: "100%", height: 220 })}
+              >
+                <Image source={{ uri: (selectedPackageDetail.photoUri || selectedPackageDetail.firstServicePhotoUri)! }} style={{ width: "100%", height: 220 }} contentFit="cover" />
+                <View style={{ position: "absolute", bottom: 10, right: 10, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 }}>
+                  <Text style={{ color: "#fff", fontSize: 10, fontWeight: "600" }}>Tap to preview</Text>
+                </View>
+              </Pressable>
             ) : null}
             <ScrollView contentContainerStyle={{ padding: 20 }}>
               {selectedPackageDetail?.category ? <Text style={{ color: ACCENT, fontSize: fs.xs, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>{selectedPackageDetail.category}</Text> : null}
