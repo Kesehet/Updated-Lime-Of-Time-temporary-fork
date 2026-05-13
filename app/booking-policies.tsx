@@ -25,12 +25,26 @@ export default function BookingPoliciesScreen() {
   const responseWindow = settings.requestResponseWindowHours ?? 48;
   const giftValidDays = settings.giftValidDays ?? 90;
   const giftMinBalance = settings.giftMinBalance ?? 10;
+  const PRESET_VALIDITY_DAYS = [30, 60, 90, 180, 365];
+  // "Custom" chip state — show text input when user selects a non-preset value
+  const isCustomValidity = !PRESET_VALIDITY_DAYS.includes(giftValidDays);
+  const [customDaysInput, setCustomDaysInput] = useState(isCustomValidity ? String(giftValidDays) : "");
+  const [showCustomInput, setShowCustomInput] = useState(isCustomValidity);
 
   const setGiftValidDays = useCallback((days: number) => {
     const action = { type: "UPDATE_SETTINGS" as const, payload: { giftValidDays: days } };
     dispatch(action);
     syncToDb(action);
   }, [dispatch, syncToDb]);
+
+  const applyCustomDays = useCallback(() => {
+    const parsed = parseInt(customDaysInput, 10);
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= 3650) {
+      setGiftValidDays(parsed);
+    } else {
+      Alert.alert("Invalid Value", "Please enter a number between 1 and 3650 days.");
+    }
+  }, [customDaysInput, setGiftValidDays]);
 
   const setGiftMinBalance = useCallback((amount: number) => {
     const action = { type: "UPDATE_SETTINGS" as const, payload: { giftMinBalance: amount } };
@@ -273,21 +287,79 @@ export default function BookingPoliciesScreen() {
             How many days a publicly-purchased gift card remains valid
           </Text>
           <View style={styles.chipRow}>
-            {[30, 60, 90, 180, 365].map((d) => (
+            {PRESET_VALIDITY_DAYS.map((d) => (
               <Pressable
                 key={d}
-                onPress={() => setGiftValidDays(d)}
+                onPress={() => {
+                  setGiftValidDays(d);
+                  setShowCustomInput(false);
+                  setCustomDaysInput("");
+                }}
                 style={[styles.chip, {
-                  backgroundColor: giftValidDays === d ? "#E91E63" : colors.background,
-                  borderColor: giftValidDays === d ? "#E91E63" : colors.border,
+                  backgroundColor: giftValidDays === d && !showCustomInput ? "#E91E63" : colors.background,
+                  borderColor: giftValidDays === d && !showCustomInput ? "#E91E63" : colors.border,
                 }]}
               >
-                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: giftValidDays === d ? "#fff" : colors.foreground }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: giftValidDays === d && !showCustomInput ? "#fff" : colors.foreground }}>
                   {d === 365 ? "1 year" : `${d} days`}
                 </Text>
               </Pressable>
             ))}
+            {/* Custom days chip */}
+            <Pressable
+              onPress={() => {
+                setShowCustomInput(true);
+                setCustomDaysInput(isCustomValidity ? String(giftValidDays) : "");
+              }}
+              style={[styles.chip, {
+                backgroundColor: showCustomInput ? "#E91E63" : colors.background,
+                borderColor: showCustomInput ? "#E91E63" : colors.border,
+              }]}
+            >
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: showCustomInput ? "#fff" : colors.foreground }}>
+                {showCustomInput && isCustomValidity ? `${giftValidDays}d ✎` : "Custom"}
+              </Text>
+            </Pressable>
           </View>
+          {/* Custom days input — shown when Custom chip is selected */}
+          {showCustomInput && (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 }}>
+              <TextInput
+                style={[
+                  styles.chip,
+                  { flex: 1, backgroundColor: colors.background, borderColor: "#E91E63",
+                    color: colors.foreground, fontSize: fs.xs, fontWeight: "600",
+                    textAlign: "center", minWidth: 80, paddingHorizontal: 10 }
+                ]}
+                placeholder="e.g. 45"
+                placeholderTextColor={colors.muted}
+                keyboardType="number-pad"
+                value={customDaysInput}
+                onChangeText={setCustomDaysInput}
+                returnKeyType="done"
+                onSubmitEditing={applyCustomDays}
+                maxLength={4}
+              />
+              <Text style={{ fontSize: fs.xs, color: colors.muted }}>days</Text>
+              <Pressable
+                onPress={applyCustomDays}
+                style={({ pressed }) => [{
+                  backgroundColor: "#E91E63", borderRadius: 8,
+                  paddingHorizontal: 14, paddingVertical: 8,
+                  opacity: pressed ? 0.8 : 1,
+                }]}
+              >
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#fff" }}>Apply</Text>
+              </Pressable>
+            </View>
+          )}
+          {/* Current selection label */}
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 8 }}>
+            Currently: gift cards expire after{" "}
+            <Text style={{ fontWeight: "700", color: colors.foreground }}>
+              {giftValidDays === 365 ? "1 year" : `${giftValidDays} days`}
+            </Text>
+          </Text>
         </View>
         {/* Gift Card Minimum Balance */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>

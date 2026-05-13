@@ -2194,3 +2194,5 @@
 - [x] Move Packages tab inside Home tab (not a separate bottom tab)
 - [x] Fix OTP "Failed to fetch" error on Android APK: add timeout to trpc httpLink so it fails fast instead of hanging; improve error message for rate-limit 429 responses
 - [x] Fix 10-20 second location delay in Discover screen: add timeoutInterval to getCurrentPositionAsync so it doesn't hang waiting for high-accuracy GPS fix
+- [x] Fix Business Portal message thread keyboard overlap - input bar hidden behind keyboard on Android
+- [x] Gift Card Validity: fix selection (all options selectable) and add Custom days input

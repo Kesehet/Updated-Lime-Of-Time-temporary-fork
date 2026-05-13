@@ -692,11 +692,7 @@ export default function ClientMessageThreadBusinessScreen() {
   return (
     <ScreenContainer edges={["top", "left", "right"]} containerClassName="bg-background">
       <StatusBar style="auto" />
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
-      >
+      {/* Header is OUTSIDE KeyboardAvoidingView so it doesn't get compressed on Android */}
       <View style={[s.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         <Pressable
           style={({ pressed }) => [s.backBtn, { backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 }]}
@@ -725,6 +721,12 @@ export default function ClientMessageThreadBusinessScreen() {
         </Pressable>
       </View>
 
+      {/* KAV wraps only the message list + input bar, not the header */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
       <View style={{ flex: 1 }}>
         {loading ? (
           <View style={s.loadingContainer}><ActivityIndicator size="large" color={colors.primary} /></View>
@@ -848,7 +850,6 @@ export default function ClientMessageThreadBusinessScreen() {
           </View>
         </View>
       </View>
-
       </KeyboardAvoidingView>
 
       {/* ── Template Picker Modal ─────────────────────────────────────────── */}
