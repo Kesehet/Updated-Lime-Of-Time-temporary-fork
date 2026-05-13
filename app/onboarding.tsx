@@ -507,8 +507,18 @@ export default function OnboardingScreen() {
         if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         return;
       }
-    } catch {
-      setOtpError("Verification failed. Please try again.");
+    } catch (err: any) {
+      const errMsg = err?.message || err?.data?.message || "Verification failed. Please try again.";
+      setOtpError(errMsg);
+      // Shake all boxes on error
+      otpBoxScales.forEach((s, i) => {
+        s.value = withDelay(i * 30, withSequence(
+          withTiming(0.92, { duration: 60 }),
+          withTiming(1.04, { duration: 60 }),
+          withTiming(1, { duration: 60 }),
+        ));
+      });
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     } finally {
       setLoading(false);
