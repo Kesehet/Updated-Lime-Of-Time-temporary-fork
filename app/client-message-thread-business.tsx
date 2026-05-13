@@ -16,7 +16,6 @@ import {
   Pressable,
   StyleSheet,
   TextInput,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Image,
@@ -25,6 +24,7 @@ import {
   Linking,
   Alert,
 } from "react-native";
+import { KeyboardAvoidingView as RNKCKeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
@@ -721,13 +721,7 @@ export default function ClientMessageThreadBusinessScreen() {
         </Pressable>
       </View>
 
-      {/* KAV wraps only the message list + input bar, not the header */}
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "padding"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-      >
-      <View style={{ flex: 1 }}>
+      <RNKCKeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         {loading ? (
           <View style={s.loadingContainer}><ActivityIndicator size="large" color={colors.primary} /></View>
         ) : error ? (
@@ -849,8 +843,7 @@ export default function ClientMessageThreadBusinessScreen() {
             </Pressable>
           </View>
         </View>
-      </View>
-      </KeyboardAvoidingView>
+      </RNKCKeyboardAvoidingView>
 
       {/* ── Template Picker Modal ─────────────────────────────────────────── */}
       <Modal visible={showTemplates} animationType="slide" transparent onRequestClose={() => setShowTemplates(false)}>

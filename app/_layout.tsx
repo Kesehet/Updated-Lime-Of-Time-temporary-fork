@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-reanimated";
 import { Platform, StyleSheet, View } from "react-native";
 import "@/lib/_core/nativewind-pressable";
@@ -272,6 +273,7 @@ function RootLayout() {
       </View>
     )}
     <StripeProvider publishableKey={stripePublishableKey || "pk_test_placeholder"}>
+    <KeyboardProvider statusBarTranslucent={true} navigationBarTranslucent={true}>
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
@@ -371,6 +373,7 @@ function RootLayout() {
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>
+    </KeyboardProvider>
     </StripeProvider>
     </View>
   );

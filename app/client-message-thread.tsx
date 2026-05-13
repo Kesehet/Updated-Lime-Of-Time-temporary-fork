@@ -15,13 +15,13 @@ import {
   Pressable,
   StyleSheet,
   TextInput,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Image,
   Alert,
   Linking,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFocusEffect } from "@react-navigation/native";
@@ -348,7 +348,6 @@ export default function ClientMessageThreadScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior="padding"
-        keyboardVerticalOffset={0}
       >
         {loading ? (
           <View style={styles.loadingContainer}>
