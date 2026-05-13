@@ -171,6 +171,9 @@ export default function BusinessProfileScreen() {
       type: "UPDATE_SETTINGS" as const,
       payload: {
         businessName: businessName.trim(),
+        // Write to top-level so portal selector, settings header, and lock screen
+        // all read the same value via state.settings.businessLogoUri
+        businessLogoUri: logoUri.trim() || "",
         profile: {
           ...profile,
           ownerName: ownerName.trim(),

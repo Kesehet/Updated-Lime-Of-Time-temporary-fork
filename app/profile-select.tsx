@@ -30,6 +30,7 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { setProfileMode } from "@/lib/client-store";
+import { useStore } from "@/lib/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { recordBusinessActivity, recordClientActivity, CLIENT_BIOMETRIC_ENABLED_KEY } from "@/hooks/use-app-lock";
 import * as LocalAuthentication from "expo-local-authentication";
@@ -89,6 +90,7 @@ function PortalCard({
   gradientColors,
   accentLight,
   icon,
+  logoUri,
   badgeLabel,
   title,
   subtitle,
@@ -101,6 +103,7 @@ function PortalCard({
   gradientColors: [string, string, string];
   accentLight: string;
   icon: string;
+  logoUri?: string;
   badgeLabel: string;
   title: string;
   subtitle: string;
@@ -149,8 +152,16 @@ function PortalCard({
 
           {/* Top row: icon + badge */}
           <View style={styles.cardTopRow}>
-            <View style={[styles.cardIconBox, { backgroundColor: "rgba(255,255,255,0.18)" }]}>
-              <Text style={styles.cardIconText}>{icon}</Text>
+            <View style={[styles.cardIconBox, { backgroundColor: "rgba(255,255,255,0.18)", overflow: "hidden", padding: 0 }]}>
+              {logoUri ? (
+                <Image
+                  source={{ uri: logoUri }}
+                  style={{ width: 44, height: 44, borderRadius: 10 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={styles.cardIconText}>{icon}</Text>
+              )}
             </View>
             <View style={[styles.cardBadge, { backgroundColor: "rgba(255,255,255,0.22)" }]}>
               <Text style={styles.cardBadgeText}>{badgeLabel}</Text>
@@ -201,6 +212,12 @@ export default function ProfileSelectScreen() {
   // Welcome-back hints — loaded from AsyncStorage on mount
   const [returnBusinessName, setReturnBusinessName] = useState<string | null>(null);
   const [returnClientName, setReturnClientName] = useState<string | null>(null);
+
+  // Business logo — shown in the Business Portal card
+  const { state } = useStore();
+  const businessLogoUri = state.settings.businessLogoUri ||
+    state.settings.profile?.businessLogoUri ||
+    undefined;
 
   useEffect(() => {
     (async () => {
@@ -355,6 +372,7 @@ export default function ProfileSelectScreen() {
             gradientColors={["#1E5C3A", "#2D7A50", "#3A9463"]}
             accentLight="#7ECFA0"
             icon="🏢"
+            logoUri={businessLogoUri}
             badgeLabel="For Businesses"
             title="Business Portal"
             subtitle="Your complete business management hub"
