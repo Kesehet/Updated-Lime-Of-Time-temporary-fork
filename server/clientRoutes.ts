@@ -274,16 +274,42 @@ export function registerClientRoutes(app: Express) {
 
       // Load all discoverable businesses
       const businesses = await db.getDiscoverableBusinesses();
+      const bizIds = businesses.map((b) => b.id);
+
+      // Batch-load all related data in 4 parallel queries (instead of 4 × N queries)
+      let allLocs: any[] = [];
+      let allReviews: any[] = [];
+      let allServices: any[] = [];
+      let allPhotos: any[] = [];
+      if (bizIds.length > 0) {
+        const dbase = await db.getDb();
+        if (dbase) {
+          const { locations: locsTable, reviews: reviewsTable, services: svcTable, servicePhotos: photosTable } = await import("../drizzle/schema");
+          const { inArray } = await import("drizzle-orm");
+          [allLocs, allReviews, allServices, allPhotos] = await Promise.all([
+            dbase.select().from(locsTable).where(inArray(locsTable.businessOwnerId, bizIds)),
+            dbase.select().from(reviewsTable).where(inArray(reviewsTable.businessOwnerId, bizIds)),
+            dbase.select().from(svcTable).where(inArray(svcTable.businessOwnerId, bizIds)),
+            dbase.select().from(photosTable).where(inArray(photosTable.businessOwnerId, bizIds)),
+          ]);
+        }
+      }
+      // Group by businessOwnerId for O(1) lookup
+      const locsMap = new Map<number, any[]>();
+      const reviewsMap = new Map<number, any[]>();
+      const servicesMap = new Map<number, any[]>();
+      const photosMap = new Map<number, any[]>();
+      for (const l of allLocs) { const arr = locsMap.get(l.businessOwnerId) ?? []; arr.push(l); locsMap.set(l.businessOwnerId, arr); }
+      for (const r of allReviews) { const arr = reviewsMap.get(r.businessOwnerId) ?? []; arr.push(r); reviewsMap.set(r.businessOwnerId, arr); }
+      for (const s of allServices) { const arr = servicesMap.get(s.businessOwnerId) ?? []; arr.push(s); servicesMap.set(s.businessOwnerId, arr); }
+      for (const p of allPhotos) { const arr = photosMap.get(p.businessOwnerId) ?? []; arr.push(p); photosMap.set(p.businessOwnerId, arr); }
 
       // Build enriched list with location data, ratings, and service categories
-      const enriched = await Promise.all(
-        businesses.map(async (b) => {
-          const [locs, reviewsList, servicesList, servicePhotosList] = await Promise.all([
-            db.getLocationsByOwner(b.id),
-            db.getReviewsByOwner(b.id),
-            db.getServicesByOwner(b.id),
-            db.getServicePhotos(b.id),
-          ]);
+      const enriched = businesses.map((b) => {
+          const locs = locsMap.get(b.id) ?? [];
+          const reviewsList = reviewsMap.get(b.id) ?? [];
+          const servicesList = servicesMap.get(b.id) ?? [];
+          const servicePhotosList = photosMap.get(b.id) ?? [];
           const firstServicePhotoUri: string | null = servicePhotosList.length > 0 ? servicePhotosList[0].uri : null;
           // Collect all searchable text from locations
           const locationText = locs
@@ -320,12 +346,10 @@ export function registerClientRoutes(app: Express) {
               serviceCategories.push(normalized);
             }
           }
-          const hasMobileServices = servicesList.some((svc: any) => svc.serviceType === 'mobile');
-          const hasInStoreServices = servicesList.some((svc: any) => !svc.serviceType || svc.serviceType === 'in-store');
-          return { ...b, locationText, bizLat, bizLng, displayAddress, locs, avgRating, reviewCount, serviceCategories, firstServicePhotoUri, hasMobileServices, hasInStoreServices };
-        })
-      );
-
+          const hasMobileServices = servicesList.some((svc: any) => svc.serviceType === 'mobile' || svc.serviceType === 'both');
+          const hasInStoreServices = servicesList.some((svc: any) => !svc.serviceType || svc.serviceType === 'in_store' || svc.serviceType === 'in-store' || svc.serviceType === 'both');
+           return { ...b, locationText, bizLat, bizLng, displayAddress, locs, avgRating, reviewCount, serviceCategories, firstServicePhotoUri, hasMobileServices, hasInStoreServices };
+        });
       const results = enriched
         .filter((b) => {
           // Category filter — checks both businessCategory AND serviceCategories

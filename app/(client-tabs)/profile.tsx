@@ -438,82 +438,20 @@ export default function ClientProfileScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>ACCOUNT</Text>
-          {/* Inline notification reminder toggles */}
-          <View>
-            <View style={[styles.menuItem, { paddingBottom: 4 }]}>
-              <View style={[styles.menuIconWrap, { backgroundColor: "rgba(143,191,106,0.12)" }]}>
-                <IconSymbol name="bell.fill" size={18} color={GREEN_ACCENT} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.menuLabel}>Appointment Reminders</Text>
-                <Text style={styles.menuSubtitle}>Push notifications before each visit</Text>
-              </View>
+          {/* Notification settings — tappable row that opens full notification settings */}
+          <Pressable
+            style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: "rgba(255,255,255,0.05)" }]}
+            onPress={() => router.push("/client-notifications" as any)}
+          >
+            <View style={[styles.menuIconWrap, { backgroundColor: "rgba(143,191,106,0.12)" }]}>
+              <IconSymbol name="bell.fill" size={18} color={GREEN_ACCENT} />
             </View>
-            {/* 24h toggle */}
-            <View style={[styles.menuItem, { paddingLeft: 64, paddingTop: 4, paddingBottom: 4, opacity: pushPermission !== "granted" ? 0.45 : 1 }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.menuLabel, { fontSize: 14 }]}>24-Hour Reminder</Text>
-                <Text style={styles.menuSubtitle}>Day before your appointment</Text>
-              </View>
-              <Switch
-                value={notifPrefs.pushEnabled && notifPrefs.reminder24h && pushPermission === "granted"}
-                onValueChange={(v) => updateNotifPref("reminder24h", v)}
-                trackColor={{ false: "rgba(255,255,255,0.15)", true: GREEN_ACCENT }}
-                thumbColor="#FFFFFF"
-                ios_backgroundColor="rgba(255,255,255,0.15)"
-                disabled={pushPermission !== "granted"}
-              />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.menuLabel}>All Notifications</Text>
+              <Text style={styles.menuSubtitle}>Reminders, push settings & more</Text>
             </View>
-            <View style={styles.divider} />
-            {/* 1h toggle */}
-            <View style={[styles.menuItem, { paddingLeft: 64, paddingTop: 4, paddingBottom: 4, opacity: pushPermission !== "granted" ? 0.45 : 1 }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.menuLabel, { fontSize: 14 }]}>1-Hour Reminder</Text>
-                <Text style={styles.menuSubtitle}>One hour before your appointment</Text>
-              </View>
-              <Switch
-                value={notifPrefs.pushEnabled && notifPrefs.reminder1h && pushPermission === "granted"}
-                onValueChange={(v) => updateNotifPref("reminder1h", v)}
-                trackColor={{ false: "rgba(255,255,255,0.15)", true: GREEN_ACCENT }}
-                thumbColor="#FFFFFF"
-                ios_backgroundColor="rgba(255,255,255,0.15)"
-                disabled={pushPermission !== "granted"}
-              />
-            </View>
-            <View style={styles.divider} />
-            {/* 30m toggle */}
-            <View style={[styles.menuItem, { paddingLeft: 64, paddingTop: 4, paddingBottom: 4, opacity: pushPermission !== "granted" ? 0.45 : 1 }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.menuLabel, { fontSize: 14 }]}>30-Minute Reminder</Text>
-                <Text style={styles.menuSubtitle}>30 minutes before your appointment</Text>
-              </View>
-              <Switch
-                value={notifPrefs.pushEnabled && notifPrefs.reminder30m && pushPermission === "granted"}
-                onValueChange={(v) => updateNotifPref("reminder30m", v)}
-                trackColor={{ false: "rgba(255,255,255,0.15)", true: GREEN_ACCENT }}
-                thumbColor="#FFFFFF"
-                ios_backgroundColor="rgba(255,255,255,0.15)"
-                disabled={pushPermission !== "granted"}
-              />
-            </View>
-            {pushPermission !== "granted" && (
-              <Pressable
-                style={({ pressed }) => ({ paddingHorizontal: 64, paddingBottom: 12, paddingTop: 2, opacity: pressed ? 0.7 : 1 })}
-                onPress={() => router.push("/client-notifications" as any)}
-              >
-                <Text style={{ fontSize: 12, color: GREEN_ACCENT }}>Enable push notifications →</Text>
-              </Pressable>
-            )}
-            <View style={styles.divider} />
-            <Pressable
-              style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: "rgba(255,255,255,0.05)" }]}
-              onPress={() => router.push("/client-notifications" as any)}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.menuLabel, { fontSize: 13, color: GREEN_ACCENT }]}>All notification settings →</Text>
-              </View>
-            </Pressable>
-          </View>
+            <IconSymbol name="chevron.right" size={16} color="rgba(255,255,255,0.35)" />
+          </Pressable>
           <View style={styles.divider} />
           {/* Face ID / Biometric lock toggle */}
           <Pressable

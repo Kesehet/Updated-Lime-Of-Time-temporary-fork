@@ -77,6 +77,7 @@ function ClientTabsInner() {
         options={{
           title: "Packages",
           tabBarIcon: ({ color }) => <IconSymbol size={26} name="rectangle.stack.fill" color={color} />,
+          tabBarItemStyle: { display: "none" },
         }}
       />
       <Tabs.Screen

@@ -406,6 +406,9 @@ export default function ClientHomeScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>📦 My Packages</Text>
+                <Pressable onPress={() => router.push("/(client-tabs)/packages" as any)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                  <Text style={{ color: GREEN_ACCENT, fontSize: 13, fontWeight: "600" }}>View All →</Text>
+                </Pressable>
               </View>
               {myPackages.map((pkg) => {
                 const progress = pkg.totalSessions > 0 ? pkg.sessionsCompleted / pkg.totalSessions : 0;

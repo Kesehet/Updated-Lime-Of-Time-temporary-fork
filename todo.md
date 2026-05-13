@@ -2188,3 +2188,7 @@
 - [x] Fix 20+ second delay when submitting phone number on Business Portal onboarding/login (OTP send bottleneck: batch DB config reads + 10s Twilio timeout + 5min config cache TTL)
 - [x] Add server-side OTP resend rate limiting (60s cooldown per phone number)
 - [x] Fix test mode OTP verify JSON parse error (server-side header strip deployed)
+- [x] Fix discover hasMobileServices/hasInStoreServices: server checks 'in-store' but DB stores 'in_store'; also handle 'both' serviceType
+- [x] Fix app slowness: optimize discover API N+1 queries (4 queries per business)
+- [x] Remove 24hr/1hr/30min reminder switches from Profile main page (keep only in All Notification Settings)
+- [x] Move Packages tab inside Home tab (not a separate bottom tab)
