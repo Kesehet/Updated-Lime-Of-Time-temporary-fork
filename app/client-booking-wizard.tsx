@@ -204,12 +204,18 @@ export default function ClientBookingWizardScreen() {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   // Build dynamic payment methods list — Card only shown when Stripe is connected
   const PAYMENT_METHODS = useMemo(() => {
-    const methods = [...BASE_PAYMENT_METHODS];
+    // Only include manual payment methods if the business has configured them
+    const methods = BASE_PAYMENT_METHODS.filter((m) => {
+      if (m.id === "zelle") return !!bizZelleHandle;
+      if (m.id === "venmo") return !!bizVenmoHandle;
+      if (m.id === "cashapp") return !!bizCashAppHandle;
+      return true; // cash is always available
+    });
     if (stripeConnectEnabled) {
       methods.unshift({ id: "card", label: "Credit / Debit Card", icon: "💳", hint: "Pay securely online via Stripe" });
     }
     return methods;
-  }, [stripeConnectEnabled]);
+  }, [stripeConnectEnabled, bizZelleHandle, bizVenmoHandle, bizCashAppHandle]);
   // Category filter for the service selection step
   const [wizardCatFilter, setWizardCatFilter] = useState<string | null>(null);
   // ── Products step state ──────────────────────────────────────────────────
