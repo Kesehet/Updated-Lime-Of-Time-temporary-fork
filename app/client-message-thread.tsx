@@ -359,7 +359,7 @@ export default function ClientMessageThreadScreen() {
         <View style={{ width: 36 }} />
       </View>
 
-      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
+      <View style={{ flex: 1, paddingBottom: keyboardHeight > 0 ? keyboardHeight - insets.bottom : 0 }}>
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator color={GREEN_ACCENT} size="large" />

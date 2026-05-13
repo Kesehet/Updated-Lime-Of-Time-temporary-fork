@@ -735,7 +735,7 @@ export default function ClientMessageThreadBusinessScreen() {
         </Pressable>
       </View>
 
-      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
+      <View style={{ flex: 1, paddingBottom: keyboardHeight > 0 ? keyboardHeight - insets.bottom : 0 }}>
         {loading ? (
           <View style={s.loadingContainer}><ActivityIndicator size="large" color={colors.primary} /></View>
         ) : error ? (
