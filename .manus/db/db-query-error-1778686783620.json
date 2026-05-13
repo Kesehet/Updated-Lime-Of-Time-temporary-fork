@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT b.id, b.business_name, b.is_discoverable, b.address\nFROM businesses b\nWHERE b.id = 1650001;\n\nSELECT l.id, l.business_id, l.address, l.lat, l.lng, l.is_primary\nFROM locations l\nWHERE l.business_id = 1650001;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \nSELECT b.id, b.business_name, b.is_discoverable, b.address\nFROM businesses b\nWHERE b.id = 1650001;\n\nSELECT l.id, l.business_id, l.address, l.lat, l.lng, l.is_primary\nFROM locations l\nWHERE l.business_id = 1650001;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 2: Table 'dw4mhfnuurfcnilsqjlpwn.businesses' doesn't exist"
+  ]
+}
