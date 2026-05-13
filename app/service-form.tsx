@@ -18,6 +18,45 @@ import * as FileSystem from "expo-file-system/legacy";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { trpc } from "@/lib/trpc";
 import { SERVICE_CATEGORIES, MOBILE_SERVICE_CATEGORIES, getCategoryDef } from "@/constants/categories";
+import { FlatList } from "react-native";
+
+// ─── Emoji data for service name picker ──────────────────────────────────────
+const SERVICE_EMOJI_OPTIONS = [
+  // Hair & Grooming
+  "💇", "✂️", "💈", "🪮", "👱", "🧔",
+  // Nails & Beauty
+  "💅", "💎", "✨", "💄", "👄", "💋",
+  // Face & Skin
+  "🧖", "🫧", "🧴", "💆", "🌿", "🪷",
+  // Body & Massage
+  "💪", "🛁", "🧘", "🌸", "🪻", "🌺",
+  // Wellness & Health
+  "🌱", "🍃", "🩺", "💊", "🩹", "🏃",
+  // Eyes & Lashes
+  "👁️", "🎨", "🪞", "🌈", "🔮", "💫",
+  // Spa & Relaxation
+  "🕯️", "🌻", "🌼", "🌷", "🫖", "☕",
+  // Fitness & Sport
+  "🏋️", "🤸", "🧗", "🏊", "🚴", "⚽",
+  // Food & Nutrition
+  "🥗", "🥤", "🍎", "🥑", "🫐", "🍋",
+  // Photography & Art
+  "📸", "🎭", "🎨", "🖌️", "🎬", "🎤",
+  // Education & Coaching
+  "📚", "🎓", "🧠", "💡", "📝", "🏆",
+  // Tech & Business
+  "💻", "📱", "🔧", "⚙️", "📊", "💼",
+  // Home & Cleaning
+  "🏠", "🧹", "🧽", "🪣", "🌿", "🛋️",
+  // Pets
+  "🐾", "🐶", "🐱", "🐴", "🐠", "🦜",
+  // Events & Celebrations
+  "🎉", "🎊", "🎁", "🎂", "🥂", "🎈",
+  // General
+  "⭐", "🌟", "🎯", "🔖", "🏷️", "📌",
+  // Symbols
+  "➕", "❤️", "💛", "💚", "💙", "💜",
+];
 
 export default function ServiceFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -64,6 +103,7 @@ export default function ServiceFormScreen() {
   const [minTravelFee, setMinTravelFee] = useState<string>(
     existing?.minTravelFee != null ? String(existing.minTravelFee) : ""
   );
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const uploadImageMut = trpc.files.uploadImage.useMutation();
   const isEdit = !!existing;
 
@@ -293,14 +333,36 @@ export default function ServiceFormScreen() {
           <Text style={[styles.sectionLabel, { color: colors.muted }]}>BASIC INFO</Text>
 
           <Text style={[styles.fieldLabel, { color: colors.muted }]}>Service Name *</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
-            placeholder="e.g. Haircut, Consultation, Massage…"
-            placeholderTextColor={colors.muted}
-            value={name}
-            onChangeText={setName}
-            returnKeyType="next"
-          />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Pressable
+              onPress={() => setShowEmojiPicker(true)}
+              style={({ pressed }) => ({
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.background,
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Text style={{ fontSize: 22 }}>
+                {/* Show the leading emoji from the name, or a smiley placeholder */}
+                {name.match(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u)?.[0] ?? "😊"}
+              </Text>
+            </Pressable>
+            <TextInput
+              style={[styles.input, { flex: 1, backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+              placeholder="e.g. Haircut, Consultation, Massage…"
+              placeholderTextColor={colors.muted}
+              value={name}
+              onChangeText={setName}
+              returnKeyType="next"
+            />
+          </View>
+          <Text style={{ fontSize: 10, color: colors.muted, marginTop: 4, marginLeft: 2 }}>Tap the emoji button to add an emoji to your service name</Text>
 
           <Text style={[styles.fieldLabel, { color: colors.muted, marginTop: 16 }]}>Price ($)</Text>
           <TextInput
@@ -569,6 +631,53 @@ export default function ServiceFormScreen() {
             />
           )}
         </View>
+      </Modal>
+
+      {/* ── Emoji Picker Modal ── */}
+      <Modal visible={showEmojiPicker} transparent animationType="fade" onRequestClose={() => setShowEmojiPicker(false)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", padding: 24 }}
+          onPress={() => setShowEmojiPicker(false)}
+        >
+          <Pressable style={[{ width: "100%", maxWidth: 380, borderRadius: 20, borderWidth: 1, padding: 20, gap: 12 }, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={{ fontSize: 16, fontWeight: "700", textAlign: "center", color: colors.foreground, marginBottom: 4 }}>Choose an Emoji</Text>
+            <Text style={{ fontSize: 11, textAlign: "center", color: colors.muted, marginBottom: 8 }}>The emoji will be added to the beginning of your service name</Text>
+            <FlatList
+              data={Array.from(new Set(SERVICE_EMOJI_OPTIONS))}
+              numColumns={6}
+              keyExtractor={(item, i) => `emoji-${i}-${item}`}
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => {
+                    // Replace leading emoji if present, otherwise prepend
+                    const stripped = name.replace(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})\s*/u, "");
+                    setName(item + " " + stripped);
+                    setShowEmojiPicker(false);
+                  }}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    aspectRatio: 1,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: 10,
+                    margin: 3,
+                    opacity: pressed ? 0.6 : 1,
+                  })}
+                >
+                  <Text style={{ fontSize: 26 }}>{item}</Text>
+                </Pressable>
+              )}
+              contentContainerStyle={{ paddingBottom: 8 }}
+              style={{ maxHeight: 320 }}
+            />
+            <Pressable
+              onPress={() => setShowEmojiPicker(false)}
+              style={[{ borderRadius: 12, paddingVertical: 12, alignItems: "center", marginTop: 4 }, { backgroundColor: colors.border }]}
+            >
+              <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>Cancel</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {upgradeSheetInfo && (

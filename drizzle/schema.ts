@@ -152,6 +152,10 @@ export const businessOwners = mysqlTable("business_owners", {
   appStoreUrl: varchar("appStoreUrl", { length: 500 }),
   /** Google Play Store URL for the App Share card */
   playStoreUrl: varchar("playStoreUrl", { length: 500 }),
+  /** When the owner requested account deletion (null = not requested) */
+  pendingDeletionAt: timestamp("pendingDeletionAt"),
+  /** Scheduled deletion date (30 days after request) */
+  deletionScheduledFor: timestamp("deletionScheduledFor"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

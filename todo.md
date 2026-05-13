@@ -2179,3 +2179,6 @@
 - [x] Fix no available time slots showing in client public booking when selecting dates for package sessions (race condition fix: calendar now waits for working days to load)
 - [x] Fix Home page share button sending wrong location address (sends first location instead of the selected/active location, and missing ?location= param in URL)
 - [x] Add multi-step account deletion confirmation with full risk disclosure, typed confirmation, and complete image/data cleanup from cloud storage
+- [x] Add emoji picker for custom service name creation in service form
+- [x] Implement 30-day grace period for account deletion (pending deletion state, confirmation email, cancel option)
+- [x] Add admin notification email when a business account is deleted

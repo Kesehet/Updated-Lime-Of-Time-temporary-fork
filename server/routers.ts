@@ -5,7 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
-import { sendAppointmentConfirmationEmail, sendPaymentReceiptEmail } from "./email";
+import { sendAppointmentConfirmationEmail, sendPaymentReceiptEmail, sendDeletionScheduledEmail, sendAdminDeletionAlertEmail } from "./email";
 import { sendExpoPush } from "./push";
 import {
   getPlatformConfig,
@@ -148,10 +148,78 @@ const businessRouter = router({
       return db.getBusinessOwnerById(id);
     }),
 
-  /** Delete business and all related data */
+  /** Schedule account deletion (30-day grace period) */
+  scheduleDeletion: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const owner = await db.getBusinessOwnerById(input.id);
+      if (!owner) throw new Error("Business not found");
+      const now = new Date();
+      const deletionDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      await db.updateBusinessOwner(input.id, {
+        pendingDeletionAt: now,
+        deletionScheduledFor: deletionDate,
+      } as Parameters<typeof db.updateBusinessOwner>[1]);
+      // Send confirmation email to owner
+      if (owner.email) {
+        await sendDeletionScheduledEmail({
+          businessName: owner.businessName,
+          ownerName: owner.ownerName ?? null,
+          email: owner.email,
+          deletionDate,
+        });
+      }
+      // Alert admin
+      await sendAdminDeletionAlertEmail({
+        businessName: owner.businessName,
+        ownerName: owner.ownerName ?? null,
+        email: owner.email ?? null,
+        phone: owner.phone,
+        businessOwnerId: owner.id,
+        action: "scheduled",
+        deletionDate,
+      });
+      return { success: true, deletionScheduledFor: deletionDate.toISOString() };
+    }),
+
+  /** Cancel a pending account deletion */
+  cancelDeletion: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const owner = await db.getBusinessOwnerById(input.id);
+      if (!owner) throw new Error("Business not found");
+      await db.updateBusinessOwner(input.id, {
+        pendingDeletionAt: null,
+        deletionScheduledFor: null,
+      } as Parameters<typeof db.updateBusinessOwner>[1]);
+      // Alert admin
+      await sendAdminDeletionAlertEmail({
+        businessName: owner.businessName,
+        ownerName: owner.ownerName ?? null,
+        email: owner.email ?? null,
+        phone: owner.phone,
+        businessOwnerId: owner.id,
+        action: "cancelled",
+      });
+      return { success: true };
+    }),
+
+  /** Delete business and all related data immediately */
   delete: publicProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
+      const owner = await db.getBusinessOwnerById(input.id);
+      if (owner) {
+        // Alert admin before deletion (after, data is gone)
+        await sendAdminDeletionAlertEmail({
+          businessName: owner.businessName,
+          ownerName: owner.ownerName ?? null,
+          email: owner.email ?? null,
+          phone: owner.phone,
+          businessOwnerId: owner.id,
+          action: "completed",
+        });
+      }
       await db.deleteBusinessOwner(input.id);
       return { success: true };
     }),

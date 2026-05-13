@@ -96,6 +96,8 @@ function StatusDot({ status, colors }: { status: "ok" | "warn" | "off"; colors: 
 export default function SettingsScreen() {
   const { state, dispatch, syncToDb, filterAppointmentsByLocation, clientsForActiveLocation } = useStore();
   const deleteBusinessMut = trpc.business.delete.useMutation();
+  const scheduleDeleteMut = trpc.business.scheduleDeletion.useMutation();
+  const cancelDeleteMut = trpc.business.cancelDeletion.useMutation();
   const updateBusinessMut = trpc.business.update.useMutation();
   const colors = useColors();
   const router = useRouter();
@@ -116,6 +118,10 @@ export default function SettingsScreen() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteConfirmMatch = deleteConfirmText.trim().toUpperCase() === "DELETE";
+  // Pending deletion state from server profile
+  const pendingDeletionAt = (state.profile as any)?.pendingDeletionAt ?? null;
+  const deletionScheduledFor = (state.profile as any)?.deletionScheduledFor ?? null;
+  const hasPendingDeletion = !!pendingDeletionAt;
 
   // ── Calendar Sync ─────────────────────────────────────────────────────────────
   const CALENDAR_SYNC_KEY = "@limeofttime_calendar_sync_enabled";
@@ -325,30 +331,33 @@ export default function SettingsScreen() {
     setIsDeleting(true);
     try {
       if (state.businessOwnerId) {
-        try { await deleteBusinessMut.mutateAsync({ id: state.businessOwnerId }); } catch {}
+        // Schedule deletion (30-day grace period) instead of immediate delete
+        try { await scheduleDeleteMut.mutateAsync({ id: state.businessOwnerId }); } catch {}
       }
-      dispatch({ type: "RESET_ALL_DATA" });
-      try {
-        await AsyncStorage.multiRemove([
-          "@bookease_services","@bookease_clients","@bookease_appointments",
-          "@bookease_reviews","@bookease_settings","@bookease_business_owner_id",
-          "@bookease_discounts","@bookease_gift_cards","@bookease_custom_schedule",
-          "@bookease_location_custom_schedule","@bookease_products","@bookease_staff",
-          "@bookease_locations","@bookease_active_location_id",
-          "@bookease_client_photos","@bookease_packages","@bookease_service_photos",
-          "@bookease_biometric_enabled",
-          "@bookease_business_name",
-          "@lime_tutorial_seen","@lime_tour_analytics","@lime_first_action_shown",
-        ]);
-      } catch {}
-      try { await removeSessionToken(); } catch {}
-      try { await clearUserInfo(); } catch {}
       setShowDeleteModal(false);
-      router.replace("/profile-select" as any);
+      Alert.alert(
+        "Deletion Scheduled",
+        "Your account has been scheduled for deletion in 30 days. You will receive a confirmation email. You can cancel this from Settings before the deletion date.",
+        [{ text: "OK" }]
+      );
+      // Refresh profile to show pending deletion banner
+      try { await trpc.useUtils().business.getFullData.invalidate(); } catch {}
     } finally {
       setIsDeleting(false);
     }
-  }, [deleteConfirmMatch, isDeleting, state.businessOwnerId, deleteBusinessMut, dispatch, router]);
+  }, [deleteConfirmMatch, isDeleting, state.businessOwnerId, scheduleDeleteMut]);
+
+  const handleCancelDeletion = useCallback(async () => {
+    if (!state.businessOwnerId) return;
+    try {
+      await cancelDeleteMut.mutateAsync({ id: state.businessOwnerId });
+      Alert.alert("Deletion Cancelled", "Your account deletion has been cancelled. Your account is safe.", [{ text: "OK" }]);
+      // Refresh profile
+      try { await trpc.useUtils().business.getFullData.invalidate(); } catch {}
+    } catch {
+      Alert.alert("Error", "Failed to cancel deletion. Please try again.");
+    }
+  }, [state.businessOwnerId, cancelDeleteMut]);
 
   const reviewAvg = useMemo(() => {
     if (state.reviews.length === 0) return null;
@@ -977,6 +986,36 @@ export default function SettingsScreen() {
 
       {/* Danger Zone */}
       <SectionHeader label="Danger Zone" accentColor={colors.error} colors={colors} />
+
+      {/* Pending Deletion Banner */}
+      {hasPendingDeletion && (
+        <View style={{ backgroundColor: colors.error + "12", borderRadius: 14, borderWidth: 1, borderColor: colors.error + "40", padding: 16, marginBottom: 12, gap: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Text style={{ fontSize: 20 }}>⚠️</Text>
+            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.error, flex: 1 }}>Account Deletion Scheduled</Text>
+          </View>
+          <Text style={{ fontSize: 13, color: colors.foreground, lineHeight: 19 }}>
+            Your account is scheduled for permanent deletion on{" "}
+            <Text style={{ fontWeight: "700" }}>
+              {deletionScheduledFor ? new Date(deletionScheduledFor).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : ""}
+            </Text>.
+            {" "}All your data will be permanently removed and cannot be recovered.
+          </Text>
+          <Pressable
+            onPress={handleCancelDeletion}
+            style={({ pressed }) => ({
+              backgroundColor: colors.success,
+              borderRadius: 10,
+              paddingVertical: 12,
+              alignItems: "center" as const,
+              opacity: pressed ? 0.8 : 1,
+            })}
+          >
+            <Text style={{ fontSize: 14, fontWeight: "700", color: "#fff" }}>Cancel Deletion — Keep My Account</Text>
+          </Pressable>
+        </View>
+      )}
+
       <Pressable
         onPress={handleLogout}
         style={({ pressed }) => [styles.dangerButton, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
@@ -987,16 +1026,18 @@ export default function SettingsScreen() {
         <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.primary, flex: 1 }}>Log Out</Text>
         <IconSymbol name="chevron.right" size={16} color={colors.muted} />
       </Pressable>
-      <Pressable
-        onPress={handleDeleteBusiness}
-        style={({ pressed }) => [styles.dangerButton, { backgroundColor: colors.error + "08", borderColor: colors.error + "30", opacity: pressed ? 0.7 : 1 }]}
-      >
-        <View style={[styles.navIcon, { backgroundColor: colors.error + "15" }]}>
-          <IconSymbol name="trash.fill" size={22} color={colors.error} />
-        </View>
-        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.error, flex: 1 }}>Delete Business</Text>
-        <IconSymbol name="chevron.right" size={16} color={colors.error + "60"} />
-      </Pressable>
+      {!hasPendingDeletion && (
+        <Pressable
+          onPress={handleDeleteBusiness}
+          style={({ pressed }) => [styles.dangerButton, { backgroundColor: colors.error + "08", borderColor: colors.error + "30", opacity: pressed ? 0.7 : 1 }]}
+        >
+          <View style={[styles.navIcon, { backgroundColor: colors.error + "15" }]}>
+            <IconSymbol name="trash.fill" size={22} color={colors.error} />
+          </View>
+          <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.error, flex: 1 }}>Delete Business</Text>
+          <IconSymbol name="chevron.right" size={16} color={colors.error + "60"} />
+        </Pressable>
+      )}
 
       {/* Dev Testing (hidden easter egg) */}
       {devTapCount >= 5 && (
@@ -1297,11 +1338,17 @@ export default function SettingsScreen() {
                     </View>
                   </View>
 
+                  <View style={{ backgroundColor: colors.warning + "15", borderRadius: 12, borderWidth: 1, borderColor: colors.warning + "40", padding: 14, marginBottom: 16 }}>
+                    <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.warning, marginBottom: 4 }}>⏳ 30-Day Grace Period</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.foreground, lineHeight: 18 }}>
+                      Your account will be <Text style={{ fontWeight: "700" }}>scheduled for deletion in 30 days</Text>, not deleted immediately. You can cancel at any time from Settings before the deletion date. A confirmation email will be sent to your registered email address.
+                    </Text>
+                  </View>
                   <Text style={{ fontSize: fs.sm, color: colors.foreground, lineHeight: 20, marginBottom: 20 }}>
-                    You are about to permanently delete{" "}
+                    You are scheduling the deletion of{" "}
                     <Text style={{ fontWeight: "700" }}>{state.settings.businessName || "your business"}</Text>
                     {" "}and all associated data. This includes all appointments, clients, services, packages, staff, locations, images, and account settings.{"\n\n"}
-                    <Text style={{ color: colors.error, fontWeight: "600" }}>This cannot be undone. There is no recovery option.</Text>
+                    <Text style={{ color: colors.error, fontWeight: "600" }}>After 30 days, this cannot be undone. There is no recovery option.</Text>
                   </Text>
 
                   <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>
@@ -1347,7 +1394,7 @@ export default function SettingsScreen() {
                       }]}
                     >
                       <Text style={{ fontSize: fs.sm, fontWeight: "700", color: "#fff" }}>
-                        {isDeleting ? "Deleting..." : "Delete Everything"}
+                        {isDeleting ? "Scheduling..." : "Schedule Deletion"}
                       </Text>
                     </Pressable>
                   </View>

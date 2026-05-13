@@ -727,3 +727,121 @@ export async function sendGiftPurchaseConfirmationEmail(data: {
     return true;
   } catch (err) { console.error("[Email] Failed to send gift purchase confirmation email:", err); return false; }
 }
+
+/** Send a deletion-scheduled confirmation email to the business owner */
+export async function sendDeletionScheduledEmail(data: {
+  businessName: string;
+  ownerName: string | null;
+  email: string;
+  deletionDate: Date;
+}): Promise<boolean> {
+  const resend = getResend();
+  if (!resend || !data.email) return false;
+
+  const deletionDateStr = data.deletionDate.toLocaleDateString("en-US", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+  });
+
+  const html = brandedTemplate(
+    "Your account deletion has been scheduled",
+    `
+    <p style="margin:0 0 16px;font-size:16px;color:#374151;line-height:1.6;">
+      Hi ${escHtml(data.ownerName ?? data.businessName)},
+    </p>
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
+      We've received your request to delete your <strong>${escHtml(data.businessName)}</strong> account on Lime Of Time.
+    </p>
+    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:12px;padding:20px;margin:0 0 20px;">
+      <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#856404;">⚠️ Your account is scheduled for permanent deletion on:</p>
+      <p style="margin:0;font-size:18px;font-weight:700;color:#856404;">${escHtml(deletionDateStr)}</p>
+    </div>
+    <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">
+      <strong>What will be deleted:</strong>
+    </p>
+    <ul style="margin:0 0 20px;padding-left:20px;font-size:14px;color:#374151;line-height:1.8;">
+      <li>All appointments and booking history</li>
+      <li>All client records and contact information</li>
+      <li>All services, packages, and pricing</li>
+      <li>All staff members and their schedules</li>
+      <li>All locations and working hours</li>
+      <li>All uploaded photos and images</li>
+      <li>All discount codes and gift cards</li>
+      <li>Your business profile and settings</li>
+      <li>All billing and subscription data</li>
+    </ul>
+    <div style="background:#d1fae5;border:1px solid #34d399;border-radius:12px;padding:20px;margin:0 0 20px;">
+      <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#065f46;">✅ You can cancel this deletion</p>
+      <p style="margin:0;font-size:14px;color:#065f46;line-height:1.6;">
+        If you change your mind, open the Lime Of Time app, go to <strong>Settings → Delete Business</strong>, and tap <strong>Cancel Deletion</strong> before ${escHtml(deletionDateStr)}.
+      </p>
+    </div>
+    <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
+      If you did not request this deletion, please contact us immediately at support@lime-of-time.com.
+    </p>
+    `
+  );
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: data.email,
+      subject: `⚠️ Account deletion scheduled for ${deletionDateStr} — ${escHtml(data.businessName)}`,
+      html,
+    });
+    console.log("[Email] Deletion scheduled email sent to", data.email);
+    return true;
+  } catch (err) {
+    console.error("[Email] Failed to send deletion scheduled email:", err);
+    return false;
+  }
+}
+
+/** Send an internal admin alert when a business schedules or cancels deletion */
+export async function sendAdminDeletionAlertEmail(data: {
+  businessName: string;
+  ownerName: string | null;
+  email: string | null;
+  phone: string;
+  businessOwnerId: number;
+  action: "scheduled" | "cancelled" | "completed";
+  deletionDate?: Date;
+}): Promise<boolean> {
+  const resend = getResend();
+  if (!resend) return false;
+
+  const ADMIN_EMAIL = "admin@lime-of-time.com";
+  const actionLabel = data.action === "scheduled" ? "🗑️ Deletion Scheduled" :
+    data.action === "cancelled" ? "✅ Deletion Cancelled" : "💀 Account Deleted";
+  const deletionDateStr = data.deletionDate
+    ? data.deletionDate.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+    : "N/A";
+
+  const html = brandedTemplate(
+    `Admin Alert: ${actionLabel}`,
+    `
+    <p style="margin:0 0 16px;font-size:16px;font-weight:700;color:#374151;">${escHtml(actionLabel)}</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;color:#374151;">
+      <tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;font-weight:600;width:40%;">Business Name</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;">${escHtml(data.businessName)}</td></tr>
+      <tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;font-weight:600;">Owner Name</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;">${escHtml(data.ownerName ?? "N/A")}</td></tr>
+      <tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;font-weight:600;">Email</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;">${escHtml(data.email ?? "N/A")}</td></tr>
+      <tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;font-weight:600;">Phone</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;">${escHtml(data.phone)}</td></tr>
+      <tr><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;font-weight:600;">Business Owner ID</td><td style="padding:8px 0;border-bottom:1px solid #e5e7eb;">${data.businessOwnerId}</td></tr>
+      ${data.action === "scheduled" ? `<tr><td style="padding:8px 0;font-weight:600;">Scheduled Deletion</td><td style="padding:8px 0;">${escHtml(deletionDateStr)}</td></tr>` : ""}
+    </table>
+    `
+  );
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: ADMIN_EMAIL,
+      subject: `[Lime Of Time Admin] ${actionLabel}: ${data.businessName}`,
+      html,
+    });
+    console.log("[Email] Admin deletion alert sent for", data.businessName);
+    return true;
+  } catch (err) {
+    console.error("[Email] Failed to send admin deletion alert:", err);
+    return false;
+  }
+}
