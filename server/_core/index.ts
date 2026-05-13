@@ -84,6 +84,16 @@ async function startServer() {
     res.json({ ok: true, timestamp: Date.now() });
   });
 
+  // Force standard JSON responses for all tRPC requests.
+  // Old native app builds (LimeOfTime/13 and earlier) use httpBatchStreamLink which sends
+  // trpc-accept: application/jsonl, triggering JSONL streaming responses that React Native
+  // cannot parse (no ReadableStream support). Stripping this header forces the tRPC server
+  // to always return standard JSON, compatible with all client versions.
+  app.use("/api/trpc", (req, _res, next) => {
+    delete req.headers["trpc-accept"];
+    next();
+  });
+
   app.use(
     "/api/trpc",
     createExpressMiddleware({
