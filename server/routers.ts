@@ -3,6 +3,7 @@ import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
 import { sendAppointmentConfirmationEmail, sendPaymentReceiptEmail, sendDeletionScheduledEmail, sendAdminDeletionAlertEmail } from "./email";
@@ -1398,6 +1399,9 @@ const twilioRouter = router({
 // Uses Twilio Verify API when credentials are configured.
 // Falls back to in-memory test mode (code = TWILIO_TEST_OTP or "123456") when not.
 const otpStore = new Map<string, { code: string; expiresAt: number }>();
+// Rate-limit OTP sends: track last send time per phone number (60-second cooldown)
+const otpSendCooldown = new Map<string, number>(); // phone -> lastSentAt timestamp
+const OTP_RESEND_COOLDOWN_MS = 60_000; // 60 seconds
 
 /** Get Twilio Verify credentials from env or platform_config (single batch DB query) */
 async function getTwilioVerifyCredentials() {
@@ -1470,6 +1474,17 @@ const otpRouter = router({
   send: publicProcedure
     .input(z.object({ phone: z.string().min(7) }))
     .mutation(async ({ input }) => {
+      // Server-side rate limit: prevent duplicate OTP sends within 60 seconds per phone
+      const normalizedPhoneKey = input.phone.replace(/\D/g, "").slice(-10);
+      const lastSent = otpSendCooldown.get(normalizedPhoneKey);
+      if (lastSent && Date.now() - lastSent < OTP_RESEND_COOLDOWN_MS) {
+        const secondsLeft = Math.ceil((OTP_RESEND_COOLDOWN_MS - (Date.now() - lastSent)) / 1000);
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: `Please wait ${secondsLeft} second${secondsLeft !== 1 ? "s" : ""} before requesting another code.`,
+        });
+      }
+
       // Fetch all OTP config in a single DB query (avoids 3 sequential round-trips)
       const cfg = await getBatchPlatformConfig(["TWILIO_TEST_MODE", "TWILIO_TEST_OTP", "TWILIO_PER_PHONE_OTP"]);
       const globalTestMode = cfg["TWILIO_TEST_MODE"] === "true";
@@ -1485,6 +1500,7 @@ const otpRouter = router({
       if (perPhoneCode) {
         const expiresAt = Date.now() + 10 * 60 * 1000;
         otpStore.set(input.phone, { code: perPhoneCode, expiresAt });
+        otpSendCooldown.set(normalizedPhoneKey, Date.now());
         return { success: true, testMode: true };
       }
 
@@ -1492,6 +1508,7 @@ const otpRouter = router({
       if (globalTestMode) {
         const expiresAt = Date.now() + 10 * 60 * 1000;
         otpStore.set(input.phone, { code: testOtp, expiresAt });
+        otpSendCooldown.set(normalizedPhoneKey, Date.now());
         return { success: true, testMode: true };
       }
 
@@ -1511,6 +1528,7 @@ const otpRouter = router({
         console.error("[OTP] Twilio Verify send failed:", result.error);
         throw new Error(result.error || "Failed to send OTP via Twilio. Check your Twilio credentials and account status.");
       }
+      otpSendCooldown.set(normalizedPhoneKey, Date.now());
       return { success: true, testMode: false };
     }),
 
