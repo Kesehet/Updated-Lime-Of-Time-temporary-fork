@@ -2192,3 +2192,5 @@
 - [x] Fix app slowness: optimize discover API N+1 queries (4 queries per business)
 - [x] Remove 24hr/1hr/30min reminder switches from Profile main page (keep only in All Notification Settings)
 - [x] Move Packages tab inside Home tab (not a separate bottom tab)
+- [ ] Fix OTP "Failed to fetch" error on Android APK: add timeout to trpc httpLink so it fails fast instead of hanging; improve error message for rate-limit 429 responses
+- [ ] Fix 10-20 second location delay in Discover screen: add timeoutInterval to getCurrentPositionAsync so it doesn't hang waiting for high-accuracy GPS fix

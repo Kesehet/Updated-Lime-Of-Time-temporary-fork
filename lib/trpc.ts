@@ -33,16 +33,31 @@ export function createTRPCClient() {
           const token = await Auth.getSessionToken();
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
-        // Custom fetch to include credentials and handle 401 session expiry
+        // Custom fetch with a 15-second timeout and credentials.
+        // Without a timeout, React Native's fetch can hang indefinitely on slow
+        // networks, causing "Failed to fetch" errors that confuse users.
         async fetch(url, options) {
-          const response = await globalThis.fetch(url, {
-            ...options,
-            credentials: "include",
-          });
-          if (response.status === 401) {
-            emitSessionExpired("business"); // tRPC is used by business portal
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+          try {
+            const response = await globalThis.fetch(url, {
+              ...options,
+              credentials: "include",
+              signal: controller.signal,
+            });
+            if (response.status === 401) {
+              emitSessionExpired("business"); // tRPC is used by business portal
+            }
+            return response;
+          } catch (err: any) {
+            // Convert AbortError to a user-friendly message
+            if (err?.name === "AbortError") {
+              throw new Error("Request timed out. Please check your internet connection and try again.");
+            }
+            throw err;
+          } finally {
+            clearTimeout(timeoutId);
           }
-          return response;
         },
       }),
     ],

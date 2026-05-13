@@ -299,7 +299,20 @@ export function ClientStoreProvider({ children }: { children: React.ReactNode })
     if (state.sessionToken) {
       headers["Authorization"] = `Bearer ${state.sessionToken}`;
     }
-    const res = await fetch(`${getApiBaseUrl()}${path}`, { ...options, headers });
+    // 15-second timeout prevents indefinite hangs on slow networks (Android APK)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    let res: Response;
+    try {
+      res = await fetch(`${getApiBaseUrl()}${path}`, { ...options, headers, signal: controller.signal });
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      if (err?.name === "AbortError") {
+        throw new Error("Request timed out. Please check your internet connection and try again.");
+      }
+      throw err;
+    }
+    clearTimeout(timeoutId);
     if (!res.ok) {
       // 401 Unauthorized — session expired or invalid: auto sign out and notify
       if (res.status === 401) {

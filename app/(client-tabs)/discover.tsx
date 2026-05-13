@@ -617,7 +617,8 @@ export default function DiscoverScreen() {
           setLocationError("Location access denied. Showing all businesses.");
           return;
         }
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        // timeoutInterval: 8s prevents the 10-20s hang on Android when GPS signal is weak
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced, timeoutInterval: 8000 });
         if (cancelled) return;
         const { latitude, longitude } = loc.coords;
         setUserLat(latitude);
@@ -660,7 +661,8 @@ export default function DiscoverScreen() {
         setNearMeLoading(false);
         return;
       }
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      // timeoutInterval: 8s prevents the 10-20s hang on Android when GPS signal is weak
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced, timeoutInterval: 8000 });
       const { latitude, longitude } = loc.coords;
       setUserLat(latitude);
       setUserLng(longitude);
@@ -1199,7 +1201,8 @@ export default function DiscoverScreen() {
                 try {
                   const { status } = await Location.getForegroundPermissionsAsync();
                   if (status === "granted") {
-                    const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                    // timeoutInterval: 8s prevents the 10-20s hang on Android when GPS signal is weak
+                    const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced, timeoutInterval: 8000 });
                     const { latitude, longitude } = loc.coords;
                     setUserLat(latitude);
                     setUserLng(longitude);

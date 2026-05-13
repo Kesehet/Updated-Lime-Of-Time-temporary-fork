@@ -876,7 +876,11 @@ export default function OnboardingScreen() {
         setOtpValue("");
         setOtpError("");
         // Send OTP via server (Twilio or test mode 123456)
-        sendOtpMut.mutate({ phone: rawPhone });
+        sendOtpMut.mutate({ phone: rawPhone }, {
+          onError: (err: any) => {
+            setOtpError(err?.message || "Failed to send OTP. Please check your connection and try again.");
+          },
+        });
         navigateToStep("otp");
         return;
       }
@@ -933,7 +937,11 @@ export default function OnboardingScreen() {
         setPendingOtpAction("existing");
         setOtpValue("");
         setOtpError("");
-        sendOtpMut.mutate({ phone: rawPhone });
+        sendOtpMut.mutate({ phone: rawPhone }, {
+          onError: (err: any) => {
+            setOtpError(err?.message || "Failed to send OTP. Please check your connection and try again.");
+          },
+        });
         navigateToStep("otp");
         return;
       }
