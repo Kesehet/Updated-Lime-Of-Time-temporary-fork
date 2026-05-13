@@ -443,18 +443,19 @@ export function PlanCarousel({
   useEffect(() => {
     if (isOnboarding) {
       setActiveIdx(0);
-      scrollRef.current?.scrollTo({ x: 0, animated: false });
+      // scroll to first card (sidePad offset so it's centered)
+      scrollRef.current?.scrollTo({ x: sidePad, animated: false });
     }
   }, [isOnboarding]);
 
-  // snapToOffsets: each card's left edge relative to scroll content start (after sidePad)
-  // The first card starts at x=0 inside the content (sidePad is handled by contentInset, not padding)
-  const snapOffsets = plans.map((_, i) => i * (slideWidth + CARD_GAP));
+  // snapToOffsets: each card's left edge relative to scroll content start (including sidePad)
+  // sidePad is added as paddingHorizontal in contentContainerStyle, so snap offsets must include it
+  const snapOffsets = plans.map((_, i) => sidePad + i * (slideWidth + CARD_GAP));
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const x = e.nativeEvent.contentOffset.x;
-      const idx = Math.round(x / (slideWidth + CARD_GAP));
+      const idx = Math.round((x - sidePad) / (slideWidth + CARD_GAP));
       const clamped = Math.max(0, Math.min(idx, plans.length - 1));
       if (clamped !== activeIdx) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -469,7 +470,7 @@ export function PlanCarousel({
     if (clamped !== activeIdx) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
-    scrollRef.current?.scrollTo({ x: clamped * (slideWidth + CARD_GAP), animated: true });
+    scrollRef.current?.scrollTo({ x: sidePad + clamped * (slideWidth + CARD_GAP), animated: true });
     setActiveIdx(clamped);
   }, [activeIdx, plans.length, slideWidth]);
 
@@ -505,11 +506,9 @@ export function PlanCarousel({
         snapToOffsets={snapOffsets}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
-        // contentInset centers first/last card without shifting snap positions
-        contentInset={{ left: sidePad, right: sidePad }}
-        contentOffset={{ x: -sidePad, y: 0 }}
-        automaticallyAdjustContentInsets={false}
+        // paddingHorizontal centers first/last card (works on iOS, Android, and web)
         contentContainerStyle={{
+          paddingHorizontal: sidePad,
           gap: CARD_GAP,
           alignItems: "stretch",
         }}
