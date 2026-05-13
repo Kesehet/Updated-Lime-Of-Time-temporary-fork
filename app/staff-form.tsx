@@ -14,8 +14,8 @@ import {
   Modal,
   Image,
   ActivityIndicator,
+  KeyboardAvoidingView,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { trpc } from "@/lib/trpc";

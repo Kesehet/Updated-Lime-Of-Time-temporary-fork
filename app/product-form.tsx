@@ -3,8 +3,8 @@ import {
   ScrollView, Text, View, TextInput, Pressable, StyleSheet,
   Alert, Switch, Platform, Image,
   Modal, TouchableOpacity, ActivityIndicator,
+  KeyboardAvoidingView,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScreenContainer } from "@/components/screen-container";

@@ -7,8 +7,8 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   View, Text, ScrollView, Pressable, StyleSheet, TextInput,
   ActivityIndicator, Alert, Platform, Linking, Dimensions, FlatList, Modal,
-  NativeScrollEvent, NativeSyntheticEvent, } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+  NativeScrollEvent, NativeSyntheticEvent,   KeyboardAvoidingView,
+} from "react-native";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";

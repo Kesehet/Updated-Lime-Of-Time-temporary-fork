@@ -30,8 +30,8 @@ import {
   TextInput,
   ActivityIndicator,
   Animated,
+  KeyboardAvoidingView,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { ScreenContainer } from "@/components/screen-container";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { useStore, formatTime, formatDateStr, formatDateDisplay } from "@/lib/store";

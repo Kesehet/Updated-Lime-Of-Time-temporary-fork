@@ -10,8 +10,8 @@ import {
   Linking,
   Platform,
   Image,
+  KeyboardAvoidingView,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { PhotoLightbox } from "@/components/photo-lightbox";

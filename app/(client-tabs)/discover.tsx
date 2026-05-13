@@ -20,8 +20,8 @@ import {
   Linking,
   Alert,
   RefreshControl,
+  KeyboardAvoidingView,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useColors } from "@/hooks/use-colors";

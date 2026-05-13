@@ -9,8 +9,8 @@ import {
   Linking,
   Alert,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Svg, { Path, Rect, Circle, G } from "react-native-svg";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore } from "@/lib/store";

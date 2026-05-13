@@ -1,7 +1,7 @@
 import {
   Text, View, Pressable, StyleSheet, TextInput, ScrollView,
-  Alert, Platform, Image, ActivityIndicator, Modal, TouchableOpacity, } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+  Alert, Platform, Image, ActivityIndicator, Modal, TouchableOpacity,   KeyboardAvoidingView,
+} from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId } from "@/lib/store";

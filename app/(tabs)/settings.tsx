@@ -11,8 +11,8 @@ import {
   Image,
   Platform,
   Modal,
+  KeyboardAvoidingView,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { ScreenContainer } from "@/components/screen-container";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { useStore } from "@/lib/store";

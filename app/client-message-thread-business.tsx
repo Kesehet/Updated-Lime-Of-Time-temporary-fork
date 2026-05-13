@@ -23,8 +23,8 @@ import {
   ScrollView,
   Linking,
   Alert,
+  Keyboard,
 } from "react-native";
-import { KeyboardAvoidingView as RNKCKeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as Haptics from "expo-haptics";
@@ -335,6 +335,20 @@ export default function ClientMessageThreadBusinessScreen() {
 
   const flatListRef = useRef<FlatList>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── Keyboard height tracking (works with edge-to-edge Android) ───────────
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKeyboardHeight(e.endCoordinates.height)
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardHeight(0)
+    );
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
 
   // ── Client appointments from store (for template context) ─────────────────
   const clientAppointments = useMemo(() => {
@@ -721,7 +735,7 @@ export default function ClientMessageThreadBusinessScreen() {
         </Pressable>
       </View>
 
-      <RNKCKeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
         {loading ? (
           <View style={s.loadingContainer}><ActivityIndicator size="large" color={colors.primary} /></View>
         ) : error ? (
@@ -852,7 +866,7 @@ export default function ClientMessageThreadBusinessScreen() {
             </Text>
           )}
         </View>
-      </RNKCKeyboardAvoidingView>
+      </View>
 
       {/* ── Template Picker Modal ─────────────────────────────────────────── */}
       <Modal visible={showTemplates} animationType="slide" transparent onRequestClose={() => setShowTemplates(false)}>

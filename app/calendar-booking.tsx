@@ -14,8 +14,8 @@ import {
   Modal,
   TouchableOpacity,
   useWindowDimensions,
+  KeyboardAvoidingView,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import {
