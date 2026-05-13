@@ -2175,3 +2175,5 @@
 - [x] My Packages tab in client portal with session history per package
 - [x] Fix duration display in booking page (show "1 hr 30 min" instead of decimal hours)
 - [x] Fix package/bundle images not showing in booking service selection step
+- [x] Fix session stepper circles overflowing the container when package has many sessions (e.g. 10)
+- [x] Fix no available time slots showing in client public booking when selecting dates for package sessions (race condition fix: calendar now waits for working days to load)

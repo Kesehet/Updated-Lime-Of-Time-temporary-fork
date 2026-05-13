@@ -5697,7 +5697,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       <h2 id="step4Title">Select Date &amp; Time</h2>
       <!-- Package session progress bar (shown only for packages) -->
       <div id="pkgSessionHeader" style="display:none;margin-bottom:14px;">
-        <div id="pkgSessionProgress" style="display:flex;gap:6px;margin-bottom:10px;"></div>
+        <div id="pkgSessionProgress" style="display:flex;flex-wrap:wrap;gap:4px 4px;margin-bottom:10px;align-items:flex-start;"></div>
         <div id="pkgSessionSummary" style="font-size:12px;color:var(--text-secondary);background:var(--accent-bg);border:1px solid var(--border);border-radius:10px;padding:8px 12px;"></div>
       </div>
       <div id="locClosedBanner" class="loc-closed-banner">
@@ -6820,19 +6820,27 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       if (titleEl) titleEl.textContent = 'Session ' + (packageSessionCurrentIdx + 1) + ' of ' + totalSess + ' — Select Date & Time';
       // Build progress dots
       if (progressEl) {
+        // Use grid layout for many sessions so circles wrap cleanly without connector lines
         var ph = '';
+        var circleSize = totalSess > 6 ? '32px' : '36px';
+        var fontSize = totalSess > 6 ? '10px' : '11px';
+        progressEl.style.display = 'grid';
+        progressEl.style.gridTemplateColumns = 'repeat(auto-fill, minmax(44px, 1fr))';
+        progressEl.style.gap = '6px 4px';
         for (var si = 0; si < totalSess; si++) {
           var sess = packageSessions[si];
           var isDone = sess && sess.date && sess.time;
           var isCurrent = si === packageSessionCurrentIdx;
           var color = isDone ? 'var(--accent)' : (isCurrent ? 'var(--accent)' : 'var(--border)');
           var opacity = isCurrent ? '1' : (isDone ? '1' : '0.4');
-          ph += '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;opacity:' + opacity + ';">' +
-            '<div style="width:28px;height:28px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;">' +
+          var border = isCurrent ? '2px solid var(--accent)' : 'none';
+          var bg = isDone ? 'var(--accent)' : (isCurrent ? 'var(--accent)' : 'var(--bg-card)');
+          var textColor = (isDone || isCurrent) ? '#fff' : 'var(--text-secondary)';
+          ph += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;opacity:' + opacity + ';">' +
+            '<div style="width:' + circleSize + ';height:' + circleSize + ';border-radius:50%;background:' + bg + ';border:' + border + ';display:flex;align-items:center;justify-content:center;font-size:' + fontSize + ';font-weight:700;color:' + textColor + ';box-sizing:border-box;">' +
             (isDone ? '&#10003;' : (si + 1)) + '</div>' +
-            '<div style="font-size:10px;color:var(--text-secondary);">Sess ' + (si + 1) + '</div>' +
+            '<div style="font-size:9px;color:var(--text-secondary);white-space:nowrap;">Sess ' + (si + 1) + '</div>' +
             '</div>';
-          if (si < totalSess - 1) ph += '<div style="flex:1;height:2px;background:' + (isDone ? 'var(--accent)' : 'var(--border)') + ';margin-top:14px;"></div>';
         }
         progressEl.innerHTML = ph;
       }
@@ -6952,7 +6960,17 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       }
       updateSelectedLocBanner();
       if (step === 3) renderStaffStep();
-      if (step === 4) { renderPackageSessionHeader(); renderCalendar(); }
+      if (step === 4) {
+        renderPackageSessionHeader();
+        // Ensure working days are loaded before rendering calendar (fixes race condition
+        // where apiWeeklyDays is null when calendar first renders, causing all days to
+        // appear disabled for businesses that only configure location-level working hours)
+        if (apiWeeklyDays === null && selectedLocation) {
+          loadWorkingDays(selectedLocation).then(() => renderCalendar());
+        } else {
+          renderCalendar();
+        }
+      }
       if (step === '4b') {
         renderMobileServiceInfo();
         // Reset fee preview state so it shows fresh on each visit
