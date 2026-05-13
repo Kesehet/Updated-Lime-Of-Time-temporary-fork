@@ -22,7 +22,7 @@ import {
   promoCodes,
   waitlist,
 } from "../drizzle/schema";
-import { sql, eq, count as drizzleCount } from "drizzle-orm";
+import { sql, eq, count as drizzleCount, isNotNull, lte, and } from "drizzle-orm";
 import { ADMIN_LOGO_BASE64 } from "./admin-logo-data";
 import { invalidatePlanCache, invalidateConfigCache, getPlatformConfig } from "./subscription";
 
@@ -2783,6 +2783,61 @@ export function registerAdminRoutes(app: Express): void {
     }
   });
 
+  // --- Pending Deletions Dashboard -----------------------------------
+  app.get("/api/admin/pending-deletions", requireAuth, async (_req: Request, res: Response) => {
+    try {
+      const dbase = await getDb();
+      if (!dbase) { res.status(503).send("DB unavailable"); return; }
+
+      const pending = await dbase
+        .select({
+          id: businessOwners.id,
+          businessName: businessOwners.businessName,
+          ownerName: businessOwners.ownerName,
+          email: businessOwners.email,
+          phone: businessOwners.phone,
+          pendingDeletionAt: businessOwners.pendingDeletionAt,
+          deletionScheduledFor: businessOwners.deletionScheduledFor,
+        })
+        .from(businessOwners)
+        .where(isNotNull(businessOwners.pendingDeletionAt));
+
+      const now = new Date();
+      const expired = pending.filter(o => o.deletionScheduledFor && new Date(o.deletionScheduledFor) <= now);
+      const upcoming = pending.filter(o => !o.deletionScheduledFor || new Date(o.deletionScheduledFor) > now);
+
+      res.send(pendingDeletionsPage(upcoming, expired));
+    } catch (err: any) {
+      res.status(500).send("Error: " + String(err?.message || err));
+    }
+  });
+
+  app.post("/api/admin/pending-deletions/cancel", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const dbase = await getDb();
+      if (!dbase) { res.json({ ok: false, error: "DB unavailable" }); return; }
+      const id = Number(req.body?.id);
+      if (!id) { res.json({ ok: false, error: "id required" }); return; }
+      await dbase.update(businessOwners)
+        .set({ pendingDeletionAt: null, deletionScheduledFor: null })
+        .where(eq(businessOwners.id, id));
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.json({ ok: false, error: String(err?.message || err) });
+    }
+  });
+
+  app.post("/api/admin/pending-deletions/execute", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.body?.id);
+      if (!id) { res.json({ ok: false, error: "id required" }); return; }
+      await db.deleteBusinessOwner(id);
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.json({ ok: false, error: String(err?.message || err) });
+    }
+  });
+
 }
 
 // --- HTML Templates -------------------------------------------------
@@ -3092,6 +3147,7 @@ function sidebarHtml(activePage: string): string {
       ${navItem('/api/admin/waitlist', '⏳', 'Waitlist', a === 'waitlist')}
 
       ${navSection('SYSTEM')}
+      ${navItem('/api/admin/pending-deletions', '🗑️', 'Pending Deletions', a === 'pending-deletions')}
       ${navItem('/api/admin/platform-config', '🔧', 'Platform Config', a === 'platform-config')}
       ${navItem('/api/admin/settings', '⚙️', 'Settings', a === 'settings')}
       ${navItem('/api/admin/db', '🗄️', 'DB Explorer', a === 'db')}
@@ -7522,4 +7578,190 @@ function devTestingPage(bizOptions: string): string {
       })();
     </script>
   `;
+}
+
+// --- Pending Deletions Page ------------------------------------------
+type PendingOwner = {
+  id: number;
+  businessName: string | null;
+  ownerName: string | null;
+  email: string | null;
+  phone: string;
+  pendingDeletionAt: Date | null;
+  deletionScheduledFor: Date | null;
+};
+
+function pendingDeletionsPage(upcoming: PendingOwner[], expired: PendingOwner[]): string {
+  const fmtDate = (d: Date | null) => d
+    ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "N/A";
+
+  const daysLeft = (d: Date | null) => {
+    if (!d) return "?";
+    const diff = Math.ceil((new Date(d).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return diff > 0 ? `${diff}d left` : "Expired";
+  };
+
+  const renderRow = (o: PendingOwner, isExpired: boolean) => `
+    <tr id="row-${o.id}">
+      <td>
+        <strong>${o.businessName ?? "Unnamed"}</strong><br>
+        <span style="color:var(--text-muted);font-size:12px;">${o.ownerName ?? ""}</span>
+      </td>
+      <td>${o.email ?? "—"}</td>
+      <td>${o.phone}</td>
+      <td>
+        <span style="color:var(--text-muted);font-size:12px;">Requested:</span><br>
+        ${fmtDate(o.pendingDeletionAt)}<br>
+        <span style="color:var(--text-muted);font-size:12px;">Scheduled:</span><br>
+        <strong style="color:${isExpired ? "var(--danger)" : "var(--warning)"};">${fmtDate(o.deletionScheduledFor)}</strong>
+      </td>
+      <td>
+        <span class="badge ${isExpired ? "badge-danger" : "badge-warning"}">${isExpired ? "EXPIRED" : daysLeft(o.deletionScheduledFor)}</span>
+      </td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-sm btn-success" onclick="cancelDeletion(${o.id}, '${(o.businessName ?? "").replace(/'/g, "\\'")}')">
+          ✅ Cancel Deletion
+        </button>
+        &nbsp;
+        <button class="btn btn-sm btn-danger" onclick="executeDeletion(${o.id}, '${(o.businessName ?? "").replace(/'/g, "\\'")}')">
+          🗑️ Delete Now
+        </button>
+      </td>
+    </tr>
+  `;
+
+  const upcomingRows = upcoming.length > 0
+    ? upcoming.map(o => renderRow(o, false)).join("")
+    : `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px;">No accounts in grace period</td></tr>`;
+
+  const expiredRows = expired.length > 0
+    ? expired.map(o => renderRow(o, true)).join("")
+    : `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px;">No expired accounts pending</td></tr>`;
+
+  const content = `
+    <div class="page-header">
+      <h2>🗑️ Pending Deletions</h2>
+      <p style="color:var(--text-muted);margin-top:4px;">Business accounts scheduled for deletion. Cancel to restore or delete immediately to override the 30-day grace period.</p>
+    </div>
+
+    <div style="display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;">
+      <div class="stat-card" style="flex:1;min-width:160px;">
+        <div class="stat-value" style="color:var(--warning);">${upcoming.length}</div>
+        <div class="stat-label">In Grace Period</div>
+      </div>
+      <div class="stat-card" style="flex:1;min-width:160px;">
+        <div class="stat-value" style="color:var(--danger);">${expired.length}</div>
+        <div class="stat-label">Expired (Awaiting Cron)</div>
+      </div>
+      <div class="stat-card" style="flex:1;min-width:160px;">
+        <div class="stat-value">${upcoming.length + expired.length}</div>
+        <div class="stat-label">Total Pending</div>
+      </div>
+    </div>
+
+    ${expired.length > 0 ? `
+    <div class="card" style="border:1px solid var(--danger);margin-bottom:24px;">
+      <div class="card-header" style="background:var(--danger)20;">
+        <h3 style="color:var(--danger);">⚠️ Expired Grace Periods — Awaiting Cron Execution</h3>
+        <p style="color:var(--text-muted);font-size:13px;margin-top:4px;">These accounts have passed their deletion date. The daily cron will delete them automatically. You can also delete immediately below.</p>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Business</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Dates</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>${expiredRows}</tbody>
+        </table>
+      </div>
+    </div>
+    ` : ""}
+
+    <div class="card">
+      <div class="card-header">
+        <h3>⏳ Active Grace Periods</h3>
+        <p style="color:var(--text-muted);font-size:13px;margin-top:4px;">These accounts requested deletion and are within their 30-day window. Cancel to restore the account.</p>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Business</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Dates</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>${upcomingRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="actionMsg" style="display:none;position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;font-weight:600;font-size:14px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.3);"></div>
+
+    <script>
+      function showMsg(text, isError) {
+        var el = document.getElementById('actionMsg');
+        el.textContent = text;
+        el.style.display = 'block';
+        el.style.background = isError ? 'var(--danger)' : 'var(--success)';
+        el.style.color = '#fff';
+        setTimeout(function() { el.style.display = 'none'; }, 4000);
+      }
+
+      function cancelDeletion(id, name) {
+        if (!confirm('Cancel deletion for "' + name + '"? Their account will be fully restored.')) return;
+        fetch('/api/admin/pending-deletions/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id }),
+          credentials: 'same-origin'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.ok) {
+            var row = document.getElementById('row-' + id);
+            if (row) row.remove();
+            showMsg('✅ Deletion cancelled for "' + name + '"', false);
+          } else {
+            showMsg('❌ Error: ' + data.error, true);
+          }
+        })
+        .catch(function(e) { showMsg('❌ Network error: ' + e.message, true); });
+      }
+
+      function executeDeletion(id, name) {
+        if (!confirm('⚠️ PERMANENTLY DELETE "' + name + '"?\\n\\nThis will immediately remove all data and images. This CANNOT be undone.')) return;
+        if (!confirm('Are you absolutely sure? Type OK to confirm.')) return;
+        fetch('/api/admin/pending-deletions/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id }),
+          credentials: 'same-origin'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.ok) {
+            var row = document.getElementById('row-' + id);
+            if (row) row.remove();
+            showMsg('🗑️ "' + name + '" permanently deleted', false);
+          } else {
+            showMsg('❌ Error: ' + data.error, true);
+          }
+        })
+        .catch(function(e) { showMsg('❌ Network error: ' + e.message, true); });
+      }
+    </script>
+  `;
+
+  return adminLayout("Pending Deletions", "pending-deletions", content);
 }

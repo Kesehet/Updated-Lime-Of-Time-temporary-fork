@@ -2183,3 +2183,4 @@
 - [x] Implement 30-day grace period for account deletion (pending deletion state, confirmation email, cancel option)
 - [x] Add admin notification email when a business account is deleted
 - [x] Add daily deletion cron job that auto-executes account deletion when 30-day grace period expires
+- [x] Add admin dashboard at /admin/pending-deletions with secret token protection, listing grace-period accounts with manual cancel/execute override buttons
