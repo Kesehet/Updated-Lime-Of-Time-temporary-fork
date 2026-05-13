@@ -2165,3 +2165,6 @@
 - [x] Stripe webhook: trial→active transition on customer.subscription.updated
 - [x] Stripe webhook: auto-downgrade to Solo after 3 failed payment retries
 - [x] Trial countdown banner on dashboard (amber, tappable, shows days remaining)
+- [x] Fix calendar-to-Available-Times spacing in client booking wizard date/time step
+- [x] Fix "Book This Package" button to open booking wizard at Location tab (step 2) instead of Service step
+- [x] Fix staff members not visible in booking wizard Staff step (step 3) even when they have availability

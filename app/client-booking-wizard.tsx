@@ -382,11 +382,34 @@ export default function ClientBookingWizardScreen() {
           setSelectedLocation(locList[0]);
         }
         // Step routing:
+        // - packageLocalId (Book This Package) → pre-select package + Location step (step 1)
         // - serviceLocalId (per-service Book button) → Location step (step 1) so client picks branch first
         // - preGiftCode (Redeem Gift) → Location step (step 1)
         // - preServiceName (Book Again) → Location step (step 1)
         // - no params (Book an Appointment) → stays at step 0 (Service selection)
-        if (serviceLocalId) {
+        const pkgList: any[] = Array.isArray(pkgData) ? pkgData : [];
+        if (packageLocalId) {
+          // Pre-select the package and jump straight to Location step
+          const pkg = pkgList.find((p: any) => p.localId === String(packageLocalId));
+          if (pkg) {
+            setSelectedPackage(pkg);
+            setServiceTab("packages");
+            setSessionDates(Array.from({ length: pkg.totalSessions }, () => ({ date: null, slot: null })));
+            setActiveSessionIdx(0);
+            const syntheticService = {
+              localId: pkg.localId,
+              name: pkg.name,
+              duration: pkg.sessionDurationMinutes,
+              price: String(pkg.packagePrice),
+              description: pkg.description,
+              category: pkg.category,
+              photoUri: pkg.photoUri,
+            };
+            setSelectedService(syntheticService as any);
+            setSelectedServices([syntheticService as any]);
+            setStep(1); // Jump to Location step
+          }
+        } else if (serviceLocalId) {
           const found = svcList.find((s) => s.localId === serviceLocalId);
           if (found) {
             setSelectedService(found);
@@ -417,7 +440,7 @@ export default function ClientBookingWizardScreen() {
       }
      })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effectiveSlug, serviceLocalId, preServiceName, preStaffId, preStaffName, apiBase]);
+  }, [effectiveSlug, serviceLocalId, preServiceName, preStaffId, preStaffName, packageLocalId, apiBase]);
 
   // Pre-fill gift code when navigating from "Redeem" on home screen
   useEffect(() => {
@@ -2672,7 +2695,7 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     dayHeaders: { flexDirection: "row", marginBottom: 4 },
     dayHeader: { flex: 1, textAlign: "center", fontSize: 12, fontWeight: "600" },
     calGrid: { flexDirection: "row", flexWrap: "wrap" },
-    calCell: { width: "14.28%" as any, aspectRatio: 0.85, alignItems: "center", justifyContent: "center" },
+    calCell: { width: "14.28%" as any, aspectRatio: 1.1, alignItems: "center", justifyContent: "center" },
     selectedDateLabel: { textAlign: "center", fontSize: 14, fontWeight: "600", marginTop: 12 },
     timeSectionHeader: { flexDirection: "row" as const, alignItems: "center" as const, gap: 6, marginBottom: 10 },
     timeSectionTitle: { fontSize: 15, fontWeight: "700" as const },

@@ -1,0 +1,50 @@
+{
+  "query": "SELECT localId, name FROM services LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT localId, name FROM services LIMIT 10;",
+  "rows": [
+    {
+      "localId": "mobh0t717ycxsli",
+      "name": "Lifting Facial Massage"
+    },
+    {
+      "localId": "mobh57kq5rg2j5c",
+      "name": "Full Body Swedish Massage"
+    },
+    {
+      "localId": "mobh8bo5mnv50rm",
+      "name": "Upper Body Therapeutic Massage"
+    },
+    {
+      "localId": "mobh9zbh01x1vtk",
+      "name": "Hot Stone Massage"
+    },
+    {
+      "localId": "mobhbxhixde4wv6",
+      "name": "Deep Tissue/ Therapeutic Massage"
+    },
+    {
+      "localId": "mokwabuc18hzfos",
+      "name": "Hot/Cool Body Wrapping -Slimming"
+    },
+    {
+      "localId": "mokz0z23avfoqav",
+      "name": "NOT AVAILABLE - Wiskey Wrap- Body Contouring"
+    },
+    {
+      "localId": "mokzoq01j7efg7o",
+      "name": "AddOn:Lymphatic Drainage Massage"
+    },
+    {
+      "localId": "mokzq31enkvefv6",
+      "name": "AddOn: Anti-Cellulite Cupping Massage (one area)"
+    },
+    {
+      "localId": "mokzruguxjndyzw",
+      "name": "AddOn: Lifting Facial Massage"
+    }
+  ],
+  "messages": [],
+  "stdout": "localId\tname\nmobh0t717ycxsli\tLifting Facial Massage\nmobh57kq5rg2j5c\tFull Body Swedish Massage\nmobh8bo5mnv50rm\tUpper Body Therapeutic Massage\nmobh9zbh01x1vtk\tHot Stone Massage\nmobhbxhixde4wv6\tDeep Tissue/ Therapeutic Massage\nmokwabuc18hzfos\tHot/Cool Body Wrapping -Slimming\nmokz0z23avfoqav\tNOT AVAILABLE - Wiskey Wrap- Body Contouring\nmokzoq01j7efg7o\tAddOn:Lymphatic Drainage Massage\nmokzq31enkvefv6\tAddOn: Anti-Cellulite Cupping Massage (one area)\nmokzruguxjndyzw\tAddOn: Lifting Facial Massage\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

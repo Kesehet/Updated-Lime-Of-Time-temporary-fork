@@ -1,0 +1,64 @@
+{
+  "query": "SELECT s.name, s.active, s.serviceIds, s.locationIds FROM staff_members s LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT s.name, s.active, s.serviceIds, s.locationIds FROM staff_members s LIMIT 10;",
+  "rows": [
+    {
+      "name": "Emma Richardson",
+      "active": "1",
+      "serviceIds": "[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]",
+      "locationIds": "[\"sv-loc-15237\"]"
+    },
+    {
+      "name": "Olivia Bennett",
+      "active": "1",
+      "serviceIds": "[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]",
+      "locationIds": "[\"sv-loc-15237\"]"
+    },
+    {
+      "name": "Sophia Clarke",
+      "active": "1",
+      "serviceIds": "[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]",
+      "locationIds": "[\"sv-loc-15237\"]"
+    },
+    {
+      "name": "Ava Thompson",
+      "active": "1",
+      "serviceIds": "[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]",
+      "locationIds": "[\"sv-loc-15222\"]"
+    },
+    {
+      "name": "Isabella Martinez",
+      "active": "1",
+      "serviceIds": "[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]",
+      "locationIds": "[\"sv-loc-15222\"]"
+    },
+    {
+      "name": "Mia Johnson",
+      "active": "1",
+      "serviceIds": "[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]",
+      "locationIds": "[\"sv-loc-15222\"]"
+    },
+    {
+      "name": "Charlotte Davis",
+      "active": "1",
+      "serviceIds": "[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]",
+      "locationIds": "[\"sv-loc-16606\"]"
+    },
+    {
+      "name": "Amelia Wilson",
+      "active": "1",
+      "serviceIds": "[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]",
+      "locationIds": "[\"sv-loc-16606\"]"
+    },
+    {
+      "name": "Harper Moore",
+      "active": "1",
+      "serviceIds": "[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]",
+      "locationIds": "[\"sv-loc-16606\"]"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\tactive\tserviceIds\tlocationIds\nEmma Richardson\t1\t[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]\t[\"sv-loc-15237\"]\nOlivia Bennett\t1\t[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]\t[\"sv-loc-15237\"]\nSophia Clarke\t1\t[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]\t[\"sv-loc-15237\"]\nAva Thompson\t1\t[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]\t[\"sv-loc-15222\"]\nIsabella Martinez\t1\t[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]\t[\"sv-loc-15222\"]\nMia Johnson\t1\t[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]\t[\"sv-loc-15222\"]\nCharlotte Davis\t1\t[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]\t[\"sv-loc-16606\"]\nAmelia Wilson\t1\t[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]\t[\"sv-loc-16606\"]\nHarper Moore\t1\t[\"sv-svc-01\", \"sv-svc-02\", \"sv-svc-03\", \"sv-svc-04\", \"sv-svc-05\", \"sv-svc-06\", \"sv-svc-07\", \"sv-svc-08\", \"sv-svc-09\", \"sv-svc-10\", \"sv-svc-11\", \"sv-svc-12\", \"sv-svc-13\", \"sv-svc-14\", \"sv-svc-15\", \"sv-svc-16\", \"sv-svc-17\", \"sv-svc-18\", \"sv-svc-19\", \"sv-svc-20\"]\t[\"sv-loc-16606\"]\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

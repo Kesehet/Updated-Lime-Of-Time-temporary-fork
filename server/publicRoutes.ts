@@ -397,20 +397,26 @@ export function registerPublicRoutes(app: Express) {
         const rawServiceIds: any[] = Array.isArray(s.serviceIds) ? s.serviceIds : (s.serviceIds ? JSON.parse(s.serviceIds) : []);
         const serviceLocalIds: string[] = rawServiceIds
           .map((numId: any) => {
-            // If it's already a UUID string (e.g. already migrated data), pass through
-            if (typeof numId === 'string' && numId.includes('-')) return numId;
+            // If it's already a UUID string that matches a real service localId, pass through
+            if (typeof numId === 'string' && numId.includes('-')) {
+              // Verify it actually exists in servicesList; if not, return null (stale/seed data)
+              const exists = servicesList.find((sv: any) => sv.localId === numId);
+              return exists ? numId : null;
+            }
             // Otherwise treat as numeric DB id and look up the localId
             const svc = servicesList.find((sv: any) => sv.id === numId || sv.id === Number(numId));
             return svc ? svc.localId : null;
           })
           .filter((id: string | null): id is string => id !== null);
+        // If ALL serviceIds were stale/unresolvable, treat as "all services" (empty array = no restriction)
+        const resolvedServiceIds = serviceLocalIds.length === 0 && rawServiceIds.length > 0 ? [] : serviceLocalIds;
         return {
           localId: s.localId,
           name: s.name,
           role: s.role || "",
           color: s.color || "#6366f1",
           photoUri: ((s as any).photoUri && /^https?:\/\//i.test((s as any).photoUri)) ? (s as any).photoUri : null,
-          serviceIds: serviceLocalIds,
+          serviceIds: resolvedServiceIds,
           locationIds: Array.isArray(s.locationIds) ? s.locationIds : (s.locationIds ? JSON.parse(s.locationIds) : null),
           workingHours: s.workingHours ? (typeof s.workingHours === 'object' ? s.workingHours : JSON.parse(s.workingHours)) : null,
           avgRating: staffRatingMap.has(s.localId) ? Math.round((staffRatingMap.get(s.localId)!.sum / staffRatingMap.get(s.localId)!.count) * 10) / 10 : null,
