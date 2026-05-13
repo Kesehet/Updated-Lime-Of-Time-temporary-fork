@@ -11,6 +11,7 @@ import { sendExpoPush } from "./push";
 import {
   getPlatformConfig,
   getBatchPlatformConfig,
+  getTwilioTestModeFlag,
   getPublicPlans,
   getBusinessSubscriptionInfo,
   isSmsAllowed,
@@ -1485,11 +1486,21 @@ const otpRouter = router({
         });
       }
 
-      // Fetch all OTP config in a single DB query (avoids 3 sequential round-trips)
+       // ── Fast path: in-memory test mode flag (no DB call) ──────────────────
+      // This flag is set on server startup (first config read) and updated
+      // immediately when admin toggles the mode. Avoids 1-2s DB round-trip.
+      const inMemoryTestMode = getTwilioTestModeFlag();
+      if (inMemoryTestMode === true) {
+        const expiresAt = Date.now() + 10 * 60 * 1000;
+        otpStore.set(input.phone, { code: "123456", expiresAt });
+        otpSendCooldown.set(normalizedPhoneKey, Date.now());
+        return { success: true, testMode: true };
+      }
+
+      // ── DB path: fetch config (only reached on first call or after cache miss) ──
       const cfg = await getBatchPlatformConfig(["TWILIO_TEST_MODE", "TWILIO_TEST_OTP", "TWILIO_PER_PHONE_OTP"]);
       const globalTestMode = cfg["TWILIO_TEST_MODE"] === "true";
       const testOtp = cfg["TWILIO_TEST_OTP"] || "123456";
-
       // Check per-phone override first — no SMS sent, static code stored
       let perPhoneOverrides: Record<string, string> = {};
       try { perPhoneOverrides = JSON.parse(cfg["TWILIO_PER_PHONE_OTP"] || "{}"); } catch {}
@@ -1503,7 +1514,6 @@ const otpRouter = router({
         otpSendCooldown.set(normalizedPhoneKey, Date.now());
         return { success: true, testMode: true };
       }
-
       // Global test mode — store code locally, no real SMS
       if (globalTestMode) {
         const expiresAt = Date.now() + 10 * 60 * 1000;

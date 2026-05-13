@@ -209,6 +209,13 @@ export async function getBusinessSubscriptionInfo(businessOwnerId: number) {
 const configCache = new Map<string, { value: string | null; time: number }>();
 const CONFIG_CACHE_TTL = 5 * 60 * 1000; // 5 minutes (config rarely changes; admin saves call invalidateConfigCache)
 
+// ─── In-memory Twilio test mode flag ─────────────────────────────────────────
+// Initialized lazily on first getPlatformConfig("TWILIO_TEST_MODE") call.
+// Avoids a DB round-trip on every otp.send when test mode is active.
+let _twilioTestModeCache: boolean | null = null; // null = not yet loaded
+export function getTwilioTestModeFlag(): boolean | null { return _twilioTestModeCache; }
+export function setTwilioTestModeFlag(value: boolean) { _twilioTestModeCache = value; }
+
 export async function getPlatformConfig(key: string): Promise<string | null> {
   const cached = configCache.get(key);
   if (cached && Date.now() - cached.time < CONFIG_CACHE_TTL) {
@@ -224,6 +231,8 @@ export async function getPlatformConfig(key: string): Promise<string | null> {
       .limit(1);
     const value = rows[0]?.configValue ?? null;
     configCache.set(key, { value, time: Date.now() });
+    // Keep in-memory test mode flag in sync
+    if (key === "TWILIO_TEST_MODE") _twilioTestModeCache = value === "true";
     return value;
   } catch {
     return null;
@@ -261,6 +270,8 @@ export async function getBatchPlatformConfig(keys: string[]): Promise<Record<str
         for (const row of rows) {
           result[row.configKey] = row.configValue ?? null;
           configCache.set(row.configKey, { value: row.configValue ?? null, time: now });
+          // Keep in-memory test mode flag in sync
+          if (row.configKey === "TWILIO_TEST_MODE") _twilioTestModeCache = (row.configValue ?? null) === "true";
         }
         // Keys not found in DB → null
         for (const key of uncached) {
@@ -298,8 +309,11 @@ export async function setPlatformConfig(
 export function invalidateConfigCache(key?: string) {
   if (key) {
     configCache.delete(key);
+    // Reset in-memory test mode flag so next read re-fetches from DB
+    if (key === "TWILIO_TEST_MODE") _twilioTestModeCache = null;
   } else {
     configCache.clear();
+    _twilioTestModeCache = null; // full cache clear — reset flag too
   }
 }
 

@@ -2,7 +2,7 @@ import { Express, Request, Response } from "express";
 import { getDb } from "./db";
 import { businessOwners } from "../drizzle/schema";
 import { sql } from "drizzle-orm";
-import { getPlatformConfig } from "./subscription";
+import { getPlatformConfig, setTwilioTestModeFlag } from "./subscription";
 import { isAuthenticated } from "./adminRoutes";
 
 function requireAdminAuth(req: Request, res: Response): boolean {
@@ -562,13 +562,13 @@ export function registerAdminStripeConnectRoutes(app: Express): void {
         await upsert("TWILIO_FROM_NUMBER", newFromNumber, false, "Twilio From Phone Number (active)");
       }
       await upsert("TWILIO_TEST_MODE", isLive ? "false" : "true", false, "Twilio Test Mode (true/false)");
-
-      // Invalidate config cache
+      // Invalidate config cache and update in-memory test mode flag immediately
       invalidateConfigCache("TWILIO_ACCOUNT_SID");
       invalidateConfigCache("TWILIO_AUTH_TOKEN");
       invalidateConfigCache("TWILIO_VERIFY_SERVICE_SID");
       invalidateConfigCache("TWILIO_FROM_NUMBER");
       invalidateConfigCache("TWILIO_TEST_MODE");
+      setTwilioTestModeFlag(!isLive); // update in-memory flag immediately (no DB round-trip on next OTP send)
 
       const sessionId = req.cookies?.session_id || "";
       console.log(`[Admin] Twilio mode switched to ${targetMode.toUpperCase()} by ${sessionId || "admin"}`);
