@@ -384,7 +384,10 @@ export default function GiftCardsScreen() {
   }, []);
 
   const sortedCards = useMemo(
-    () => [...state.giftCards].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    () => [...state.giftCards]
+      // "My Gift Cards" tab only shows business-created cards (not client-purchased)
+      .filter((c) => !(c as any).purchasedPublicly)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     [state.giftCards]
   );
   const activeCards = useMemo(() => sortedCards.filter((c) => !c.redeemed), [sortedCards]);
