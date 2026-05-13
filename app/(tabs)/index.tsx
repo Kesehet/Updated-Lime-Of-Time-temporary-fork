@@ -626,11 +626,12 @@ export default function HomeScreen() {
     const slug = state.settings.customSlug || state.settings.businessName.replace(/\s+/g, "-").toLowerCase();
     return `${PUBLIC_BOOKING_URL}/book/${slug}`;
   }, [state.settings]);
-  // URL used inside the QR modal — always base URL (client selects location as first step)
+  // URL used inside the QR modal — include active location so it pre-selects the correct location
   const qrBookingUrl = useMemo(() => {
     const slug = state.settings.customSlug || state.settings.businessName.replace(/\s+/g, "-").toLowerCase();
-    return `${PUBLIC_BOOKING_URL}/book/${slug}`;
-  }, [state.settings]);
+    const locationParam = activeLocation?.localId ? `?location=${encodeURIComponent(activeLocation.localId)}` : "";
+    return `${PUBLIC_BOOKING_URL}/book/${slug}${locationParam}`;
+  }, [state.settings, activeLocation]);
   // Use the store's location-aware filter (single source of truth)
   const filterByLocation = filterAppointmentsByLocation;
 
@@ -1301,8 +1302,9 @@ export default function HomeScreen() {
 
   const doShareForLocation = useCallback(async (loc: typeof activeLocation) => {
     const slug = state.settings.customSlug || state.settings.businessName.replace(/\s+/g, "-").toLowerCase();
-    // Always use base URL — client selects location as the first step in the booking flow
-    const url = `${PUBLIC_BOOKING_URL}/book/${slug}`;
+    // Include ?location= param when a specific location is passed so the booking page pre-selects it
+    const locationParam = loc?.localId ? `?location=${encodeURIComponent(loc.localId)}` : "";
+    const url = `${PUBLIC_BOOKING_URL}/book/${slug}${locationParam}`;
     const profile = state.settings.profile;
     // Use full address (street + city + state + zip) for the share message
     const displayAddress = loc
@@ -1336,9 +1338,9 @@ export default function HomeScreen() {
   }, [state.settings, activeLocation]);
 
   const handleShareBookingLink = useCallback(() => {
-    // Always share the base booking URL — client selects location as the first step
-    doShareForLocation(null);
-  }, [doShareForLocation]);
+    // Share with the active location so address and ?location= param are correct
+    doShareForLocation(activeLocation);
+  }, [doShareForLocation, activeLocation]);
 
   const handlePickLogo = useCallback(async () => {
     if (Platform.OS === "web") {
@@ -2962,8 +2964,8 @@ export default function HomeScreen() {
               </Pressable>
               <Pressable
                 onPress={async () => {
-                  // Share base booking URL — client selects location as first step
-                  await doShareForLocation(null);
+                  // Share with active location so address and ?location= param are correct
+                  await doShareForLocation(activeLocation);
                   setShowQrModal(false);
                 }}
                 style={({ pressed }) => [{

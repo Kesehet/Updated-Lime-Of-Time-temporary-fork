@@ -2177,3 +2177,4 @@
 - [x] Fix package/bundle images not showing in booking service selection step
 - [x] Fix session stepper circles overflowing the container when package has many sessions (e.g. 10)
 - [x] Fix no available time slots showing in client public booking when selecting dates for package sessions (race condition fix: calendar now waits for working days to load)
+- [x] Fix Home page share button sending wrong location address (sends first location instead of the selected/active location, and missing ?location= param in URL)
