@@ -105,7 +105,10 @@ export default function LocationFormScreen() {
         if (Platform.OS === "web") return;
         const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
         if (status !== "granted" || cancelled) return;
-        const pos = await ExpoLocation.getCurrentPositionAsync({ accuracy: ExpoLocation.Accuracy.Lowest, timeoutInterval: 5000 });
+        const pos = await Promise.race([
+          ExpoLocation.getCurrentPositionAsync({ accuracy: ExpoLocation.Accuracy.Lowest }),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+        ]);
         if (cancelled) return;
         const [geo] = await ExpoLocation.reverseGeocodeAsync({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
         if (cancelled || !geo?.isoCountryCode) return;

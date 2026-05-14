@@ -692,7 +692,7 @@ export default function NewBookingScreen() {
           ? (bookNotes ? `${bookNotes}\nPackage: ${selectedPackage.name}` : `Package: ${selectedPackage.name}`)
           : bookNotes,
         createdAt: new Date().toISOString(),
-        totalPrice,
+        totalPrice: grandTotal,
         extraItems: cart.length > 0 ? cart.map((c) => ({ type: c.type, id: c.id, name: c.name, price: c.price, duration: c.duration })) : undefined,
         staffId: selectedStaffId ?? undefined,
         locationId: effectiveLocationId ?? undefined,
@@ -701,7 +701,6 @@ export default function NewBookingScreen() {
         discountName: appliedDiscount?.name,
         clientAddress: isMobileService && clientAddress.trim() ? clientAddress.trim() : undefined,
         travelFee: (isMobileService && travelFeeAmount > 0) ? travelFeeAmount : undefined,
-        totalPrice: grandTotal,
         paymentMethod: grandTotal <= 0 ? 'free' as any : (selectedPaymentMethod === 'card' ? 'card' as any : ((selectedPaymentMethod as 'zelle' | 'venmo' | 'cashapp' | 'cash' | undefined) ?? undefined)),
         paymentStatus: grandTotal <= 0 ? 'paid' as const : (selectedPaymentMethod === 'cash' ? 'pending_cash' : (selectedPaymentMethod === 'card' ? 'unpaid' : (selectedPaymentMethod ? 'unpaid' : undefined))),
       };
@@ -780,7 +779,6 @@ export default function NewBookingScreen() {
         const { error: initError } = await initPaymentSheet({
           merchantDisplayName: state.settings.businessName ?? 'Business',
           paymentIntentClientSecret: sheetData.paymentIntent,
-          stripeAccountId: sheetData.accountId,
           customerId: undefined,
           allowsDelayedPaymentMethods: false,
           defaultBillingDetails: selectedClient?.name ? { name: selectedClient.name } : undefined,
@@ -801,8 +799,12 @@ export default function NewBookingScreen() {
           return;
         }
         // Payment succeeded — update appointment payment status
-        dispatch({ type: 'UPDATE_APPOINTMENT', payload: { id: firstAppointmentId, paymentStatus: 'paid', paymentMethod: 'card' } });
-        syncToDb({ type: 'UPDATE_APPOINTMENT', payload: { id: firstAppointmentId, paymentStatus: 'paid', paymentMethod: 'card' } });
+        const paidAppt = state.appointments.find((a) => a.id === firstAppointmentId);
+        if (paidAppt) {
+          const updatedAppt = { ...paidAppt, paymentStatus: 'paid' as const, paymentMethod: 'card' as const };
+          dispatch({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
+          syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
+        }
         setChargingCard(false);
       } catch (err: any) {
         Alert.alert('Payment Error', err?.message ?? 'Failed to process card payment');

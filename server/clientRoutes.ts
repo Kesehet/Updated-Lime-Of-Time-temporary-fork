@@ -1401,7 +1401,7 @@ export function registerClientRoutes(app: Express) {
         conditions.length === 1 ? conditions[0] : or(...conditions)
       );
       const result = await Promise.all(packages.map(async (pkg: any) => {
-        const [owner] = await dbase.select({ businessName: businessOwners.businessName, businessLogoUri: businessOwners.businessLogoUri, customSlug: businessOwners.customSlug }).from(businessOwners).where(eq(businessOwners.id, pkg.businessOwnerId));
+        const [owner] = await dbase.select({ id: businessOwners.id, businessName: businessOwners.businessName, businessLogoUri: businessOwners.businessLogoUri, customSlug: businessOwners.customSlug }).from(businessOwners).where(eq(businessOwners.id, pkg.businessOwnerId));
         return {
           localId: pkg.localId,
           packageLocalId: pkg.packageLocalId,

@@ -932,7 +932,6 @@ export default function ClientBookingWizardScreen() {
                 merchantDisplayName: businessDisplayName || effectiveSlug,
                 paymentIntentClientSecret: paymentIntent,
                 style: "alwaysDark",
-                stripeAccountId: accountId,
               });
               if (!initError) {
                 const { error: presentError } = await presentPaymentSheet();
@@ -1077,9 +1076,9 @@ export default function ClientBookingWizardScreen() {
         {/* Service thumbnail + name in header when a service is pre-selected */}
         {selectedService && step > STEP_SERVICE ? (
           <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            {selectedService.imageUrl ? (
+            {selectedService.photoUri ? (
               <Image
-                source={{ uri: selectedService.imageUrl }}
+                source={{ uri: selectedService.photoUri }}
                 style={{ width: 28, height: 28, borderRadius: 6 }}
                 contentFit="cover"
               />
@@ -2066,7 +2065,7 @@ export default function ClientBookingWizardScreen() {
           <View style={s.stepContent}>
             <Text style={[s.stepTitle, { color: TEXT_PRIMARY }]}>Your Address</Text>
             <Text style={[s.stepSubtitle, { color: TEXT_MUTED }]}>This service is performed at your location. Please enter the address where you'd like the service.</Text>
-            <View style={[s.card, { padding: 16, marginTop: 8 }]}>
+            <View style={{ borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)", padding: 16, marginTop: 8 }}>
               {/* Pre-fill hint when a previous address is available */}
               {!addrStreet && lastUsedAddress ? (
                 <Pressable

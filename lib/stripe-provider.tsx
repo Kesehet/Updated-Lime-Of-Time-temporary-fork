@@ -19,7 +19,7 @@ export function StripeProvider({ children, publishableKey, merchantIdentifier, u
       merchantIdentifier={merchantIdentifier}
       urlScheme={urlScheme}
     >
-      {children}
+      {children as React.ReactElement}
     </NativeStripeProvider>
   );
 }

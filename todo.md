@@ -2244,3 +2244,28 @@
 - [x] Fix bookings.tsx: replace removeCalendarEvent with deleteCalendarEvent from calendar-sync
 - [x] Fix index.tsx: fix localId references on Location type (use id instead)
 - [x] Fix index.tsx: fix fs token references (xxl, xl, lg, sm, xs) — destructure fs directly from useResponsive() instead of fontScale: fs
+
+## Phase: Full TypeScript Clean Build (May 2026)
+
+- [ ] client-signin.tsx(128): timeoutInterval → Promise.race pattern
+- [ ] location-form.tsx(108): timeoutInterval → Promise.race pattern
+- [ ] onboarding.tsx(377): timeoutInterval → Promise.race pattern
+- [ ] onboarding.tsx(1073): updateSettings called with {businessLogoUri} only — needs full partial type fix
+- [ ] appointment-detail.tsx(479): stripeAccountId not in SetupParams — use correct Stripe initPaymentSheet params
+- [ ] client-booking-wizard.tsx(935): stripeAccountId not in SetupParams
+- [ ] client-booking-wizard.tsx(1080,1082): imageUrl not on PublicService type — add imageUrl to PublicService or use correct field
+- [ ] client-booking-wizard.tsx(2069): styles.card missing — add card style or use correct style key
+- [ ] client-buy-gift.tsx(446,453): initPaymentSheet/presentPaymentSheet not found — missing import from @stripe/stripe-react-native
+- [ ] client-gift-confirmation.tsx(98): stripeAccountId not in SetupParams
+- [ ] new-booking.tsx(704): duplicate property in object literal
+- [ ] new-booking.tsx(783): stripeAccountId not in SetupParams
+- [ ] new-booking.tsx(804,805): partial Appointment object missing required fields — use type assertion or spread
+- [ ] lib/store.tsx(1077): stripeConnectEnabled not in Partial<BusinessSettings> — add to BusinessSettings type
+- [ ] lib/stripe-provider.tsx(22): ReactNode not assignable to ReactElement — fix children type
+- [ ] server/_core/storageProxy.ts(5): implicit any on index type — add type annotation
+- [ ] server/clientRoutes.ts(1411): .id not on business settings select result — add id to the select
+- [ ] server/publicRoutes.ts(192): .select not on Promise<db> — await db before calling .select
+- [ ] server/referralExpiryCron.ts(73): screen not in PushNotificationData — remove or use correct field
+- [ ] server/stripeRoutes.ts(302,329,333): isTrialEligible not defined — import or define it
+- [ ] server/stripeRoutes.ts(568): screen not in PushNotificationData — remove or use correct field
+- [ ] server/stripeRoutes.ts(589): bizName not defined — fix variable reference

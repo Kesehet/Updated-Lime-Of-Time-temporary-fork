@@ -374,7 +374,10 @@ export default function OnboardingScreen() {
         if (Platform.OS === "web") return; // geolocation not needed on web
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted" || cancelled) return;
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Lowest, timeoutInterval: 5000 });
+        const pos = await Promise.race([
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Lowest }),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+        ]);
         if (cancelled) return;
         const [geo] = await Location.reverseGeocodeAsync({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
         if (cancelled || !geo?.isoCountryCode) return;
@@ -1070,7 +1073,7 @@ export default function OnboardingScreen() {
       if (logoUri && !logoUri.startsWith("file:///")) {
         // Already uploaded to S3 — update the owner record
         try {
-          await updateBusinessMut.mutateAsync({ businessLogoUri: logoUri });
+          await updateBusinessMut.mutateAsync({ id: newOwner.id, businessLogoUri: logoUri });
           dispatch({ type: "UPDATE_SETTINGS", payload: { businessLogoUri: logoUri } });
         } catch { /* non-blocking */ }
       }

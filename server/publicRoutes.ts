@@ -185,15 +185,15 @@ export function registerPublicRoutes(app: Express) {
     let discountBanner = "";
     if (refCode) {
       try {
-        const drizzleDb = db.getDb();
+        const drizzleDb = await db.getDb();
         const { referralCodes, businessOwners } = await import("../drizzle/schema");
         const { eq } = await import("drizzle-orm");
-        const rows = await drizzleDb
+        const rows = drizzleDb ? await drizzleDb
           .select({ businessName: businessOwners.businessName })
           .from(referralCodes)
           .innerJoin(businessOwners, eq(referralCodes.businessOwnerId, businessOwners.id))
           .where(eq(referralCodes.code, refCode.toUpperCase()))
-          .limit(1);
+          .limit(1) : [];
         if (rows[0]) {
           referrerName = rows[0].businessName;
           // Store ref in cookie for 30 days so the app can pick it up on first open

@@ -476,7 +476,6 @@ export default function AppointmentDetailScreen() {
         merchantDisplayName: biz.businessName || 'Business',
         paymentIntentClientSecret: paymentIntent,
         style: 'alwaysDark',
-        stripeAccountId: accountId,
       });
       if (initError) {
         throw new Error(initError.message ?? 'Could not initialize payment.');

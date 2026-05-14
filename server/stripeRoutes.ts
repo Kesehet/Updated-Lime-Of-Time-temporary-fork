@@ -207,12 +207,13 @@ export function registerStripeRoutes(app: Express): void {
       const db = await getDb();
       let stripeCustomerId: string | undefined;
 
+      let isTrialEligible = false;
       if (db) {
         const rows = await db.select().from(businessOwners).where(eq(businessOwners.id, businessOwnerId)).limit(1);
         const owner = rows[0];
         // Determine if this owner is eligible for a 14-day trial
         // Eligible: paid plan (not solo), has NOT used trial before
-        const isTrialEligible = planKey !== "solo" && !(owner as any)?.hasUsedTrial;
+        isTrialEligible = planKey !== "solo" && !(owner as any)?.hasUsedTrial;
         if (owner?.stripeCustomerId) {
           stripeCustomerId = owner.stripeCustomerId;
         } else {
@@ -557,15 +558,14 @@ export function registerStripeRoutes(app: Express): void {
                       const referrerRows = await db.select().from(businessOwners)
                         .where(eq(businessOwners.id, referral.referrerBusinessOwnerId)).limit(1);
                       const referrer = referrerRows[0] as any;
+                      const referredRows2 = await db.select().from(businessOwners)
+                        .where(eq(businessOwners.id, referredOwnerId)).limit(1);
+                      const bizName = referredRows2[0]?.businessName ?? "Your referral";
                       if (referrer?.expoPushToken) {
-                        const referredRows = await db.select().from(businessOwners)
-                          .where(eq(businessOwners.id, referredOwnerId)).limit(1);
-                        const referredBiz = referredRows[0];
-                        const bizName = referredBiz?.businessName ?? "Your referral";
                         await sendExpoPush(referrer.expoPushToken, {
                           title: "\uD83C\uDF89 Referral Converted!",
                           body: `${bizName} just signed up! You'll earn a free month once they complete their first payment.`,
-                          data: { screen: "referrals" },
+                          data: { type: "general" as const, screen: "referrals" },
                         });
                         console.log(`[Referral] Push notification sent to referrer ${referral.referrerBusinessOwnerId}`);
                       }

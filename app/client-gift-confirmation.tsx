@@ -95,7 +95,6 @@ export default function ClientGiftConfirmationScreen() {
         const { error: initError } = await initPaymentSheet({
           paymentIntentClientSecret: sheetData.paymentIntent,
           merchantDisplayName: businessName ?? "Business",
-          stripeAccountId: sheetData.accountId,
           style: "alwaysDark",
         });
         if (initError) {

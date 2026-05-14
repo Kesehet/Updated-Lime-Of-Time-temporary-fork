@@ -125,7 +125,10 @@ export default function ClientSignInScreen() {
         if (Platform.OS === "web") return;
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted" || cancelled) return;
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Lowest, timeoutInterval: 5000 });
+        const pos = await Promise.race([
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Lowest }),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+        ]);
         if (cancelled) return;
         const [geo] = await Location.reverseGeocodeAsync({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
         if (cancelled || !geo?.isoCountryCode) return;

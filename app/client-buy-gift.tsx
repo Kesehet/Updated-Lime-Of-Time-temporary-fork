@@ -182,6 +182,7 @@ export default function ClientBuyGiftScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const today = new Date();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   // ── Load gift info ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -446,7 +447,6 @@ export default function ClientBuyGiftScreen() {
             const { error: initError } = await initPaymentSheet({
               paymentIntentClientSecret: sheetData.paymentIntent,
               merchantDisplayName: businessName || "Business",
-              stripeAccountId: sheetData.accountId,
               style: "alwaysDark",
             });
             if (initError) { Alert.alert("Payment Error", initError.message); return; }

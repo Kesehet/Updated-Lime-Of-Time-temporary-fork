@@ -120,8 +120,8 @@ export default function SettingsScreen() {
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteConfirmMatch = deleteConfirmText.trim().toUpperCase() === "DELETE";
   // Pending deletion state from server profile
-  const pendingDeletionAt = (state.profile as any)?.pendingDeletionAt ?? null;
-  const deletionScheduledFor = (state.profile as any)?.deletionScheduledFor ?? null;
+  const pendingDeletionAt = (state as any).profile?.pendingDeletionAt ?? null;
+  const deletionScheduledFor = (state as any).profile?.deletionScheduledFor ?? null;
   const hasPendingDeletion = !!pendingDeletionAt;
 
   // ── Calendar Sync ─────────────────────────────────────────────────────────────
@@ -288,7 +288,7 @@ export default function SettingsScreen() {
 
   // Derive which service types the business has (drives which sections appear)
   const hasInStoreServices = useMemo(() =>
-    state.services.some((s) => !s.serviceType || s.serviceType === 'in_store' || s.serviceType === 'in-store'),
+    state.services.some((s) => !s.serviceType || s.serviceType === 'in_store'),
     [state.services]
   );
   const hasMobileServices = useMemo(() =>
@@ -304,7 +304,7 @@ export default function SettingsScreen() {
   const customInStoreCategories = useMemo(() => {
     const cats = new Set<string>();
     state.services
-      .filter((s) => !s.serviceType || s.serviceType === 'in_store' || s.serviceType === 'in-store')
+      .filter((s) => !s.serviceType || s.serviceType === 'in_store')
       .forEach((s) => {
         if (s.category && !SERVICE_CATEGORIES.find((c) => c.label === s.category) && !MOBILE_SERVICE_CATEGORIES.find((c) => c.label === s.category)) {
           cats.add(s.category);

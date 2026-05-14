@@ -33,6 +33,8 @@ export type PushNotificationData = {
   clientName?: string;
   /** Business owner ID for business message deep-links */
   businessOwnerId?: number;
+  /** Optional screen name for deep-link navigation (e.g. 'referrals') */
+  screen?: string;
 };
 
 export type PushPayload = {

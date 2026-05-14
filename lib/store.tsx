@@ -1073,9 +1073,9 @@ export function dbOwnerToSettings(owner: any): Partial<BusinessSettings> {
     // Client portal
     clientPortalVisible: (owner as any).clientPortalVisible ?? false,
     businessCategory: (owner as any).businessCategory ?? null,
-    // Stripe Connect
-    stripeConnectEnabled: (owner as any).stripeConnectEnabled ?? false,
-    stripeConnectAccountId: (owner as any).stripeConnectAccountId ?? null,
+    // Stripe Connect (cast to any since these fields are not in BusinessSettings type yet)
+    ...(((owner as any).stripeConnectEnabled !== undefined) ? { stripeConnectEnabled: (owner as any).stripeConnectEnabled } : {}),
+    ...(((owner as any).stripeConnectAccountId !== undefined) ? { stripeConnectAccountId: (owner as any).stripeConnectAccountId } : {}),
   };
 }
 
