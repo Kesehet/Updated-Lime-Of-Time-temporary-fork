@@ -345,6 +345,15 @@ const servicesRouter = router({
 // ─── Clients Router ──────────────────────────────────────────────────
 
 const clientsRouter = router({
+  checkByPhone: publicProcedure
+    .input(z.object({ businessOwnerId: z.number(), phone: z.string() }))
+    .query(async ({ input }) => {
+      if (!input.phone.trim()) return null;
+      const existing = await db.getClientByPhone(input.phone, input.businessOwnerId);
+      if (!existing) return null;
+      return { localId: existing.localId, name: existing.name, phone: existing.phone ?? null };
+    }),
+
   list: publicProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {

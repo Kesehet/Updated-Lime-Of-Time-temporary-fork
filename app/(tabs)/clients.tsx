@@ -21,6 +21,7 @@ import { BirthdayPicker } from "@/components/birthday-picker";
 import { apiCall } from "@/lib/_core/api";
 import * as Auth from "@/lib/_core/auth";
 import { useFocusEffect } from "expo-router";
+import { trpc } from "@/lib/trpc";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface MessageThread {
@@ -158,6 +159,25 @@ export default function ClientsScreen() {
   const [upgradeSheetVisible, setUpgradeSheetVisible] = useState(false);
   const [upgradeSheetInfo, setUpgradeSheetInfo] = useState<{ planKey: string; planName: string; limit: number } | null>(null);
 
+  // ── Duplicate phone detection ─────────────────────────────────────────────
+  const [phoneToCheck, setPhoneToCheck] = useState("");
+  const [duplicateClient, setDuplicateClient] = useState<{ localId: string; name: string; phone: string | null } | null>(null);
+  const [saveAnyway, setSaveAnyway] = useState(false);
+  const { data: dupeCheckResult } = trpc.clients.checkByPhone.useQuery(
+    { businessOwnerId: state.businessOwnerId ?? 0, phone: phoneToCheck },
+    { enabled: !!state.businessOwnerId && phoneToCheck.length >= 7 }
+  );
+  // Sync duplicate result into state whenever the query resolves
+  useEffect(() => {
+    if (!phoneToCheck || phoneToCheck.length < 7) {
+      setDuplicateClient(null);
+      setSaveAnyway(false);
+      return;
+    }
+    setDuplicateClient(dupeCheckResult ?? null);
+    if (!dupeCheckResult) setSaveAnyway(false);
+  }, [dupeCheckResult, phoneToCheck]);
+
   // ── Action sheet state ────────────────────────────────────────────────────
   const [actionSheetClient, setActionSheetClient] = useState<{ client: Client; appt: Appointment | null } | null>(null);
 
@@ -284,11 +304,20 @@ export default function ClientsScreen() {
   );
 
   const handlePhoneChange = useCallback((text: string) => {
-    setNewPhone(formatPhoneNumber(text));
+    const formatted = formatPhoneNumber(text);
+    setNewPhone(formatted);
+    // Reset dupe state when phone changes
+    setDuplicateClient(null);
+    setSaveAnyway(false);
+    // Trigger duplicate check once we have enough digits
+    const digits = stripPhoneFormat(formatted);
+    setPhoneToCheck(digits.length >= 7 ? formatted : "");
   }, []);
 
   const handleAddClient = useCallback(() => {
     if (!newName.trim()) return;
+    // Block if a duplicate is detected and the owner hasn't explicitly chosen to save anyway
+    if (duplicateClient && !saveAnyway) return;
     const limitInfo = checkLimit("clients");
     if (!limitInfo.allowed) {
       setUpgradeSheetInfo({ planKey: limitInfo.planKey, planName: limitInfo.planName, limit: limitInfo.currentLimit });
@@ -307,8 +336,9 @@ export default function ClientsScreen() {
     dispatch({ type: "ADD_CLIENT", payload: client });
     syncToDb({ type: "ADD_CLIENT", payload: client });
     setNewName(""); setNewPhone(""); setNewEmail(""); setNewBirthday("");
+    setPhoneToCheck(""); setDuplicateClient(null); setSaveAnyway(false);
     setShowAdd(false);
-  }, [newName, newPhone, newEmail, newBirthday, dispatch, syncToDb]);
+  }, [newName, newPhone, newEmail, newBirthday, duplicateClient, saveAnyway, dispatch, syncToDb, checkLimit]);
 
   const handleSelectFromContacts = useCallback(async () => {
     const limitInfo = checkLimit("clients");
@@ -699,7 +729,44 @@ export default function ClientsScreen() {
                 <View style={[styles.addForm, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>New Client</Text>
                   <TextInput style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]} placeholder="Full Name *" placeholderTextColor={colors.muted} value={newName} onChangeText={setNewName} returnKeyType="next" />
-                  <TextInput style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]} placeholder="(000) 000-0000" placeholderTextColor={colors.muted} value={newPhone} onChangeText={handlePhoneChange} keyboardType="phone-pad" returnKeyType="next" maxLength={19} />
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.background, borderColor: duplicateClient ? colors.warning : colors.border, color: colors.foreground }]}
+                    placeholder="(000) 000-0000"
+                    placeholderTextColor={colors.muted}
+                    value={newPhone}
+                    onChangeText={handlePhoneChange}
+                    keyboardType="phone-pad"
+                    returnKeyType="next"
+                    maxLength={19}
+                  />
+                  {/* ── Duplicate phone warning ──────────────────────────── */}
+                  {duplicateClient && !saveAnyway && (
+                    <View style={{ backgroundColor: colors.warning + "22", borderColor: colors.warning, borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 8 }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.warning, marginBottom: 4 }}>⚠️ Phone already in use</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.foreground, marginBottom: 10, lineHeight: 18 }}>
+                        <Text style={{ fontWeight: "600" }}>{duplicateClient.name}</Text> already has this phone number in your client list.
+                      </Text>
+                      <View style={{ flexDirection: "row", gap: 8 }}>
+                        <Pressable
+                          onPress={() => {
+                            setShowAdd(false);
+                            setNewName(""); setNewPhone(""); setNewEmail(""); setNewBirthday("");
+                            setPhoneToCheck(""); setDuplicateClient(null); setSaveAnyway(false);
+                            router.push({ pathname: "/client-detail", params: { id: duplicateClient.localId } } as any);
+                          }}
+                          style={({ pressed }) => ({ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 })}
+                        >
+                          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#FFF" }}>View Existing</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => setSaveAnyway(true)}
+                          style={({ pressed }) => ({ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, opacity: pressed ? 0.7 : 1 })}
+                        >
+                          <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.foreground }}>Add Anyway</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  )}
                   <TextInput style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]} placeholder="Email" placeholderTextColor={colors.muted} value={newEmail} onChangeText={setNewEmail} keyboardType="email-address" autoCapitalize="none" returnKeyType="next" />
                   <BirthdayPicker value={newBirthday} onChange={setNewBirthday} placeholder="Expire Date (optional)" style={{ marginBottom: 14 }} />
                   <View style={styles.formActions}>
