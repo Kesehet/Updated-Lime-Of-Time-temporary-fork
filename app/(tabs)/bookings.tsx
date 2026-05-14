@@ -54,7 +54,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SwipeableRequestCard } from "@/components/swipeable-request-card";
 import { useScrollToTopOnFocus } from "@/hooks/use-scroll-to-top-on-focus";
-import { addCalendarEvent, removeCalendarEvent } from "@/lib/calendar-sync";
+import { addCalendarEvent, deleteCalendarEvent } from "@/lib/calendar-sync";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -336,7 +336,7 @@ export default function BookingsScreen() {
           else Alert.alert("Appointment Rejected", message);
           // Calendar sync — remove event if enabled
           AsyncStorage.getItem("@limeofttime_calendar_sync_enabled").then((v) => {
-            if (v === "true") removeCalendarEvent(appt.id).catch(() => {});
+            if (v === "true") deleteCalendarEvent(appt.id).catch(() => {});
           });
         },
       },

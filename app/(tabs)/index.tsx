@@ -118,7 +118,7 @@ function GradientKpiCard({
   onPress?: () => void;
   width: number;
 }) {
-  const { fontScale: fs } = useResponsive();
+  const { fs } = useResponsive();
   const sparkW = cardWidth - 28;
   const animatedNum = useCountUp(numericValue ?? 0);
   const displayValue = numericValue != null
@@ -304,7 +304,7 @@ export default function HomeScreen() {
     useStore();
   const colors = useColors();
   const router = useRouter();
-  const { width, height, isTablet, isLargeTablet, hp, maxContentWidth, cardGap, kpiCols, fontScale: fs, modalMaxWidth, buttonHeight, iconButtonSize } = useResponsive();
+  const { width, height, isTablet, isLargeTablet, hp, maxContentWidth, cardGap, kpiCols, fs, modalMaxWidth, buttonHeight, iconButtonSize } = useResponsive();
   const contentWidth = maxContentWidth - hp * 2;
   const cardW = Math.floor((contentWidth - cardGap * (kpiCols - 1)) / kpiCols);
 
@@ -629,7 +629,7 @@ export default function HomeScreen() {
   // URL used inside the QR modal — include active location so it pre-selects the correct location
   const qrBookingUrl = useMemo(() => {
     const slug = state.settings.customSlug || state.settings.businessName.replace(/\s+/g, "-").toLowerCase();
-    const locationParam = activeLocation?.localId ? `?location=${encodeURIComponent(activeLocation.localId)}` : "";
+    const locationParam = activeLocation?.id ? `?location=${encodeURIComponent(activeLocation.id)}` : "";
     return `${PUBLIC_BOOKING_URL}/book/${slug}${locationParam}`;
   }, [state.settings, activeLocation]);
   // Use the store's location-aware filter (single source of truth)
@@ -1303,7 +1303,7 @@ export default function HomeScreen() {
   const doShareForLocation = useCallback(async (loc: typeof activeLocation) => {
     const slug = state.settings.customSlug || state.settings.businessName.replace(/\s+/g, "-").toLowerCase();
     // Include ?location= param when a specific location is passed so the booking page pre-selects it
-    const locationParam = loc?.localId ? `?location=${encodeURIComponent(loc.localId)}` : "";
+    const locationParam = loc?.id ? `?location=${encodeURIComponent(loc.id)}` : "";
     const url = `${PUBLIC_BOOKING_URL}/book/${slug}${locationParam}`;
     const profile = state.settings.profile;
     // Use full address (street + city + state + zip) for the share message

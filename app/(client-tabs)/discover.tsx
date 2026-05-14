@@ -619,8 +619,11 @@ export default function DiscoverScreen() {
           setLocationError("Location access denied. Showing all businesses.");
           return;
         }
-        // timeoutInterval: 8s prevents the 10-20s hang on Android when GPS signal is weak
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced, timeoutInterval: 8000 });
+        // Use Promise.race to enforce an 8s timeout — getCurrentPositionAsync has no built-in timeout option
+        const loc = await Promise.race([
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Location timeout')), 8000)),
+        ]);
         if (cancelled) return;
         const { latitude, longitude } = loc.coords;
         setUserLat(latitude);
@@ -663,8 +666,11 @@ export default function DiscoverScreen() {
         setNearMeLoading(false);
         return;
       }
-      // timeoutInterval: 8s prevents the 10-20s hang on Android when GPS signal is weak
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced, timeoutInterval: 8000 });
+      // Use Promise.race to enforce an 8s timeout — getCurrentPositionAsync has no built-in timeout option
+      const loc = await Promise.race([
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Location timeout')), 8000)),
+      ]);
       const { latitude, longitude } = loc.coords;
       setUserLat(latitude);
       setUserLng(longitude);
@@ -1203,8 +1209,11 @@ export default function DiscoverScreen() {
                 try {
                   const { status } = await Location.getForegroundPermissionsAsync();
                   if (status === "granted") {
-                    // timeoutInterval: 8s prevents the 10-20s hang on Android when GPS signal is weak
-                    const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced, timeoutInterval: 8000 });
+                    // Use Promise.race to enforce an 8s timeout — getCurrentPositionAsync has no built-in timeout option
+                    const loc = await Promise.race([
+                      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+                      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Location timeout')), 8000)),
+                    ]);
                     const { latitude, longitude } = loc.coords;
                     setUserLat(latitude);
                     setUserLng(longitude);

@@ -2237,3 +2237,10 @@
 - [x] Fix 7: Save client address after mobile booking to client_accounts.savedAddress
 - [x] Fix 8: Pre-fill address fields on public booking page (4b) from saved address when phone is known
 - [x] Fix 9: Pre-fill address fields on Client Portal booking wizard from logged-in client's saved address (already implemented in client-booking-wizard.tsx)
+
+## Phase: TypeScript Error Fixes (May 2026)
+
+- [x] Fix discover.tsx: replace timeoutInterval with Promise.race timeout pattern in getCurrentPositionAsync calls (3 occurrences)
+- [x] Fix bookings.tsx: replace removeCalendarEvent with deleteCalendarEvent from calendar-sync
+- [x] Fix index.tsx: fix localId references on Location type (use id instead)
+- [x] Fix index.tsx: fix fs token references (xxl, xl, lg, sm, xs) — destructure fs directly from useResponsive() instead of fontScale: fs
