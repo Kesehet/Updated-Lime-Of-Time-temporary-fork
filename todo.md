@@ -2213,3 +2213,15 @@
 - [x] Service-form category picker: show existing custom categories alongside standard ones per serviceType
 - [x] clientRoutes.ts categories endpoint: pass through custom category labels without normalizing to Other
 - [x] discover.tsx: handle custom categories with proper emoji/color fallback in chips
+
+## Phase: Mobile Service Address Step Fix (May 2026)
+
+- [x] Public booking page: move address step (4b) to BEFORE date/time step — intercept goToStep(4) when mobile service selected, show 4b first, then proceed to date/time after address is confirmed
+- [x] Public booking page: update Back button on date/time step (step 4) to return to address step (4b) when mobile service is selected
+- [x] Public booking page: update Back button on step 4b to return to staff step (step 3) instead of date/time
+- [x] Public booking page: distance/travel-fee calculation must use client address entered BEFORE date/time so available slots can reflect travel buffer
+- [x] Business owner booking app (new-booking.tsx): add dedicated address step (step 3.5 / new step 4) between date/time and confirm for mobile services
+- [x] Business owner booking app: address step shows Street, City, State, ZIP fields with travel fee preview
+- [x] Business owner booking app: Continue from date/time step goes to address step when mobile service selected
+- [x] Business owner booking app: Back from confirm step goes to address step when mobile service selected
+- [x] Business owner booking app: address step Back returns to date/time step

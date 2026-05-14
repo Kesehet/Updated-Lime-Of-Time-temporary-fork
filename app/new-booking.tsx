@@ -97,6 +97,8 @@ export default function NewBookingScreen() {
   const [productQty, setProductQty] = useState<Record<string, number>>({});
   const [recurring, setRecurring] = useState<"none" | "weekly" | "biweekly" | "monthly">("none");
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+  // Address step gate: shown between date/time (step 3) and review (step 4) for mobile services
+  const [onAddressStep, setOnAddressStep] = useState(false);
   // Pre-select the currently active location (single source of truth).
   // When activeLocationId is null (All mode), keep null so the date picker shows all locations.
   const [refreshKey, setRefreshKey] = useState(0);
@@ -825,7 +827,10 @@ export default function NewBookingScreen() {
     return formatTime(minutesToTime(timeToMinutes(time) + totalDuration));
   };
 
-  const TOTAL_STEPS = 5;
+  // For mobile services, there is an extra address step between date/time and review
+  const TOTAL_STEPS = isMobileService ? 6 : 5;
+  // Compute a display step number that accounts for the address step
+  const displayStep = onAddressStep ? 4 : (isMobileService && step >= 4 ? step + 1 : step);
 
   return (
     <ScreenContainer edges={["top", "bottom", "left", "right"]} tabletMaxWidth={720}>
@@ -838,7 +843,7 @@ export default function NewBookingScreen() {
           </Pressable>
           <Text className="text-xl font-bold text-foreground ml-4">New Booking</Text>
         </View>
-        <Text className="text-sm text-muted">Step {step}/{TOTAL_STEPS}</Text>
+        <Text className="text-sm text-muted">Step {displayStep}/{TOTAL_STEPS}</Text>
       </View>
 
       {/* Progress Bar */}
@@ -847,7 +852,7 @@ export default function NewBookingScreen() {
           <View
             key={s}
             className="flex-1 h-1 rounded-full"
-            style={{ backgroundColor: s <= step ? colors.primary : colors.border }}
+            style={{ backgroundColor: s <= displayStep ? colors.primary : colors.border }}
           />
         ))}
       </View>
@@ -1696,66 +1701,6 @@ export default function NewBookingScreen() {
             numberOfLines={2}
             style={{ color: colors.foreground, minHeight: 50, textAlignVertical: "top" }}
           />
-          {/* Client Address (mobile services only) — split into Street / City / State / ZIP */}
-          {isMobileService && (
-            <View style={{ marginBottom: 4, marginTop: 2 }}>
-              <Text className="text-xs font-medium text-muted ml-1 mb-2">Client Address <Text style={{ color: colors.error }}>*</Text></Text>
-              {/* Street */}
-              <Text style={{ fontSize: 10, fontWeight: "600", color: colors.muted, marginBottom: 3, marginLeft: 2 }}>Street Address</Text>
-              <TextInput
-                className="bg-surface rounded-xl px-4 py-3 text-sm mb-2 border border-border"
-                placeholder="123 Main St"
-                placeholderTextColor={colors.muted}
-                value={addrStreet}
-                onChangeText={setAddrStreet}
-                returnKeyType="next"
-                style={{ color: colors.foreground }}
-              />
-              {/* City */}
-              <Text style={{ fontSize: 10, fontWeight: "600", color: colors.muted, marginBottom: 3, marginLeft: 2 }}>City</Text>
-              <TextInput
-                className="bg-surface rounded-xl px-4 py-3 text-sm mb-2 border border-border"
-                placeholder="Austin"
-                placeholderTextColor={colors.muted}
-                value={addrCity}
-                onChangeText={setAddrCity}
-                returnKeyType="next"
-                style={{ color: colors.foreground }}
-              />
-              {/* State + ZIP side by side */}
-              <View style={{ flexDirection: "row", gap: 8, marginBottom: 4 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 10, fontWeight: "600", color: colors.muted, marginBottom: 3, marginLeft: 2 }}>State</Text>
-                  <TextInput
-                    className="bg-surface rounded-xl px-4 py-3 text-sm border border-border"
-                    placeholder="TX"
-                    placeholderTextColor={colors.muted}
-                    value={addrState}
-                    onChangeText={setAddrState}
-                    autoCapitalize="characters"
-                    maxLength={2}
-                    returnKeyType="next"
-                    style={{ color: colors.foreground }}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 10, fontWeight: "600", color: colors.muted, marginBottom: 3, marginLeft: 2 }}>ZIP Code</Text>
-                  <TextInput
-                    className="bg-surface rounded-xl px-4 py-3 text-sm border border-border"
-                    placeholder="78701"
-                    placeholderTextColor={colors.muted}
-                    value={addrZip}
-                    onChangeText={setAddrZip}
-                    keyboardType="number-pad"
-                    maxLength={10}
-                    returnKeyType="done"
-                    style={{ color: colors.foreground }}
-                  />
-                </View>
-              </View>
-            </View>
-          )}
-
           {/* Staff Selector — REMOVED from bottom of Step 3 (now at top) */}
           {false && activeStaff.length > 0 && (
             <View className="bg-surface rounded-2xl p-4 mb-4 border border-border">
@@ -1833,7 +1778,13 @@ export default function NewBookingScreen() {
           {/* Continue to Add More or Book */}
           {selectedTime && (
             <Pressable
-              onPress={() => setStep(4)}
+              onPress={() => {
+                if (isMobileService) {
+                  setOnAddressStep(true);
+                } else {
+                  setStep(4);
+                }
+              }}
               style={({ pressed }) => [
                 styles.bookButton,
                 {
@@ -1850,11 +1801,169 @@ export default function NewBookingScreen() {
         </ScrollView>
       )}
 
+      {/* Step 3.5: Client Address (mobile services only) */}
+      {onAddressStep && (
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View className="flex-row items-center justify-between mb-3">
+              <Pressable
+                onPress={() => setOnAddressStep(false)}
+                style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+              >
+                <Text className="text-sm" style={{ color: colors.primary }}>← Back</Text>
+              </Pressable>
+              <Text className="text-base font-semibold text-foreground">Client Address</Text>
+              <View style={{ width: 40 }} />
+            </View>
+
+            {/* Mobile service info banner */}
+            {selectedService && (
+              <View style={{
+                backgroundColor: colors.primary + "12",
+                borderWidth: 1.5,
+                borderColor: colors.primary + "40",
+                borderRadius: 14,
+                padding: 14,
+                marginBottom: 16,
+                flexDirection: "row",
+                alignItems: "flex-start",
+                gap: 10,
+              }}>
+                <Text style={{ fontSize: 20 }}>🚗</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>{selectedService.name} — Mobile Service</Text>
+                  {selectedService.travelDuration ? (
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 3 }}>Travel time: ~{selectedService.travelDuration} min each way</Text>
+                  ) : null}
+                  {selectedService.travelFee ? (
+                    <Text style={{ fontSize: fs.xs, color: colors.primary, marginTop: 2, fontWeight: "600" }}>Travel fee: +${(selectedService.travelFee as unknown as number).toFixed(2)}</Text>
+                  ) : null}
+                </View>
+              </View>
+            )}
+
+            {/* Address fields */}
+            <View className="bg-surface rounded-2xl p-4 mb-4 border border-border">
+              <Text className="text-xs font-medium text-muted mb-3">Service Address <Text style={{ color: colors.error }}>*</Text></Text>
+
+              {/* Street */}
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 4, marginLeft: 2 }}>Street Address</Text>
+              <TextInput
+                className="bg-background rounded-xl px-4 py-3 text-sm mb-3 border border-border"
+                placeholder="123 Main St"
+                placeholderTextColor={colors.muted}
+                value={addrStreet}
+                onChangeText={setAddrStreet}
+                returnKeyType="next"
+                style={{ color: colors.foreground, borderColor: addrStreet.trim() ? colors.border : colors.error + "80" }}
+              />
+
+              {/* City */}
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 4, marginLeft: 2 }}>City</Text>
+              <TextInput
+                className="bg-background rounded-xl px-4 py-3 text-sm mb-3 border border-border"
+                placeholder="Austin"
+                placeholderTextColor={colors.muted}
+                value={addrCity}
+                onChangeText={setAddrCity}
+                returnKeyType="next"
+                style={{ color: colors.foreground, borderColor: addrCity.trim() ? colors.border : colors.error + "80" }}
+              />
+
+              {/* State + ZIP side by side */}
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 4, marginLeft: 2 }}>State</Text>
+                  <TextInput
+                    className="bg-background rounded-xl px-4 py-3 text-sm border border-border"
+                    placeholder="TX"
+                    placeholderTextColor={colors.muted}
+                    value={addrState}
+                    onChangeText={setAddrState}
+                    autoCapitalize="characters"
+                    maxLength={2}
+                    returnKeyType="next"
+                    style={{ color: colors.foreground, borderColor: addrState.trim() ? colors.border : colors.error + "80" }}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 4, marginLeft: 2 }}>ZIP Code</Text>
+                  <TextInput
+                    className="bg-background rounded-xl px-4 py-3 text-sm border border-border"
+                    placeholder="78701"
+                    placeholderTextColor={colors.muted}
+                    value={addrZip}
+                    onChangeText={setAddrZip}
+                    keyboardType="number-pad"
+                    maxLength={10}
+                    returnKeyType="done"
+                    style={{ color: colors.foreground, borderColor: addrZip.trim() ? colors.border : colors.error + "80" }}
+                  />
+                </View>
+              </View>
+
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 8 }}>We'll come to you at this address.</Text>
+            </View>
+
+            {/* Travel fee preview */}
+            {travelFeeAmount > 0 && (
+              <View style={{
+                backgroundColor: "#eff6ff",
+                borderWidth: 1.5,
+                borderColor: "#bfdbfe",
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+              }}>
+                <Text style={{ fontSize: 16 }}>💳</Text>
+                <Text style={{ fontSize: fs.sm, color: "#1d4ed8", flex: 1 }}>A travel fee of <Text style={{ fontWeight: "700" }}>${travelFeeAmount.toFixed(2)}</Text> will be added to your total.</Text>
+              </View>
+            )}
+
+            {/* Continue button */}
+            <Pressable
+              onPress={() => {
+                if (!addrStreet.trim() || !addrCity.trim() || !addrState.trim() || !addrZip.trim()) {
+                  Alert.alert("Address Required", "Please fill in all address fields (Street, City, State, ZIP) before continuing.");
+                  return;
+                }
+                setOnAddressStep(false);
+                setStep(4);
+              }}
+              style={({ pressed }) => [
+                styles.bookButton,
+                { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
+              ]}
+            >
+              <Text className="text-base font-semibold text-white">Continue →</Text>
+            </Pressable>
+
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </KeyboardAvoidingView>
+      )}
+
       {/* Step 4: Add More & Confirm */}
-      {step === 4 && (
+      {step === 4 && !onAddressStep && (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: hp, paddingBottom: 40, alignSelf: 'center', width: '100%', maxWidth: maxContentWidth }}>
           <View className="flex-row items-center justify-between mb-3">
-            <Pressable onPress={() => setStep(3)} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
+            <Pressable
+              onPress={() => {
+                if (isMobileService) {
+                  setOnAddressStep(true);
+                } else {
+                  setStep(3);
+                }
+              }}
+              style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+            >
               <Text className="text-sm" style={{ color: colors.primary }}>← Back</Text>
             </Pressable>
             <Text className="text-base font-semibold text-foreground">Review & Add More</Text>
@@ -1974,6 +2083,21 @@ export default function NewBookingScreen() {
               <View style={[styles.cartItem]}>
                 <Text className="text-sm font-medium" style={{ color: colors.warning }}>{appliedDiscount.name} ({appliedDiscount.percentage}% off)</Text>
                 <Text className="text-sm font-medium" style={{ color: colors.warning }}>-${discountAmount.toFixed(2)}</Text>
+              </View>
+            )}
+            {/* Service Address summary (mobile services) */}
+            {isMobileService && clientAddress.trim() && (
+              <View style={[styles.cartItem, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, marginTop: 4, paddingTop: 8 }]}>
+                <View style={{ flex: 1 }}>
+                  <Text className="text-xs text-muted">Service Address</Text>
+                  <Text className="text-xs font-medium text-foreground" numberOfLines={2}>{clientAddress}</Text>
+                </View>
+                <Pressable
+                  onPress={() => setOnAddressStep(true)}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, marginLeft: 8 }]}
+                >
+                  <Text style={{ fontSize: fs.xs, color: colors.primary }}>Edit</Text>
+                </Pressable>
               </View>
             )}
             {/* Travel Fee (mobile services) */}

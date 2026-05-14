@@ -5725,7 +5725,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       <div id="staffListStep3" class="service-list"></div>
       <div style="display:flex;gap:8px;margin-top:16px;">
         <button class="btn btn-secondary" onclick="goToStep(2)" style="flex:1">Back</button>
-        <button class="btn btn-primary" onclick="goToStep(4)" style="flex:1">Continue</button>
+        <button class="btn btn-primary" onclick="goToStep(4, 3)" style="flex:1">Continue</button>
       </div>
     </div>
     <!-- Service primary detail overlay -->
@@ -5763,7 +5763,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       </div>
       <div id="discountInfo" style="display:none;margin-top:12px;"></div>
       <div style="display:flex;gap:8px;margin-top:16px;">
-        <button class="btn btn-secondary" onclick="goToStep(3)" style="flex:1">Back</button>
+        <button class="btn btn-secondary" onclick="goToStep(3, 4)" style="flex:1">Back</button>
         <button class="btn btn-primary" onclick="packageSessionContinue()" id="btnToConfirm" disabled style="flex:1">Continue</button>
       </div>
     </div>
@@ -5803,7 +5803,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       <div id="addrErrorMsg" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;font-size:13px;color:#b91c1c;margin-top:10px;"></div>
       <div id="addrFeePreview" style="display:none;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:10px 14px;font-size:13px;color:#1d4ed8;margin-top:10px;"></div>
       <div style="display:flex;gap:8px;margin-top:16px;">
-        <button class="btn btn-secondary" onclick="goToStep(4)" style="flex:1">Back</button>
+        <button class="btn btn-secondary" onclick="goToStep(3)" style="flex:1">Back</button>
         <button id="addrContinueBtn" class="btn btn-primary" onclick="validateAndProceedFromAddress()" style="flex:1">Continue</button>
       </div>
     </div>
@@ -6783,7 +6783,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     function skipStaffSelection() {
       selectedStaff = null;
       slotCache = {};
-      goToStep(4);
+      goToStep(4, 3);
     }
     function selectStaff(id) {
       selectedStaff = id ? staffMembers.find(s => s.localId === id) : null;
@@ -6791,8 +6791,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       document.querySelectorAll("#staffListStep3 .service-item").forEach(el => el.classList.remove("selected"));
       const el = document.getElementById(id ? "staff-" + id : "staff-any");
       if (el) el.classList.add("selected");
-      // Auto-advance to Date step after a short visual confirmation delay
-      setTimeout(function() { goToStep(4); }, 350);
+      // Auto-advance: for mobile services go to address step first, otherwise go to date/time
+      setTimeout(function() { goToStep(4, 3); }, 350);
     }
 
     var selectedPaymentMethod = null; // 'zelle' | 'venmo' | 'cashapp' | 'cash'
@@ -6961,21 +6961,23 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       }
       if (step === 3 && !selectedService) { alert("Please select a service"); return; }
       // step 3 = staff (optional, always allowed)
+      // For mobile services: intercept going from staff (step 3) to date/time (step 4) — show address step first
+      if (step === 4 && isMobileService() && (fromStep === 3 || currentStep === 3)) {
+        renderMobileServiceInfo();
+        _showStep('4b');
+        return;
+      }
+      // For mobile services: address step (4b) Continue goes to date/time (step 4)
+      // (handled by validateAndProceedFromAddress which calls _showStep(4))
+      // For mobile services: Back from date/time (step 4) returns to address step (4b)
+      if (step === 3 && isMobileService() && (fromStep === 4 || currentStep === 4)) {
+        _showStep('4b');
+        return;
+      }
       if (step === 5 && (!selectedDate || !selectedTime)) { alert("Please select a date and time"); return; }
       // Skip step 5 (Add Products) if no products available
       if (step === 5 && products.length === 0 && (fromStep === 4 || fromStep === '4b' || currentStep === 4 || currentStep === '4b')) {
         _showStep(6);
-        return;
-      }
-      // For mobile services: intercept step 5 (Extras) to show address step first
-      if (step === 5 && isMobileService() && (fromStep === 4 || currentStep === 4)) {
-        // Go to address step instead
-        _showStep('4b');
-        return;
-      }
-      // For mobile services going back from step 5: go to address step
-      if (step === 4 && isMobileService() && (fromStep === 5 || currentStep === 5)) {
-        _showStep('4b');
         return;
       }
       _showStep(step);
@@ -6991,8 +6993,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       const stepEl = document.getElementById("step-" + step);
       if (stepEl) stepEl.style.display = "block";
       currentStep = step;
-      // Update step indicators (treat 4b as between 4 and 5)
-      const stepNum = step === '4b' ? 4.5 : Number(step);
+      // Update step indicators (treat 4b as between staff(3) and date(4))
+      const stepNum = step === '4b' ? 3.5 : Number(step);
       for (let i = 0; i < 8; i++) {
         const dot = document.getElementById("dot-" + i);
         if (dot) dot.className = "step-dot" + (i < stepNum ? " done" : i === Math.floor(stepNum) ? " active" : "");
@@ -7253,8 +7255,8 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
             var preview = document.getElementById('addrFeePreview');
             var continueBtn = document.getElementById('addrContinueBtn');
             if (preview && preview.dataset.confirmed === '1') {
-              // Second tap — proceed
-              _showStep(5);
+              // Second tap — proceed to date/time selection
+              _showStep(4);
             } else {
               // First tap — show preview and update button
               if (preview) preview.dataset.confirmed = '1';
@@ -7262,14 +7264,15 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
               return;
             }
           } else {
-            _showStep(5);
+            // No fee — proceed to date/time selection
+            _showStep(4);
           }
           return;
         }
       }
-      // No fee config and no distance check needed — proceed directly
+      // No fee config and no distance check needed — proceed directly to date/time
       dynamicTravelFee = null;
-      _showStep(5);
+      _showStep(4);
     }
     function renderMobileServiceInfo() {
       const el = document.getElementById('mobileServiceInfo');
