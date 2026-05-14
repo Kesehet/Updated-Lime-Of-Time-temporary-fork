@@ -1,0 +1,1 @@
+ALTER TABLE `clients` ADD CONSTRAINT `clients_businessOwnerId_phone_unique` UNIQUE(`businessOwnerId`,`phone`);

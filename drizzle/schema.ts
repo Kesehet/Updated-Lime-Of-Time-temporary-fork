@@ -9,6 +9,7 @@ import {
   boolean,
   decimal,
   json,
+  uniqueIndex,
 } from "drizzle-orm/mysql-core";
 
 // ─── Users (Auth) ────────────────────────────────────────────────────
@@ -202,20 +203,30 @@ export type DbService = typeof services.$inferSelect;
 export type InsertService = typeof services.$inferInsert;
 
 // ─── Clients ─────────────────────────────────────────────────────────
-export const clients = mysqlTable("clients", {
-  id: int("id").autoincrement().primaryKey(),
-  /** Foreign key to business_owners */
-  businessOwnerId: int("businessOwnerId").notNull(),
-  /** Local client-generated ID for backward compat */
-  localId: varchar("localId", { length: 64 }).notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  phone: varchar("phone", { length: 20 }),
-  email: varchar("email", { length: 320 }),
-  notes: text("notes"),
-  birthday: varchar("birthday", { length: 20 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+export const clients = mysqlTable(
+  "clients",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    /** Foreign key to business_owners */
+    businessOwnerId: int("businessOwnerId").notNull(),
+    /** Local client-generated ID for backward compat */
+    localId: varchar("localId", { length: 64 }).notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    phone: varchar("phone", { length: 20 }),
+    email: varchar("email", { length: 320 }),
+    notes: text("notes"),
+    birthday: varchar("birthday", { length: 20 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    /** Prevent duplicate phone entries within the same business */
+    businessPhoneUnique: uniqueIndex("clients_businessOwnerId_phone_unique").on(
+      table.businessOwnerId,
+      table.phone
+    ),
+  })
+);
 
 export type DbClient = typeof clients.$inferSelect;
 export type InsertClient = typeof clients.$inferInsert;
