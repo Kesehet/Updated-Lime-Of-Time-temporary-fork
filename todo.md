@@ -2203,3 +2203,13 @@
 - [x] Fix clientPortalVisible: auto-set to true when business completes onboarding with a business name and at least one location
 - [x] Fix discover endpoint: show businesses without coordinates (don't exclude them from results when client has GPS)
 - [x] Backfill lat/lng for existing locations missing coordinates
+
+## Phase: Business Category Expansion
+
+- [x] Expand constants/categories.ts with full in-store and mobile category lists
+- [x] Fix normalizeCategory to pass through custom labels instead of collapsing to "Other"
+- [x] Update getCategoryDef to return a graceful fallback for unknown custom labels
+- [x] Settings business category picker: two expandable sections (In-Store / Mobile) with auto-pre-selection from existing services
+- [x] Service-form category picker: show existing custom categories alongside standard ones per serviceType
+- [x] clientRoutes.ts categories endpoint: pass through custom category labels without normalizing to Other
+- [x] discover.tsx: handle custom categories with proper emoji/color fallback in chips

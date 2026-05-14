@@ -28,6 +28,7 @@ import { trpc } from "@/lib/trpc";
 import { useAppLockContext } from "@/lib/app-lock-provider";
 import { LocationSwitcher } from "@/components/location-switcher";
 import { useActiveLocation } from "@/hooks/use-active-location";
+import { SERVICE_CATEGORIES, MOBILE_SERVICE_CATEGORIES, getCategoryDef } from "@/constants/categories";
 import { useResponsive } from "@/hooks/use-responsive";
 import { useScrollToTopOnFocus } from "@/hooks/use-scroll-to-top-on-focus";
 import {
@@ -247,7 +248,8 @@ export default function SettingsScreen() {
 
   // ── Client Portal Visibility ──────────────────────────────────────────────────
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-  const PORTAL_CATEGORIES = ["Hair", "Nails", "Skin", "Massage", "Fitness", "Dental", "Medical", "Spa", "Barber", "Tattoo", "Other"];
+  const [showInStorePicker, setShowInStorePicker] = useState(true);
+  const [showMobilePicker, setShowMobilePicker] = useState(true);
   const togglePortalVisible = useCallback(async (value: boolean) => {
     // Update local state immediately for responsive UI
     const action = { type: "UPDATE_SETTINGS" as const, payload: { clientPortalVisible: value } };
@@ -283,6 +285,60 @@ export default function SettingsScreen() {
     dispatch(action);
     syncToDb(action);
   }, [dispatch, syncToDb, settings.businessCategory]);
+
+  // Derive which service types the business has (drives which sections appear)
+  const hasInStoreServices = useMemo(() =>
+    state.services.some((s) => !s.serviceType || s.serviceType === 'in_store' || s.serviceType === 'in-store'),
+    [state.services]
+  );
+  const hasMobileServices = useMemo(() =>
+    state.services.some((s) => s.serviceType === 'mobile'),
+    [state.services]
+  );
+  // Show both sections if the business has no services yet (new business)
+  const showBothSections = !state.services.length || (hasInStoreServices && hasMobileServices);
+  const showInStoreSection = showBothSections || hasInStoreServices;
+  const showMobileSection = showBothSections || hasMobileServices;
+
+  // Custom categories from existing services (not in standard lists)
+  const customInStoreCategories = useMemo(() => {
+    const cats = new Set<string>();
+    state.services
+      .filter((s) => !s.serviceType || s.serviceType === 'in_store' || s.serviceType === 'in-store')
+      .forEach((s) => {
+        if (s.category && !SERVICE_CATEGORIES.find((c) => c.label === s.category) && !MOBILE_SERVICE_CATEGORIES.find((c) => c.label === s.category)) {
+          cats.add(s.category);
+        }
+      });
+    return Array.from(cats);
+  }, [state.services]);
+  const customMobileCategories = useMemo(() => {
+    const cats = new Set<string>();
+    state.services
+      .filter((s) => s.serviceType === 'mobile')
+      .forEach((s) => {
+        if (s.category && !SERVICE_CATEGORIES.find((c) => c.label === s.category) && !MOBILE_SERVICE_CATEGORIES.find((c) => c.label === s.category)) {
+          cats.add(s.category);
+        }
+      });
+    return Array.from(cats);
+  }, [state.services]);
+
+  // Auto-pre-select categories from existing services when picker first opens
+  const autoPreselectCategories = useCallback(() => {
+    const current = settings.businessCategory
+      ? settings.businessCategory.split(",").map((c: string) => c.trim()).filter(Boolean)
+      : [];
+    const fromServices = new Set<string>();
+    state.services.forEach((s) => { if (s.category?.trim()) fromServices.add(s.category.trim()); });
+    const toAdd = Array.from(fromServices).filter((c) => !current.includes(c));
+    if (toAdd.length > 0) {
+      const newValue = [...current, ...toAdd].join(",");
+      const action = { type: "UPDATE_SETTINGS" as const, payload: { businessCategory: newValue } };
+      dispatch(action);
+      syncToDb(action);
+    }
+  }, [settings.businessCategory, state.services, dispatch, syncToDb]);
 
   const handleLogout = useCallback(() => {
     Alert.alert("Log Out", "Are you sure you want to log out?", [
@@ -669,7 +725,7 @@ export default function SettingsScreen() {
             <>
               <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 12 }} />
               <Pressable
-                onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+                onPress={() => { if (!showCategoryPicker) autoPreselectCategories(); setShowCategoryPicker(!showCategoryPicker); }}
                 style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, opacity: pressed ? 0.7 : 1 })}
               >
                 <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: "#8B5CF620", alignItems: "center", justifyContent: "center" }}>
@@ -684,25 +740,81 @@ export default function SettingsScreen() {
                 <IconSymbol name="chevron.right" size={16} color={colors.muted} />
               </Pressable>
               {showCategoryPicker && (
-                <View style={{ marginTop: 10, flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                  {PORTAL_CATEGORIES.map((cat) => {
-                    const isSelected = selectedCategories.includes(cat);
-                    return (
+                <View style={{ marginTop: 10 }}>
+                  {/* In-Store section */}
+                  {showInStoreSection && (
+                    <View style={{ marginBottom: 10 }}>
                       <Pressable
-                        key={cat}
-                        onPress={() => togglePortalCategory(cat)}
-                        style={({ pressed }) => ({
-                          paddingHorizontal: 14,
-                          paddingVertical: 8,
-                          borderRadius: 20,
-                          backgroundColor: isSelected ? "#8B5CF6" : colors.border,
-                          opacity: pressed ? 0.75 : 1,
-                        })}
+                        onPress={() => setShowInStorePicker((v) => !v)}
+                        style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, opacity: pressed ? 0.7 : 1 })}
                       >
-                        <Text style={{ fontSize: fs.xs, fontWeight: "600", color: isSelected ? "#fff" : colors.foreground }}>{cat}</Text>
+                        <Text style={{ fontSize: 13, color: colors.primary, fontWeight: "700" }}>🏪 In-Store</Text>
+                        <Text style={{ fontSize: 11, color: colors.muted }}>{showInStorePicker ? "▲" : "▼"}</Text>
                       </Pressable>
-                    );
-                  })}
+                      {showInStorePicker && (
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingTop: 4 }}>
+                          {[...SERVICE_CATEGORIES, ...customInStoreCategories.map((l) => getCategoryDef(l))].map((cat) => {
+                            const isSelected = selectedCategories.includes(cat.label);
+                            return (
+                              <Pressable
+                                key={cat.label}
+                                onPress={() => togglePortalCategory(cat.label)}
+                                style={({ pressed }) => ({
+                                  flexDirection: "row", alignItems: "center", gap: 5,
+                                  paddingHorizontal: 12, paddingVertical: 7,
+                                  borderRadius: 20,
+                                  borderWidth: 1.5,
+                                  borderColor: isSelected ? cat.color : colors.border,
+                                  backgroundColor: isSelected ? cat.color + "22" : colors.surface,
+                                  opacity: pressed ? 0.75 : 1,
+                                })}
+                              >
+                                <Text style={{ fontSize: 13 }}>{cat.emoji}</Text>
+                                <Text style={{ fontSize: fs.xs, fontWeight: isSelected ? "700" : "500", color: isSelected ? cat.color : colors.muted }}>{cat.label}</Text>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      )}
+                    </View>
+                  )}
+                  {/* Mobile section */}
+                  {showMobileSection && (
+                    <View>
+                      <Pressable
+                        onPress={() => setShowMobilePicker((v) => !v)}
+                        style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, opacity: pressed ? 0.7 : 1 })}
+                      >
+                        <Text style={{ fontSize: 13, color: "#60A5FA", fontWeight: "700" }}>🚐 Mobile / Comes to You</Text>
+                        <Text style={{ fontSize: 11, color: colors.muted }}>{showMobilePicker ? "▲" : "▼"}</Text>
+                      </Pressable>
+                      {showMobilePicker && (
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingTop: 4 }}>
+                          {[...MOBILE_SERVICE_CATEGORIES, ...customMobileCategories.map((l) => getCategoryDef(l))].map((cat) => {
+                            const isSelected = selectedCategories.includes(cat.label);
+                            return (
+                              <Pressable
+                                key={cat.label}
+                                onPress={() => togglePortalCategory(cat.label)}
+                                style={({ pressed }) => ({
+                                  flexDirection: "row", alignItems: "center", gap: 5,
+                                  paddingHorizontal: 12, paddingVertical: 7,
+                                  borderRadius: 20,
+                                  borderWidth: 1.5,
+                                  borderColor: isSelected ? "#60A5FA" : colors.border,
+                                  backgroundColor: isSelected ? "#60A5FA22" : colors.surface,
+                                  opacity: pressed ? 0.75 : 1,
+                                })}
+                              >
+                                <Text style={{ fontSize: 13 }}>{cat.emoji}</Text>
+                                <Text style={{ fontSize: fs.xs, fontWeight: isSelected ? "700" : "500", color: isSelected ? "#60A5FA" : colors.muted }}>{cat.label}</Text>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      )}
+                    </View>
+                  )}
                 </View>
               )}
             </>

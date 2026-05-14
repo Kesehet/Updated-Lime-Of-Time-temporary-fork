@@ -376,50 +376,62 @@ export default function ServiceFormScreen() {
           />
 
           <Text style={[styles.fieldLabel, { color: colors.muted, marginTop: 16 }]}>Category (optional)</Text>
-          {/* Category dropdown */}
-          <View style={{ marginBottom: 4 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
-              <View style={{ flexDirection: "row", gap: 8, paddingVertical: 4 }}>
-                {(serviceType === 'mobile' ? MOBILE_SERVICE_CATEGORIES : SERVICE_CATEGORIES).map((cat) => {
-                  const isSelected = category === cat.label;
-                  return (
-                    <Pressable
-                      key={cat.label}
-                      onPress={() => setCategory(isSelected ? "" : cat.label)}
-                      style={({ pressed }) => ({
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingHorizontal: 12,
-                        paddingVertical: 8,
-                        borderRadius: 20,
-                        borderWidth: 1.5,
-                        borderColor: isSelected ? cat.color : colors.border,
-                        backgroundColor: isSelected ? cat.color + "22" : colors.surface,
-                        opacity: pressed ? 0.7 : 1,
-                        gap: 6,
-                      })}
-                    >
-                      <Text style={{ fontSize: 14 }}>{cat.emoji}</Text>
-                      <Text style={{ fontSize: 12, fontWeight: isSelected ? "700" : "500", color: isSelected ? cat.color : colors.muted }}>
-                        {cat.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+          {/* Category picker — standard + existing custom categories for this service type */}
+          {(() => {
+            const standardList = serviceType === 'mobile' ? MOBILE_SERVICE_CATEGORIES : SERVICE_CATEGORIES;
+            // Collect custom categories already used by other services of the same type
+            const customUsed = existingCategories.filter(
+              (c) => !SERVICE_CATEGORIES.find((s) => s.label === c) && !MOBILE_SERVICE_CATEGORIES.find((s) => s.label === c)
+            );
+            const allCats = [...standardList, ...customUsed.map((l) => getCategoryDef(l))];
+            const isOther = category === "Other" || category === "Other Mobile";
+            const isCustom = !!(category && !SERVICE_CATEGORIES.find((c) => c.label === category) && !MOBILE_SERVICE_CATEGORIES.find((c) => c.label === category) && !customUsed.includes(category));
+            return (
+              <View style={{ marginBottom: 4 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+                  <View style={{ flexDirection: "row", gap: 8, paddingVertical: 4 }}>
+                    {allCats.map((cat) => {
+                      const isSelected = category === cat.label;
+                      return (
+                        <Pressable
+                          key={cat.label}
+                          onPress={() => setCategory(isSelected ? "" : cat.label)}
+                          style={({ pressed }) => ({
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                            borderRadius: 20,
+                            borderWidth: 1.5,
+                            borderColor: isSelected ? cat.color : colors.border,
+                            backgroundColor: isSelected ? cat.color + "22" : colors.surface,
+                            opacity: pressed ? 0.7 : 1,
+                            gap: 6,
+                          })}
+                        >
+                          <Text style={{ fontSize: 14 }}>{cat.emoji}</Text>
+                          <Text style={{ fontSize: 12, fontWeight: isSelected ? "700" : "500", color: isSelected ? cat.color : colors.muted }}>
+                            {cat.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+                {/* Custom category text input — shown when Other is selected or a brand-new name is being typed */}
+                {(isOther || isCustom) && (
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border, marginTop: 4 }]}
+                    placeholder="Enter custom category name…"
+                    placeholderTextColor={colors.muted}
+                    value={isOther ? "" : (category ?? "")}
+                    onChangeText={(text) => setCategory(text || (serviceType === 'mobile' ? "Other Mobile" : "Other"))}
+                    returnKeyType="done"
+                  />
+                )}
               </View>
-            </ScrollView>
-            {/* Custom category input when "Other" is selected */}
-            {(category === "Other" || category === "Other Mobile" || (category && !SERVICE_CATEGORIES.find(c => c.label === category) && !MOBILE_SERVICE_CATEGORIES.find(c => c.label === category))) && (
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border, marginTop: 4 }]}
-                placeholder="Enter custom category name…"
-                placeholderTextColor={colors.muted}
-                value={(category === "Other" || category === "Other Mobile") ? "" : category}
-                onChangeText={(text) => setCategory(text || (serviceType === 'mobile' ? "Other Mobile" : "Other"))}
-                returnKeyType="done"
-              />
-            )}
-          </View>
+            );
+          })()}
                     <Text style={[styles.fieldLabel, { color: colors.muted, marginTop: 16 }]}>Description (optional)</Text>
           <TextInput
             style={[styles.input, styles.textArea, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}

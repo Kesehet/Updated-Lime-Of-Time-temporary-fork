@@ -43,7 +43,7 @@ import * as Location from "expo-location";
 import * as Calendar from "expo-calendar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiBaseUrl } from "@/constants/oauth";
-import { SERVICE_CATEGORIES, ALL_CATEGORY, CATEGORY_MAP, getCategoryDef } from "@/constants/categories";
+import { SERVICE_CATEGORIES, MOBILE_SERVICE_CATEGORIES, ALL_CATEGORY, CATEGORY_MAP, getCategoryDef } from "@/constants/categories";
 
 /** Convert "HH:MM" (24h) to "H:MM AM/PM" */
 function formatTime12(time: string): string {
@@ -151,11 +151,13 @@ async function loadRecentlyViewed(): Promise<RecentlyViewedBusiness[]> {
 // CATEGORIES and CATEGORY_COLORS are derived from the shared constants/categories.ts
 // This ensures the service form picker and discover filter chips always stay in sync.
 const STANDARD_CATEGORIES = [ALL_CATEGORY, ...SERVICE_CATEGORIES];
+// All known labels (in-store + mobile) for fast custom-category detection
+const ALL_KNOWN_LABELS = new Set([...SERVICE_CATEGORIES.map((c) => c.label), ...MOBILE_SERVICE_CATEGORIES.map((c) => c.label)]);
 // Radius options in miles
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
-// Accent color lookup — falls back to getCategoryDef for unknowns
+// Accent color lookup — falls back to getCategoryDef for unknowns; includes mobile categories
 const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
-  STANDARD_CATEGORIES.map((c) => [c.label, c.color])
+  [...STANDARD_CATEGORIES, ...MOBILE_SERVICE_CATEGORIES].map((c) => [c.label, c.color])
 );
 const GREEN_ACCENT = "#8FBF6A";
 const GREEN_DARK = "#1A3A28";
@@ -1051,9 +1053,9 @@ export default function DiscoverScreen() {
           {(() => {
             // "Other" chip is only shown when the API confirms at least one business has non-standard categories
             const apiHasOther = dynamicCategories.includes("Other");
-            const standardLabels = new Set(STANDARD_CATEGORIES.map((c) => c.label));
+            // Custom categories: any label from the API that is not in either in-store or mobile standard lists
             const customCats = dynamicCategories
-              .filter((c) => !standardLabels.has(c))
+              .filter((c) => c !== "Other" && !ALL_KNOWN_LABELS.has(c))
               .map((c) => getCategoryDef(c));
             // Include all standard categories; exclude "Other" unless API says it exists
             const baseStandard = STANDARD_CATEGORIES.filter((c) => c.label !== "Other");

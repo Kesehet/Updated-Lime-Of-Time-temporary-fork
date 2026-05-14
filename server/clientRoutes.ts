@@ -11,7 +11,7 @@ import { Express, Request, Response } from "express";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
 import { sendExpoPush } from "./push";
-import { STANDARD_LABELS, normalizeCategory } from "../constants/categories";
+import { normalizeCategory } from "../constants/categories";
 
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
@@ -224,16 +224,21 @@ export function registerClientRoutes(app: Express) {
       const catSet = new Set<string>();
       let hasOther = false;
       for (const biz of businesses) {
-        // Normalize business-level category
-        const bizCat = biz.businessCategory ? normalizeCategory(biz.businessCategory) : null;
-        if (bizCat && bizCat !== "Other") catSet.add(bizCat);
-        else if (bizCat === "Other") hasOther = true;
-        // Normalize service-level categories
+        // Business-level categories are comma-separated; normalize each one
+        if (biz.businessCategory) {
+          const bizCats = biz.businessCategory.split(",").map((c: string) => c.trim()).filter(Boolean);
+          for (const bc of bizCats) {
+            const normalized = normalizeCategory(bc);
+            if (normalized === "Other" || normalized === "Other Mobile") hasOther = true;
+            else catSet.add(normalized);
+          }
+        }
+        // Service-level categories: custom labels pass through as-is
         const services = await db.getServicesByOwner(biz.id);
         for (const svc of services) {
           const normalized = normalizeCategory(svc.category);
-          if (normalized !== "Other") catSet.add(normalized);
-          else hasOther = true;
+          if (normalized === "Other" || normalized === "Other Mobile") hasOther = true;
+          else catSet.add(normalized);
         }
       }
       const sorted = Array.from(catSet).sort();
