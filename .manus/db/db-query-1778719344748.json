@@ -1,0 +1,50 @@
+{
+  "query": "SHOW COLUMNS FROM business_owners WHERE Field IN ('lat','lng','clientPortalVisible','customSlug','businessCategory');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SHOW COLUMNS FROM business_owners WHERE Field IN ('lat','lng','clientPortalVisible','customSlug','businessCategory');",
+  "rows": [
+    {
+      "Field": "customSlug",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "businessCategory",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "lat",
+      "Type": "decimal(10,7)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "lng",
+      "Type": "decimal(10,7)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "clientPortalVisible",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\ncustomSlug\tvarchar(100)\tYES\t\tNULL\t\nbusinessCategory\tvarchar(100)\tYES\t\tNULL\t\nlat\tdecimal(10,7)\tYES\t\tNULL\t\nlng\tdecimal(10,7)\tYES\t\tNULL\t\nclientPortalVisible\ttinyint(1)\tNO\t\t0\t\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}

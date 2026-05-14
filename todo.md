@@ -2199,3 +2199,7 @@
 - [x] Replace RN KeyboardAvoidingView with RNKC in all 49 screens (edge-to-edge fix)
 - [x] Add character counter (X/1000) to Business Portal and Client Portal message threads
 - [x] Fix subscription plan carousel: each card must snap to center of screen when scrolling in either direction (FlatList+snapToInterval+snapToAlignment=center)
+- [x] Fix location geocoding: auto-geocode lat/lng when business owner saves a location (createLocation/updateLocation tRPC procedures)
+- [x] Fix clientPortalVisible: auto-set to true when business completes onboarding with a business name and at least one location
+- [x] Fix discover endpoint: show businesses without coordinates (don't exclude them from results when client has GPS)
+- [x] Backfill lat/lng for existing locations missing coordinates

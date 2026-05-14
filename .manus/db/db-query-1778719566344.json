@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Backfill lat/lng for 100 Forbes Ave (businessOwnerId 1920001)\nUPDATE locations SET lat = 40.4410340, lng = -80.0038840 WHERE id = 1290001 AND lat IS NULL;\n\n-- Backfill lat/lng for 410 S Main St (businessOwnerId 1950002 = Lime Time)\nUPDATE locations SET lat = 40.4416617, lng = -80.0333963 WHERE id = 1320001 AND lat IS NULL;\n\n-- Enable client portal visibility for Lime Time (was 0)\nUPDATE business_owners SET clientPortalVisible = 1 WHERE id = 1950002;\n\n-- Also enable for businessOwnerId 1920001 if it exists and is not visible\nUPDATE business_owners SET clientPortalVisible = 1 WHERE id = 1920001 AND clientPortalVisible = 0;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Backfill lat/lng for 100 Forbes Ave (businessOwnerId 1920001)\nUPDATE locations SET lat = 40.4410340, lng = -80.0038840 WHERE id = 1290001 AND lat IS NULL;\n\n-- Backfill lat/lng for 410 S Main St (businessOwnerId 1950002 = Lime Time)\nUPDATE locations SET lat = 40.4416617, lng = -80.0333963 WHERE id = 1320001 AND lat IS NULL;\n\n-- Enable client portal visibility for Lime Time (was 0)\nUPDATE business_owners SET clientPortalVisible = 1 WHERE id = 1950002;\n\n-- Also enable for businessOwnerId 1920001 if it exists and is not visible\nUPDATE business_owners SET clientPortalVisible = 1 WHERE id = 1920001 AND clientPortalVisible = 0;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 308
+}

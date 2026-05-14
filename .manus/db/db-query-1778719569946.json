@@ -1,0 +1,30 @@
+{
+  "query": "\nSELECT l.id, l.businessOwnerId, l.address, l.zipCode, l.lat, l.lng, bo.businessName, bo.clientPortalVisible\nFROM locations l\nJOIN business_owners bo ON bo.id = l.businessOwnerId\nORDER BY l.businessOwnerId, l.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \nSELECT l.id, l.businessOwnerId, l.address, l.zipCode, l.lat, l.lng, bo.businessName, bo.clientPortalVisible\nFROM locations l\nJOIN business_owners bo ON bo.id = l.businessOwnerId\nORDER BY l.businessOwnerId, l.id;\n",
+  "rows": [
+    {
+      "id": "1110001",
+      "businessOwnerId": "1650001",
+      "address": "134 Locust Ct",
+      "zipCode": "15237",
+      "lat": "40.5534000",
+      "lng": "-80.0076000",
+      "businessName": "Wellness Suite",
+      "clientPortalVisible": "1"
+    },
+    {
+      "id": "1320001",
+      "businessOwnerId": "1950002",
+      "address": "410 S Main St",
+      "zipCode": "15220",
+      "lat": "40.4416617",
+      "lng": "-80.0333963",
+      "businessName": "Lime Time",
+      "clientPortalVisible": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbusinessOwnerId\taddress\tzipCode\tlat\tlng\tbusinessName\tclientPortalVisible\n1110001\t1650001\t134 Locust Ct\t15237\t40.5534000\t-80.0076000\tWellness Suite\t1\n1320001\t1950002\t410 S Main St\t15220\t40.4416617\t-80.0333963\tLime Time\t1\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

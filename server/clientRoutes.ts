@@ -399,10 +399,13 @@ export function registerClientRoutes(app: Express) {
           return { ...rest, distanceKm, slug, avgRating: b.avgRating, reviewCount: b.reviewCount, serviceCategories: b.serviceCategories, hasMobileServices: (b as any).hasMobileServices ?? false, hasInStoreServices: (b as any).hasInStoreServices ?? true };
         })
         .filter((b) => {
-          // Only apply radius filter when we have both client coords AND business coords
+          // Only apply radius filter when we have BOTH client coords AND business coords.
+          // If the business has no coordinates yet (lat/lng not geocoded), always include it
+          // so newly added businesses are visible even before geocoding completes.
           if (clientLat !== null && b.distanceKm !== null) {
             return b.distanceKm <= radiusKm;
           }
+          // Business has no coordinates — include it regardless of client location
           return true;
         })
         .sort((a, b) => {

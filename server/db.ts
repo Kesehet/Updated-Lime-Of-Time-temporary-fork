@@ -1698,3 +1698,22 @@ export async function setReferralCodeCoupon(referralCodeId: number, stripeCoupon
   if (!db) return;
   await db.update(referralCodes).set({ stripeCouponId }).where(eq(referralCodes.id, referralCodeId));
 }
+
+// ─── Geocoding Helper ─────────────────────────────────────────────────────────
+/**
+ * Geocode a free-form address string using Nominatim (OpenStreetMap).
+ * Returns { lat, lng } or null if geocoding fails or no result found.
+ * No API key required.
+ */
+export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const encoded = encodeURIComponent(address);
+    const url = `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`;
+    const res = await fetch(url, { headers: { "User-Agent": "LimeOfTime/1.0" } });
+    const data = (await res.json()) as { lat: string; lon: string }[];
+    if (!data || data.length === 0) return null;
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  } catch {
+    return null;
+  }
+}

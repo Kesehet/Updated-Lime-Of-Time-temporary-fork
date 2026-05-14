@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, businessOwnerId, name, address, zipCode, lat, lng, active FROM locations ORDER BY businessOwnerId, id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, businessOwnerId, name, address, zipCode, lat, lng, active FROM locations ORDER BY businessOwnerId, id;",
+  "rows": [
+    {
+      "id": "1110001",
+      "businessOwnerId": "1650001",
+      "name": "Wellness Suite",
+      "address": "134 Locust Ct",
+      "zipCode": "15237",
+      "lat": "40.5534000",
+      "lng": "-80.0076000",
+      "active": "1"
+    },
+    {
+      "id": "1290001",
+      "businessOwnerId": "1920001",
+      "name": "Main Location",
+      "address": "100 Forbes Ave",
+      "zipCode": "15222",
+      "lat": "NULL",
+      "lng": "NULL",
+      "active": "1"
+    },
+    {
+      "id": "1320001",
+      "businessOwnerId": "1950002",
+      "name": "Main St",
+      "address": "410 S Main St",
+      "zipCode": "15220",
+      "lat": "NULL",
+      "lng": "NULL",
+      "active": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbusinessOwnerId\tname\taddress\tzipCode\tlat\tlng\tactive\n1110001\t1650001\tWellness Suite\t134 Locust Ct\t15237\t40.5534000\t-80.0076000\t1\n1290001\t1920001\tMain Location\t100 Forbes Ave\t15222\tNULL\tNULL\t1\n1320001\t1950002\tMain St\t410 S Main St\t15220\tNULL\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

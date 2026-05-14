@@ -1273,7 +1273,31 @@ const locationsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const id = await db.createLocation(input);
+      // Auto-geocode the address so the business appears in client portal discovery
+      let lat: string | undefined;
+      let lng: string | undefined;
+      const addressParts = [input.address, input.city, input.state, input.zipCode].filter(Boolean).join(", ");
+      if (addressParts) {
+        try {
+          const coords = await db.geocodeAddress(addressParts);
+          if (coords) {
+            lat = String(coords.lat);
+            lng = String(coords.lng);
+          }
+        } catch {
+          // Geocoding failure is non-fatal — location is saved without coordinates
+        }
+      }
+      const id = await db.createLocation({ ...input, lat, lng } as any);
+      // Auto-enable client portal visibility when a business saves their first location
+      try {
+        const existingLocs = await db.getLocations(input.businessOwnerId);
+        if (existingLocs.length <= 1) {
+          await db.updateBusinessOwner(input.businessOwnerId, { clientPortalVisible: true } as any);
+        }
+      } catch {
+        // Non-fatal
+      }
       return { id, localId: input.localId };
     }),
 
@@ -1303,6 +1327,19 @@ const locationsRouter = router({
       const data = Object.fromEntries(
         Object.entries(rawData).filter(([, v]) => v !== undefined)
       ) as typeof rawData;
+      // Auto-geocode if any address field changed
+      const addressParts = [rawData.address, rawData.city, rawData.state, rawData.zipCode].filter(Boolean).join(", ");
+      if (addressParts) {
+        try {
+          const coords = await db.geocodeAddress(addressParts);
+          if (coords) {
+            (data as any).lat = String(coords.lat);
+            (data as any).lng = String(coords.lng);
+          }
+        } catch {
+          // Geocoding failure is non-fatal
+        }
+      }
       await db.updateLocation(localId, businessOwnerId, data);
       return { success: true };
     }),
