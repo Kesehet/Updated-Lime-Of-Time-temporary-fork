@@ -535,6 +535,9 @@ export function registerClientRoutes(app: Express) {
             locationAddress: location?.address ?? null,
             locationPhone: location?.phone ?? null,
             clientAddress: (appt as any).clientAddress ?? null,
+            travelFee: (appt as any).travelFee ?? null,
+            serviceType: service?.serviceType ?? null,
+            travelDuration: service?.travelDuration ?? null,
             hasMobileServices,
           };
         })
@@ -622,6 +625,9 @@ export function registerClientRoutes(app: Express) {
         ].filter(Boolean).join(", ") : null,
         locationPhone: location?.phone ?? null,
         clientAddress: (appt as any).clientAddress ?? null,
+        travelFee: (appt as any).travelFee ?? null,
+        serviceType: service?.serviceType ?? null,
+        travelDuration: service?.travelDuration ?? null,
         packageSiblings: packageSiblings.length > 0 ? packageSiblings : null,
       });
     } catch (err: any) {

@@ -1,0 +1,54 @@
+{
+  "build_command": "pnpm run build",
+  "capabilities": [
+    "db",
+    "server",
+    "user"
+  ],
+  "dev_command": "pnpm run dev",
+  "env_vars": {
+    "DATABASE_URL": "mysql://3AafxdxuLDwTXdt.root:64kw7R1KbHJc3SYgqz5g@gateway05.us-east-1.prod.aws.tidbcloud.com:4000/Dw4mhfnuurFcniLsqjLpWN?ssl={\"rejectUnauthorized\":true}"
+  },
+  "experiments": null,
+  "git_remote": {
+    "repo_url": "s3://vida-prod-gitrepo/webdev-git/310519663347678319/Dw4mhfnuurFcniLsqjLpWN",
+    "access_key_id": "ASIAZV3A2ECZIVLFCA5V",
+    "secret_access_key": "mhgzLEpAiqrQkHob/C+23ik+m5wPBf9EKdY+Xo+s",
+    "session_token": "IQoJb3JpZ2luX2VjEJj//////////wEaCXVzLWVhc3QtMSJHMEUCIQDyoZFRoyBQ94fUezTh2LobY3x1YLnynNf7YDFm05C9wgIgJihZVyKv+qo3HgcEjYrFbZDp3Cb2AAU3WG0AxaqocUMq9gMIYRAEGgw2NjUzODYwOTg4NjYiDOABCjceZhTx/e2AWyrTAxLdw6cG9Pf654HLqdufJ6AQgI5jmQJ8IkAKk/0KgMbzxX0hH4nyUwGqeXsZllaOpKNsRJfZimea9V1m7UI8iKmkxB8JO/HIKdJ9eSvunNfuFwDJD9yqCwXzZPCleqF1+zRV3IJq0Z13/VFkl0hCaslI0Hesf3b6ffpkoKrd4rP2QNfN9LvEYfTqon9Yybm7IKlq2XUOtFzkPvssvkVRYXMfpPoic1cPrPW5uSkGkXYYAldlrhKgkwNUH6IfoCwHh3tH4Pih8MYNPobb430HhZmw3/07y4qeICzYf4FfLJ+/+pQUcS0Z3DRW0lpzmiiS/pBV1sFS9rCj5VwXRSsmZssLjX0BUeeDQp9OPPljf0Zy7ZpMlkDSbGzz7GoLBBcRZgN6m4VlYWliAeOO1l2qPIniFomgw9GjxFVeurMI7LcnRSQ/NkIZf9gzxmctg9Mhkz2KPuyJIsmF7i2il3Ukx/y8EKbpxUylC9tDmofSBQaZsWgCXMlAsIjRYzpnotCbw4UFVv+7oO3kMGjmnl3y3qsWrzbmv+SIXhaIsy4qBySmzxRrNH3++8w6zglGkWaVDZEPMLhhET4xVjOQtO5l6NTax1HEiYEl26ob/XFWtV9honluMPLTl9AGOp0B31kwwn91eh79eil06VNw+in4fqqOD1qeoScrl//6FkCIhXtbCecllwODEfrBWGzz5YE5S9EIU0RQ9dEUaYtgngxWVMq15y8ncS1BNcEdQbPr559uvQ55hbkbfLeFKIU8HnOrsVLPCL2jf/6ovbNOcYnJMGrpIho42yBOswUreNLz5gzGLCHFL7gR8f+tYOSu8XzPyOxeWHWw5vGGBg==",
+    "expiration": "2026-05-15T03:27:46.000Z"
+  },
+  "name": "manus-scheduler",
+  "path": "/home/ubuntu/manus-scheduler",
+  "port": 3000,
+  "secrets": {
+    "BUILT_IN_FORGE_API_KEY": "ghJxdLoyjRdpmxmuJJCTFJ",
+    "BUILT_IN_FORGE_API_URL": "https://forge.manus.ai",
+    "EXPO_APP_QR_URL": "exps://8081-ixuzocc9six59drb5s6qc-4ccaf691.us2.manus.computer",
+    "EXPO_PACKAGER_PROXY_URL": "https://8081-ixuzocc9six59drb5s6qc-4ccaf691.us2.manus.computer",
+    "EXPO_PUBLIC_API_BASE_URL": "https://3000-ixuzocc9six59drb5s6qc-4ccaf691.us2.manus.computer",
+    "EXPO_TOKEN": "18ptKRinK4XEYHz-EsiBDNp9-7-hE4Lvxk_6Szv3",
+    "JWT_SECRET": "mhjFGiXbavYCnHJBX7djNy",
+    "OAUTH_SERVER_URL": "https://api.manus.im",
+    "OWNER_NAME": "Murodjon Azimov",
+    "OWNER_OPEN_ID": "o5Qq8zRApLcsXDNP9AGvSk",
+    "REACT_NATIVE_PACKAGER_HOSTNAME": "8081-ixuzocc9six59drb5s6qc-4ccaf691.us2.manus.computer",
+    "RESEND_API_KEY": "re_aCMbjFnQ_HvEdYL8rgrKrjEuu4hy5dBCi",
+    "STRIPE_PUBLISHABLE_KEY": "pk_test_51REIGbG6LQX4qfeVRXbxu8HGRslT0jbjhuQmiDZeai1QPBC0zukmY1xiXTch8bVDuNNEgH0N2TMbX7sq9ZJgFZwh00DOmiSfiB",
+    "STRIPE_SECRET_KEY": "sk_test_51REIGbG6LQX4qfeVbBFQM3haHQQ0zInUNJTEeYJ2Bu7MiIPEbNsyX94ULB8U1KSFP4azC31u0P6puNuFDwFAfenl00jmavr4X0",
+    "STRIPE_WEBHOOK_SECRET": "whsec_RFNNSd9Hi8tiQAYVeMpnrn6eeKfjBItQ",
+    "TWILIO_ACCOUNT_SID": "AC0eb74aa2bc903683b21defa8c07e763e",
+    "TWILIO_AUTH_TOKEN": "7d157dfaa5f33ea090bdecbf8eb68130",
+    "TWILIO_FROM_NUMBER": "+19707070774",
+    "TWILIO_VERIFY_SERVICE_SID": "VA7348fcb20a15c8ebd03d1f789d1b005b",
+    "VITE_ANALYTICS_ENDPOINT": "https://manus-analytics.com",
+    "VITE_ANALYTICS_WEBSITE_ID": "d1d5326c-70f2-44dd-adfe-654bae0fba04",
+    "VITE_APP_ID": "Dw4mhfnuurFcniLsqjLpWN",
+    "VITE_APP_LOGO": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663347678319/rvonQNLXSNYbyBpY.png",
+    "VITE_APP_TITLE": "Lime Of Time",
+    "VITE_FRONTEND_FORGE_API_KEY": "dvAu9ModhKBQBUZzdEgEcp",
+    "VITE_FRONTEND_FORGE_API_URL": "https://forge.manus.ai",
+    "VITE_OAUTH_PORTAL_URL": "https://manus.im"
+  },
+  "template_id": "app",
+  "test_command": "pnpm test"
+}

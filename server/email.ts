@@ -111,6 +111,8 @@ export interface ConfirmationEmailData {
   customSlug?: string;
   locationId?: string;
   clientAddress?: string;
+  travelFee?: number;
+  travelDuration?: number;
 }
 
 /**
@@ -163,8 +165,26 @@ export async function sendAppointmentConfirmationEmail(
   detailsHtml += detailRow("⏰", "Time", `${timeStr} — ${endTimeStr}`);
   if (locationDisplay) detailsHtml += detailRow("📍", "Location", locationDisplay);
   if (displayPhone) detailsHtml += detailRow("📞", "Phone", formatPhoneDisplay(displayPhone));
+  // Mobile service details
+  if (data.clientAddress) {
+    detailsHtml += detailRow("🚗", "Service Address", data.clientAddress);
+  }
+  if (data.travelDuration && data.travelDuration > 0) {
+    const arrMin = h * 60 + m - data.travelDuration;
+    const safeMin = Math.max(0, arrMin);
+    const arrH = Math.floor(safeMin / 60);
+    const arrM = safeMin % 60;
+    const arrAmpm = arrH >= 12 ? "PM" : "AM";
+    const arrH12 = arrH % 12 || 12;
+    const arrTimeStr = `${arrH12}:${String(arrM).padStart(2, "0")} ${arrAmpm}`;
+    detailsHtml += detailRow("🕐", "Estimated Arrival", `${arrTimeStr} (${data.travelDuration} min travel)`);
+  }
   if (data.totalPrice !== undefined && data.totalPrice > 0) {
-    detailsHtml += detailRow("💰", "Total", `$${data.totalPrice.toFixed(2)}`);
+    let priceStr = `$${data.totalPrice.toFixed(2)}`;
+    if (data.travelFee && data.travelFee > 0) {
+      priceStr += ` (incl. $${data.travelFee.toFixed(2)} travel fee)`;
+    }
+    detailsHtml += detailRow("💰", "Total", priceStr);
   }
   detailsHtml += `</table>`;
 
@@ -231,6 +251,8 @@ export interface BookingNotificationData {
   locationName?: string;
   locationAddress?: string;
   clientAddress?: string;
+  travelFee?: number;
+  travelDuration?: number;
 }
 
 /**
@@ -276,13 +298,29 @@ export async function sendBookingNotificationEmail(
   detailsHtml += detailRow("⏰", "Time", `${timeStr} — ${endTimeStr}`);
 
   // Location
-  if (data.locationName) {
-    const locValue = data.clientAddress
-      ? `Client Address: ${data.clientAddress}`
-      : data.locationAddress
+  if (data.locationName && !data.clientAddress) {
+    const locValue = data.locationAddress
       ? `${data.locationName} — ${data.locationAddress}`
       : data.locationName;
     detailsHtml += detailRow("📍", "Location", locValue);
+  }
+
+  // Mobile service details
+  if (data.clientAddress) {
+    detailsHtml += detailRow("🚗", "Client Address", data.clientAddress);
+  }
+  if (data.travelDuration && data.travelDuration > 0) {
+    const arrMin = h * 60 + m - data.travelDuration;
+    const safeMin = Math.max(0, arrMin);
+    const arrH = Math.floor(safeMin / 60);
+    const arrM = safeMin % 60;
+    const arrAmpm = arrH >= 12 ? "PM" : "AM";
+    const arrH12 = arrH % 12 || 12;
+    const arrTimeStr = `${arrH12}:${String(arrM).padStart(2, "0")} ${arrAmpm}`;
+    detailsHtml += detailRow("🕐", "Depart By", `${arrTimeStr} (${data.travelDuration} min travel)`);
+  }
+  if (data.travelFee && data.travelFee > 0) {
+    detailsHtml += detailRow("🚗", "Travel Fee", `$${data.travelFee.toFixed(2)}`);
   }
 
   // Extras

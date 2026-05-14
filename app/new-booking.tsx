@@ -698,6 +698,7 @@ export default function NewBookingScreen() {
         discountAmount: discountAmount > 0 ? discountAmount : undefined,
         discountName: appliedDiscount?.name,
         clientAddress: isMobileService && clientAddress.trim() ? clientAddress.trim() : undefined,
+        travelFee: (isMobileService && travelFeeAmount > 0) ? travelFeeAmount : undefined,
         totalPrice: grandTotal,
         paymentMethod: grandTotal <= 0 ? 'free' as any : (selectedPaymentMethod === 'card' ? 'card' as any : ((selectedPaymentMethod as 'zelle' | 'venmo' | 'cashapp' | 'cash' | undefined) ?? undefined)),
         paymentStatus: grandTotal <= 0 ? 'paid' as const : (selectedPaymentMethod === 'cash' ? 'pending_cash' : (selectedPaymentMethod === 'card' ? 'unpaid' : (selectedPaymentMethod ? 'unpaid' : undefined))),

@@ -1047,6 +1047,8 @@ export async function getEnrichedAppointment(localId: string, businessOwnerId: n
     clientEmail: client?.email ?? null,
     clientPhone: client?.phone ?? null,
     serviceName: service?.name ?? null,
+    serviceType: service?.serviceType ?? null,
+    travelDuration: service?.travelDuration ?? null,
     locationName: location?.name ?? null,
     locationAddress: location?.address ?? null,
     locationCity: location?.city ?? null,

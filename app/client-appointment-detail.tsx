@@ -341,8 +341,43 @@ export default function ClientAppointmentDetailScreen() {
                 <Text style={{ fontSize: 16 }}>🚗</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, fontWeight: "600", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Your Address</Text>
+                <Text style={{ fontSize: 11, fontWeight: "600", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Service Address</Text>
                 <Text style={{ fontSize: 14, color: "#FFFFFF", fontWeight: "500" }}>{(appt as any).clientAddress}</Text>
+              </View>
+            </View>
+          ) : null}
+          {/* Travel fee for mobile services */}
+          {(appt as any).travelFee != null && Number((appt as any).travelFee) > 0 ? (
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: "rgba(10,126,164,0.15)", alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontSize: 14 }}>🚗</Text>
+                </View>
+                <Text style={{ fontSize: 11, fontWeight: "600", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 0.5 }}>Travel Fee</Text>
+              </View>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: "#0891b2" }}>+${Number((appt as any).travelFee).toFixed(2)}</Text>
+            </View>
+          ) : null}
+          {/* Estimated arrival time for mobile services */}
+          {(appt as any).travelDuration != null && Number((appt as any).travelDuration) > 0 && ((appt as any).serviceType === 'mobile' || (appt as any).clientAddress) ? (
+            <View style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 12, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }}>
+              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: "rgba(10,126,164,0.15)", alignItems: "center", justifyContent: "center", marginRight: 12 }}>
+                <Text style={{ fontSize: 14 }}>🕐</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, fontWeight: "600", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Estimated Arrival</Text>
+                <Text style={{ fontSize: 14, color: "#FFFFFF", fontWeight: "500" }}>
+                  {(() => {
+                    const [h, m] = appt.time.split(":").map(Number);
+                    const apptMin = h * 60 + m;
+                    const arrMin = Math.max(0, apptMin - Number((appt as any).travelDuration));
+                    const arrH = Math.floor(arrMin / 60);
+                    const arrM = arrMin % 60;
+                    const ampm = arrH >= 12 ? "PM" : "AM";
+                    const h12 = arrH % 12 === 0 ? 12 : arrH % 12;
+                    return `${h12}:${String(arrM).padStart(2, "0")} ${ampm} (${(appt as any).travelDuration} min travel)`;
+                  })()}
+                </Text>
               </View>
             </View>
           ) : null}

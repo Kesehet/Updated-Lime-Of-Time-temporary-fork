@@ -575,6 +575,13 @@
       "when": 1778727563386,
       "tag": "0081_moaning_mole_man",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "5",
+      "when": 1778773005536,
+      "tag": "0082_remarkable_franklin_storm",
+      "breakpoints": true
     }
   ]
 }

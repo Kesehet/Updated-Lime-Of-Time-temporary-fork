@@ -1040,9 +1040,14 @@ Would you also like to charge a no-show fee via Stripe?`,
               {/* Header */}
               <View className="flex-row items-center mb-2">
                 <View style={[styles.colorDot, { backgroundColor: service?.color ?? colors.primary }]} />
-                <Text className="text-xl font-bold text-foreground ml-3" numberOfLines={2}>
+                <Text className="text-xl font-bold text-foreground ml-3" numberOfLines={2} style={{ flex: 1 }}>
                   {allServices.length > 1 ? `${allServices.length} Services` : (service ? getServiceDisplayName(service) : 'Service')}
                 </Text>
+                {(service?.serviceType === 'mobile' || appointment.clientAddress) && (
+                  <View style={{ marginLeft: 8, backgroundColor: '#0891b215', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                    <Text style={{ fontSize: 11, color: '#0891b2', fontWeight: '700' }}>🚗 Mobile</Text>
+                  </View>
+                )}
               </View>
               <Text className="text-sm text-muted mb-3">
                 {totalDuration} min total · ${appointment.totalPrice != null ? appointment.totalPrice.toFixed(2) : (service?.price ?? 0)}
@@ -1355,6 +1360,12 @@ Would you also like to charge a no-show fee via Stripe?`,
                     🎁 Gift{(appointment as any).giftCode ? ` — Code: ${(appointment as any).giftCode}` : ' Card Applied'}
                   </Text>
                   <Text className="text-sm font-semibold" style={{ color: colors.success }}>-${giftDeduction.toFixed(2)}</Text>
+                </View>
+              )}
+              {appointment.travelFee != null && Number(appointment.travelFee) > 0 && (
+                <View className="flex-row justify-between py-1">
+                  <Text className="text-sm" style={{ color: '#0891b2' }}>🚗 Travel Fee</Text>
+                  <Text className="text-sm font-semibold" style={{ color: '#0891b2' }}>+${Number(appointment.travelFee).toFixed(2)}</Text>
                 </View>
               )}
               <View style={{ borderTopWidth: 1, borderTopColor: colors.border, marginTop: 6, paddingTop: 6 }} className="flex-row justify-between">
@@ -1678,6 +1689,20 @@ Would you also like to charge a no-show fee via Stripe?`,
               onPress={() => Linking.openURL(getMapUrl(appointment.clientAddress!)).catch(() => {})}
             />
           ) : null}
+          {/* Estimated depart time for mobile services */}
+          {(service?.serviceType === 'mobile' || appointment.clientAddress) && service?.travelDuration && service.travelDuration > 0 && (() => {
+            const apptMin = timeToMinutes(appointment.time);
+            const departMin = apptMin - service.travelDuration;
+            const departTime = formatTime(minutesToTime(Math.max(0, departMin)));
+            return (
+              <DetailRow
+                icon="car.fill"
+                label="Depart By"
+                value={`${departTime} (${service.travelDuration} min travel)`}
+                colors={colors}
+              />
+            );
+          })()}
         </View>
 
         {/* Cancellation Policy Info */}

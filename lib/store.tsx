@@ -1966,6 +1966,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               staffId: appt.staffId,
               locationId: appt.locationId,
               clientAddress: appt.clientAddress,
+              travelFee: appt.travelFee,
             });
             break;
           }

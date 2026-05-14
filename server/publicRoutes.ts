@@ -1145,6 +1145,7 @@ export function registerPublicRoutes(app: Express) {
         giftCode: giftCode || null,
         locationId: locationId || null,
         clientAddress: clientAddress || null,
+        travelFee: travelFee != null ? String(parseFloat(String(travelFee))) : null,
         paymentMethod: (paymentMethod && paymentMethod !== 'later') ? paymentMethod : null,
         paymentStatus: paymentMethod === 'cash' ? 'pending_cash' : ((paymentMethod && paymentMethod !== 'later') ? 'unpaid' : null),
       });
@@ -1192,6 +1193,9 @@ export function registerPublicRoutes(app: Express) {
             notes: enrichedNotes || undefined,
             locationName: bookLocationName,
             locationAddress: bookLocationAddress,
+            clientAddress: clientAddress || undefined,
+            travelFee: travelFee != null ? parseFloat(String(travelFee)) : undefined,
+            travelDuration: svc?.travelDuration != null ? Number(svc.travelDuration) : undefined,
           });
         } catch (emailErr) {
           console.warn("[Public API] Failed to send email notification:", emailErr);

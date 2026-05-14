@@ -440,6 +440,7 @@ const appointmentsRouter = router({
         staffId: z.string().optional(),
         locationId: z.string().optional(),
         clientAddress: z.string().optional(),
+        travelFee: z.number().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -448,6 +449,7 @@ const appointmentsRouter = router({
       if (input.totalPrice != null) dbInput.totalPrice = String(input.totalPrice);
       if (input.discountAmount != null) dbInput.discountAmount = String(input.discountAmount);
       if (input.giftUsedAmount != null) dbInput.giftUsedAmount = String(input.giftUsedAmount);
+      if (input.travelFee != null) dbInput.travelFee = String(input.travelFee);
       if (input.extraItems) dbInput.extraItems = input.extraItems;
       const id = await db.createAppointment(dbInput);
       // ── Auto in-app message to client on new booking ─────────────────────────
@@ -544,6 +546,9 @@ const appointmentsRouter = router({
                 businessAddress: owner.address ?? undefined,
                 customSlug: (owner as any).customSlug ?? undefined,
                 locationId: enrichedAppt.locationId ?? undefined,
+                clientAddress: (enrichedAppt as any).clientAddress ?? undefined,
+                travelFee: (enrichedAppt as any).travelFee ? Number((enrichedAppt as any).travelFee) : undefined,
+                travelDuration: (enrichedAppt as any).travelDuration ?? undefined,
               });
             }
           }

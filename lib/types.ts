@@ -95,6 +95,8 @@ export interface Appointment {
   locationId?: string;
   /** Client address for mobile/at-home service appointments */
   clientAddress?: string;
+  /** Travel fee charged for mobile/at-home service */
+  travelFee?: number;
   /** Reason for cancellation (set when status changes to 'cancelled') */
   cancellationReason?: string;
   /** Payment method chosen: zelle | venmo | cashapp | cash | card | unpaid */

@@ -312,6 +312,8 @@ export const appointments = mysqlTable("appointments", {
    */
   reviewNotifSentAt: timestamp("reviewNotifSentAt"),
   clientAddress: text("clientAddress"),
+  /** Travel fee charged for mobile/at-home service appointments */
+  travelFee: decimal("travelFee", { precision: 10, scale: 2 }),
   /** Links all appointments in a package booking together */
   packageBookingId: varchar("packageBookingId", { length: 64 }),
   /** The package localId this appointment belongs to */
