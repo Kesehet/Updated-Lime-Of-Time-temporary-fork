@@ -182,7 +182,9 @@ export async function updateBusinessOwner(
   // Guard: skip if no fields to update (prevents drizzle 'No values to set' error
   // which can occur when the client sends fields that Zod strips from the schema)
   if (Object.keys(data).length === 0) return;
-  await db.update(businessOwners).set(data).where(eq(businessOwners.id, id));
+  // Always normalize phone to E.164 format before storing
+  const normalizedData = data.phone ? { ...data, phone: normalizePhone(data.phone) } : data;
+  await db.update(businessOwners).set(normalizedData).where(eq(businessOwners.id, id));
 }
 
 export async function deleteBusinessOwner(id: number): Promise<void> {

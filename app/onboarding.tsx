@@ -1005,9 +1005,14 @@ export default function OnboardingScreen() {
     setOnboardingErrors({});
     setLoading(true);
     try {
-      const rawPhone = stripPhoneFormat(businessPhone.trim() || phone.trim());
+      // Build E.164 phone: strip formatting, then prepend country dial code
+      const stripped = stripPhoneFormat(businessPhone.trim() || phone.trim());
+      // For US (+1): 10-digit → +14124827733; for other regions: prepend dial code digits
+      const e164Phone = selectedCountry.dial === "+1"
+        ? `+1${stripped.slice(-10)}`
+        : `${selectedCountry.dial}${stripped}`;
       const newOwner = await createBusinessMut.mutateAsync({
-        phone: rawPhone,
+        phone: e164Phone,
         businessName: businessName.trim(),
         email: email.trim() || undefined,
         website: website.trim() || undefined,
@@ -1027,7 +1032,7 @@ export default function OnboardingScreen() {
           onboardingComplete: true,
           profile: {
             ownerName: "",
-            phone: businessPhone.trim() || phone.trim(),
+            phone: e164Phone,
             email: email.trim(),
             address: "",
             city: "",
