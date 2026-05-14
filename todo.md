@@ -2198,3 +2198,4 @@
 - [x] Gift Card Validity: fix selection (all options selectable) and add Custom days input
 - [x] Replace RN KeyboardAvoidingView with RNKC in all 49 screens (edge-to-edge fix)
 - [x] Add character counter (X/1000) to Business Portal and Client Portal message threads
+- [x] Fix subscription plan carousel: each card must snap to center of screen when scrolling in either direction (FlatList+snapToInterval+snapToAlignment=center)
