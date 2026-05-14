@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, phone, name FROM client_accounts WHERE phone NOT LIKE 'oauth:%' AND phone NOT LIKE '+%' LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, phone, name FROM client_accounts WHERE phone NOT LIKE 'oauth:%' AND phone NOT LIKE '+%' LIMIT 20;",
+  "rows": [
+    {
+      "id": "180001",
+      "phone": "4124822976",
+      "name": "Iryna Azimova"
+    },
+    {
+      "id": "240002",
+      "phone": "(412) 482-7733",
+      "name": "NULL"
+    },
+    {
+      "id": "240003",
+      "phone": "4124827733",
+      "name": "Test Client"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tphone\tname\n180001\t4124822976\tIryna Azimova\n240002\t(412) 482-7733\tNULL\n240003\t4124827733\tTest Client\n",
+  "stderr": "",
+  "execution_time_ms": 300
+}

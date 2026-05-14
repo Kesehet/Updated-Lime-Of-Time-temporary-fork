@@ -1,0 +1,190 @@
+{
+  "query": "SELECT id, phone, name, businessOwnerId FROM clients WHERE phone IS NOT NULL AND phone NOT LIKE '+%' LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, phone, name, businessOwnerId FROM clients WHERE phone IS NOT NULL AND phone NOT LIKE '+%' LIMIT 30;",
+  "rows": [
+    {
+      "id": "1470002",
+      "phone": "4124822976",
+      "name": "Iryna",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1530001",
+      "phone": "2677262231",
+      "name": "Yuliia Sharapova",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1530002",
+      "phone": "4124827733",
+      "name": "MJ",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1620001",
+      "phone": "4128440382",
+      "name": "Assel",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1650004",
+      "phone": "(412) 667-0047",
+      "name": "Svitlana",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1740001",
+      "phone": "(412) 799-3528",
+      "name": "Mama❤️",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1800001",
+      "phone": "4125223688",
+      "name": "Lisa Nagy",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950001",
+      "phone": "4125550101",
+      "name": "Sofia Martinez",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950002",
+      "phone": "4125550102",
+      "name": "Emma Johnson",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950003",
+      "phone": "4125550103",
+      "name": "Aisha Williams",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950004",
+      "phone": "4125550104",
+      "name": "Natalie Chen",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950005",
+      "phone": "4125550105",
+      "name": "Rachel Kim",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950006",
+      "phone": "4125550106",
+      "name": "Priya Sharma",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950007",
+      "phone": "4125550107",
+      "name": "Lauren Brooks",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950008",
+      "phone": "4125550108",
+      "name": "Mia Torres",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950009",
+      "phone": "4125550109",
+      "name": "Jasmine Reed",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950010",
+      "phone": "4125550110",
+      "name": "Olivia Scott",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950011",
+      "phone": "4125550111",
+      "name": "Chloe Adams",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950012",
+      "phone": "4125550112",
+      "name": "Zoe Mitchell",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950013",
+      "phone": "4125550113",
+      "name": "Ava Thompson",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950014",
+      "phone": "4125550114",
+      "name": "Isabella Garcia",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950015",
+      "phone": "4125550115",
+      "name": "Lily Nguyen",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950016",
+      "phone": "4125550116",
+      "name": "Hannah Lee",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950017",
+      "phone": "4125550117",
+      "name": "Grace Wilson",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950018",
+      "phone": "4125550118",
+      "name": "Ella Brown",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950019",
+      "phone": "4125550119",
+      "name": "Aria Davis",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950020",
+      "phone": "4125550120",
+      "name": "Scarlett Moore",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950021",
+      "phone": "4125550121",
+      "name": "Victoria Hall",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950022",
+      "phone": "4125550122",
+      "name": "Penelope Young",
+      "businessOwnerId": "1650001"
+    },
+    {
+      "id": "1950023",
+      "phone": "4125550123",
+      "name": "Layla King",
+      "businessOwnerId": "1650001"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tphone\tname\tbusinessOwnerId\n1470002\t4124822976\tIryna\t1650001\n1530001\t2677262231\tYuliia Sharapova\t1650001\n1530002\t4124827733\tMJ\t1650001\n1620001\t4128440382\tAssel\t1650001\n1650004\t(412) 667-0047\tSvitlana\t1650001\n1740001\t(412) 799-3528\tMama❤️\t1650001\n1800001\t4125223688\tLisa Nagy\t1650001\n1950001\t4125550101\tSofia Martinez\t1650001\n1950002\t4125550102\tEmma Johnson\t1650001\n1950003\t4125550103\tAisha Williams\t1650001\n1950004\t4125550104\tNatalie Chen\t1650001\n1950005\t4125550105\tRachel Kim\t1650001\n1950006\t4125550106\tPriya Sharma\t1650001\n1950007\t4125550107\tLauren Brooks\t1650001\n1950008\t4125550108\tMia Torres\t1650001\n1950009\t4125550109\tJasmine Reed\t1650001\n1950010\t4125550110\tOlivia Scott\t1650001\n1950011\t4125550111\tChloe Adams\t1650001\n1950012\t4125550112\tZoe Mitchell\t1650001\n1950013\t4125550113\tAva Thompson\t1650001\n1950014\t4125550114\tIsabella Garcia\t1650001\n1950015\t4125550115\tLily Nguyen\t1650001\n1950016\t4125550116\tHannah Lee\t1650001\n1950017\t4125550117\tGrace Wilson\t1650001\n1950018\t4125550118\tElla Brown\t1650001\n1950019\t4125550119\tAria Davis\t1650001\n1950020\t4125550120\tScarlett Moore\t1650001\n1950021\t4125550121\tVictoria Hall\t1650001\n1950022\t4125550122\tPenelope Young\t1650001\n1950023\t4125550123\tLayla King\t1650001\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

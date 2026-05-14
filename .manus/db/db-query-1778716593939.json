@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Migrate clients: 10-digit phones to E.164\nUPDATE clients\nSET phone = CONCAT('+1', REGEXP_REPLACE(phone, '[^0-9]', ''))\nWHERE phone IS NOT NULL\n  AND phone NOT LIKE '+%'\n  AND LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '')) = 10;\n\n-- Migrate clients: 11-digit phones starting with 1 to E.164\nUPDATE clients\nSET phone = CONCAT('+', REGEXP_REPLACE(phone, '[^0-9]', ''))\nWHERE phone IS NOT NULL\n  AND phone NOT LIKE '+%'\n  AND LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '')) = 11\n  AND LEFT(REGEXP_REPLACE(phone, '[^0-9]', ''), 1) = '1';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Migrate clients: 10-digit phones to E.164\nUPDATE clients\nSET phone = CONCAT('+1', REGEXP_REPLACE(phone, '[^0-9]', ''))\nWHERE phone IS NOT NULL\n  AND phone NOT LIKE '+%'\n  AND LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '')) = 10;\n\n-- Migrate clients: 11-digit phones starting with 1 to E.164\nUPDATE clients\nSET phone = CONCAT('+', REGEXP_REPLACE(phone, '[^0-9]', ''))\nWHERE phone IS NOT NULL\n  AND phone NOT LIKE '+%'\n  AND LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '')) = 11\n  AND LEFT(REGEXP_REPLACE(phone, '[^0-9]', ''), 1) = '1';\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 270
+}

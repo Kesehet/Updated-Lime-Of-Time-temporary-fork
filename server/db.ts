@@ -426,23 +426,24 @@ export async function deleteClient(localId: string, businessOwnerId: number): Pr
     .where(and(eq(clients.localId, localId), eq(clients.businessOwnerId, businessOwnerId)));
 }
 
-/** Normalize a phone number to 10-digit US format for consistent matching.
- *  "4124820000" -> "4124820000"
- *  "+14124820000" -> "4124820000"
- *  "14124820000" -> "4124820000"
- *  "(412) 482-0000" -> "4124820000" */
+/** Normalize a phone number to E.164 format for consistent storage and matching.
+ *  "4124820000" -> "+14124820000"
+ *  "+14124820000" -> "+14124820000"
+ *  "14124820000" -> "+14124820000"
+ *  "(412) 482-0000" -> "+14124820000"
+ *  Non-US/non-standard: "+" + digits (best effort) */
 export function normalizePhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
-  // US number with country code 1 prefix
+  // US number with country code 1 prefix (11 digits starting with 1)
   if (digits.length === 11 && digits.startsWith("1")) {
-    return digits.slice(1);
+    return "+" + digits;
   }
-  // Already 10 digits
+  // 10-digit US number — prepend +1
   if (digits.length === 10) {
-    return digits;
+    return "+1" + digits;
   }
-  // Return as-is for non-standard lengths
-  return digits;
+  // Return best-effort E.164 for non-standard lengths
+  return "+" + digits;
 }
 
 export async function getClientByPhone(phone: string, businessOwnerId: number) {
@@ -1160,8 +1161,16 @@ export async function getBusinessUsageCounts(businessOwnerId: number): Promise<{
 export async function getClientAccountByPhone(phone: string): Promise<ClientAccount | null> {
   const db = await getDb();
   if (!db) return null;
-  const rows = await db.select().from(clientAccounts).where(eq(clientAccounts.phone, phone)).limit(1);
-  return rows[0] ?? null;
+  // Normalize to E.164 for consistent lookup; skip normalization for oauth: keys
+  const lookupPhone = phone.startsWith("oauth:") ? phone : normalizePhone(phone);
+  const rows = await db.select().from(clientAccounts).where(eq(clientAccounts.phone, lookupPhone)).limit(1);
+  if (rows[0]) return rows[0];
+  // Fallback: scan all accounts and compare normalized digits (handles legacy 10-digit records)
+  if (!phone.startsWith("oauth:")) {
+    const allAccounts = await db.select().from(clientAccounts);
+    return allAccounts.find((a) => a.phone && !a.phone.startsWith("oauth:") && normalizePhone(a.phone) === lookupPhone) ?? null;
+  }
+  return null;
 }
 
 export async function getClientAccountById(id: number): Promise<ClientAccount | null> {
@@ -1174,6 +1183,10 @@ export async function getClientAccountById(id: number): Promise<ClientAccount | 
 export async function upsertClientAccount(data: InsertClientAccount): Promise<ClientAccount> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  // Normalize phone to E.164 before storage (skip oauth: keys)
+  if (data.phone && !data.phone.startsWith("oauth:")) {
+    data = { ...data, phone: normalizePhone(data.phone) };
+  }
   const existing = await getClientAccountByPhone(data.phone);
   if (existing) {
     await db.update(clientAccounts).set({ ...data, updatedAt: new Date() }).where(eq(clientAccounts.id, existing.id));
@@ -1420,8 +1433,15 @@ export async function getBusinessOwnerByOpenId(openId: string): Promise<Business
 export async function getAppointmentsByClientPhone(phone: string) {
   const db = await getDb();
   if (!db) return [];
+  // Normalize to E.164 for consistent lookup
+  const normalizedPhone = normalizePhone(phone);
   // Find all clients with this phone number across all businesses
-  const matchingClients = await db.select().from(clients).where(eq(clients.phone, phone));
+  // Try exact E.164 match first, then fallback scan for legacy 10-digit records
+  let matchingClients = await db.select().from(clients).where(eq(clients.phone, normalizedPhone));
+  if (matchingClients.length === 0) {
+    const allClients = await db.select().from(clients);
+    matchingClients = allClients.filter((c) => c.phone && normalizePhone(c.phone) === normalizedPhone);
+  }
   if (matchingClients.length === 0) return [];
   // Get appointments for each client
   const allAppointments: (typeof appointments.$inferSelect)[] = [];

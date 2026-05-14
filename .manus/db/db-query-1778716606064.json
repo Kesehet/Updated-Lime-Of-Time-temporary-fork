@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Update users.openId from 'phone:XXXXXXXXXX' to 'phone:+1XXXXXXXXXX' for 10-digit numbers\nUPDATE users\nSET openId = CONCAT('phone:+1', SUBSTRING(openId, 7))\nWHERE openId LIKE 'phone:%'\n  AND openId NOT LIKE 'phone:+%'\n  AND LENGTH(SUBSTRING(openId, 7)) = 10;\n\n-- Update users.openId from 'phone:1XXXXXXXXXX' to 'phone:+1XXXXXXXXXX' for 11-digit numbers starting with 1\nUPDATE users\nSET openId = CONCAT('phone:+', SUBSTRING(openId, 7))\nWHERE openId LIKE 'phone:%'\n  AND openId NOT LIKE 'phone:+%'\n  AND LENGTH(SUBSTRING(openId, 7)) = 11\n  AND LEFT(SUBSTRING(openId, 7), 1) = '1';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Update users.openId from 'phone:XXXXXXXXXX' to 'phone:+1XXXXXXXXXX' for 10-digit numbers\nUPDATE users\nSET openId = CONCAT('phone:+1', SUBSTRING(openId, 7))\nWHERE openId LIKE 'phone:%'\n  AND openId NOT LIKE 'phone:+%'\n  AND LENGTH(SUBSTRING(openId, 7)) = 10;\n\n-- Update users.openId from 'phone:1XXXXXXXXXX' to 'phone:+1XXXXXXXXXX' for 11-digit numbers starting with 1\nUPDATE users\nSET openId = CONCAT('phone:+', SUBSTRING(openId, 7))\nWHERE openId LIKE 'phone:%'\n  AND openId NOT LIKE 'phone:+%'\n  AND LENGTH(SUBSTRING(openId, 7)) = 11\n  AND LEFT(SUBSTRING(openId, 7), 1) = '1';\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 287
+}

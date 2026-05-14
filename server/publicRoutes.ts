@@ -951,8 +951,7 @@ export function registerPublicRoutes(app: Express) {
 
       // Normalize phone for consistent matching
       let clientLocalId: string;
-      const rawDigits = (clientPhone || "").replace(/\D/g, "");
-      const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
+      const normalizedPhone = clientPhone ? db.normalizePhone(clientPhone) : "";
       if (normalizedPhone.length >= 10) {
         const existingClient = await db.getClientByPhone(normalizedPhone, owner.id);
         if (existingClient) {
@@ -1248,8 +1247,7 @@ export function registerPublicRoutes(app: Express) {
       }
       // Resolve or create client
       let clientLocalId: string;
-      const rawDigits = (clientPhone || "").replace(/\D/g, "");
-      const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
+      const normalizedPhone = clientPhone ? db.normalizePhone(clientPhone) : "";
       if (normalizedPhone.length >= 10) {
         const existingClient = await db.getClientByPhone(normalizedPhone, owner.id);
         if (existingClient) {
@@ -1382,8 +1380,7 @@ export function registerPublicRoutes(app: Express) {
 
       // Normalize phone for consistent matching
       let clientLocalId: string;
-      const rawReviewDigits = (clientPhone || "").replace(/\D/g, "");
-      const normalizedReviewPhone = rawReviewDigits.length === 11 && rawReviewDigits.startsWith("1") ? rawReviewDigits.slice(1) : rawReviewDigits;
+      const normalizedReviewPhone = clientPhone ? db.normalizePhone(clientPhone) : "";
       if (normalizedReviewPhone.length >= 10) {
         const existingClient = await db.getClientByPhone(normalizedReviewPhone, owner.id);
         if (existingClient) {
@@ -1494,17 +1491,13 @@ export function registerPublicRoutes(app: Express) {
       // Verify client identity by phone
       const clientList = await db.getClientsByOwner(owner.id);
       const client = clientList.find((c) => c.localId === appt.clientLocalId);
-      const normPhone = (p: string) => {
-        const d = p.replace(/\D/g, "");
-        return d.length >= 10 ? d.slice(-10) : d;
-      };
       // If client has a phone on record, require verification
       if (client && client.phone && client.phone.trim()) {
         if (!clientPhone || !clientPhone.trim()) {
           res.status(403).json({ error: "Please enter your phone number to verify your identity." });
           return;
         }
-        if (normPhone(clientPhone) !== normPhone(client.phone)) {
+        if (db.normalizePhone(clientPhone) !== db.normalizePhone(client.phone)) {
           res.status(403).json({ error: "Phone number does not match. Please enter the phone number used when booking." });
           return;
         }
@@ -1599,17 +1592,13 @@ export function registerPublicRoutes(app: Express) {
       // Verify client identity by phone
       const clientList = await db.getClientsByOwner(owner.id);
       const client = clientList.find((c) => c.localId === appt.clientLocalId);
-      const normPhone2 = (p: string) => {
-        const d = p.replace(/\D/g, "");
-        return d.length >= 10 ? d.slice(-10) : d;
-      };
       // If client has a phone on record, require verification
       if (client && client.phone && client.phone.trim()) {
         if (!clientPhone || !clientPhone.trim()) {
           res.status(403).json({ error: "Please enter your phone number to verify your identity." });
           return;
         }
-        if (normPhone2(clientPhone) !== normPhone2(client.phone)) {
+        if (db.normalizePhone(clientPhone) !== db.normalizePhone(client.phone)) {
           res.status(403).json({ error: "Phone number does not match. Please enter the phone number used when booking." });
           return;
         }
@@ -1712,10 +1701,9 @@ export function registerPublicRoutes(app: Express) {
       // Verify client identity
       const clientList = await db.getClientsByOwner(owner.id);
       const client = clientList.find((c: any) => c.localId === appt.clientLocalId);
-      const normPhone = (p: string) => { const d = p.replace(/\D/g, ""); return d.length >= 10 ? d.slice(-10) : d; };
       if (client?.phone?.trim()) {
         if (!clientPhone?.trim()) { res.status(403).json({ error: "Please enter your phone number to verify your identity." }); return; }
-        if (normPhone(clientPhone) !== normPhone(client.phone)) { res.status(403).json({ error: "Phone number does not match." }); return; }
+        if (db.normalizePhone(clientPhone) !== db.normalizePhone(client.phone)) { res.status(403).json({ error: "Phone number does not match." }); return; }
       }
       const cancelRequest = { status: "pending", reason: reason || "", submittedAt: new Date().toISOString() };
       await db.updateAppointment(appointmentId, owner.id, { cancelRequest } as any);
@@ -1761,10 +1749,9 @@ export function registerPublicRoutes(app: Express) {
       // Verify client identity
       const clientList = await db.getClientsByOwner(owner.id);
       const client = clientList.find((c: any) => c.localId === appt.clientLocalId);
-      const normPhone = (p: string) => { const d = p.replace(/\D/g, ""); return d.length >= 10 ? d.slice(-10) : d; };
       if (client?.phone?.trim()) {
         if (!clientPhone?.trim()) { res.status(403).json({ error: "Please enter your phone number to verify your identity." }); return; }
-        if (normPhone(clientPhone) !== normPhone(client.phone)) { res.status(403).json({ error: "Phone number does not match." }); return; }
+        if (db.normalizePhone(clientPhone) !== db.normalizePhone(client.phone)) { res.status(403).json({ error: "Phone number does not match." }); return; }
       }
       const rescheduleRequest = { status: "pending", requestedDate, requestedTime, reason: reason || "", submittedAt: new Date().toISOString() };
       await db.updateAppointment(appointmentId, owner.id, { rescheduleRequest } as any);
@@ -1806,10 +1793,9 @@ export function registerPublicRoutes(app: Express) {
       // Verify client identity
       const clientList = await db.getClientsByOwner(owner.id);
       const client = clientList.find((c: any) => c.localId === appt.clientLocalId);
-      const normPhone = (p: string) => { const d = p.replace(/\D/g, ""); return d.length >= 10 ? d.slice(-10) : d; };
       if (client?.phone?.trim()) {
         if (!clientPhone?.trim()) { res.status(403).json({ error: "Please enter your phone number to verify your identity." }); return; }
-        if (normPhone(clientPhone) !== normPhone(client.phone)) { res.status(403).json({ error: "Phone number does not match." }); return; }
+        if (db.normalizePhone(clientPhone) !== db.normalizePhone(client.phone)) { res.status(403).json({ error: "Phone number does not match." }); return; }
       }
       if (requestType === "cancel") {
         const existing = (appt as any).cancelRequest as any;
@@ -1855,13 +1841,12 @@ export function registerPublicRoutes(app: Express) {
       // Verify client identity by phone if phone is on record
       const clientList = await db.getClientsByOwner(owner.id);
       const client = clientList.find((c) => c.localId === appt.clientLocalId);
-      const normPhone = (p: string) => { const d = p.replace(/\D/g, ""); return d.length >= 10 ? d.slice(-10) : d; };
       if (client && client.phone && client.phone.trim()) {
         if (!clientPhone || !clientPhone.trim()) {
           res.status(403).json({ error: "Please enter your phone number to verify your identity." });
           return;
         }
-        if (normPhone(clientPhone) !== normPhone(client.phone)) {
+        if (db.normalizePhone(clientPhone) !== db.normalizePhone(client.phone)) {
           res.status(403).json({ error: "Phone number does not match." });
           return;
         }

@@ -12,7 +12,7 @@
  * The message uses the same full professional format as the manual "Send Reminder" feature:
  * Dear {clientName}, service, date, time, location, pricing block, business name, phone, footer.
  */
-import { getDb, insertClientMessage, getClientAccountByPhone } from "./db";
+import { getDb, insertClientMessage, getClientAccountByPhone, normalizePhone } from "./db";
 import {
   appointments,
   businessOwners,
@@ -281,10 +281,8 @@ async function sendClientReminders() {
       if (!masterEnabled) continue;
 
       // Get client portal account
-      const rawDigits = client.phone.replace(/\D/g, "");
-      const normPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
-      const clientAcc = await getClientAccountByPhone(normPhone)
-        ?? await getClientAccountByPhone(client.phone);
+      const normPhone = normalizePhone(client.phone);
+      const clientAcc = await getClientAccountByPhone(normPhone);
       if (!clientAcc) continue;
 
       // Parse existing reminder flags

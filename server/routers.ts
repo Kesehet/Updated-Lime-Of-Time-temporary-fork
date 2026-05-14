@@ -24,7 +24,7 @@ const businessRouter = router({
   checkByPhone: publicProcedure
     .input(z.object({ phone: z.string().min(1) }))
     .query(async ({ input }) => {
-      // Normalize to 10-digit format so formatting differences don't cause lookup misses
+      // Normalize to E.164 format so formatting differences don't cause lookup misses
       const normalized = db.normalizePhone(input.phone);
       const owner = await db.getBusinessOwnerByPhone(normalized);
       return owner ?? null;
@@ -63,7 +63,7 @@ const businessRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      // Always store phone in normalized 10-digit format for consistent lookup
+      // Always store phone in E.164 format (+1XXXXXXXXXX) for consistent lookup
       const normalizedPhone = db.normalizePhone(input.phone);
       const id = await db.createBusinessOwner({
         phone: normalizedPhone,
@@ -433,10 +433,8 @@ const appointmentsRouter = router({
           db.getEnrichedAppointment(input.localId, input.businessOwnerId),
         ]);
         if (owner && enrichedAppt?.clientPhone) {
-          const rawDigits = enrichedAppt.clientPhone.replace(/\D/g, "");
-          const normPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
-          const clientAcc = await db.getClientAccountByPhone(normPhone)
-            ?? await db.getClientAccountByPhone(enrichedAppt.clientPhone);
+          const normPhone = db.normalizePhone(enrichedAppt.clientPhone);
+          const clientAcc = await db.getClientAccountByPhone(normPhone);
           if (clientAcc) {
             const sName = enrichedAppt.serviceName ?? "appointment";
             const dateStr = enrichedAppt.date ?? input.date;
@@ -596,10 +594,8 @@ const appointmentsRouter = router({
         try {
           const enrichedAppt = await db.getEnrichedAppointment(localId, businessOwnerId);
           if (enrichedAppt?.clientPhone) {
-            const rawDigits = enrichedAppt.clientPhone.replace(/\D/g, "");
-            const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
-            const clientAcc = await db.getClientAccountByPhone(normalizedPhone)
-              ?? await db.getClientAccountByPhone(enrichedAppt.clientPhone);
+            const normalizedPhone = db.normalizePhone(enrichedAppt.clientPhone);
+            const clientAcc = await db.getClientAccountByPhone(normalizedPhone);
             if (clientAcc?.expoPushToken) {
               const businessOwner = await db.getBusinessOwnerById(businessOwnerId);
               const bName = businessOwner?.businessName ?? "Your business";
@@ -654,10 +650,8 @@ const appointmentsRouter = router({
             db.getEnrichedAppointment(localId, businessOwnerId),
           ]);
           if (owner2 && enrichedAppt2?.clientPhone) {
-            const rawDigits2 = enrichedAppt2.clientPhone.replace(/\D/g, "");
-            const normPhone2 = rawDigits2.length === 11 && rawDigits2.startsWith("1") ? rawDigits2.slice(1) : rawDigits2;
-            const clientAcc2 = await db.getClientAccountByPhone(normPhone2)
-              ?? await db.getClientAccountByPhone(enrichedAppt2.clientPhone);
+            const normPhone2 = db.normalizePhone(enrichedAppt2.clientPhone);
+            const clientAcc2 = await db.getClientAccountByPhone(normPhone2);
             if (clientAcc2) {
               const bName2 = owner2.businessName;
               const sName2 = enrichedAppt2.serviceName ?? "appointment";
@@ -713,10 +707,8 @@ const appointmentsRouter = router({
             // Find the client account to insert the message into the conversation thread
             const enrichedPkg = await db.getEnrichedAppointment(localId, businessOwnerId);
             if (enrichedPkg?.clientPhone) {
-              const rawDigitsPkg = enrichedPkg.clientPhone.replace(/\D/g, "");
-              const normPhonePkg = rawDigitsPkg.length === 11 && rawDigitsPkg.startsWith("1") ? rawDigitsPkg.slice(1) : rawDigitsPkg;
-              const clientAccPkg = await db.getClientAccountByPhone(normPhonePkg)
-                ?? await db.getClientAccountByPhone(enrichedPkg.clientPhone);
+              const normPhonePkg = db.normalizePhone(enrichedPkg.clientPhone);
+              const clientAccPkg = await db.getClientAccountByPhone(normPhonePkg);
               if (clientAccPkg) {
                 // Insert into messaging conversation thread (pre-generated, visible in Messages tab)
                 await db.insertClientMessage({ businessOwnerId, clientAccountId: clientAccPkg.id, senderType: "business", body: progressMsg }).catch(() => {});
@@ -763,10 +755,8 @@ const appointmentsRouter = router({
             // Push notification + in-app message to client portal user
             if (enrichedAppt.clientPhone) {
               try {
-                const rawDigits = enrichedAppt.clientPhone.replace(/\D/g, "");
-                const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
-                const clientAcc = await db.getClientAccountByPhone(normalizedPhone)
-                  ?? await db.getClientAccountByPhone(enrichedAppt.clientPhone);
+                const normalizedPhone = db.normalizePhone(enrichedAppt.clientPhone);
+                const clientAcc = await db.getClientAccountByPhone(normalizedPhone);
                 if (clientAcc?.expoPushToken) {
                   await sendExpoPush(clientAcc.expoPushToken, {
                     title: `\u274c Reschedule Request Declined`,
@@ -812,10 +802,8 @@ const appointmentsRouter = router({
             // Push notification + in-app message to client portal user
             if (enrichedAppt.clientPhone) {
               try {
-                const rawDigits = enrichedAppt.clientPhone.replace(/\D/g, "");
-                const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
-                const clientAcc = await db.getClientAccountByPhone(normalizedPhone)
-                  ?? await db.getClientAccountByPhone(enrichedAppt.clientPhone);
+                const normalizedPhone = db.normalizePhone(enrichedAppt.clientPhone);
+                const clientAcc = await db.getClientAccountByPhone(normalizedPhone);
                 if (clientAcc?.expoPushToken) {
                   await sendExpoPush(clientAcc.expoPushToken, {
                     title: `\u2705 Reschedule Approved!`,

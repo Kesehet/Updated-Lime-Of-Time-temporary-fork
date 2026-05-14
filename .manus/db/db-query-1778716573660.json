@@ -1,0 +1,26 @@
+{
+  "query": "SELECT id, phone, name, email, expoPushToken, createdAt FROM client_accounts WHERE id IN (240002, 240003);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, phone, name, email, expoPushToken, createdAt FROM client_accounts WHERE id IN (240002, 240003);",
+  "rows": [
+    {
+      "id": "240002",
+      "phone": "(412) 482-7733",
+      "name": "NULL",
+      "email": "NULL",
+      "expoPushToken": "NULL",
+      "createdAt": "2026-05-13 16:33:35"
+    },
+    {
+      "id": "240003",
+      "phone": "4124827733",
+      "name": "Test Client",
+      "email": "NULL",
+      "expoPushToken": "ExponentPushToken[GIWQJzGFOP1yfhcIzO89z4]",
+      "createdAt": "2026-05-13 16:34:15"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tphone\tname\temail\texpoPushToken\tcreatedAt\n240002\t(412) 482-7733\tNULL\tNULL\tNULL\t2026-05-13 16:33:35\n240003\t4124827733\tTest Client\tNULL\tExponentPushToken[GIWQJzGFOP1yfhcIzO89z4]\t2026-05-13 16:34:15\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

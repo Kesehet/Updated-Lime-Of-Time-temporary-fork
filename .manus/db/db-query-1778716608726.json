@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, openId, name FROM users WHERE openId LIKE 'phone:%' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, openId, name FROM users WHERE openId LIKE 'phone:%' LIMIT 10;",
+  "rows": [
+    {
+      "id": "120001",
+      "openId": "phone:+14124827733",
+      "name": "NULL"
+    },
+    {
+      "id": "630021",
+      "openId": "phone:+14124822976",
+      "name": "NULL"
+    },
+    {
+      "id": "1080052",
+      "openId": "phone:+14125551234",
+      "name": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\tname\n120001\tphone:+14124827733\tNULL\n630021\tphone:+14124822976\tNULL\n1080052\tphone:+14125551234\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 272
+}

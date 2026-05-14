@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, phone, businessName FROM business_owners WHERE phone IS NOT NULL AND phone NOT LIKE '+%' LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, phone, businessName FROM business_owners WHERE phone IS NOT NULL AND phone NOT LIKE '+%' LIMIT 20;",
+  "rows": [
+    {
+      "id": "1650001",
+      "phone": "(412) 482-2976",
+      "businessName": "Wellness Suite"
+    },
+    {
+      "id": "1920001",
+      "phone": "4124827733",
+      "businessName": "Pittsburgh Test Salon"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tphone\tbusinessName\n1650001\t(412) 482-2976\tWellness Suite\n1920001\t4124827733\tPittsburgh Test Salon\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

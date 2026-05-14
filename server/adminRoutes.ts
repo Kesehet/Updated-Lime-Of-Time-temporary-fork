@@ -5585,7 +5585,7 @@ function platformConfigPage(
               try { overrides = JSON.parse(cfgMap["TWILIO_PER_PHONE_OTP"] || "{}"); } catch {}
               if (Object.keys(overrides).length === 0) return '<p id="noOtpRows" style="font-size:13px;color:var(--text-muted);text-align:center;padding:16px;border:1px dashed var(--border);border-radius:8px;">No per-business overrides yet. Click "+ Add Business" to add one.</p>';
               return Object.entries(overrides).map(([phone, code]) => {
-                const biz = bizList.find(b => b.phone === phone || b.phone.replace(/\D/g,'').slice(-10) === phone.replace(/\D/g,'').slice(-10));
+                const biz = bizList.find(b => b.phone === phone || (b.phone && phone && db.normalizePhone(b.phone) === db.normalizePhone(phone)));
                 const bizName = biz ? biz.businessName : phone;
                 return `<div class="phone-otp-row" style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
                   <span style="flex:1;font-size:13px;font-weight:600;">${escHtml(bizName)}</span>

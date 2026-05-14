@@ -125,12 +125,14 @@ export function registerClientRoutes(app: Express) {
     try {
       const { phone, name } = req.body as { phone: string; name?: string };
       if (!phone) { res.status(400).json({ error: "Phone required" }); return; }
-      let clientAccount = await db.getClientAccountByPhone(phone);
+      // Normalize to E.164 for consistent storage and lookup
+      const normalizedPhone = db.normalizePhone(phone);
+      let clientAccount = await db.getClientAccountByPhone(normalizedPhone);
       if (!clientAccount) {
-        clientAccount = await db.upsertClientAccount({ phone, name: name ?? null, email: null });
+        clientAccount = await db.upsertClientAccount({ phone: normalizedPhone, name: name ?? null, email: null });
       }
-      // Issue a simple JWT-like token using the SDK
-      const token = await sdk.createSessionToken(`phone:${phone}`, { name: clientAccount.name ?? "client" });
+      // Issue a simple JWT-like token using the SDK (use normalized phone in openId)
+      const token = await sdk.createSessionToken(`phone:${normalizedPhone}`, { name: clientAccount.name ?? "client" });
       res.json({ token, account: clientAccount });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -154,8 +156,10 @@ export function registerClientRoutes(app: Express) {
 
       // If user is providing a real phone number, update the primary key
       if (phone && !phone.startsWith("oauth:")) {
+        // Normalize to E.164 for consistent storage
+        const normalizedPhone = db.normalizePhone(phone);
         // Check if a clientAccount with this phone already exists
-        const existing = await db.getClientAccountByPhone(phone);
+        const existing = await db.getClientAccountByPhone(normalizedPhone);
         if (existing && existing.id !== clientAccount!.id) {
           // Merge: update existing account, delete the oauth: one
           await db.updateClientAccount(existing.id, {
@@ -169,8 +173,8 @@ export function registerClientRoutes(app: Express) {
           res.json({ clientAccount: await db.getClientAccountById(existing.id) });
           return;
         }
-        // Update phone on current account
-        await db.updateClientAccount(clientAccount!.id, { phone });
+        // Update phone on current account (normalized)
+        await db.updateClientAccount(clientAccount!.id, { phone: normalizedPhone });
       }
 
       await db.updateClientAccount(clientAccount!.id, {
@@ -484,10 +488,8 @@ export function registerClientRoutes(app: Express) {
         res.json({ appointments: [] });
         return;
       }
-      // Normalize phone to 10-digit format (same as booking endpoint)
-      const rawDigits = phone.replace(/\D/g, "");
-      const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
-      if (normalizedPhone.length >= 10) phone = normalizedPhone;
+      // Normalize phone to E.164 for consistent appointment lookup
+      phone = db.normalizePhone(phone);
       // Get all appointments for this phone number across all businesses
       const rawAppts = await db.getAppointmentsByClientPhone(phone);
       // Enrich each appointment with businessName, serviceName, staffName, staffAvatarUrl
@@ -550,9 +552,7 @@ export function registerClientRoutes(app: Express) {
       }
       // Use getAppointmentsByClientPhone to find the appointment
       let phone = clientAccount!.phone.startsWith("oauth:") ? clientAccount!.email : clientAccount!.phone;
-      const rawDigits = (phone ?? "").replace(/\D/g, "");
-      const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
-      if (normalizedPhone.length >= 10) phone = normalizedPhone;
+      if (phone) phone = db.normalizePhone(phone);
       const rawAppts = await db.getAppointmentsByClientPhone(phone ?? "");
       const appt = rawAppts.find((a) => a.id === apptId);
       if (!appt) {
@@ -634,9 +634,7 @@ export function registerClientRoutes(app: Express) {
         return;
       }
       let phone = clientAccount!.phone.startsWith("oauth:") ? clientAccount!.email : clientAccount!.phone;
-      const rawDigits = (phone ?? "").replace(/\D/g, "");
-      const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
-      if (normalizedPhone.length >= 10) phone = normalizedPhone;
+      if (phone) phone = db.normalizePhone(phone);
       const rawAppts = await db.getAppointmentsByClientPhone(phone ?? "");
       const appt = rawAppts.find((a) => a.id === apptId);
       if (!appt) {
@@ -711,15 +709,12 @@ export function registerClientRoutes(app: Express) {
           ]);
           // Find the most recent appointment for this client at this business
           const clientPhone = clientAccount!.phone.startsWith("oauth:") ? clientAccount!.email : clientAccount!.phone;
-          const rawDigits = (clientPhone ?? "").replace(/\D/g, "");
-          const normalizedPhone = rawDigits.length === 11 && rawDigits.startsWith("1") ? rawDigits.slice(1) : rawDigits;
+          const normalizedPhone = clientPhone ? db.normalizePhone(clientPhone) : "";
           // Match via client records
           const matchingClients = await db.getClientsByOwner(item.businessOwnerId);
           const matchedClient = matchingClients.find((c) => {
             if (!c.phone) return false;
-            const d = c.phone.replace(/\D/g, "");
-            const n = d.length === 11 && d.startsWith("1") ? d.slice(1) : d;
-            return n === normalizedPhone || c.phone === clientPhone;
+            return db.normalizePhone(c.phone) === normalizedPhone;
           });
           const clientAppts = matchedClient
             ? allAppts.filter((a) => a.clientLocalId === matchedClient.localId)
@@ -966,9 +961,10 @@ export function registerClientRoutes(app: Express) {
       const user = await sdk.authenticateRequest(req);
       const owner = await db.getBusinessOwnerByOpenId(user.openId);
       if (!owner) { res.status(404).json({ error: "Business owner not found" }); return; }
-      const rawPhone = String(req.query.phone ?? "").replace(/\D/g, "").slice(-10);
+      const rawPhone = String(req.query.phone ?? "");
       if (!rawPhone) { res.status(400).json({ error: "phone required" }); return; }
-      const clientAcc = await db.getClientAccountByPhone(rawPhone);
+      const normalizedPhone = db.normalizePhone(rawPhone);
+      const clientAcc = await db.getClientAccountByPhone(normalizedPhone);
       if (!clientAcc) { res.json({ found: false }); return; }
       res.json({ found: true, clientAccountId: clientAcc.id, clientName: clientAcc.name ?? "Client", clientAvatarUrl: (clientAcc as any)?.profilePhotoUri ?? null });
     } catch (err: any) {
