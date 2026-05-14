@@ -459,6 +459,20 @@ export function registerPublicRoutes(app: Express) {
     }
   });
 
+  /** Look up a client's saved address by phone (for pre-filling the address step on the public booking page) */
+  app.get("/api/public/business/:slug/client-address", async (req: Request, res: Response) => {
+    try {
+      const phone = (req.query.phone as string || "").trim();
+      if (!phone) { res.json({ savedAddress: null }); return; }
+      const normalized = db.normalizePhone(phone);
+      const account = await db.getClientAccountByPhone(normalized);
+      // Only return the savedAddress field — no other PII
+      res.json({ savedAddress: account?.savedAddress ?? null });
+    } catch (err) {
+      res.json({ savedAddress: null });
+    }
+  });
+
   /** Get available time slots for a date */
   app.get("/api/public/business/:slug/slots", async (req: Request, res: Response) => {
     try {
@@ -1225,13 +1239,18 @@ export function registerPublicRoutes(app: Express) {
           );
         } else {
           // Fallback: Manus platform notification (no device token registered yet)
-          const extrasLabel = extras.length > 0 ? ` + ${extras.length} extra` : "";
-          const phoneLabel = clientPhone ? ` | 📞 ${formatPhoneNumber(clientPhone)}` : "";
-          const priceLabel = finalTotal > 0 ? ` | $${finalTotal.toFixed(2)}` : "";
-          await throttledNotifyOwner({
-            title: `📅 New Booking Request — ${owner.businessName}`,
-            content: `${clientName}${phoneLabel} requested ${svc?.name ?? "a service"}${extrasLabel}\nDate: ${date} at ${time} (${dur} min)${priceLabel}\nTap to review and confirm.`,
-          });
+          // Only fires when the owner has explicitly enabled it in Notification Settings
+          // (manusNotifyFallback defaults to false to avoid Manus-branded emails by default)
+          const manusNotifyFallbackEnabled = ownerNotifPrefs.manusNotifyFallback === true;
+          if (manusNotifyFallbackEnabled) {
+            const extrasLabel = extras.length > 0 ? ` + ${extras.length} extra` : "";
+            const phoneLabel = clientPhone ? ` | 📞 ${formatPhoneNumber(clientPhone)}` : "";
+            const priceLabel = finalTotal > 0 ? ` | $${finalTotal.toFixed(2)}` : "";
+            await throttledNotifyOwner({
+              title: `📅 New Booking Request — ${owner.businessName}`,
+              content: `${clientName}${phoneLabel} requested ${svc?.name ?? "a service"}${extrasLabel}\nDate: ${date} at ${time} (${dur} min)${priceLabel}\nTap to review and confirm.`,
+            });
+          }
         }
       } catch (pushErr) {
         console.warn("[Public API] Failed to send push notification:", pushErr);
@@ -1243,10 +1262,15 @@ export function registerPublicRoutes(app: Express) {
       // they typed on the public booking page.
       if (normalizedPhone && normalizedPhone.length >= 10) {
         try {
-          await db.upsertClientAccount(
+          const upserted = await db.upsertClientAccount(
             { phone: normalizedPhone, name: clientName, email: clientEmail || null },
             { preserveExistingName: true }
           );
+          // For mobile/at-home bookings, save the client address to their profile
+          // so it can be pre-filled on their next booking.
+          if (clientAddress && upserted?.id) {
+            await db.updateClientAccount(upserted.id, { savedAddress: clientAddress });
+          }
         } catch (caErr) {
           console.warn("[Public API] Failed to upsert client_accounts:", caErr);
         }
@@ -1393,8 +1417,8 @@ export function registerPublicRoutes(app: Express) {
           const firstSess = sessions[0];
           if (ownerPushToken) {
             await notifyNewBooking(ownerPushToken, owner.businessName, clientName, `${pkg.name} (${sessions.length}-session package)`, firstSess.date, firstSess.time, appointmentIds[0], { duration: sessionDur });
-          } else {
-            await throttledNotifyOwner({ title: `\uD83D\uDCC5 New Package Booking \u2014 ${owner.businessName}`, content: `${clientName} booked ${pkg.name} (${sessions.length} sessions)\nFirst session: ${firstSess.date} at ${firstSess.time}\nTotal: $${finalTotal.toFixed(2)}` });
+          } else if (ownerNotifPrefs.manusNotifyFallback === true) {
+            await throttledNotifyOwner({ title: `📅 New Package Booking — ${owner.businessName}`, content: `${clientName} booked ${pkg.name} (${sessions.length} sessions)\nFirst session: ${firstSess.date} at ${firstSess.time}\nTotal: $${finalTotal.toFixed(2)}` });
           }
         }
       } catch {}
@@ -1588,7 +1612,7 @@ export function registerPublicRoutes(app: Express) {
               clientPhone: client?.phone || undefined,
             }
           );
-        } else {
+        } else if (cancelNotifPrefs.manusNotifyFallback === true) {
           await throttledNotifyOwner({
             title: `❌ Appointment Cancelled — ${owner.businessName}`,
             content: `${client?.name || "A client"} cancelled their ${svc?.name || "appointment"}\nDate: ${appt.date} at ${appt.time} (${appt.duration} min)\nTap to view your calendar.`,
@@ -1720,7 +1744,7 @@ export function registerPublicRoutes(app: Express) {
               clientPhone: client?.phone || undefined,
             }
           );
-        } else {
+        } else if (reschedNotifPrefs.manusNotifyFallback === true) {
           await throttledNotifyOwner({
             title: `🔄 Appointment Rescheduled — ${owner.businessName}`,
             content: `${client?.name || "A client"} rescheduled their ${svc?.name || "appointment"}\nNew date: ${newDate} at ${newTime}\nTap to review and confirm.`,
@@ -1980,7 +2004,7 @@ export function registerPublicRoutes(app: Express) {
               notes: notes || undefined,
             }
           );
-        } else {
+        } else if (waitlistNotifPrefs.manusNotifyFallback === true) {
           await throttledNotifyOwner({
             title: `⏳ New Waitlist Entry — ${owner.businessName}`,
             content: `${clientName} joined the waitlist for ${svc?.name || "a service"}\nPreferred date: ${preferredDate}\nTap to view waitlist.`,
@@ -7025,6 +7049,40 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         if (addrNote) addrNote.style.display = 'block';
         dynamicTravelFee = null;
         calculatedDistanceMi = null;
+        // Pre-fill address fields from client's saved address (if they've booked before)
+        (async function prefillSavedAddress() {
+          try {
+            var phoneRaw = (document.getElementById('clientPhone') || {}).value || '';
+            var digits = phoneRaw.replace(/\\D/g, '');
+            if (digits.length < 10) return; // not enough digits yet
+            var phone = '+1' + digits.slice(-10);
+            var r = await fetch(API + '/client-address?phone=' + encodeURIComponent(phone));
+            if (!r.ok) return;
+            var data = await r.json();
+            if (!data.savedAddress) return;
+            // Only pre-fill if the fields are currently empty
+            var streetEl = document.getElementById('addrStreet');
+            var cityEl = document.getElementById('addrCity');
+            var stateEl = document.getElementById('addrState');
+            var zipEl = document.getElementById('addrZip');
+            if (streetEl && !streetEl.value) {
+              // savedAddress is a formatted string like "123 Main St, Pittsburgh, PA 15222"
+              var parts = data.savedAddress.split(',').map(function(p) { return p.trim(); });
+              if (parts.length >= 1) { streetEl.value = parts[0]; clientAddress.street = parts[0]; }
+              if (parts.length >= 2) { cityEl.value = parts[1]; clientAddress.city = parts[1]; }
+              if (parts.length >= 3) {
+                var stateZip = parts[2].trim().split(' ');
+                if (stateZip.length >= 1) { stateEl.value = stateZip[0]; clientAddress.state = stateZip[0]; }
+                if (stateZip.length >= 2) { zipEl.value = stateZip[1]; clientAddress.zip = stateZip[1]; }
+              }
+              // Show a subtle hint that the address was pre-filled
+              if (addrNote) {
+                addrNote.textContent = 'We pre-filled your address from your last booking. You can edit it below.';
+                addrNote.style.color = 'var(--primary)';
+              }
+            }
+          } catch(e) { /* silent fail — pre-fill is best-effort */ }
+        })();
       }
       if (step === 5) initAddMoreStep();
       if (step === 6) renderPaymentStep();

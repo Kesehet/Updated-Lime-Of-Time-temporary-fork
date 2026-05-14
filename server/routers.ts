@@ -369,6 +369,19 @@ const clientsRouter = router({
         ? { ...input, phone: db.normalizePhone(input.phone) }
         : input;
       const id = await db.createClient(normalizedInput);
+      // Pre-create a client_accounts record so this client can log into the Client Portal
+      // using their phone number without being asked to create a new account.
+      if (normalizedInput.phone) {
+        try {
+          await db.upsertClientAccount(
+            { phone: normalizedInput.phone, name: normalizedInput.name, email: normalizedInput.email ?? null },
+            { preserveExistingName: true }
+          );
+        } catch (caErr) {
+          // Non-fatal: client_accounts pre-creation failed (e.g. duplicate key race)
+          console.warn("[createClient] Failed to pre-create client_accounts record:", caErr);
+        }
+      }
       return { id, localId: input.localId };
     }),
 
@@ -391,6 +404,17 @@ const clientsRouter = router({
         ? { ...data, phone: db.normalizePhone(data.phone) }
         : data;
       await db.updateClient(localId, businessOwnerId, normalizedData);
+      // Sync phone/name/email to client_accounts so Client Portal login stays linked
+      if (normalizedData.phone) {
+        try {
+          await db.upsertClientAccount(
+            { phone: normalizedData.phone, name: normalizedData.name ?? null, email: normalizedData.email ?? null },
+            { preserveExistingName: true }
+          );
+        } catch (caErr) {
+          console.warn("[updateClient] Failed to sync client_accounts record:", caErr);
+        }
+      }
       return { success: true };
     }),
 

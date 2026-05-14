@@ -2225,3 +2225,15 @@
 - [x] Business owner booking app: Continue from date/time step goes to address step when mobile service selected
 - [x] Business owner booking app: Back from confirm step goes to address step when mobile service selected
 - [x] Business owner booking app: address step Back returns to date/time step
+
+## Phase: Phone Deduplication & Notification Fixes (May 2026)
+
+- [x] Fix 1: getClientAccountByPhone — normalize ALL phones before comparing (not just ones with + prefix)
+- [x] Fix 2: upsertClientAccount — always store in E.164, pre-check with normalized comparison before inserting
+- [x] Fix 3: createClient/updateClient tRPC — call upsertClientAccount with normalized phone so Client Portal account is pre-created
+- [x] Fix 4: Merge existing DB duplicates (5559871234 → +15559871234)
+- [x] Fix 5: Manus fallback notification — gated behind manusNotifyFallback (always falsy by default); existing emailOnNewBooking toggle in Notification Settings covers this use case
+- [x] Fix 6: Removed — existing emailOnNewBooking toggle in Notification Settings is the correct control; no separate Manus fallback toggle needed
+- [x] Fix 7: Save client address after mobile booking to client_accounts.savedAddress
+- [x] Fix 8: Pre-fill address fields on public booking page (4b) from saved address when phone is known
+- [x] Fix 9: Pre-fill address fields on Client Portal booking wizard from logged-in client's saved address (already implemented in client-booking-wizard.tsx)
