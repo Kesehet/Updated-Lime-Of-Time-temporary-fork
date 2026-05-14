@@ -137,6 +137,7 @@ export default function ClientsScreen() {
   const router = useRouter();
   const { isTablet, isLargeTablet, hp, maxContentWidth, modalMaxWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
   const { checkLimit } = usePlanLimitCheck();
+  const trpcUtils = trpc.useUtils();
 
   // ── Tab state ─────────────────────────────────────────────────────────────
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
@@ -368,6 +369,42 @@ export default function ClientsScreen() {
       const phone = contact.phoneNumbers?.[0]?.number ?? "";
       const email = contact.emails?.[0]?.email ?? "";
       const formattedPhone = phone ? formatPhoneNumber(stripPhoneFormat(phone)) : "";
+
+      // ── Duplicate phone check ───────────────────────────────────────────────
+      if (formattedPhone && state.businessOwnerId) {
+        try {
+          const dupeByPhone = await trpcUtils.clients.checkByPhone.fetch({
+            businessOwnerId: state.businessOwnerId,
+            phone: formattedPhone,
+          });
+          if (dupeByPhone) {
+            Alert.alert(
+              "Phone Already in Use",
+              `${dupeByPhone.name} already has this phone number in your client list.`,
+              [
+                {
+                  text: "View Existing",
+                  onPress: () => router.push({ pathname: "/client-detail", params: { id: dupeByPhone.localId } } as any),
+                },
+                {
+                  text: "Add Anyway",
+                  onPress: () => {
+                    const client: Client = { id: generateId(), name, phone: formattedPhone, email, notes: "Imported from contacts", birthday: "", createdAt: new Date().toISOString() };
+                    dispatch({ type: "ADD_CLIENT", payload: client });
+                    syncToDb({ type: "ADD_CLIENT", payload: client });
+                    Alert.alert("Added", `${name} has been added as a client.`);
+                  },
+                },
+                { text: "Cancel", style: "cancel" },
+              ]
+            );
+            return;
+          }
+        } catch {
+          // Non-fatal: if the check fails, proceed with the add
+        }
+      }
+
       const client: Client = { id: generateId(), name, phone: formattedPhone, email, notes: "Imported from contacts", birthday: "", createdAt: new Date().toISOString() };
       dispatch({ type: "ADD_CLIENT", payload: client });
       syncToDb({ type: "ADD_CLIENT", payload: client });
@@ -375,7 +412,7 @@ export default function ClientsScreen() {
     } catch {
       Alert.alert("Error", "Failed to access contacts. Please try again.");
     }
-  }, [state.clients, dispatch, syncToDb]);
+  }, [state.clients, state.businessOwnerId, dispatch, syncToDb, trpcUtils, router]);
 
   const getInitials = (name: string) => {
     const parts = name.split(" ");
