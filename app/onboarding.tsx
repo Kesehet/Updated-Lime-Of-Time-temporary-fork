@@ -514,7 +514,8 @@ export default function OnboardingScreen() {
     setLoading(true);
     try {
       const stripped = stripPhoneFormat(phone);
-      const rawPhone = selectedCountry.dial === "+1" ? stripped : `${selectedCountry.dial.replace("+", "")}${stripped}`;
+      // Always use full E.164 (+dialCode+number) so the server normalizes consistently for all countries
+      const rawPhone = `${selectedCountry.dial}${stripped}`;
       const result = await verifyOtpMut.mutateAsync({ phone: rawPhone, code: code.trim() });
       // Store session token for native API calls (avoids "Invalid session cookie" error)
       if (result.success && result.sessionToken) {
@@ -891,7 +892,8 @@ export default function OnboardingScreen() {
     try {
       // For non-US numbers, prepend the dial code; for US (+1) keep existing 10-digit format
       const stripped = stripPhoneFormat(phone);
-      const rawPhone = selectedCountry.dial === "+1" ? stripped : `${selectedCountry.dial.replace("+", "")}${stripped}`;
+      // Always use full E.164 (+dialCode+number) so the server normalizes consistently for all countries
+      const rawPhone = `${selectedCountry.dial}${stripped}`;
       const existing = await trpcUtils.business.checkByPhone.fetch({ phone: rawPhone });
       if (existing) {
         // Existing user — fetch full data, then show OTP before logging in
@@ -938,7 +940,8 @@ export default function OnboardingScreen() {
     setOtpError("");
     // Send OTP via server (Twilio or test mode 123456)
     const stripped2 = stripPhoneFormat(phone);
-    const rawPhone2 = selectedCountry.dial === "+1" ? stripped2 : `${selectedCountry.dial.replace("+", "")}${stripped2}`;
+    // Always use full E.164 (+dialCode+number) so the server normalizes consistently for all countries
+    const rawPhone2 = `${selectedCountry.dial}${stripped2}`;
     navigateToStep("otp");
     try {
       await sendOtpMut.mutateAsync({ phone: rawPhone2 });
@@ -952,7 +955,8 @@ export default function OnboardingScreen() {
     setLoading(true);
     try {
       const stripped = stripPhoneFormat(phone);
-      const rawPhone = selectedCountry.dial === "+1" ? stripped : `${selectedCountry.dial.replace("+", "")}${stripped}`;
+      // Always use full E.164 (+dialCode+number) so the server normalizes consistently for all countries
+      const rawPhone = `${selectedCountry.dial}${stripped}`;
       // Check if a business owner already exists with this phone
       const existing = await trpcUtils.business.checkByPhone.fetch({ phone: rawPhone });
       if (existing) {
@@ -991,7 +995,8 @@ export default function OnboardingScreen() {
     setOtpDigits(["","","","","",""]);
     try {
       const stripped = stripPhoneFormat(phone);
-      const rawPhone = selectedCountry.dial === "+1" ? stripped : `${selectedCountry.dial.replace("+", "")}${stripped}`;
+      // Always use full E.164 (+dialCode+number) so the server normalizes consistently for all countries
+      const rawPhone = `${selectedCountry.dial}${stripped}`;
       await sendOtpMut.mutateAsync({ phone: rawPhone });
       setOtpCountdown(60);
       const id = setInterval(() => {

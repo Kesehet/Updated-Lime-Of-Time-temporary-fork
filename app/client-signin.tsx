@@ -204,7 +204,9 @@ export default function ClientSignInScreen() {
     setPhoneLoading(true);
     setPhoneError("");
     try {
-      const rawPhone = selectedCountry.dial === "+1" ? stripped : `${selectedCountry.dial.replace("+", "")}${stripped}`;
+      // Always build a full E.164 number so the server always normalizes to the same key
+      // e.g. +1 + 5559871234 → "+15559871234" (never bare "5559871234")
+      const rawPhone = `${selectedCountry.dial}${stripped}`;
       // Directly sign in with phone number (no OTP required)
       const apiBase = getApiBaseUrl();
       const res = await fetch(`${apiBase}/api/client/phone-login`, {

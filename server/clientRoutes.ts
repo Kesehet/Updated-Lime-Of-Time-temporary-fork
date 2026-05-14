@@ -36,7 +36,9 @@ async function getClientAccount(req: Request): Promise<{ clientAccount: Awaited<
 
   // ── Phone-based client (openId starts with "phone:") ─────────────────────
   if (session.openId.startsWith("phone:")) {
-    const phone = session.openId.slice(6); // strip "phone:" prefix
+    const rawPhone = session.openId.slice(6); // strip "phone:" prefix
+    // Always normalize to E.164 so the lookup is consistent regardless of how the token was issued
+    const phone = db.normalizePhone(rawPhone);
     let clientAccount = await db.getClientAccountByPhone(phone);
     if (!clientAccount) {
       clientAccount = await db.upsertClientAccount({ phone, name: session.name ?? null, email: null });

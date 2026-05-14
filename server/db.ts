@@ -169,7 +169,9 @@ export async function getBusinessOwnerById(id: number): Promise<BusinessOwner | 
 export async function createBusinessOwner(data: InsertBusinessOwner): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const [result] = await db.insert(businessOwners).values(data);
+  // Always normalize phone to E.164 before storing
+  const normalizedData = data.phone && !data.phone.startsWith("oauth:") ? { ...data, phone: normalizePhone(data.phone) } : data;
+  const [result] = await db.insert(businessOwners).values(normalizedData);
   return result.insertId;
 }
 
