@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT COUNT(*) as non_e164_count FROM appointments \nWHERE clientPhone IS NOT NULL AND clientPhone != '' AND clientPhone NOT LIKE '+%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \nSELECT COUNT(*) as non_e164_count FROM appointments \nWHERE clientPhone IS NOT NULL AND clientPhone != '' AND clientPhone NOT LIKE '+%';\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'clientphone' in 'where clause'"
+  ]
+}

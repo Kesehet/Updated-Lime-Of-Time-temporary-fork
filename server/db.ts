@@ -390,7 +390,9 @@ export async function getClientsByOwner(businessOwnerId: number) {
 export async function createClient(data: InsertClient): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const [result] = await db.insert(clients).values(data);
+  // Always normalize phone to E.164 before storing
+  const normalizedData = data.phone ? { ...data, phone: normalizePhone(data.phone) } : data;
+  const [result] = await db.insert(clients).values(normalizedData);
   return result.insertId;
 }
 
@@ -401,9 +403,11 @@ export async function updateClient(
 ): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  // Always normalize phone to E.164 before storing
+  const normalizedData = data.phone ? { ...data, phone: normalizePhone(data.phone) } : data;
   await db
     .update(clients)
-    .set(data)
+    .set(normalizedData)
     .where(and(eq(clients.localId, localId), eq(clients.businessOwnerId, businessOwnerId)));
 }
 

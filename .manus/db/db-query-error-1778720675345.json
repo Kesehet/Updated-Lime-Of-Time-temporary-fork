@@ -1,0 +1,8 @@
+{
+  "query": "\n-- Normalize all remaining non-E.164 phone numbers in clients table\n-- Strip all non-digits, then add +1 prefix for 10-digit US numbers\nUPDATE clients\nSET phone = CASE\n  WHEN LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '', 'g')) = 10 \n    THEN '+1' || REGEXP_REPLACE(phone, '[^0-9]', '', 'g')\n  WHEN LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '', 'g')) = 11 \n    AND LEFT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 1) = '1'\n    THEN '+' || REGEXP_REPLACE(phone, '[^0-9]', '', 'g')\n  ELSE phone\nEND\nWHERE phone IS NOT NULL \n  AND phone != ''\n  AND phone NOT LIKE '+%';\n\n-- Verify\nSELECT id, localId, name, phone FROM clients WHERE id = 2070001;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Normalize all remaining non-E.164 phone numbers in clients table\n-- Strip all non-digits, then add +1 prefix for 10-digit US numbers\nUPDATE clients\nSET phone = CASE\n  WHEN LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '', 'g')) = 10 \n    THEN '+1' || REGEXP_REPLACE(phone, '[^0-9]', '', 'g')\n  WHEN LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '', 'g')) = 11 \n    AND LEFT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 1) = '1'\n    THEN '+' || REGEXP_REPLACE(phone, '[^0-9]', '', 'g')\n  ELSE phone\nEND\nWHERE phone IS NOT NULL \n  AND phone != ''\n  AND phone NOT LIKE '+%';\n\n-- Verify\nSELECT id, localId, name, phone FROM clients WHERE id = 2070001;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1292 (22007) at line 4: Truncated incorrect INTEGER value: '?'"
+  ]
+}

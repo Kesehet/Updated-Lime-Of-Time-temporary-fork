@@ -1,0 +1,26 @@
+{
+  "query": "\nSELECT r.id, r.businessOwnerId, r.rating, r.comment, r.clientLocalId, bo.businessName\nFROM reviews r\nJOIN business_owners bo ON bo.id = r.businessOwnerId\nORDER BY r.businessOwnerId, r.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \nSELECT r.id, r.businessOwnerId, r.rating, r.comment, r.clientLocalId, bo.businessName\nFROM reviews r\nJOIN business_owners bo ON bo.id = r.businessOwnerId\nORDER BY r.businessOwnerId, r.id;\n",
+  "rows": [
+    {
+      "id": "540001",
+      "businessOwnerId": "1650001",
+      "rating": "5",
+      "comment": "Very professional and caring. Thank you",
+      "clientLocalId": "mopuenf1gpeq6gv",
+      "businessName": "Wellness Suite"
+    },
+    {
+      "id": "600001",
+      "businessOwnerId": "1950002",
+      "rating": "5",
+      "comment": "Excellent service",
+      "clientLocalId": "270003",
+      "businessName": "Lime Time"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbusinessOwnerId\trating\tcomment\tclientLocalId\tbusinessName\n540001\t1650001\t5\tVery professional and caring. Thank you\tmopuenf1gpeq6gv\tWellness Suite\n600001\t1950002\t5\tExcellent service\t270003\tLime Time\n",
+  "stderr": "",
+  "execution_time_ms": 299
+}

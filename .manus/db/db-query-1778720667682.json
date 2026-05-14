@@ -1,0 +1,17 @@
+{
+  "query": "\n-- Find all clients with phone numbers NOT in E.164 format (+1XXXXXXXXXX)\nSELECT id, localId, businessOwnerId, name, phone\nFROM clients\nWHERE phone IS NOT NULL \n  AND phone != ''\n  AND phone NOT LIKE '+%'\nORDER BY businessOwnerId, name\nLIMIT 50;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Find all clients with phone numbers NOT in E.164 format (+1XXXXXXXXXX)\nSELECT id, localId, businessOwnerId, name, phone\nFROM clients\nWHERE phone IS NOT NULL \n  AND phone != ''\n  AND phone NOT LIKE '+%'\nORDER BY businessOwnerId, name\nLIMIT 50;\n",
+  "rows": [
+    {
+      "id": "2070001",
+      "localId": "mp4ra05rht7al7p",
+      "businessOwnerId": "1950002",
+      "name": "Test Client",
+      "phone": "(412) 482-7733"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlocalId\tbusinessOwnerId\tname\tphone\n2070001\tmp4ra05rht7al7p\t1950002\tTest Client\t(412) 482-7733\n",
+  "stderr": "",
+  "execution_time_ms": 273
+}

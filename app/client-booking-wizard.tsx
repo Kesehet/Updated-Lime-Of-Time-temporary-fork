@@ -137,7 +137,7 @@ export default function ClientBookingWizardScreen() {
   const router = useRouter();
   const { slug, businessSlug, serviceLocalId, preServiceName, preStaffId, preStaffName, packageLocalId, preGiftCode } = useLocalSearchParams<{ slug?: string; businessSlug?: string; serviceLocalId?: string; preServiceName?: string; preStaffId?: string; preStaffName?: string; packageLocalId?: string; preGiftCode?: string }>();
   const effectiveSlug = slug || businessSlug || "";
-  const { state } = useClientStore();
+  const { state, dispatch } = useClientStore();
   const apiBase = getApiBaseUrl();
 
   const [step, setStep] = useState(0);
@@ -999,7 +999,11 @@ export default function ClientBookingWizardScreen() {
         }).then(async (r) => {
           if (r.ok) {
             const data = await r.json().catch(() => ({}));
-            if (data.clientAccount) dispatch({ type: "SET_ACCOUNT", account: data.clientAccount });
+            if (data.clientAccount) {
+              dispatch({ type: "SET_ACCOUNT", payload: data.clientAccount });
+              // Also persist to AsyncStorage so profile page shows address immediately
+              AsyncStorage.setItem("client_account_info", JSON.stringify(data.clientAccount)).catch(() => {});
+            }
           }
         }).catch(() => {});
       }

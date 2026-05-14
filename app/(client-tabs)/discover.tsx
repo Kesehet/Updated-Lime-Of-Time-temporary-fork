@@ -1445,9 +1445,9 @@ function BusinessCard({ item, router, index, onTap }: { item: DiscoverBusiness; 
               );
             })()}
 
-            {item.address && (
+            {(item.displayAddress || item.address) && (
               <Text style={[cardStyles.address, { color: TEXT_MUTED }]} numberOfLines={1}>
-                📍 {item.address}
+                📍 {item.displayAddress || item.address}
               </Text>
             )}
             {item.hasMobileServices && (

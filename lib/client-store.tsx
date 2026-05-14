@@ -100,6 +100,8 @@ export interface DiscoverBusiness {
   slug: string;
   category: string | null;
   address: string | null;
+  /** Computed display address from the business's primary location (preferred over `address`) */
+  displayAddress?: string | null;
   phone: string | null;
   lat: number | null;
   lng: number | null;

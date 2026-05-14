@@ -1,0 +1,16 @@
+{
+  "query": "\nSELECT id, localId, name, phone FROM clients WHERE id = 2070001;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \nSELECT id, localId, name, phone FROM clients WHERE id = 2070001;\n",
+  "rows": [
+    {
+      "id": "2070001",
+      "localId": "mp4ra05rht7al7p",
+      "name": "Test Client",
+      "phone": "+14124827733"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlocalId\tname\tphone\n2070001\tmp4ra05rht7al7p\tTest Client\t+14124827733\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

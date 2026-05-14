@@ -1,0 +1,120 @@
+{
+  "query": "\n-- Check recent appointments with client phone numbers\nSELECT \n  a.id, a.businessOwnerId, a.clientLocalId, a.date, a.status, a.serviceLocalId,\n  c.phone as clientPhone, c.name as clientName,\n  bo.businessName\nFROM appointments a\nLEFT JOIN clients c ON c.localId = a.clientLocalId AND c.businessOwnerId = a.businessOwnerId\nLEFT JOIN business_owners bo ON bo.id = a.businessOwnerId\nORDER BY a.id DESC\nLIMIT 10;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Check recent appointments with client phone numbers\nSELECT \n  a.id, a.businessOwnerId, a.clientLocalId, a.date, a.status, a.serviceLocalId,\n  c.phone as clientPhone, c.name as clientName,\n  bo.businessName\nFROM appointments a\nLEFT JOIN clients c ON c.localId = a.clientLocalId AND c.businessOwnerId = a.businessOwnerId\nLEFT JOIN business_owners bo ON bo.id = a.businessOwnerId\nORDER BY a.id DESC\nLIMIT 10;\n",
+  "rows": [
+    {
+      "id": "3420002",
+      "businessOwnerId": "1950002",
+      "clientLocalId": "mp4ra05rht7al7p",
+      "date": "2026-05-15",
+      "status": "pending",
+      "serviceLocalId": "mp4rbugmfvt3tx8",
+      "clientPhone": "(412) 482-7733",
+      "clientName": "Test Client",
+      "businessName": "Lime Time"
+    },
+    {
+      "id": "3420001",
+      "businessOwnerId": "1950002",
+      "clientLocalId": "mp4ra05rht7al7p",
+      "date": "2026-05-15",
+      "status": "pending",
+      "serviceLocalId": "mp4r6820a15mccx",
+      "clientPhone": "(412) 482-7733",
+      "clientName": "Test Client",
+      "businessName": "Lime Time"
+    },
+    {
+      "id": "3390001",
+      "businessOwnerId": "1920001",
+      "clientLocalId": "web-1778703165466-0vzbws",
+      "date": "2026-05-13",
+      "status": "confirmed",
+      "serviceLocalId": "mp4bb1cwqgcyitv",
+      "clientPhone": "+14124827733",
+      "clientName": "Test Client",
+      "businessName": "NULL"
+    },
+    {
+      "id": "3300454",
+      "businessOwnerId": "1650001",
+      "clientLocalId": "client-demo-1778615221312-f68yp",
+      "date": "2026-05-12",
+      "status": "completed",
+      "serviceLocalId": "mobh0t717ycxsli",
+      "clientPhone": "+14125550115",
+      "clientName": "Lily Nguyen",
+      "businessName": "Wellness Suite"
+    },
+    {
+      "id": "3300453",
+      "businessOwnerId": "1650001",
+      "clientLocalId": "client-demo-1778615221216-bjs6m",
+      "date": "2026-05-12",
+      "status": "completed",
+      "serviceLocalId": "mobhbxhixde4wv6",
+      "clientPhone": "+14125550108",
+      "clientName": "Mia Torres",
+      "businessName": "Wellness Suite"
+    },
+    {
+      "id": "3300451",
+      "businessOwnerId": "1650001",
+      "clientLocalId": "client-demo-1778615221201-cah0b",
+      "date": "2026-05-12",
+      "status": "completed",
+      "serviceLocalId": "molsg4vf6ujc9q3",
+      "clientPhone": "+14125550107",
+      "clientName": "Lauren Brooks",
+      "businessName": "Wellness Suite"
+    },
+    {
+      "id": "3300449",
+      "businessOwnerId": "1650001",
+      "clientLocalId": "client-demo-1778615221201-cah0b",
+      "date": "2026-05-12",
+      "status": "completed",
+      "serviceLocalId": "mokzruguxjndyzw",
+      "clientPhone": "+14125550107",
+      "clientName": "Lauren Brooks",
+      "businessName": "Wellness Suite"
+    },
+    {
+      "id": "3300448",
+      "businessOwnerId": "1650001",
+      "clientLocalId": "client-demo-1778615221394-21old",
+      "date": "2026-05-11",
+      "status": "completed",
+      "serviceLocalId": "molskh87fw6fzb6",
+      "clientPhone": "+14125550121",
+      "clientName": "Victoria Hall",
+      "businessName": "Wellness Suite"
+    },
+    {
+      "id": "3300447",
+      "businessOwnerId": "1650001",
+      "clientLocalId": "client-demo-1778615221464-4z7ck",
+      "date": "2026-05-11",
+      "status": "completed",
+      "serviceLocalId": "mokzq31enkvefv6",
+      "clientPhone": "+14125550126",
+      "clientName": "Hazel Hill",
+      "businessName": "Wellness Suite"
+    },
+    {
+      "id": "3300446",
+      "businessOwnerId": "1650001",
+      "clientLocalId": "client-demo-1778615221243-pjjg8",
+      "date": "2026-05-11",
+      "status": "completed",
+      "serviceLocalId": "mobh9zbh01x1vtk",
+      "clientPhone": "+14125550110",
+      "clientName": "Olivia Scott",
+      "businessName": "Wellness Suite"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbusinessOwnerId\tclientLocalId\tdate\tstatus\tserviceLocalId\tclientPhone\tclientName\tbusinessName\n3420002\t1950002\tmp4ra05rht7al7p\t2026-05-15\tpending\tmp4rbugmfvt3tx8\t(412) 482-7733\tTest Client\tLime Time\n3420001\t1950002\tmp4ra05rht7al7p\t2026-05-15\tpending\tmp4r6820a15mccx\t(412) 482-7733\tTest Client\tLime Time\n3390001\t1920001\tweb-1778703165466-0vzbws\t2026-05-13\tconfirmed\tmp4bb1cwqgcyitv\t+14124827733\tTest Client\tNULL\n3300454\t1650001\tclient-demo-1778615221312-f68yp\t2026-05-12\tcompleted\tmobh0t717ycxsli\t+14125550115\tLily Nguyen\tWellness Suite\n3300453\t1650001\tclient-demo-1778615221216-bjs6m\t2026-05-12\tcompleted\tmobhbxhixde4wv6\t+14125550108\tMia Torres\tWellness Suite\n3300451\t1650001\tclient-demo-1778615221201-cah0b\t2026-05-12\tcompleted\tmolsg4vf6ujc9q3\t+14125550107\tLauren Brooks\tWellness Suite\n3300449\t1650001\tclient-demo-1778615221201-cah0b\t2026-05-12\tcompleted\tmokzruguxjndyzw\t+14125550107\tLauren Brooks\tWellness Suite\n3300448\t1650001\tclient-demo-1778615221394-21old\t2026-05-11\tcompleted\tmolskh87fw6fzb6\t+14125550121\tVictoria Hall\tWellness Suite\n3300447\t1650001\tclient-demo-1778615221464-4z7ck\t2026-05-11\tcompleted\tmokzq31enkvefv6\t+14125550126\tHazel Hill\tWellness Suite\n3300446\t1650001\tclient-demo-1778615221243-pjjg8\t2026-05-11\tcompleted\tmobh9zbh01x1vtk\t+14125550110\tOlivia Scott\tWellness Suite\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

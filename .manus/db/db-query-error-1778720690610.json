@@ -1,0 +1,10 @@
+{
+  "query": "\n-- Verify clients table fix\nSELECT id, localId, name, phone FROM clients WHERE id = 2070001;\n\n-- Check ALL tables for any remaining non-E.164 phones\nSELECT 'clients' as tbl, COUNT(*) as non_e164 FROM clients WHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nUNION ALL\nSELECT 'client_accounts', COUNT(*) FROM client_accounts WHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nUNION ALL\nSELECT 'business_owners', COUNT(*) FROM business_owners WHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nUNION ALL\nSELECT 'appointments', COUNT(*) FROM appointments WHERE clientPhone IS NOT NULL AND clientPhone != '' AND clientPhone NOT LIKE '+%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Verify clients table fix\nSELECT id, localId, name, phone FROM clients WHERE id = 2070001;\n\n-- Check ALL tables for any remaining non-E.164 phones\nSELECT 'clients' as tbl, COUNT(*) as non_e164 FROM clients WHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nUNION ALL\nSELECT 'client_accounts', COUNT(*) FROM client_accounts WHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nUNION ALL\nSELECT 'business_owners', COUNT(*) FROM business_owners WHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nUNION ALL\nSELECT 'appointments', COUNT(*) FROM appointments WHERE clientPhone IS NOT NULL AND clientPhone != '' AND clientPhone NOT LIKE '+%';\n",
+  "returncode": 1,
+  "logs": [
+    "id\tlocalId\tname\tphone",
+    "2070001\tmp4ra05rht7al7p\tTest Client\t+14124827733",
+    "ERROR 1054 (42S22) at line 6: Unknown column 'clientphone' in 'where clause'"
+  ]
+}
