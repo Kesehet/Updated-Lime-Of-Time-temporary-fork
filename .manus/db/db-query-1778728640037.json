@@ -1,0 +1,25 @@
+{
+  "query": "\n-- Test 2: Duplicate phones in clients table (per business)\nSELECT phone, COUNT(*) as cnt, GROUP_CONCAT(DISTINCT businessOwnerId) as owners\nFROM clients\nWHERE phone IS NOT NULL AND phone != ''\nGROUP BY phone\nHAVING cnt > 1\nLIMIT 20;\n\n-- Test 3: Un-normalized phones in clients table\nSELECT id, phone, name\nFROM clients\nWHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nLIMIT 20;\n\n-- Test 4: Duplicate phones in client_accounts table\nSELECT phone, COUNT(*) as cnt\nFROM client_accounts\nWHERE phone IS NOT NULL AND phone != ''\nGROUP BY phone\nHAVING cnt > 1\nLIMIT 20;\n\n-- Test 5: Un-normalized phones in client_accounts\nSELECT id, phone, name\nFROM client_accounts\nWHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nLIMIT 20;\n\n-- Test 6: Locations with countryCode\nSELECT id, name, countryCode FROM locations LIMIT 20;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Test 2: Duplicate phones in clients table (per business)\nSELECT phone, COUNT(*) as cnt, GROUP_CONCAT(DISTINCT businessOwnerId) as owners\nFROM clients\nWHERE phone IS NOT NULL AND phone != ''\nGROUP BY phone\nHAVING cnt > 1\nLIMIT 20;\n\n-- Test 3: Un-normalized phones in clients table\nSELECT id, phone, name\nFROM clients\nWHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nLIMIT 20;\n\n-- Test 4: Duplicate phones in client_accounts table\nSELECT phone, COUNT(*) as cnt\nFROM client_accounts\nWHERE phone IS NOT NULL AND phone != ''\nGROUP BY phone\nHAVING cnt > 1\nLIMIT 20;\n\n-- Test 5: Un-normalized phones in client_accounts\nSELECT id, phone, name\nFROM client_accounts\nWHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nLIMIT 20;\n\n-- Test 6: Locations with countryCode\nSELECT id, name, countryCode FROM locations LIMIT 20;\n",
+  "rows": [
+    {
+      "id": "270005",
+      "phone": "4124827733",
+      "name": "Test Client"
+    },
+    {
+      "id": "id",
+      "phone": "name",
+      "name": "countryCode"
+    },
+    {
+      "id": "1110001",
+      "phone": "Wellness Suite",
+      "name": "+1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tphone\tname\n270005\t4124827733\tTest Client\nid\tname\tcountryCode\n1110001\tWellness Suite\t+1\n",
+  "stderr": "",
+  "execution_time_ms": 293
+}

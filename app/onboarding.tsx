@@ -57,7 +57,8 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
-import { CountryCodePicker, DEFAULT_COUNTRY, type Country } from "@/components/country-code-picker";
+import { CountryCodePicker, DEFAULT_COUNTRY, COUNTRIES, type Country } from "@/components/country-code-picker";
+import * as Location from "expo-location";
 import { PlanCarousel } from "@/components/plan-carousel";
 import { startOAuthLogin } from "@/constants/oauth";
 import { GoogleLogo, MicrosoftLogo, AppleLogo } from "@/components/brand-icons";
@@ -364,6 +365,28 @@ export default function OnboardingScreen() {
   }, [width]);
   const { biometricAvailable, biometricType, toggleBiometric } = useAppLockContext();
   const [selectedCountry, setSelectedCountry] = useState<Country>(DEFAULT_COUNTRY);
+
+  // Auto-detect country from GPS on mount (best-effort, silent — never blocks the user)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (Platform.OS === "web") return; // geolocation not needed on web
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted" || cancelled) return;
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Lowest, timeoutInterval: 5000 });
+        if (cancelled) return;
+        const [geo] = await Location.reverseGeocodeAsync({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        if (cancelled || !geo?.isoCountryCode) return;
+        const match = COUNTRIES.find((c) => c.code === geo.isoCountryCode);
+        if (match) setSelectedCountry(match);
+      } catch (_) {
+        // Silent — GPS failure should never block onboarding
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const [phone, setPhone] = useState("");
   const [otpValue, setOtpValue] = useState("");
   const [otpDigits, setOtpDigits] = useState<string[]>(["" ,"","","","",""]);

@@ -989,6 +989,7 @@ export function dbLocationToLocal(l: any): Location {
     workingHours: (l.workingHours && Object.keys(l.workingHours).length > 0) ? normalizeWorkingHours(l.workingHours) : null,
     photoUri: l.photoUri ?? undefined,
     createdAt: l.createdAt ? new Date(l.createdAt).toISOString() : new Date().toISOString(),
+    countryCode: l.countryCode ?? "+1",
   };
 }
 
@@ -2302,6 +2303,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               isDefault: loc.isDefault,
               active: loc.active,
               workingHours: loc.workingHours,
+              countryCode: loc.countryCode || "+1",
             });
             break;
           }
@@ -2326,6 +2328,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 temporarilyClosed: loc.temporarilyClosed,
                 reopenOn: loc.reopenOn,
                 workingHours: loc.workingHours,
+                countryCode: loc.countryCode || "+1",
               });
             } else {
               // Location not in DB yet — create it (handles cases where ADD_LOCATION sync failed)
@@ -2344,6 +2347,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 temporarilyClosed: loc.temporarilyClosed,
                 reopenOn: loc.reopenOn,
                 workingHours: loc.workingHours,
+                countryCode: loc.countryCode || "+1",
               });
             }
             break;

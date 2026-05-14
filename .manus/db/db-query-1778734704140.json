@@ -1,0 +1,16 @@
+{
+  "query": "SELECT phone, \"workingHours\", \"customSchedule\", \"scheduleMode\" FROM business_owners WHERE phone = '+15550019999';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT phone, \"workingHours\", \"customSchedule\", \"scheduleMode\" FROM business_owners WHERE phone = '+15550019999';",
+  "rows": [
+    {
+      "phone": "+15550019999",
+      "workingHours": "workingHours",
+      "customSchedule": "customSchedule",
+      "scheduleMode": "scheduleMode"
+    }
+  ],
+  "messages": [],
+  "stdout": "phone\tworkingHours\tcustomSchedule\tscheduleMode\n+15550019999\tworkingHours\tcustomSchedule\tscheduleMode\n",
+  "stderr": "",
+  "execution_time_ms": 288
+}

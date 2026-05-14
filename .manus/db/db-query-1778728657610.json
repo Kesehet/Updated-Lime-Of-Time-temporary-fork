@@ -1,0 +1,22 @@
+{
+  "query": "\n-- Verify no un-normalized phones remain in clients\nSELECT 'clients' as tbl, COUNT(*) as unnormalized_count\nFROM clients\nWHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nUNION ALL\n-- Verify no un-normalized phones remain in client_accounts\nSELECT 'client_accounts' as tbl, COUNT(*) as unnormalized_count\nFROM client_accounts\nWHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nUNION ALL\n-- Verify no un-normalized phones remain in business_owners\nSELECT 'business_owners' as tbl, COUNT(*) as unnormalized_count\nFROM business_owners\nWHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Verify no un-normalized phones remain in clients\nSELECT 'clients' as tbl, COUNT(*) as unnormalized_count\nFROM clients\nWHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nUNION ALL\n-- Verify no un-normalized phones remain in client_accounts\nSELECT 'client_accounts' as tbl, COUNT(*) as unnormalized_count\nFROM client_accounts\nWHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%'\nUNION ALL\n-- Verify no un-normalized phones remain in business_owners\nSELECT 'business_owners' as tbl, COUNT(*) as unnormalized_count\nFROM business_owners\nWHERE phone IS NOT NULL AND phone != '' AND phone NOT LIKE '+%';\n",
+  "rows": [
+    {
+      "tbl": "business_owners",
+      "unnormalized_count": "0"
+    },
+    {
+      "tbl": "client_accounts",
+      "unnormalized_count": "0"
+    },
+    {
+      "tbl": "clients",
+      "unnormalized_count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\tunnormalized_count\nbusiness_owners\t0\nclient_accounts\t0\nclients\t0\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

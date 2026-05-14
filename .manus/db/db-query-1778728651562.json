@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Normalize phones in clients table: prepend +1 to any phone that doesn't start with +\nUPDATE clients\nSET phone = CONCAT('+1', REGEXP_REPLACE(phone, '[^0-9]', ''))\nWHERE phone IS NOT NULL \n  AND phone != '' \n  AND phone NOT LIKE '+%';\n\n-- Normalize phones in client_accounts table\nUPDATE client_accounts\nSET phone = CONCAT('+1', REGEXP_REPLACE(phone, '[^0-9]', ''))\nWHERE phone IS NOT NULL \n  AND phone != '' \n  AND phone NOT LIKE '+%';\n\n-- Normalize phones in business_owners table\nUPDATE business_owners\nSET phone = CONCAT('+1', REGEXP_REPLACE(phone, '[^0-9]', ''))\nWHERE phone IS NOT NULL \n  AND phone != '' \n  AND phone NOT LIKE '+%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Normalize phones in clients table: prepend +1 to any phone that doesn't start with +\nUPDATE clients\nSET phone = CONCAT('+1', REGEXP_REPLACE(phone, '[^0-9]', ''))\nWHERE phone IS NOT NULL \n  AND phone != '' \n  AND phone NOT LIKE '+%';\n\n-- Normalize phones in client_accounts table\nUPDATE client_accounts\nSET phone = CONCAT('+1', REGEXP_REPLACE(phone, '[^0-9]', ''))\nWHERE phone IS NOT NULL \n  AND phone != '' \n  AND phone NOT LIKE '+%';\n\n-- Normalize phones in business_owners table\nUPDATE business_owners\nSET phone = CONCAT('+1', REGEXP_REPLACE(phone, '[^0-9]', ''))\nWHERE phone IS NOT NULL \n  AND phone != '' \n  AND phone NOT LIKE '+%';\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 283
+}

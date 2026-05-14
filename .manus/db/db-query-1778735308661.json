@@ -1,0 +1,26 @@
+{
+  "query": "SELECT a.id, a.clientLocalId, a.date, a.time, a.status, c.name as clientName FROM appointments a LEFT JOIN clients c ON a.clientLocalId = c.localId WHERE c.phone = '+15559871234' ORDER BY a.createdAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT a.id, a.clientLocalId, a.date, a.time, a.status, c.name as clientName FROM appointments a LEFT JOIN clients c ON a.clientLocalId = c.localId WHERE c.phone = '+15559871234' ORDER BY a.createdAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "3420004",
+      "clientLocalId": "mp4y98i2jm8m8aa",
+      "date": "2026-05-20",
+      "time": "11:00",
+      "status": "pending",
+      "clientName": "Jane Traveler"
+    },
+    {
+      "id": "3420003",
+      "clientLocalId": "mp4y98i2jm8m8aa",
+      "date": "2026-05-15",
+      "time": "10:00",
+      "status": "pending",
+      "clientName": "Jane Traveler"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tclientLocalId\tdate\ttime\tstatus\tclientName\n3420004\tmp4y98i2jm8m8aa\t2026-05-20\t11:00\tpending\tJane Traveler\n3420003\tmp4y98i2jm8m8aa\t2026-05-15\t10:00\tpending\tJane Traveler\n",
+  "stderr": "",
+  "execution_time_ms": 288
+}

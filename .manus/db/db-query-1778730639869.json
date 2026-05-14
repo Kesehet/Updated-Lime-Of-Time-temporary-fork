@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, businessName, phone FROM business_owners ORDER BY createdAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, businessName, phone FROM business_owners ORDER BY createdAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "1950003",
+      "businessName": "Test Spa & Wellness",
+      "phone": "5550019999"
+    },
+    {
+      "id": "1650001",
+      "businessName": "Wellness Suite",
+      "phone": "+14124822976"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tbusinessName\tphone\n1950003\tTest Spa & Wellness\t5550019999\n1650001\tWellness Suite\t+14124822976\n",
+  "stderr": "",
+  "execution_time_ms": 276
+}

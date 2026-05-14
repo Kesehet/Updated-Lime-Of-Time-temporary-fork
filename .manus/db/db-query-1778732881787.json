@@ -1,0 +1,18 @@
+{
+  "query": "SELECT configKey, configValue FROM platform_config WHERE configKey IN ('TWILIO_TEST_MODE', 'TWILIO_TEST_OTP');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT configKey, configValue FROM platform_config WHERE configKey IN ('TWILIO_TEST_MODE', 'TWILIO_TEST_OTP');",
+  "rows": [
+    {
+      "configKey": "TWILIO_TEST_MODE",
+      "configValue": "true"
+    },
+    {
+      "configKey": "TWILIO_TEST_OTP",
+      "configValue": "123456"
+    }
+  ],
+  "messages": [],
+  "stdout": "configKey\tconfigValue\nTWILIO_TEST_MODE\ttrue\nTWILIO_TEST_OTP\t123456\n",
+  "stderr": "",
+  "execution_time_ms": 272
+}

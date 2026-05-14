@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, name, phone, businessOwnerId FROM clients WHERE phone = '+15559871234';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, name, phone, businessOwnerId FROM clients WHERE phone = '+15559871234';",
+  "rows": [
+    {
+      "id": "2070002",
+      "name": "Jane T.",
+      "phone": "+15559871234",
+      "businessOwnerId": "1950003"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tphone\tbusinessOwnerId\n2070002\tJane T.\t+15559871234\t1950003\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

@@ -1,0 +1,15 @@
+{
+  "query": "DESCRIBE platform_config; SELECT * FROM platform_config WHERE `key` IN ('TWILIO_TEST_MODE', 'TWILIO_TEST_OTP') LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute DESCRIBE platform_config; SELECT * FROM platform_config WHERE `key` IN ('TWILIO_TEST_MODE', 'TWILIO_TEST_OTP') LIMIT 5;",
+  "returncode": 1,
+  "logs": [
+    "Field\tType\tNull\tKey\tDefault\tExtra",
+    "id\tint\tNO\tPRI\tNULL\tauto_increment",
+    "configKey\tvarchar(100)\tNO\tUNI\tNULL\t",
+    "configValue\ttext\tYES\t\tNULL\t",
+    "isSensitive\ttinyint(1)\tNO\t\t0\t",
+    "description\ttext\tYES\t\tNULL\t",
+    "updatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+    "ERROR 1054 (42S22) at line 1: Unknown column 'key' in 'where clause'"
+  ]
+}

@@ -576,6 +576,10 @@ export const locations = mysqlTable("locations", {
   lat: decimal("lat", { precision: 10, scale: 7 }),
   /** Geocoded longitude */
   lng: decimal("lng", { precision: 10, scale: 7 }),
+  /** E.164 country code for this location (e.g. "+1" for US/Canada, "+44" for UK).
+   * Used to normalize client phone numbers entered on the public booking page.
+   * Defaults to "+1" if not set. */
+  countryCode: varchar("countryCode", { length: 10 }).default("+1"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

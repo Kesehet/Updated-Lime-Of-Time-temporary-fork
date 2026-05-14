@@ -1,0 +1,37 @@
+{
+  "query": "SELECT COUNT(*) as count FROM client_accounts WHERE phone = '+15559871234';\nSELECT COUNT(*) as count FROM clients WHERE phone = '+15559871234';\nSELECT id, clientLocalId, date, time, status FROM appointments WHERE clientLocalId = '2070002' OR clientLocalId LIKE 'web-%' ORDER BY createdAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT COUNT(*) as count FROM client_accounts WHERE phone = '+15559871234';\nSELECT COUNT(*) as count FROM clients WHERE phone = '+15559871234';\nSELECT id, clientLocalId, date, time, status FROM appointments WHERE clientLocalId = '2070002' OR clientLocalId LIKE 'web-%' ORDER BY createdAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "count": "1"
+    },
+    {
+      "count": "count"
+    },
+    {
+      "count": "1"
+    },
+    {
+      "count": "id\tclientLocalId\tdate\ttime\tstatus"
+    },
+    {
+      "count": "3030001\tweb-1777574498060-s2wclo\t2026-05-19\t18:15\tconfirmed"
+    },
+    {
+      "count": "2940001\tweb-1777574498060-s2wclo\t2026-05-13\t20:00\tcompleted"
+    },
+    {
+      "count": "2880001\tweb-1777656292845-hlaqn2\t2026-05-12\t18:15\tcompleted"
+    },
+    {
+      "count": "2820001\tweb-1778161059948-ginx7y\t2026-05-30\t10:00\tconfirmed"
+    },
+    {
+      "count": "2250001\tweb-1777574498060-s2wclo\t2026-05-09\t12:00\tcompleted"
+    }
+  ],
+  "messages": [],
+  "stdout": "count\n1\ncount\n1\nid\tclientLocalId\tdate\ttime\tstatus\n3030001\tweb-1777574498060-s2wclo\t2026-05-19\t18:15\tconfirmed\n2940001\tweb-1777574498060-s2wclo\t2026-05-13\t20:00\tcompleted\n2880001\tweb-1777656292845-hlaqn2\t2026-05-12\t18:15\tcompleted\n2820001\tweb-1778161059948-ginx7y\t2026-05-30\t10:00\tconfirmed\n2250001\tweb-1777574498060-s2wclo\t2026-05-09\t12:00\tcompleted\n",
+  "stderr": "",
+  "execution_time_ms": 301
+}

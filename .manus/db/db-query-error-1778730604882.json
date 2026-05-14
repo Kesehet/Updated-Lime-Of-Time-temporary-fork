@@ -1,0 +1,8 @@
+{
+  "query": "SELECT bo.id, bo.business_name, bo.business_slug, l.id as location_id, l.name as location_name \nFROM business_owners bo \nLEFT JOIN locations l ON l.owner_id = bo.id \nWHERE bo.phone = '+15550019999' OR bo.business_name = 'Test Spa & Wellness'\nLIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT bo.id, bo.business_name, bo.business_slug, l.id as location_id, l.name as location_name \nFROM business_owners bo \nLEFT JOIN locations l ON l.owner_id = bo.id \nWHERE bo.phone = '+15550019999' OR bo.business_name = 'Test Spa & Wellness'\nLIMIT 5;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'l.owner_id' in 'on clause'"
+  ]
+}

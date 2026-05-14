@@ -232,6 +232,10 @@ export interface Location {
   bufferMinutes?: number | null;
   /** Per-location slot interval override in minutes. 0 = Auto. null/undefined = use global BusinessSettings.slotInterval */
   slotIntervalMinutes?: number | null;
+  /** E.164 country code for this location (e.g. "+1" for US/Canada, "+44" for UK).
+   * Used to normalize client phone numbers entered on the public booking page.
+   * Defaults to "+1" if not set. */
+  countryCode?: string;
 }
 
 export const LOCATION_COLORS = [

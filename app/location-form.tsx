@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePlanLimitCheck } from "@/hooks/use-plan-limit-check";
 import { UpgradePlanSheet } from "@/components/upgrade-plan-sheet";
@@ -20,6 +20,8 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
+import * as ExpoLocation from "expo-location";
+import { CountryCodePicker, DEFAULT_COUNTRY, COUNTRIES, type Country } from "@/components/country-code-picker";
 import { trpc } from "@/lib/trpc";
 import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -28,7 +30,7 @@ import { useStore, generateId } from "@/lib/store";
 import { useColors } from "@/hooks/use-colors";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import {
-  Location,
+  type Location,
   formatPhoneNumber,
   formatFullAddress,
   PUBLIC_BOOKING_URL,
@@ -86,6 +88,35 @@ export default function LocationFormScreen() {
   const [email, setEmail] = useState(existing?.email ?? "");
   const [photoUri, setPhotoUri] = useState<string>(existing?.photoUri ?? "");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // Country code for this location — used to normalize client phones on the public booking page
+  const [selectedCountry, setSelectedCountry] = useState<Country>(
+    existing?.countryCode
+      ? (COUNTRIES.find((c) => c.dial === existing.countryCode) ?? DEFAULT_COUNTRY)
+      : DEFAULT_COUNTRY
+  );
+
+  // Auto-detect country from GPS when creating a new location (best-effort, silent)
+  useEffect(() => {
+    if (isEdit) return; // Don't override existing location's country
+    let cancelled = false;
+    (async () => {
+      try {
+        if (Platform.OS === "web") return;
+        const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
+        if (status !== "granted" || cancelled) return;
+        const pos = await ExpoLocation.getCurrentPositionAsync({ accuracy: ExpoLocation.Accuracy.Lowest, timeoutInterval: 5000 });
+        if (cancelled) return;
+        const [geo] = await ExpoLocation.reverseGeocodeAsync({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        if (cancelled || !geo?.isoCountryCode) return;
+        const match = COUNTRIES.find((c) => c.code === geo.isoCountryCode);
+        if (match) setSelectedCountry(match);
+      } catch (_) {
+        // Silent — GPS failure is non-fatal
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isEdit]);
   const uploadImageMut = trpc.files.uploadImage.useMutation();
   const pickLocationPhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -164,6 +195,7 @@ export default function LocationFormScreen() {
       createdAt: existing?.createdAt ?? new Date().toISOString(),
       bufferMinutes: locBufferMinutes ?? undefined,
       slotIntervalMinutes: locSlotIntervalMinutes ?? undefined,
+      countryCode: selectedCountry.dial,
     };
 
     const action = isEdit
@@ -525,6 +557,20 @@ export default function LocationFormScreen() {
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
             returnKeyType="done"
           />
+
+          {/* Country — determines dial code used for client phone normalization on public booking page */}
+          <Text className="text-xs font-medium text-muted mb-1 mt-3">Country</Text>
+          <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8, lineHeight: 15 }}>
+            Used to auto-format client phone numbers on your public booking page.
+          </Text>
+          <CountryCodePicker
+            selected={selectedCountry}
+            onSelect={setSelectedCountry}
+            backgroundColor={colors.background}
+            textColor={colors.foreground}
+            borderColor={colors.border}
+          />
+
           {/* Studio Photo */}
           <Text className="text-xs font-medium text-muted mb-1 mt-4">Studio Photo (optional)</Text>
           <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8, lineHeight: 15 }}>

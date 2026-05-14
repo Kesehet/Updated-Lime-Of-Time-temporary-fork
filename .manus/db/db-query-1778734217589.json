@@ -1,0 +1,15 @@
+{
+  "query": "\nSELECT id, phone, businessName FROM business_owners WHERE phone IN ('+15550019999', '5550019999') LIMIT 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \nSELECT id, phone, businessName FROM business_owners WHERE phone IN ('+15550019999', '5550019999') LIMIT 1;\n",
+  "rows": [
+    {
+      "id": "1950003",
+      "phone": "+15550019999",
+      "businessName": "Test Spa & Wellness"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tphone\tbusinessName\n1950003\t+15550019999\tTest Spa & Wellness\n",
+  "stderr": "",
+  "execution_time_ms": 439
+}

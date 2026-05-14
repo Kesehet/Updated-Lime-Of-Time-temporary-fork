@@ -28,7 +28,8 @@ import { setProfileMode, useClientStore } from "@/lib/client-store";
 import { startOAuthLogin, getApiBaseUrl } from "@/constants/oauth";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { LinearGradient } from "expo-linear-gradient";
-import { CountryCodePicker, DEFAULT_COUNTRY, type Country } from "@/components/country-code-picker";
+import { CountryCodePicker, DEFAULT_COUNTRY, COUNTRIES, type Country } from "@/components/country-code-picker";
+import * as Location from "expo-location";
 import { GoogleLogo, MicrosoftLogo, AppleLogo } from "@/components/brand-icons";
 // trpc removed (OTP no longer used)
 import Animated, {
@@ -115,6 +116,28 @@ export default function ClientSignInScreen() {
 
   // Phone step
   const [selectedCountry, setSelectedCountry] = useState<Country>(DEFAULT_COUNTRY);
+
+  // Auto-detect country from GPS on mount (best-effort, silent — never blocks sign-in)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (Platform.OS === "web") return;
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted" || cancelled) return;
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Lowest, timeoutInterval: 5000 });
+        if (cancelled) return;
+        const [geo] = await Location.reverseGeocodeAsync({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        if (cancelled || !geo?.isoCountryCode) return;
+        const match = COUNTRIES.find((c) => c.code === geo.isoCountryCode);
+        if (match) setSelectedCountry(match);
+      } catch (_) {
+        // Silent — GPS failure should never block sign-in
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const [phone, setPhone] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
   const [phoneLoading, setPhoneLoading] = useState(false);

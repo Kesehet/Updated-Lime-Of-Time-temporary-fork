@@ -506,7 +506,7 @@ export function registerPublicRoutes(app: Express) {
         const loc = locs.find((l: any) => l.localId === locationLocalId);
         if (loc && loc.workingHours) {
           const locWh = typeof loc.workingHours === 'object' ? loc.workingHours : JSON.parse(loc.workingHours as string);
-          effectiveWorkingHours = locWh;
+          if (locWh && Object.keys(locWh).length > 0) effectiveWorkingHours = locWh;
         }
         if (staffLocalId) {
           const staffList = await db.getStaffByOwner(owner.id);
@@ -950,15 +950,30 @@ export function registerPublicRoutes(app: Express) {
       }
 
       // Normalize phone for consistent matching
+      // Use the business's location country code so that clients entering numbers without
+      // a country prefix are normalized to the correct country (not always +1).
       let clientLocalId: string;
-      const normalizedPhone = clientPhone ? db.normalizePhone(clientPhone) : "";
+      let businessCountryCode = "+1"; // default
+      if (locationId) {
+        const locs = await db.getLocationsByOwner(owner.id);
+        const loc = locs.find((l) => l.localId === locationId || String(l.id) === String(locationId));
+        if (loc && (loc as any).countryCode) businessCountryCode = (loc as any).countryCode;
+      } else {
+        // No specific location — use the default/first location's country code
+        const locs = await db.getLocationsByOwner(owner.id);
+        const defaultLoc = locs.find((l) => l.isDefault) || locs[0];
+        if (defaultLoc && (defaultLoc as any).countryCode) businessCountryCode = (defaultLoc as any).countryCode;
+      }
+      const normalizedPhone = clientPhone ? db.normalizePhone(clientPhone, businessCountryCode) : "";
       if (normalizedPhone.length >= 10) {
         const existingClient = await db.getClientByPhone(normalizedPhone, owner.id);
         if (existingClient) {
           clientLocalId = existingClient.localId;
-          // Update client name if different
-          if (existingClient.name !== clientName) {
-            await db.updateClient(existingClient.localId, owner.id, { name: clientName, email: clientEmail || undefined });
+          // Do NOT overwrite the business portal's client name with the name from the public booking form.
+          // The business owner's nickname for the client should be preserved.
+          // Only update email if the client doesn't have one yet.
+          if (clientEmail && !existingClient.email) {
+            await db.updateClient(existingClient.localId, owner.id, { email: clientEmail });
           }
         } else {
           clientLocalId = `web-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1218,6 +1233,21 @@ export function registerPublicRoutes(app: Express) {
         console.warn("[Public API] Failed to send push notification:", pushErr);
       }
 
+      // Ensure a client_accounts record exists for this phone so the client can sign in
+      // to the Client Portal and see their appointment. We use preserveExistingName so that
+      // if the client already has a profile, their own name is not overwritten by the name
+      // they typed on the public booking page.
+      if (normalizedPhone && normalizedPhone.length >= 10) {
+        try {
+          await db.upsertClientAccount(
+            { phone: normalizedPhone, name: clientName, email: clientEmail || null },
+            { preserveExistingName: true }
+          );
+        } catch (caErr) {
+          console.warn("[Public API] Failed to upsert client_accounts:", caErr);
+        }
+      }
+
       res.json({
         success: true,
         appointmentId: appointmentLocalId,
@@ -1246,14 +1276,27 @@ export function registerPublicRoutes(app: Express) {
         res.status(400).json({ error: "Missing required fields" }); return;
       }
       // Resolve or create client
+      // Use the business's location country code for phone normalization
       let clientLocalId: string;
-      const normalizedPhone = clientPhone ? db.normalizePhone(clientPhone) : "";
+      let pkgBusinessCountryCode = "+1";
+      if (locationId) {
+        const pkgLocs = await db.getLocationsByOwner(owner.id);
+        const pkgLoc = pkgLocs.find((l) => l.localId === locationId || String(l.id) === String(locationId));
+        if (pkgLoc && (pkgLoc as any).countryCode) pkgBusinessCountryCode = (pkgLoc as any).countryCode;
+      } else {
+        const pkgLocs = await db.getLocationsByOwner(owner.id);
+        const pkgDefaultLoc = pkgLocs.find((l) => l.isDefault) || pkgLocs[0];
+        if (pkgDefaultLoc && (pkgDefaultLoc as any).countryCode) pkgBusinessCountryCode = (pkgDefaultLoc as any).countryCode;
+      }
+      const normalizedPhone = clientPhone ? db.normalizePhone(clientPhone, pkgBusinessCountryCode) : "";
       if (normalizedPhone.length >= 10) {
         const existingClient = await db.getClientByPhone(normalizedPhone, owner.id);
         if (existingClient) {
           clientLocalId = existingClient.localId;
-          if (existingClient.name !== clientName) {
-            await db.updateClient(existingClient.localId, owner.id, { name: clientName, email: clientEmail || undefined });
+          // Do NOT overwrite the business portal's client name with the name from the public booking form.
+          // Only update email if the client doesn't have one yet.
+          if (clientEmail && !existingClient.email) {
+            await db.updateClient(existingClient.localId, owner.id, { email: clientEmail });
           }
         } else {
           clientLocalId = `web-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1351,6 +1394,18 @@ export function registerPublicRoutes(app: Express) {
           }
         }
       } catch {}
+      // Ensure a client_accounts record exists so the client can sign in to the Client Portal
+      if (normalizedPhone && normalizedPhone.length >= 10) {
+        try {
+          await db.upsertClientAccount(
+            { phone: normalizedPhone, name: clientName, email: clientEmail || null },
+            { preserveExistingName: true }
+          );
+        } catch (caErr) {
+          console.warn("[Public API] Failed to upsert client_accounts (package):", caErr);
+        }
+      }
+
       res.json({
         success: true,
         packageGroupId,
@@ -1385,10 +1440,7 @@ export function registerPublicRoutes(app: Express) {
         const existingClient = await db.getClientByPhone(normalizedReviewPhone, owner.id);
         if (existingClient) {
           clientLocalId = existingClient.localId;
-          // Update client name if different
-          if (existingClient.name !== clientName) {
-            await db.updateClient(existingClient.localId, owner.id, { name: clientName });
-          }
+          // Do NOT overwrite the business portal's client name with the name from the public review form.
         } else {
           clientLocalId = `web-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
           await db.createClient({

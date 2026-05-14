@@ -432,24 +432,48 @@ export async function deleteClient(localId: string, businessOwnerId: number): Pr
     .where(and(eq(clients.localId, localId), eq(clients.businessOwnerId, businessOwnerId)));
 }
 
-/** Normalize a phone number to E.164 format for consistent storage and matching.
- *  "4124820000" -> "+14124820000"
- *  "+14124820000" -> "+14124820000"
- *  "14124820000" -> "+14124820000"
- *  "(412) 482-0000" -> "+14124820000"
- *  Non-US/non-standard: "+" + digits (best effort) */
-export function normalizePhone(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  // US number with country code 1 prefix (11 digits starting with 1)
-  if (digits.length === 11 && digits.startsWith("1")) {
+/**
+ * Normalize a phone number to E.164 format for consistent storage and matching.
+ *
+ * @param phone - Raw phone string in any format (e.g. "4124820000", "(412) 482-0000", "+14124820000")
+ * @param countryCode - Optional E.164 country code prefix to use when the number has no "+" prefix
+ *                      (e.g. "+1" for US/Canada, "+44" for UK, "+33" for France).
+ *                      Defaults to "+1" (US/Canada) if omitted.
+ *
+ * Examples:
+ *   normalizePhone("4124820000")           -> "+14124820000"  (default +1)
+ *   normalizePhone("4124820000", "+1")     -> "+14124820000"
+ *   normalizePhone("0612345678", "+33")    -> "+33612345678"  (French number)
+ *   normalizePhone("+14124820000")         -> "+14124820000"  (already E.164, unchanged)
+ *   normalizePhone("(412) 482-0000")       -> "+14124820000"
+ *   normalizePhone("14124820000")          -> "+14124820000"  (11-digit with leading 1)
+ */
+export function normalizePhone(phone: string, countryCode: string = "+1"): string {
+  // If already in E.164 format (starts with +), strip formatting and return as-is
+  if (phone.trim().startsWith("+")) {
+    const digits = phone.replace(/\D/g, "");
     return "+" + digits;
   }
-  // 10-digit US number — prepend +1
-  if (digits.length === 10) {
-    return "+1" + digits;
+
+  const digits = phone.replace(/\D/g, "");
+
+  // Normalize the country code: ensure it starts with + and contains only digits after
+  const cc = countryCode.trim().startsWith("+") ? countryCode.trim() : "+" + countryCode.trim();
+  const ccDigits = cc.slice(1); // e.g. "1" for +1, "33" for +33
+
+  // If the number already has the country code prefix prepended (e.g. "14124820000" for +1)
+  if (digits.startsWith(ccDigits) && digits.length > ccDigits.length) {
+    // Only strip the country code prefix if the remaining number length looks correct
+    // For +1: 11 digits starting with 1 → valid US/Canada number
+    const remaining = digits.slice(ccDigits.length);
+    // Heuristic: if remaining is 6-12 digits, treat as local number with CC already prepended
+    if (remaining.length >= 6 && remaining.length <= 12) {
+      return cc + remaining;
+    }
   }
-  // Return best-effort E.164 for non-standard lengths
-  return "+" + digits;
+
+  // Otherwise treat digits as a local number and prepend the country code
+  return cc + digits;
 }
 
 export async function getClientByPhone(phone: string, businessOwnerId: number) {
@@ -1186,7 +1210,14 @@ export async function getClientAccountById(id: number): Promise<ClientAccount | 
   return rows[0] ?? null;
 }
 
-export async function upsertClientAccount(data: InsertClientAccount): Promise<ClientAccount> {
+export async function upsertClientAccount(
+  data: InsertClientAccount,
+  options?: {
+    /** If true, do NOT overwrite the existing account's name — only update non-name fields.
+     * Use this when the caller is a public booking page or business portal (not the client themselves). */
+    preserveExistingName?: boolean;
+  }
+): Promise<ClientAccount> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   // Normalize phone to E.164 before storage (skip oauth: keys)
@@ -1195,7 +1226,12 @@ export async function upsertClientAccount(data: InsertClientAccount): Promise<Cl
   }
   const existing = await getClientAccountByPhone(data.phone);
   if (existing) {
-    await db.update(clientAccounts).set({ ...data, updatedAt: new Date() }).where(eq(clientAccounts.id, existing.id));
+    // If preserveExistingName is set and the account already has a name, don't overwrite it.
+    // This prevents a public booking or business portal entry from clobbering the client's own profile name.
+    const updateData = (options?.preserveExistingName && existing.name)
+      ? { ...data, name: existing.name, updatedAt: new Date() }
+      : { ...data, updatedAt: new Date() };
+    await db.update(clientAccounts).set(updateData).where(eq(clientAccounts.id, existing.id));
     return (await getClientAccountById(existing.id))!;
   }
   const result = await db.insert(clientAccounts).values(data);

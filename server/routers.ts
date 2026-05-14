@@ -364,7 +364,11 @@ const clientsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const id = await db.createClient(input);
+      // Normalize phone to E.164 before storing
+      const normalizedInput = input.phone
+        ? { ...input, phone: db.normalizePhone(input.phone) }
+        : input;
+      const id = await db.createClient(normalizedInput);
       return { id, localId: input.localId };
     }),
 
@@ -382,7 +386,11 @@ const clientsRouter = router({
     )
     .mutation(async ({ input }) => {
       const { localId, businessOwnerId, ...data } = input;
-      await db.updateClient(localId, businessOwnerId, data);
+      // Normalize phone to E.164 before storing
+      const normalizedData = data.phone
+        ? { ...data, phone: db.normalizePhone(data.phone) }
+        : data;
+      await db.updateClient(localId, businessOwnerId, normalizedData);
       return { success: true };
     }),
 
@@ -1286,6 +1294,7 @@ const locationsRouter = router({
         reopenOn: z.string().optional().nullable(),
         workingHours: z.any().optional(),
         photoUri: z.string().optional().nullable(),
+        countryCode: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -1335,6 +1344,7 @@ const locationsRouter = router({
         reopenOn: z.string().optional().nullable(),
         workingHours: z.any().optional(),
         photoUri: z.string().optional().nullable(),
+        countryCode: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {

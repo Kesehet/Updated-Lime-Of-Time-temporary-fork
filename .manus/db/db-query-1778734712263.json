@@ -1,0 +1,15 @@
+{
+  "query": "SELECT phone, CAST(workingHours AS CHAR), scheduleMode FROM business_owners WHERE phone = '+15550019999';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT phone, CAST(workingHours AS CHAR), scheduleMode FROM business_owners WHERE phone = '+15550019999';",
+  "rows": [
+    {
+      "phone": "+15550019999",
+      "CAST(workingHours AS CHAR)": "{\"friday\": {\"enabled\": true, \"end\": \"18:00\", \"start\": \"09:00\"}, \"monday\": {\"enabled\": true, \"end\": \"18:00\", \"start\": \"09:00\"}, \"saturday\": {\"enabled\": true, \"end\": \"16:00\", \"start\": \"10:00\"}, \"sunday\": {\"enabled\": false, \"end\": \"18:00\", \"start\": \"09:00\"}, \"thursday\": {\"enabled\": true, \"end\": \"18:00\", \"start\": \"09:00\"}, \"tuesday\": {\"enabled\": true, \"end\": \"18:00\", \"start\": \"09:00\"}, \"wednesday\": {\"enabled\": true, \"end\": \"18:00\", \"start\": \"09:00\"}}",
+      "scheduleMode": "weekly"
+    }
+  ],
+  "messages": [],
+  "stdout": "phone\tCAST(workingHours AS CHAR)\tscheduleMode\n+15550019999\t{\"friday\": {\"enabled\": true, \"end\": \"18:00\", \"start\": \"09:00\"}, \"monday\": {\"enabled\": true, \"end\": \"18:00\", \"start\": \"09:00\"}, \"saturday\": {\"enabled\": true, \"end\": \"16:00\", \"start\": \"10:00\"}, \"sunday\": {\"enabled\": false, \"end\": \"18:00\", \"start\": \"09:00\"}, \"thursday\": {\"enabled\": true, \"end\": \"18:00\", \"start\": \"09:00\"}, \"tuesday\": {\"enabled\": true, \"end\": \"18:00\", \"start\": \"09:00\"}, \"wednesday\": {\"enabled\": true, \"end\": \"18:00\", \"start\": \"09:00\"}}\tweekly\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

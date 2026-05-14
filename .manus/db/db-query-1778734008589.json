@@ -1,0 +1,16 @@
+{
+  "query": "\nSELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name LIKE '%hour%' OR table_name LIKE '%schedule%' OR table_name LIKE '%work%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \nSELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name LIKE '%hour%' OR table_name LIKE '%schedule%' OR table_name LIKE '%work%';\n",
+  "rows": [
+    {
+      "table_name": "dist_framework_meta"
+    },
+    {
+      "table_name": "custom_schedule"
+    }
+  ],
+  "messages": [],
+  "stdout": "table_name\ndist_framework_meta\ncustom_schedule\n",
+  "stderr": "",
+  "execution_time_ms": 321
+}

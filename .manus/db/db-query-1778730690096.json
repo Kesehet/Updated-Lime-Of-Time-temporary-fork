@@ -1,0 +1,14 @@
+{
+  "query": "UPDATE business_owners SET phone = '+15550019999' WHERE id = 1950003;\nSELECT id, phone FROM business_owners WHERE id = 1950003;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute UPDATE business_owners SET phone = '+15550019999' WHERE id = 1950003;\nSELECT id, phone FROM business_owners WHERE id = 1950003;",
+  "rows": [
+    {
+      "id": "1950003",
+      "phone": "+15550019999"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tphone\n1950003\t+15550019999\n",
+  "stderr": "",
+  "execution_time_ms": 273
+}
