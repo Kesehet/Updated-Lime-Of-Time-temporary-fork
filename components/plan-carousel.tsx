@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   ScrollView,
+  FlatList,
   SafeAreaView,
   Modal,
   Dimensions,
@@ -429,40 +430,40 @@ export function PlanCarousel({
 }: PlanCarouselProps) {
   const [showCompare, setShowCompare] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
-  const scrollRef = useRef<ScrollView>(null);
+  const flatListRef = useRef<FlatList>(null);
   const [carouselHeight, setCarouselHeight] = useState(0);
 
-  // Card width: 90% of available width, capped at 420px
+  // Card width: 88% of available width, capped at 420px
   const availableWidth = containerWidth ?? SCREEN_W;
-  const slideWidth = Math.min(Math.round(availableWidth * 0.90), 420);
-  // Side padding centers the first and last card
-  const sidePad = Math.max(0, Math.round((availableWidth - slideWidth) / 2));
-  // Gap between cards
   const CARD_GAP = 12;
+  const slideWidth = Math.min(Math.round(availableWidth * 0.88), 420);
+  // Side padding so first and last card are centered
+  const sidePad = Math.max(0, Math.round((availableWidth - slideWidth) / 2));
+  // Each item occupies slideWidth + CARD_GAP in the scroll axis
+  const itemStep = slideWidth + CARD_GAP;
 
   useEffect(() => {
     if (isOnboarding) {
       setActiveIdx(0);
-      // scroll to first card (sidePad offset so it's centered)
-      scrollRef.current?.scrollTo({ x: sidePad, animated: false });
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
     }
   }, [isOnboarding]);
-
-  // snapToOffsets: each card's left edge relative to scroll content start (including sidePad)
-  // sidePad is added as paddingHorizontal in contentContainerStyle, so snap offsets must include it
-  const snapOffsets = plans.map((_, i) => sidePad + i * (slideWidth + CARD_GAP));
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const x = e.nativeEvent.contentOffset.x;
-      const idx = Math.round((x - sidePad) / (slideWidth + CARD_GAP));
+      // On iOS, contentInset shifts the origin so x=0 means first card centered.
+      // On Android/web, paddingHorizontal shifts content, so x=0 is at the padding start;
+      // we subtract sidePad to get the true card offset.
+      const adjustedX = Platform.OS === "ios" ? x : Math.max(0, x - sidePad);
+      const idx = Math.round(adjustedX / itemStep);
       const clamped = Math.max(0, Math.min(idx, plans.length - 1));
       if (clamped !== activeIdx) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       }
       setActiveIdx(clamped);
     },
-    [slideWidth, plans.length, activeIdx],
+    [itemStep, sidePad, plans.length, activeIdx],
   );
 
   const scrollTo = useCallback((idx: number) => {
@@ -470,9 +471,11 @@ export function PlanCarousel({
     if (clamped !== activeIdx) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
-    scrollRef.current?.scrollTo({ x: sidePad + clamped * (slideWidth + CARD_GAP), animated: true });
+    // On Android/web, offset must include sidePad since contentInset is not supported.
+    const offset = Platform.OS === "ios" ? clamped * itemStep : sidePad + clamped * itemStep;
+    flatListRef.current?.scrollToOffset({ offset, animated: true });
     setActiveIdx(clamped);
-  }, [activeIdx, plans.length, slideWidth]);
+  }, [activeIdx, plans.length, itemStep, sidePad]);
 
   if (isLoading) {
     return (
@@ -498,25 +501,42 @@ export function PlanCarousel({
 
   return (
     <View style={[ss.container, { flex: 1 }]} onLayout={(e) => setCarouselHeight(e.nativeEvent.layout.height)}>
-      {/* Carousel — each card fills full height */}
-      <ScrollView
-        ref={scrollRef}
+      {/* Carousel — FlatList with snap-to-center */}
+      {/*
+        Centering strategy:
+        - slideWidth = 88% of screen, so sidePad = 6% on each side
+        - snapToInterval = slideWidth + CARD_GAP so each swipe moves exactly one card
+        - snapToAlignment="center" tells the list to center each snapped item
+        - contentInset (iOS only) shifts the scroll origin so item 0 starts centered
+        - On Android/web, paddingHorizontal in contentContainerStyle achieves the same
+        - getItemLayout enables instant programmatic scrollTo without measuring
+        - scrollTo() uses offset = idx * itemStep (no sidePad offset needed because
+          contentInset handles it on iOS; on Android the padding shifts content)
+      */}
+      <FlatList
+        ref={flatListRef}
+        data={plans}
+        keyExtractor={(item) => item.planKey}
         horizontal
-        pagingEnabled={false}
-        snapToOffsets={snapOffsets}
-        decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
-        // paddingHorizontal centers first/last card (works on iOS, Android, and web)
+        snapToInterval={itemStep}
+        snapToAlignment="center"
+        decelerationRate="fast"
+        contentInset={Platform.OS === "ios" ? { left: sidePad, right: sidePad } : undefined}
+        contentOffset={Platform.OS === "ios" ? { x: -sidePad, y: 0 } : undefined}
         contentContainerStyle={{
-          paddingHorizontal: sidePad,
+          paddingHorizontal: Platform.OS !== "ios" ? sidePad : 0,
           gap: CARD_GAP,
-          alignItems: "stretch",
         }}
         onMomentumScrollEnd={handleScroll}
         onScrollEndDrag={handleScroll}
         scrollEventThrottle={16}
-      >
-        {plans.map((plan, idx) => (
+        getItemLayout={(_data, index) => ({
+          length: itemStep,
+          offset: Platform.OS !== "ios" ? sidePad + index * itemStep : index * itemStep,
+          index,
+        })}
+        renderItem={({ item: plan, index: idx }) => (
           <PlanSlide
             key={plan.planKey}
             plan={plan}
@@ -535,8 +555,8 @@ export function PlanCarousel({
             onNext={() => scrollTo(activeIdx + 1)}
             onCompare={() => setShowCompare(true)}
           />
-        ))}
-      </ScrollView>
+        )}
+      />
 
       {/* Compare Modal */}
       <Modal
