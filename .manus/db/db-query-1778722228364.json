@@ -1,0 +1,20 @@
+{
+  "query": "SELECT businessOwnerId, COUNT(*) as count, AVG(rating) as avgRating FROM reviews GROUP BY businessOwnerId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT businessOwnerId, COUNT(*) as count, AVG(rating) as avgRating FROM reviews GROUP BY businessOwnerId;",
+  "rows": [
+    {
+      "businessOwnerId": "1650001",
+      "count": "1",
+      "avgRating": "5.0000"
+    },
+    {
+      "businessOwnerId": "1950002",
+      "count": "1",
+      "avgRating": "5.0000"
+    }
+  ],
+  "messages": [],
+  "stdout": "businessOwnerId\tcount\tavgRating\n1650001\t1\t5.0000\n1950002\t1\t5.0000\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

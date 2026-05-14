@@ -1,0 +1,20 @@
+{
+  "query": "SELECT businessOwnerId, name, address, city, state, zipCode, lat, lng FROM locations WHERE businessOwnerId = 1950002;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT businessOwnerId, name, address, city, state, zipCode, lat, lng FROM locations WHERE businessOwnerId = 1950002;",
+  "rows": [
+    {
+      "businessOwnerId": "1950002",
+      "name": "Main St",
+      "address": "100 Churchill Rd",
+      "city": "Pittsburgh",
+      "state": "PA",
+      "zipCode": "15235",
+      "lat": "40.4416617",
+      "lng": "-80.0333963"
+    }
+  ],
+  "messages": [],
+  "stdout": "businessOwnerId\tname\taddress\tcity\tstate\tzipCode\tlat\tlng\n1950002\tMain St\t100 Churchill Rd\tPittsburgh\tPA\t15235\t40.4416617\t-80.0333963\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}

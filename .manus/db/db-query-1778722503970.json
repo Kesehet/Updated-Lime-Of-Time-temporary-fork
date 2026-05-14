@@ -1,0 +1,13 @@
+{
+  "query": "\n-- Check if 1920001 is also orphaned (no business_owners row)\nSELECT COUNT(*) as bo_count FROM business_owners WHERE id = 1920001;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Check if 1920001 is also orphaned (no business_owners row)\nSELECT COUNT(*) as bo_count FROM business_owners WHERE id = 1920001;\n",
+  "rows": [
+    {
+      "bo_count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "bo_count\n0\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}

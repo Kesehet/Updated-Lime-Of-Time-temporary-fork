@@ -1,0 +1,22 @@
+{
+  "query": "SELECT id, openId, role, createdAt FROM users ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute SELECT id, openId, role, createdAt FROM users ORDER BY id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "1140108",
+      "openId": "phone:4124822976",
+      "role": "user",
+      "createdAt": "2026-05-14 00:10:22"
+    },
+    {
+      "id": "630021",
+      "openId": "phone:+14124822976",
+      "role": "user",
+      "createdAt": "2026-05-11 22:32:39"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\trole\tcreatedAt\n1140108\tphone:4124822976\tuser\t2026-05-14 00:10:22\n630021\tphone:+14124822976\tuser\t2026-05-11 22:32:39\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

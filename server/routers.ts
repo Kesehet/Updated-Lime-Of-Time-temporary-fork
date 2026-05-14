@@ -65,6 +65,22 @@ const businessRouter = router({
     .mutation(async ({ input }) => {
       // Always store phone in E.164 format (+1XXXXXXXXXX) for consistent lookup
       const normalizedPhone = db.normalizePhone(input.phone);
+      // Guard against duplicate creation: if a business owner with this phone already exists, return it
+      const existing = await db.getBusinessOwnerByPhone(normalizedPhone);
+      if (existing) {
+        // Still ensure userId is linked in case it wasn't set before
+        const openId = `phone:${normalizedPhone}`;
+        try {
+          await db.upsertUser({ openId, name: null, loginMethod: "otp", lastSignedIn: new Date() });
+          if (!existing.userId) {
+            const userRecord = await db.getUserByOpenId(openId);
+            if (userRecord) await db.updateBusinessOwner(existing.id, { userId: userRecord.id });
+          }
+        } catch (err) {
+          console.warn("[create] Failed to link userId on existing owner:", err);
+        }
+        return existing;
+      }
       const id = await db.createBusinessOwner({
         phone: normalizedPhone,
         businessName: input.businessName,

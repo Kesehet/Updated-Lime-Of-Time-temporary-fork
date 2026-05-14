@@ -1,0 +1,55 @@
+{
+  "query": "\nSELECT 'locations' as tbl, businessOwnerId, COUNT(*) as cnt FROM locations GROUP BY businessOwnerId\nUNION ALL\nSELECT 'clients', businessOwnerId, COUNT(*) FROM clients GROUP BY businessOwnerId\nUNION ALL\nSELECT 'appointments', businessOwnerId, COUNT(*) FROM appointments GROUP BY businessOwnerId\nORDER BY tbl, businessOwnerId;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \nSELECT 'locations' as tbl, businessOwnerId, COUNT(*) as cnt FROM locations GROUP BY businessOwnerId\nUNION ALL\nSELECT 'clients', businessOwnerId, COUNT(*) FROM clients GROUP BY businessOwnerId\nUNION ALL\nSELECT 'appointments', businessOwnerId, COUNT(*) FROM appointments GROUP BY businessOwnerId\nORDER BY tbl, businessOwnerId;\n",
+  "rows": [
+    {
+      "tbl": "appointments",
+      "businessOwnerId": "1650001",
+      "cnt": "468"
+    },
+    {
+      "tbl": "appointments",
+      "businessOwnerId": "1920001",
+      "cnt": "1"
+    },
+    {
+      "tbl": "appointments",
+      "businessOwnerId": "1950002",
+      "cnt": "2"
+    },
+    {
+      "tbl": "clients",
+      "businessOwnerId": "1650001",
+      "cnt": "49"
+    },
+    {
+      "tbl": "clients",
+      "businessOwnerId": "1920001",
+      "cnt": "1"
+    },
+    {
+      "tbl": "clients",
+      "businessOwnerId": "1950002",
+      "cnt": "1"
+    },
+    {
+      "tbl": "locations",
+      "businessOwnerId": "1650001",
+      "cnt": "1"
+    },
+    {
+      "tbl": "locations",
+      "businessOwnerId": "1920001",
+      "cnt": "1"
+    },
+    {
+      "tbl": "locations",
+      "businessOwnerId": "1950002",
+      "cnt": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\tbusinessOwnerId\tcnt\nappointments\t1650001\t468\nappointments\t1920001\t1\nappointments\t1950002\t2\nclients\t1650001\t49\nclients\t1920001\t1\nclients\t1950002\t1\nlocations\t1650001\t1\nlocations\t1920001\t1\nlocations\t1950002\t1\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

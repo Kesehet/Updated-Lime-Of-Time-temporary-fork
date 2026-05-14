@@ -1,0 +1,34 @@
+{
+  "query": "\n-- Delete all orphaned data for businessOwnerId 1920001 (no business_owners row)\nDELETE FROM reviews WHERE businessOwnerId = 1920001;\nDELETE FROM appointments WHERE businessOwnerId = 1920001;\nDELETE FROM clients WHERE businessOwnerId = 1920001;\nDELETE FROM locations WHERE businessOwnerId = 1920001;\n-- Verify clean state\nSELECT 'business_owners' as tbl, COUNT(*) as cnt FROM business_owners\nUNION ALL SELECT 'users', COUNT(*) FROM users\nUNION ALL SELECT 'locations', COUNT(*) FROM locations\nUNION ALL SELECT 'clients', COUNT(*) FROM clients\nUNION ALL SELECT 'appointments', COUNT(*) FROM appointments\nUNION ALL SELECT 'reviews', COUNT(*) FROM reviews;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Delete all orphaned data for businessOwnerId 1920001 (no business_owners row)\nDELETE FROM reviews WHERE businessOwnerId = 1920001;\nDELETE FROM appointments WHERE businessOwnerId = 1920001;\nDELETE FROM clients WHERE businessOwnerId = 1920001;\nDELETE FROM locations WHERE businessOwnerId = 1920001;\n-- Verify clean state\nSELECT 'business_owners' as tbl, COUNT(*) as cnt FROM business_owners\nUNION ALL SELECT 'users', COUNT(*) FROM users\nUNION ALL SELECT 'locations', COUNT(*) FROM locations\nUNION ALL SELECT 'clients', COUNT(*) FROM clients\nUNION ALL SELECT 'appointments', COUNT(*) FROM appointments\nUNION ALL SELECT 'reviews', COUNT(*) FROM reviews;\n",
+  "rows": [
+    {
+      "tbl": "users",
+      "cnt": "1"
+    },
+    {
+      "tbl": "locations",
+      "cnt": "1"
+    },
+    {
+      "tbl": "business_owners",
+      "cnt": "1"
+    },
+    {
+      "tbl": "clients",
+      "cnt": "49"
+    },
+    {
+      "tbl": "appointments",
+      "cnt": "468"
+    },
+    {
+      "tbl": "reviews",
+      "cnt": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\tcnt\nusers\t1\nlocations\t1\nbusiness_owners\t1\nclients\t49\nappointments\t468\nreviews\t1\n",
+  "stderr": "",
+  "execution_time_ms": 301
+}

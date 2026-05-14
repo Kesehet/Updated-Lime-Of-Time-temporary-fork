@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Delete all orphaned Lime Time data (businessOwnerId = 1950002)\nDELETE FROM reviews WHERE businessOwnerId = 1950002;\nDELETE FROM appointments WHERE businessOwnerId = 1950002;\nDELETE FROM clients WHERE businessOwnerId = 1950002;\nDELETE FROM locations WHERE businessOwnerId = 1950002;\n-- Delete ghost user 1140108 (duplicate of 630021, same phone without +1)\nDELETE FROM users WHERE id = 1140108;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3AafxdxuLDwTXdt.root --database Dw4mhfnuurFcniLsqjLpWN --execute \n-- Delete all orphaned Lime Time data (businessOwnerId = 1950002)\nDELETE FROM reviews WHERE businessOwnerId = 1950002;\nDELETE FROM appointments WHERE businessOwnerId = 1950002;\nDELETE FROM clients WHERE businessOwnerId = 1950002;\nDELETE FROM locations WHERE businessOwnerId = 1950002;\n-- Delete ghost user 1140108 (duplicate of 630021, same phone without +1)\nDELETE FROM users WHERE id = 1140108;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 305
+}

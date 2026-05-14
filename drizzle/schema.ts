@@ -33,7 +33,7 @@ export const businessOwners = mysqlTable("business_owners", {
   /** Links to users table for auth - nullable for phone-only signup */
   userId: int("userId"),
   /** Phone number used during onboarding (unique identifier for non-OAuth) */
-  phone: varchar("phone", { length: 20 }).notNull(),
+  phone: varchar("phone", { length: 20 }).notNull().unique(),
   /** Business name */
   businessName: varchar("businessName", { length: 255 }).notNull(),
   /** Owner's personal name */
