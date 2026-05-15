@@ -2592,11 +2592,27 @@ export function registerPublicRoutes(app: Express) {
   });
 
   // GET /api/public/stripe-config
-  // Returns the platform Stripe publishable key for the native payment sheet
+  // Returns the platform Stripe publishable key for the native payment sheet.
+  // IMPORTANT: Must use the same key-selection logic as getPublishableKey() in stripeConnectRoutes.ts
+  // so the StripeProvider and the create-payment-sheet endpoint always agree on which key to use.
   app.get("/api/public/stripe-config", async (_req: Request, res: Response) => {
     try {
-      const publishableKey = await getPlatformConfig("STRIPE_PUBLISHABLE_KEY");
-      res.json({ publishableKey: publishableKey || "" });
+      // Priority order (mirrors getPublishableKey in stripeConnectRoutes.ts):
+      // 1. STRIPE_CONNECT_PUBLISHABLE_KEY (dedicated Connect key)
+      // 2. STRIPE_PUBLISHABLE_KEY (generic key)
+      // 3. STRIPE_TEST_PUBLISHABLE_KEY (if test mode is on)
+      // 4. STRIPE_LIVE_PUBLISHABLE_KEY
+      const connectKey = await getPlatformConfig("STRIPE_CONNECT_PUBLISHABLE_KEY").catch(() => "");
+      if (connectKey) { res.json({ publishableKey: connectKey }); return; }
+      const genericKey = await getPlatformConfig("STRIPE_PUBLISHABLE_KEY").catch(() => "");
+      if (genericKey) { res.json({ publishableKey: genericKey }); return; }
+      const testMode = await getPlatformConfig("STRIPE_TEST_MODE").catch(() => "");
+      if (testMode === "true") {
+        const testKey = await getPlatformConfig("STRIPE_TEST_PUBLISHABLE_KEY").catch(() => "");
+        if (testKey) { res.json({ publishableKey: testKey }); return; }
+      }
+      const liveKey = await getPlatformConfig("STRIPE_LIVE_PUBLISHABLE_KEY").catch(() => "");
+      res.json({ publishableKey: liveKey || "" });
     } catch {
       res.json({ publishableKey: "" });
     }

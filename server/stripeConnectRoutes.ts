@@ -1591,9 +1591,34 @@ export function registerStripeConnectRoutes(app: Express): void {
         if (src?.description) description = src.description;
         if (src?.metadata?.feeType) description = `${src.metadata.feeType.replace(/_/g, " ")} fee`;
 
-        // Pull metadata from the source (PaymentIntent or Refund → original PaymentIntent)
-        const meta = src?.metadata ?? {};
-        const appointmentLocalId: string | null = meta.appointmentLocalId ?? null;
+        // Pull metadata from the source.
+        // For "refund" type: src is a Refund object. Its metadata is usually empty.
+        // We need to follow: Refund → Charge → PaymentIntent → metadata.
+        let meta = src?.metadata ?? {};
+        let appointmentLocalId: string | null = meta.appointmentLocalId ?? null;
+
+        if (tx.type === "refund" && !appointmentLocalId) {
+          try {
+            // src.charge is the charge ID that was refunded
+            const chargeId = src?.charge ?? src?.payment_intent ?? null;
+            if (chargeId) {
+              // Retrieve the charge (expanded with payment_intent) to get PI metadata
+              const charge = await stripe.charges.retrieve(
+                chargeId,
+                { expand: ["payment_intent"] },
+                { stripeAccount: accountId }
+              );
+              const pi = charge.payment_intent as any;
+              const piMeta = pi?.metadata ?? charge.metadata ?? {};
+              if (piMeta.appointmentLocalId) {
+                meta = piMeta;
+                appointmentLocalId = piMeta.appointmentLocalId;
+              }
+            }
+          } catch {
+            // Non-blocking — refund may not have a linked charge
+          }
+        }
 
         // Base fields from Stripe metadata (may be populated from create-payment-sheet)
         let clientName: string | null = meta.clientName ?? meta.client_name ?? null;

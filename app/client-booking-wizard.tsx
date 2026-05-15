@@ -44,6 +44,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as WebBrowser from "expo-web-browser";
 import * as Clipboard from "expo-clipboard";
 import { useStripe } from "@/lib/use-stripe";
+import { useStripeKey } from "@/lib/stripe-key-context";
 
 const LIME_GREEN = "#4A7C59";
 // ─── Portal palette (same as business detail) ────────────────────────────────
@@ -238,6 +239,7 @@ export default function ClientBookingWizardScreen() {
   // Ref to hold card last4 after Stripe payment sheet succeeds (passed to confirmation screen)
   const cardLast4Ref = useRef<{ last4: string; brand: string } | null>(null);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const { setStripePublishableKey } = useStripeKey();
   // Build dynamic payment methods list — Card only shown when Stripe is connected
   const PAYMENT_METHODS = useMemo(() => {
     // Only include manual payment methods if the business has configured them
@@ -1001,6 +1003,8 @@ export default function ClientBookingWizardScreen() {
             });
             if (sheetRes.ok) {
               const { publishableKey, paymentIntent, accountId } = await sheetRes.json();
+              // Sync StripeProvider key with the one used to create the PaymentIntent
+              if (publishableKey) setStripePublishableKey(publishableKey);
               const { error: initError } = await initPaymentSheet({
                 merchantDisplayName: businessDisplayName || effectiveSlug,
                 paymentIntentClientSecret: paymentIntent,

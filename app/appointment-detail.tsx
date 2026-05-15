@@ -15,6 +15,7 @@ import { FuturisticBackground } from "@/components/futuristic-background";
 import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { useStripe } from "@/lib/use-stripe";
+import { useStripeKey } from "@/lib/stripe-key-context";
 
 import {
   minutesToTime,
@@ -142,6 +143,7 @@ export default function AppointmentDetailScreen() {
   const [payingOnBehalf, setPayingOnBehalf] = useState(false);
   const [showPayOnBehalfSuccess, setShowPayOnBehalfSuccess] = useState(false);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const { setStripePublishableKey } = useStripeKey();
   // Package sessions accordion
   const [showSessionsAccordion, setShowSessionsAccordion] = useState(false);
 
@@ -492,6 +494,9 @@ export default function AppointmentDetailScreen() {
         throw new Error(err?.error ?? 'Could not create payment session.');
       }
       const { publishableKey, paymentIntent, accountId } = await sheetRes.json();
+      // Update the StripeProvider key to match the one used to create the PaymentIntent.
+      // This prevents the "client_secret does not match" error when test/live keys differ.
+      if (publishableKey) setStripePublishableKey(publishableKey);
       const { error: initError } = await initPaymentSheet({
         merchantDisplayName: biz.businessName || 'Business',
         paymentIntentClientSecret: paymentIntent,
