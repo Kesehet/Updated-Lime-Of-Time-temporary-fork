@@ -866,6 +866,15 @@ export default function ClientsScreen() {
                           </Text>
                           {apptCount > 0 && <Text style={{ fontSize: fs.xs, color: colors.muted, marginLeft: 8 }}>{apptCount} appt{apptCount > 1 ? "s" : ""}</Text>}
                         </View>
+                        {/* Mobile service indicator — shown when client has a saved address */}
+                        {item.savedAddress ? (
+                          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 3, gap: 4 }}>
+                            <Text style={{ fontSize: 11 }}>📍</Text>
+                            <Text style={{ fontSize: 10, color: colors.primary, fontWeight: "600" }} numberOfLines={1}>
+                              {item.savedAddress}
+                            </Text>
+                          </View>
+                        ) : null}
                         {/* Show relevant appointment info for the active filter */}
                         {relevantAppt && (
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
