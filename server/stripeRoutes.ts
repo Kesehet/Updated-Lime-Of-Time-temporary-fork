@@ -311,8 +311,16 @@ export function registerStripeRoutes(app: Express): void {
         line_items: [{ price: price.id, quantity: 1 }],
         ...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
         ...(customSubmitText ? { custom_text: { submit: { message: customSubmitText } } } : {}),
-        success_url: successUrl || `${req.headers.origin}/api/stripe/success?session_id={CHECKOUT_SESSION_ID}&boid=${businessOwnerId}`,
-        cancel_url: cancelUrl || `${req.headers.origin}/api/stripe/cancel?boid=${businessOwnerId}`,
+        success_url: successUrl || (() => {
+          const origin = req.headers.origin || (req.headers['x-forwarded-proto'] ? `${req.headers['x-forwarded-proto']}://${req.headers.host}` : `https://${req.headers.host}`) || 'https://lime-of-time.com';
+          const base = origin.startsWith('http') ? origin : `https://${origin}`;
+          return `${base}/api/stripe/success?session_id={CHECKOUT_SESSION_ID}&boid=${businessOwnerId}`;
+        })(),
+        cancel_url: cancelUrl || (() => {
+          const origin = req.headers.origin || (req.headers['x-forwarded-proto'] ? `${req.headers['x-forwarded-proto']}://${req.headers.host}` : `https://${req.headers.host}`) || 'https://lime-of-time.com';
+          const base = origin.startsWith('http') ? origin : `https://${origin}`;
+          return `${base}/api/stripe/cancel?boid=${businessOwnerId}`;
+        })(),
         metadata: {
           businessOwnerId: String(businessOwnerId),
           planKey,
