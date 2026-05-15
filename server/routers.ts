@@ -155,6 +155,8 @@ const businessRouter = router({
         // Client portal visibility
         clientPortalVisible: z.boolean().optional(),
         businessCategory: z.string().optional().nullable(),
+        // Business timezone (IANA format, e.g. "America/New_York")
+        timezone: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {

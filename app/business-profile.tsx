@@ -5,6 +5,7 @@ import {
   TextInput,
   Pressable,
   ScrollView,
+  Modal,
   StyleSheet,
   Alert,
   Linking,
@@ -25,6 +26,26 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatPhoneNumber, stripPhoneFormat } from "@/lib/types";
 import { FuturisticBackground } from "@/components/futuristic-background";
 
+
+// ─── Timezone options ────────────────────────────────────────────────────────
+const TIMEZONE_OPTIONS = [
+  { value: "America/New_York",    label: "Eastern Time (ET) — New York, Miami" },
+  { value: "America/Chicago",     label: "Central Time (CT) — Chicago, Dallas" },
+  { value: "America/Denver",      label: "Mountain Time (MT) — Denver, Salt Lake City" },
+  { value: "America/Phoenix",     label: "Mountain Time - AZ (no DST) — Phoenix" },
+  { value: "America/Los_Angeles", label: "Pacific Time (PT) — Los Angeles, Seattle" },
+  { value: "America/Anchorage",   label: "Alaska Time (AKT) — Anchorage" },
+  { value: "Pacific/Honolulu",    label: "Hawaii Time (HT) — Honolulu" },
+  { value: "America/Puerto_Rico", label: "Atlantic Time (AT) — Puerto Rico" },
+  { value: "Europe/London",       label: "GMT / London" },
+  { value: "Europe/Paris",        label: "Central European Time (CET) — Paris, Berlin" },
+  { value: "Europe/Moscow",       label: "Moscow Time (MSK)" },
+  { value: "Asia/Dubai",          label: "Gulf Standard Time (GST) — Dubai" },
+  { value: "Asia/Kolkata",        label: "India Standard Time (IST)" },
+  { value: "Asia/Singapore",      label: "Singapore Time (SGT)" },
+  { value: "Asia/Tokyo",          label: "Japan Standard Time (JST)" },
+  { value: "Australia/Sydney",    label: "Australian Eastern Time (AET) — Sydney" },
+];
 
 // ─── Field wrapper ────────────────────────────────────────────────────────────
 // IMPORTANT: defined OUTSIDE the screen component so its identity is stable
@@ -74,6 +95,8 @@ export default function BusinessProfileScreen() {
   const [email, setEmail] = useState(profile.email ?? "");
   const [website, setWebsite] = useState(profile.website ?? "");
   const [description, setDescription] = useState(profile.description ?? "");
+  const [timezone, setTimezone] = useState<string>((state.settings as any).timezone ?? "America/New_York");
+  const [showTimezonePicker, setShowTimezonePicker] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [logoUri, setLogoUri] = useState<string>(profile.businessLogoUri ?? "");
@@ -174,6 +197,7 @@ export default function BusinessProfileScreen() {
         // Write to top-level so portal selector, settings header, and lock screen
         // all read the same value via state.settings.businessLogoUri
         businessLogoUri: logoUri.trim() || "",
+        timezone,
         profile: {
           ...profile,
           ownerName: ownerName.trim(),
@@ -184,12 +208,12 @@ export default function BusinessProfileScreen() {
           businessLogoUri: logoUri.trim() || undefined,
           coverPhotoUri: coverPhotoUri.trim() || undefined,
         },
-      },
+      } as any,
     };
     dispatch(settingsAction);
     syncToDb(settingsAction);
     router.back();
-  }, [businessName, ownerName, phone, email, website, description, profile, dispatch, syncToDb, router, validate]);
+  }, [businessName, ownerName, phone, email, website, description, timezone, profile, dispatch, syncToDb, router, validate]);
 
   const openWebsite = useCallback(() => {
     const url = website.startsWith("http") ? website : `https://${website}`;
@@ -389,6 +413,73 @@ export default function BusinessProfileScreen() {
                 )}
               </View>
             </Field>
+
+            {/* Timezone */}
+            <Field
+              label="Business Timezone"
+              errorColor={colors.error}
+              foregroundColor={colors.foreground}
+            >
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8, lineHeight: 15 }}>
+                Used to display appointment times correctly to clients in other time zones.
+              </Text>
+              <Pressable
+                onPress={() => setShowTimezonePicker(true)}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingHorizontal: 14,
+                  paddingVertical: 12,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.background,
+                  opacity: pressed ? 0.7 : 1,
+                })}
+              >
+                <Text style={{ color: colors.foreground, fontSize: fs.sm }}>
+                  {TIMEZONE_OPTIONS.find((t) => t.value === timezone)?.label ?? timezone}
+                </Text>
+                <IconSymbol name="chevron.right" size={16} color={colors.muted} />
+              </Pressable>
+            </Field>
+
+            {/* Timezone picker modal */}
+            <Modal visible={showTimezonePicker} transparent animationType="slide" onRequestClose={() => setShowTimezonePicker(false)}>
+              <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }} onPress={() => setShowTimezonePicker(false)} />
+              <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 32, maxHeight: "70%" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                  <Text style={{ fontSize: fs.md, fontWeight: "700", color: colors.foreground }}>Select Timezone</Text>
+                  <Pressable onPress={() => setShowTimezonePicker(false)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                    <IconSymbol name="xmark" size={20} color={colors.muted} />
+                  </Pressable>
+                </View>
+                <ScrollView>
+                  {TIMEZONE_OPTIONS.map((opt) => (
+                    <Pressable
+                      key={opt.value}
+                      onPress={() => { setTimezone(opt.value); setShowTimezonePicker(false); }}
+                      style={({ pressed }) => ({
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        paddingHorizontal: 20,
+                        paddingVertical: 14,
+                        borderBottomWidth: 1,
+                        borderBottomColor: colors.border,
+                        backgroundColor: pressed ? colors.border : "transparent",
+                      })}
+                    >
+                      <Text style={{ color: colors.foreground, fontSize: fs.sm }}>{opt.label}</Text>
+                      {timezone === opt.value && (
+                        <IconSymbol name="checkmark" size={16} color={colors.primary} />
+                      )}
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            </Modal>
 
             {/* Business Logo */}
             <Field

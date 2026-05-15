@@ -64,6 +64,30 @@ function formatTime12(t: string): string {
   return `${h12}:${m} ${ampm}`;
 }
 
+/** Convert IANA timezone to a short readable label, e.g. "America/New_York" → "Eastern Time (ET)" */
+function formatTimezoneLabel(tz: string): string {
+  const MAP: Record<string, string> = {
+    "America/New_York":    "Eastern Time (ET)",
+    "America/Chicago":     "Central Time (CT)",
+    "America/Denver":      "Mountain Time (MT)",
+    "America/Phoenix":     "Mountain Time - AZ (MT)",
+    "America/Los_Angeles": "Pacific Time (PT)",
+    "America/Anchorage":   "Alaska Time (AKT)",
+    "Pacific/Honolulu":    "Hawaii Time (HT)",
+    "America/Puerto_Rico": "Atlantic Time (AT)",
+    "Europe/London":       "GMT / London",
+    "Europe/Paris":        "Central European Time (CET)",
+    "Europe/Berlin":       "Central European Time (CET)",
+    "Europe/Moscow":       "Moscow Time (MSK)",
+    "Asia/Dubai":          "Gulf Standard Time (GST)",
+    "Asia/Kolkata":        "India Standard Time (IST)",
+    "Asia/Singapore":      "Singapore Time (SGT)",
+    "Asia/Tokyo":          "Japan Standard Time (JST)",
+    "Australia/Sydney":    "Australian Eastern Time (AET)",
+  };
+  return MAP[tz] ?? tz.replace("_", " ").split("/").pop() ?? tz;
+}
+
 interface PublicService {
   localId: string;
   name: string;
@@ -201,6 +225,7 @@ export default function ClientBookingWizardScreen() {
   const [giftError, setGiftError] = useState("");
   const [giftLoading, setGiftLoading] = useState(false);
   const [businessDisplayName, setBusinessDisplayName] = useState<string>("");
+  const [bizTimezone, setBizTimezone] = useState<string>("America/New_York");
   const [stripeConnectEnabled, setStripeConnectEnabled] = useState(false);
   const [businessOwnerId, setBusinessOwnerId] = useState<number | null>(null);
   // Business payment handles — loaded from bizData, shown on Payment step
@@ -383,6 +408,7 @@ export default function ClientBookingWizardScreen() {
         setWizardProducts(Array.isArray(prodData) ? prodData : []);
         setDiscounts(Array.isArray(discData) ? discData : []);
         if (bizData?.businessName) setBusinessDisplayName(bizData.businessName);
+        if (bizData?.timezone) setBizTimezone(bizData.timezone);
         if (bizData?.stripeConnectEnabled) setStripeConnectEnabled(true);
         if (bizData?.id) setBusinessOwnerId(bizData.id);
         if (bizData?.zelleHandle) setBizZelleHandle(bizData.zelleHandle);
@@ -2562,6 +2588,12 @@ export default function ClientBookingWizardScreen() {
                 )}
                 <Row label="Date" value={formatDateLabel(selectedDate)} />
                 <Row label="Time" value={formatTime12(selectedSlot.time)} />
+                {/* Timezone notice — shown below the time so clients in other timezones know the appointment time */}
+                <View style={{ paddingVertical: 6, paddingHorizontal: 2, flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Text style={{ fontSize: 11, color: TEXT_MUTED }}>
+                    🌐 All times in {formatTimezoneLabel(bizTimezone)}
+                  </Text>
+                </View>
                 {selectedLocation && (
                   <Row label="Location" value={selectedLocation.name} />
                 )}

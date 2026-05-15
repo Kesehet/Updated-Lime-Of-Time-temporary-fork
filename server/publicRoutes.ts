@@ -297,6 +297,7 @@ export function registerPublicRoutes(app: Express) {
         zelleHandle: (owner as any).zelleHandle ?? "",
         cashAppHandle: (owner as any).cashAppHandle ?? "",
         venmoHandle: (owner as any).venmoHandle ?? "",
+        timezone: (owner as any).timezone ?? "America/New_York",
       });
     } catch (err) {
       console.error("[Public API] Error fetching business:", err);

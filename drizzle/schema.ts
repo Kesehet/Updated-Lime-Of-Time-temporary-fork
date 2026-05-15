@@ -153,6 +153,8 @@ export const businessOwners = mysqlTable("business_owners", {
   appStoreUrl: varchar("appStoreUrl", { length: 500 }),
   /** Google Play Store URL for the App Share card */
   playStoreUrl: varchar("playStoreUrl", { length: 500 }),
+  /** IANA timezone identifier for the business (e.g. "America/New_York"). Default: "America/New_York" */
+  timezone: varchar("timezone", { length: 64 }).default("America/New_York").notNull(),
   /** When the owner requested account deletion (null = not requested) */
   pendingDeletionAt: timestamp("pendingDeletionAt"),
   /** Scheduled deletion date (30 days after request) */

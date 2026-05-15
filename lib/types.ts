@@ -542,6 +542,8 @@ export interface BusinessSettings {
   clientPortalVisible?: boolean;
   /** Business category for client portal discovery (e.g. "Hair Salon", "Barbershop") */
   businessCategory?: string | null;
+  /** IANA timezone identifier for the business (e.g. "America/New_York", "America/Chicago"). Default: "America/New_York" */
+  timezone?: string;
 }
 
 /** A global reminder template that can be sent to clients for any appointment */
