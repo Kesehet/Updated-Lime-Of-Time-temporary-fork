@@ -101,7 +101,7 @@ async function getPlanPrice(planKey: string): Promise<{
 async function getStripeAsync(): Promise<Stripe | null> {
   const key = await getStripeSecretKey();
   if (!key) return null;
-  return new Stripe(key, { apiVersion: "2026-03-25.dahlia" as any });
+  return new Stripe(key, { apiVersion: "2024-06-20" as any });
 }
 
 export function registerStripeRoutes(app: Express): void {
