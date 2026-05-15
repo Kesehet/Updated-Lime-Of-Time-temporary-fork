@@ -1196,6 +1196,14 @@ export default function PublicBookingScreen() {
             return slots.length > 0;
           };
 
+          // Determine which staff members are out-of-range for the already-entered address
+          // routeDistanceMiles is set by the OSRM useEffect on the address step
+          const isStaffOutOfRange = (member: typeof state.staff[0]): boolean => {
+            if (!routeDistanceMiles) return false;
+            const mDist = (member as any).maxTravelDistance ?? (selectedService as any)?.maxTravelDistance;
+            return mDist != null && routeDistanceMiles > mDist;
+          };
+
           return (
             <View>
               <Pressable onPress={() => setStep("service")} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, marginBottom: 12 }]}>
@@ -1217,29 +1225,44 @@ export default function PublicBookingScreen() {
               </Pressable>
               {availableStaff.map((member) => {
                 const isAvailable = isStaffAvailableOnDate(member.id);
+                const outOfRange = isStaffOutOfRange(member);
                 return (
-                  <Pressable
-                    key={member.id}
-                    onPress={() => { setSelectedStaffId(member.id); setStep(isMobileService ? "address" : "datetime"); }}
-                    style={({ pressed }) => [styles.serviceOption, { backgroundColor: selectedStaffId === member.id ? member.color + "15" : colors.surface, borderColor: selectedStaffId === member.id ? member.color : colors.border, opacity: pressed ? 0.7 : 1 }]}
-                  >
-                    <View style={[styles.colorDot, { backgroundColor: member.color }]} />
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                        <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.foreground }}>{member.name}</Text>
-                        {/* Availability dot: green = has open slots on selected date, grey = fully booked / unavailable */}
-                        <View style={{
-                          width: 8, height: 8, borderRadius: 4,
-                          backgroundColor: isAvailable ? "#22C55E" : "#9CA3AF",
-                        }} />
-                        <Text style={{ fontSize: fs.xs, color: isAvailable ? "#22C55E" : "#9CA3AF", fontWeight: "500" }}>
-                          {isAvailable ? "Available" : "Unavailable"}
-                        </Text>
+                  <View key={member.id}>
+                    <Pressable
+                      onPress={() => {
+                        if (outOfRange) return; // block selection for out-of-range staff
+                        setSelectedStaffId(member.id);
+                        setStep(isMobileService ? "address" : "datetime");
+                      }}
+                      style={({ pressed }) => [styles.serviceOption, {
+                        backgroundColor: outOfRange ? colors.surface : (selectedStaffId === member.id ? member.color + "15" : colors.surface),
+                        borderColor: outOfRange ? colors.border : (selectedStaffId === member.id ? member.color : colors.border),
+                        opacity: outOfRange ? 0.45 : (pressed ? 0.7 : 1),
+                      }]}
+                    >
+                      <View style={[styles.colorDot, { backgroundColor: outOfRange ? colors.muted : member.color }]} />
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                          <Text style={{ fontSize: fs.sm, fontWeight: "600", color: outOfRange ? colors.muted : colors.foreground }}>{member.name}</Text>
+                          {!outOfRange && (
+                            <>
+                              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: isAvailable ? "#22C55E" : "#9CA3AF" }} />
+                              <Text style={{ fontSize: fs.xs, color: isAvailable ? "#22C55E" : "#9CA3AF", fontWeight: "500" }}>
+                                {isAvailable ? "Available" : "Unavailable"}
+                              </Text>
+                            </>
+                          )}
+                        </View>
+                        {member.role && !outOfRange ? <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{member.role}</Text> : null}
+                        {outOfRange && (
+                          <Text style={{ fontSize: fs.xs, color: colors.error, marginTop: 2, fontWeight: '500' }}>
+                            🚧 Outside service area ({routeDistanceMiles!.toFixed(1)} mi — max {(member as any).maxTravelDistance ?? (selectedService as any)?.maxTravelDistance} mi)
+                          </Text>
+                        )}
                       </View>
-                      {member.role ? <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{member.role}</Text> : null}
-                    </View>
-                    {selectedStaffId === member.id && <IconSymbol name="checkmark.circle.fill" size={20} color={member.color} />}
-                  </Pressable>
+                      {!outOfRange && selectedStaffId === member.id && <IconSymbol name="checkmark.circle.fill" size={20} color={member.color} />}
+                    </Pressable>
+                  </View>
                 );
               })}
               {availableStaff.length === 0 && (

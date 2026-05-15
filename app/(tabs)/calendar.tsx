@@ -93,11 +93,13 @@ type TimelineViewProps = {
   getServiceById: (id: string) => { color?: string; name?: string; duration?: number } | undefined;
   getClientById: (id: string) => { name?: string } | undefined;
   onApptPress: (id: string) => void;
+  /** When route optimization is active, maps appointment ID to its 1-based sequence number */
+  routeOrderMap?: Map<string, number>;
 };
 
 function TimelineView({
   dateStr, appts, tintColor, liveNow, todayStr, timelineHours, effectiveHours, available,
-  colors, getServiceById, getClientById, onApptPress,
+  colors, getServiceById, getClientById, onApptPress, routeOrderMap,
 }: TimelineViewProps) {
   const { fs } = useResponsive();
   const [containerWidth, setContainerWidth] = React.useState(0);
@@ -229,9 +231,22 @@ function TimelineView({
               },
             ])}
           >
-            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground }} numberOfLines={1}>
-              {formatTime(appt.time)} {svcName} ({appt.duration} min)
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 }}>
+              {routeOrderMap?.has(appt.id) && (
+                <View style={{
+                  width: 18, height: 18, borderRadius: 9,
+                  backgroundColor: color, alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#fff' }}>
+                    {routeOrderMap.get(appt.id)}
+                  </Text>
+                </View>
+              )}
+              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground, flexShrink: 1 }} numberOfLines={1}>
+                {formatTime(appt.time)} {svcName} ({appt.duration} min)
+              </Text>
+            </View>
             {height > 36 && (
               <Text style={{ fontSize: 10, color: colors.muted }} numberOfLines={1}>{client?.name}</Text>
             )}
@@ -365,8 +380,10 @@ export default function CalendarScreen() {
   // null = chronological order; string[] = optimized appointment IDs in drive order
   const [routeOptimizedOrder, setRouteOptimizedOrder] = useState<string[] | null>(null);
   const [routeOptimizing, setRouteOptimizing] = useState(false);
+  // Summary card: total drive time (minutes) and total distance (miles) for the optimized route
+  const [routeSummary, setRouteSummary] = useState<{ totalMins: number; totalMiles: number } | null>(null);
   // Reset optimized order when the selected date changes
-  useEffect(() => { setRouteOptimizedOrder(null); }, [selectedDate]);
+  useEffect(() => { setRouteOptimizedOrder(null); setRouteSummary(null); }, [selectedDate]);
 
   const handleReorderByRoute = useCallback(async (appts: { id: string; clientAddress?: string | null }[]) => {
     const mobileAppts = appts.filter((a) => a.clientAddress);
@@ -413,6 +430,14 @@ export default function CalendarScreen() {
         // Append any appointments without addresses at the end (in their original time order)
         const nonMobileIds = appts.filter((a) => !a.clientAddress).map((a) => a.id);
         setRouteOptimizedOrder([...orderedIds, ...nonMobileIds]);
+        // Extract total trip duration and distance from the first trip in the response
+        if (data.trips?.[0]) {
+          const trip = data.trips[0];
+          setRouteSummary({
+            totalMins: Math.round((trip.duration as number) / 60),
+            totalMiles: (trip.distance as number) / 1609.344,
+          });
+        }
       }
     } catch { /* ignore */ }
     setRouteOptimizing(false);
@@ -1528,6 +1553,22 @@ export default function CalendarScreen() {
 
   // ─── Timeline Render ──────────────────────────────────────────────────
   // Delegates to the TimelineView component defined above CalendarScreen.
+  // Build a Map<apptId, sequenceNumber> from the optimized order for badge display
+  // Only mobile appointments with addresses get a sequence number (1-based)
+  const routeOrderMap = useMemo(() => {
+    if (!routeOptimizedOrder) return undefined;
+    const map = new Map<string, number>();
+    let seq = 1;
+    for (const id of routeOptimizedOrder) {
+      // Only badge appointments that have a client address (mobile stops)
+      const appt = state.appointments.find((a) => a.id === id);
+      if (appt?.clientAddress) {
+        map.set(id, seq++);
+      }
+    }
+    return map;
+  }, [routeOptimizedOrder, state.appointments]);
+
   const renderTimeline = (dateStr: string, appts: Appointment[], tintColor?: string) => (
     <TimelineView
       dateStr={dateStr}
@@ -1542,6 +1583,7 @@ export default function CalendarScreen() {
       getServiceById={getServiceById}
       getClientById={getClientById}
       onApptPress={(id) => router.push({ pathname: "/appointment-detail", params: { id } })}
+      routeOrderMap={routeOrderMap}
     />
   );
 
@@ -2157,6 +2199,7 @@ export default function CalendarScreen() {
                       if (routeOptimizedOrder) {
                         // Toggle back to chronological
                         setRouteOptimizedOrder(null);
+                        setRouteSummary(null);
                       } else {
                         handleReorderByRoute(dayApptsChron);
                       }
@@ -2178,6 +2221,41 @@ export default function CalendarScreen() {
                       {routeOptimizing ? 'Optimizing route...' : routeOptimizedOrder ? 'Route Optimized — Tap to Reset' : 'Reorder by Route'}
                     </Text>
                   </Pressable>
+                )}
+                {/* Route summary card — shown after optimization completes */}
+                {routeSummary && routeOptimizedOrder && (
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around',
+                    paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12,
+                    backgroundColor: colors.primary + '10',
+                    borderWidth: 1, borderColor: colors.primary + '30',
+                  }}>
+                    <View style={{ alignItems: 'center', gap: 2 }}>
+                      <Text style={{ fontSize: 18 }}>⏱️</Text>
+                      <Text style={{ fontSize: fs.md, fontWeight: '700', color: colors.foreground }}>
+                        {routeSummary.totalMins >= 60
+                          ? `${Math.floor(routeSummary.totalMins / 60)}h ${routeSummary.totalMins % 60}m`
+                          : `${routeSummary.totalMins} min`}
+                      </Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted }}>Total drive time</Text>
+                    </View>
+                    <View style={{ width: 1, height: 40, backgroundColor: colors.border }} />
+                    <View style={{ alignItems: 'center', gap: 2 }}>
+                      <Text style={{ fontSize: 18 }}>📍</Text>
+                      <Text style={{ fontSize: fs.md, fontWeight: '700', color: colors.foreground }}>
+                        {routeSummary.totalMiles.toFixed(1)} mi
+                      </Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted }}>Total distance</Text>
+                    </View>
+                    <View style={{ width: 1, height: 40, backgroundColor: colors.border }} />
+                    <View style={{ alignItems: 'center', gap: 2 }}>
+                      <Text style={{ fontSize: 18 }}>🚗</Text>
+                      <Text style={{ fontSize: fs.md, fontWeight: '700', color: colors.foreground }}>
+                        {mobileAppts.length} stop{mobileAppts.length !== 1 ? 's' : ''}
+                      </Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted }}>Optimized order</Text>
+                    </View>
+                  </View>
                 )}
               </View>
             );

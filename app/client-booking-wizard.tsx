@@ -1610,39 +1610,50 @@ export default function ClientBookingWizardScreen() {
                 </Text>
               </View>
             )}
-            {eligibleStaff.map((member) => (
-              <Pressable
-                key={member.localId}
-                style={({ pressed }) => [
-                  s.optionCard,
-                  { backgroundColor: CARD_BG, borderColor: selectedStaffId === member.localId ? LIME_GREEN : CARD_BORDER },
-                  selectedStaffId === member.localId && { borderWidth: 2 },
-                  pressed && { opacity: 0.85 },
-                ]}
-                onPress={() => setSelectedStaffId(member.localId)}
-              >
-                {member.photoUri && !member.photoUri.startsWith("file://") ? (
-                  <Image
-                    source={{ uri: member.photoUri }}
-                    style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}20` }]}
-                    contentFit="cover"
-                  />
-                ) : (
-                  <View style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}25`, alignItems: "center", justifyContent: "center" }]}>
-                    <Text style={{ fontSize: 16, fontWeight: "700", color: LIME_GREEN }}>{member.name.charAt(0)}</Text>
+            {eligibleStaff.map((member) => {
+              // Grey out staff who can't reach the already-entered address
+              const memberMaxDist = (member as any).maxTravelDistance ?? selectedService?.maxTravelDistance;
+              const memberOutOfRange = routeDistanceMiles != null && memberMaxDist != null && routeDistanceMiles > memberMaxDist;
+              return (
+                <Pressable
+                  key={member.localId}
+                  style={({ pressed }) => [
+                    s.optionCard,
+                    { backgroundColor: CARD_BG, borderColor: selectedStaffId === member.localId && !memberOutOfRange ? LIME_GREEN : CARD_BORDER },
+                    selectedStaffId === member.localId && !memberOutOfRange && { borderWidth: 2 },
+                    memberOutOfRange && { opacity: 0.4 },
+                    !memberOutOfRange && pressed && { opacity: 0.85 },
+                  ]}
+                  onPress={() => { if (!memberOutOfRange) setSelectedStaffId(member.localId); }}
+                >
+                  {member.photoUri && !member.photoUri.startsWith("file://") ? (
+                    <Image
+                      source={{ uri: member.photoUri }}
+                      style={[s.staffAvatar, { backgroundColor: `${LIME_GREEN}20` }]}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <View style={[s.staffAvatar, { backgroundColor: memberOutOfRange ? 'rgba(156,163,175,0.2)' : `${LIME_GREEN}25`, alignItems: "center", justifyContent: "center" }]}>
+                      <Text style={{ fontSize: 16, fontWeight: "700", color: memberOutOfRange ? '#9CA3AF' : LIME_GREEN }}>{member.name.charAt(0)}</Text>
+                    </View>
+                  )}
+                  <View style={s.optionLeft}>
+                    <Text style={[s.optionName, { color: memberOutOfRange ? TEXT_MUTED : TEXT_PRIMARY }]}>{member.name}</Text>
+                    {member.role && !memberOutOfRange ? <Text style={[s.optionDesc, { color: TEXT_MUTED }]}>{member.role}</Text> : null}
+                    {memberOutOfRange && (
+                      <Text style={{ fontSize: 11, color: '#EF4444', marginTop: 2, fontWeight: '500' }}>
+                        🚧 Outside service area ({routeDistanceMiles!.toFixed(1)} mi — max {memberMaxDist} mi)
+                      </Text>
+                    )}
                   </View>
-                )}
-                <View style={s.optionLeft}>
-                  <Text style={[s.optionName, { color: TEXT_PRIMARY }]}>{member.name}</Text>
-                  {member.role ? <Text style={[s.optionDesc, { color: TEXT_MUTED }]}>{member.role}</Text> : null}
-                </View>
-                {selectedStaffId === member.localId && (
-                  <View style={[s.checkCircle, { backgroundColor: LIME_GREEN }]}>
-                    <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
-                  </View>
-                )}
-              </Pressable>
-            ))}
+                  {selectedStaffId === member.localId && !memberOutOfRange && (
+                    <View style={[s.checkCircle, { backgroundColor: LIME_GREEN }]}>
+                      <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
           </View>
         )}
 
