@@ -176,6 +176,54 @@ export default function BookingsScreen() {
     }
   }, [locationAppointments]);
 
+  // ─── Drive time cache for mobile appointment cards ─────────────────────
+  // Maps "bizAddress|clientAddress" -> drive time in minutes (or null if unavailable)
+  const driveTimeCacheRef = useRef<Map<string, number | null>>(new Map());
+  const [driveTimeMap, setDriveTimeMap] = useState<Map<string, number | null>>(new Map());
+
+  // Background fetch: geocode both addresses via Nominatim then call OSRM route
+  const fetchDriveTime = useCallback(async (bizAddress: string, clientAddress: string) => {
+    const cacheKey = `${bizAddress}|${clientAddress}`;
+    if (driveTimeCacheRef.current.has(cacheKey)) return; // already fetched or in-flight
+    driveTimeCacheRef.current.set(cacheKey, null); // mark in-flight
+    try {
+      const geocode = async (addr: string) => {
+        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`, {
+          headers: { 'User-Agent': 'MobileSchedulerApp/1.0' },
+        });
+        const d = await r.json();
+        if (!d?.[0]) return null;
+        return { lat: parseFloat(d[0].lat), lon: parseFloat(d[0].lon) };
+      };
+      const [biz, cli] = await Promise.all([geocode(bizAddress), geocode(clientAddress)]);
+      if (!biz || !cli) return;
+      const url = `https://router.project-osrm.org/route/v1/driving/${biz.lon},${biz.lat};${cli.lon},${cli.lat}?overview=false`;
+      const r = await fetch(url);
+      const d = await r.json();
+      const mins = d?.routes?.[0]?.duration != null ? Math.round(d.routes[0].duration / 60) : null;
+      driveTimeCacheRef.current.set(cacheKey, mins);
+      setDriveTimeMap((prev) => { const next = new Map(prev); next.set(cacheKey, mins); return next; });
+    } catch { /* ignore network errors */ }
+  }, []);
+
+  // Trigger background OSRM fetches for mobile appointments that have a clientAddress
+  useEffect(() => {
+    const bizAddr = activeLocation?.address
+      ? [activeLocation.address, activeLocation.city, activeLocation.state, activeLocation.zipCode].filter(Boolean).join(', ')
+      : [state.settings.profile.address, state.settings.profile.city, state.settings.profile.state, state.settings.profile.zipCode].filter(Boolean).join(', ');
+    if (!bizAddr) return;
+    // Stagger fetches to avoid hammering Nominatim (max 1 req/sec)
+    let delay = 0;
+    for (const appt of locationAppointments) {
+      if (!appt.clientAddress) continue;
+      const cacheKey = `${bizAddr}|${appt.clientAddress}`;
+      if (driveTimeCacheRef.current.has(cacheKey)) continue;
+      const addr = appt.clientAddress;
+      setTimeout(() => fetchDriveTime(bizAddr, addr), delay);
+      delay += 1200; // 1.2s between requests to respect Nominatim rate limit
+    }
+  }, [locationAppointments, activeLocation, state.settings.profile, fetchDriveTime]);
+
   // ─── Date filter (from collapsible calendar) ──────────────────────────
   const [selectedDateFilter, setSelectedDateFilter] = useState<string | null>(null);
 
@@ -516,6 +564,13 @@ export default function BookingsScreen() {
     const isRequest = appt.status === "pending";
     const isCardPaidUnrefunded = appt.paymentMethod === "card" && appt.paymentStatus === "paid" && !appt.refundedAt;
 
+    // Drive time chip: look up cached value for this appointment's clientAddress
+    const bizAddr = activeLocation?.address
+      ? [activeLocation.address, activeLocation.city, activeLocation.state, activeLocation.zipCode].filter(Boolean).join(', ')
+      : [state.settings.profile.address, state.settings.profile.city, state.settings.profile.state, state.settings.profile.zipCode].filter(Boolean).join(', ');
+    const driveTimeCacheKey = appt.clientAddress && bizAddr ? `${bizAddr}|${appt.clientAddress}` : null;
+    const driveTimeMins = driveTimeCacheKey ? (driveTimeMap.get(driveTimeCacheKey) ?? null) : null;
+
     const cardContent = (
       <View key={appt.id} style={[styles.apptCard, { backgroundColor: colors.surface, borderColor: colors.border, borderLeftColor: svc?.color ?? colors.primary }]}>
         <Pressable
@@ -524,9 +579,26 @@ export default function BookingsScreen() {
           delayLongPress={500}
           style={{ alignSelf: "stretch" }}
         >
-          <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>
-            {formatTime(appt.time)} – {getEndTime(appt.time, appt.duration)}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.foreground }}>
+              {formatTime(appt.time)} – {getEndTime(appt.time, appt.duration)}
+            </Text>
+            {driveTimeMins != null && (
+              <View style={{
+                flexDirection: 'row', alignItems: 'center', gap: 3,
+                backgroundColor: '#0891b218', borderRadius: 6,
+                paddingHorizontal: 7, paddingVertical: 3,
+                borderWidth: 1, borderColor: '#0891b230',
+              }}>
+                <Text style={{ fontSize: 11 }}>🚗</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: '700', color: '#0891b2' }}>
+                  {driveTimeMins >= 60
+                    ? `${Math.floor(driveTimeMins / 60)}h ${driveTimeMins % 60}m`
+                    : `${driveTimeMins} min`}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={{ fontSize: fs.xs, fontWeight: "500", color: colors.foreground, marginTop: 2 }}>
             {svc ? getServiceDisplayName(svc) : "Service"}
           </Text>
