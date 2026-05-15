@@ -343,6 +343,65 @@ export default function ClientHomeScreen() {
           </Animated.View>
         )}
 
+        {/* ── Payment Due Nudge Banner ── */}
+        {(() => {
+          // Find the earliest upcoming confirmed appointment with pending cash payment
+          const cashDueAppt = upcoming.find(
+            (a) => a.status === "confirmed" && (a as any).paymentStatus === "pending_cash"
+          );
+          if (!cashDueAppt) return null;
+          const method = (cashDueAppt as any).paymentMethod;
+          const methodLabel =
+            method === "zelle" ? "Zelle" :
+            method === "venmo" ? "Venmo" :
+            method === "cashapp" ? "Cash App" :
+            "cash";
+          const amount = cashDueAppt.totalPrice ? `$${Number(cashDueAppt.totalPrice).toFixed(0)}` : "";
+          return (
+            <Animated.View style={[{ paddingHorizontal: 16, marginBottom: 4 }, headerStyle]}>
+              <AnimCard
+                onPress={() => router.push({ pathname: "/client-appointment-detail", params: { id: String(cashDueAppt.id) } } as any)}
+              >
+                <View style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                  paddingHorizontal: 14,
+                  paddingVertical: 11,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  backgroundColor: "rgba(251,191,36,0.1)",
+                  borderColor: "rgba(251,191,36,0.3)",
+                }}>
+                  {/* Icon */}
+                  <View style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 9,
+                    backgroundColor: "rgba(251,191,36,0.2)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}>
+                    <IconSymbol name="creditcard.fill" size={16} color="#FBBF24" />
+                  </View>
+                  {/* Text */}
+                  <View style={{ flex: 1, gap: 1 }}>
+                    <Text style={{ fontSize: 13, fontWeight: "700", color: "#FBBF24" }}>
+                      Payment due{amount ? ` — ${amount}` : ""}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: "rgba(251,191,36,0.75)" }} numberOfLines={1}>
+                      Bring {methodLabel} for {cashDueAppt.serviceName} · {formatDate(cashDueAppt.date)}
+                    </Text>
+                  </View>
+                  {/* Chevron */}
+                  <IconSymbol name="chevron.right" size={13} color="#FBBF24" />
+                </View>
+              </AnimCard>
+            </Animated.View>
+          );
+        })()}
+
         {/* ── Review Prompt Banner ── */}
         {reviewPromptAppt && (
           <Animated.View style={[{ paddingHorizontal: 16, marginBottom: 4 }, headerStyle]}>

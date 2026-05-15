@@ -2299,3 +2299,4 @@
 - [x] Fix Staff page Back button skipping Location when auto-selected
 - [x] Fix total booking duration to include extra services + travel time in slot availability check
 - [ ] Investigate and fix time slot availability bug (slots showing available when appointment would run past closing time)
+- [x] Add payment due nudge amber banner on Home screen for pending_cash appointments
