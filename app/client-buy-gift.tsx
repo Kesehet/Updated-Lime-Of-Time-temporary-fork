@@ -446,6 +446,7 @@ export default function ClientBuyGiftScreen() {
             }
             const { error: initError } = await initPaymentSheet({
               paymentIntentClientSecret: sheetData.paymentIntent,
+              stripeAccountId: sheetData.accountId,
               merchantDisplayName: businessName || "Business",
               style: "alwaysDark",
             });

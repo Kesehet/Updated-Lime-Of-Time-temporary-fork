@@ -632,10 +632,52 @@ export function registerStripeConnectRoutes(app: Express): void {
       const rawPayload = (req as any).rawBody ?? req.body;
       try {
         event = stripe.webhooks.constructEvent(rawPayload, sig, webhookSecret);
-      } catch (err: any) {
-        console.error("[StripeConnect] Webhook signature verification failed:", err.message);
-        res.status(400).send(`Webhook Error: ${err.message}`);
-        return;
+      } catch (sigErr: any) {
+        // Signature verification failed — this can happen when a reverse proxy (e.g. Cloudflare)
+        // modifies the request body in transit, invalidating the HMAC signature.
+        // Fallback: retrieve the event directly from Stripe's API using the event ID
+        // embedded in the Stripe-Signature header. This is secure because we verify
+        // the event exists on our Stripe account before processing it.
+        console.warn("[StripeConnect] Signature verification failed, attempting API fallback:", sigErr.message);
+        try {
+          // Extract event ID from the Stripe-Signature header (format: t=...,v1=...,v0=...)
+          // Stripe also sends the event ID in the request body even if signature fails
+          let eventId: string | null = null;
+          try {
+            const bodyStr = Buffer.isBuffer(rawPayload) ? rawPayload.toString('utf8') : String(rawPayload);
+            const parsed = JSON.parse(bodyStr);
+            eventId = parsed?.id ?? null;
+          } catch { /* ignore parse errors */ }
+
+          if (!eventId) {
+            console.error("[StripeConnect] Could not extract event ID from body");
+            res.status(400).send("Webhook Error: signature verification failed and no event ID found");
+            return;
+          }
+
+          // Retrieve the event from Stripe to verify it's legitimate.
+          // Events on the Connect account must be retrieved using the platform key
+          // with the stripeAccount option pointing to the Connect account ID.
+          const connectAccountId = await getPlatformConfig("STRIPE_CONNECT_ACCOUNT_ID").catch(() => "");
+          if (connectAccountId) {
+            // Use platform key + stripeAccount to access Connect account events
+            const platformKeyRaw = await getPlatformConfig("STRIPE_TEST_SECRET_KEY").catch(() => "") ||
+              await getPlatformConfig("STRIPE_SECRET_KEY").catch(() => "");
+            if (platformKeyRaw) {
+              const platformStripe = new Stripe(platformKeyRaw, { apiVersion: "2026-03-25.dahlia" as any });
+              event = await platformStripe.events.retrieve(eventId, {}, { stripeAccount: connectAccountId });
+            } else {
+              event = await stripe.events.retrieve(eventId);
+            }
+          } else {
+            event = await stripe.events.retrieve(eventId);
+          }
+          console.log(`[StripeConnect] Event ${eventId} verified via API fallback (type: ${event.type})`);
+        } catch (apiErr: any) {
+          console.error("[StripeConnect] API fallback also failed:", apiErr.message);
+          res.status(400).send(`Webhook Error: ${sigErr.message}`);
+          return;
+        }
       }
 
       if (event.type === "checkout.session.completed") {

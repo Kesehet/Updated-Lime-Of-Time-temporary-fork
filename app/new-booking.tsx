@@ -779,6 +779,7 @@ export default function NewBookingScreen() {
         const { error: initError } = await initPaymentSheet({
           merchantDisplayName: state.settings.businessName ?? 'Business',
           paymentIntentClientSecret: sheetData.paymentIntent,
+          stripeAccountId: sheetData.accountId,
           customerId: undefined,
           allowsDelayedPaymentMethods: false,
           defaultBillingDetails: selectedClient?.name ? { name: selectedClient.name } : undefined,

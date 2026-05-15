@@ -18,6 +18,7 @@ export type PushNotificationData = {
     | "appointment_reminder"
     | "appointment_completed"
     | "payment_received"
+    | "payment_confirmed"
     | "stripe_payout"
     | "subscription_renewal"
     | "client_message"

@@ -50,7 +50,15 @@ export interface ClientAppointment {
   rescheduleRequest?: { status: "pending" | "approved" | "declined"; requestedDate: string; requestedTime: string } | null;
   hasMobileServices?: boolean;
   giftCode?: string | null;
-  paymentMethod?: string | null;
+  paymentMethod?: "zelle" | "venmo" | "cashapp" | "cash" | "card" | "unpaid" | "free" | null;
+  paymentStatus?: "unpaid" | "pending_cash" | "paid" | null;
+  discountAmount?: string | null;
+  discountName?: string | null;
+  extraItems?: any[] | null;
+  giftUsedAmount?: string | null;
+  refundedAt?: string | null;
+  refundedAmount?: string | null;
+  paymentConfirmationNumber?: string | null;
   // Package session fields
   packageGroupId?: string | null;
   packageName?: string | null;

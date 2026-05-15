@@ -21,6 +21,7 @@ import {
   TextInput,
   Linking,
   KeyboardAvoidingView,
+  Share,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -84,6 +85,11 @@ export default function ClientAppointmentDetailScreen() {
   const [appt, setAppt] = useState<ClientAppointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
+  const [rescheduleModalVisible, setRescheduleModalVisible] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [rescheduleReason, setRescheduleReason] = useState("");
+  const [submittingReschedule, setSubmittingReschedule] = useState(false);
 
   // ── Review state ──────────────────────────────────────────────────────────
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
@@ -203,6 +209,53 @@ export default function ClientAppointmentDetailScreen() {
       console.warn("[Calendar]", err);
       Alert.alert("Error", "Could not add to calendar. Please try again.");
     }
+  };
+  const handleRescheduleRequest = async () => {
+    if (!rescheduleDate.trim() || !rescheduleTime.trim()) {
+      Alert.alert("Missing Info", "Please enter both a date and time for your reschedule request.");
+      return;
+    }
+    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    setSubmittingReschedule(true);
+    try {
+      await apiCall(`/api/client/appointments/${id}/reschedule-request`, {
+        method: "POST",
+        body: JSON.stringify({ requestedDate: rescheduleDate.trim(), requestedTime: rescheduleTime.trim(), reason: rescheduleReason.trim() || undefined }),
+      });
+      const updated = await apiCall<ClientAppointment>(`/api/client/appointments/${id}`);
+      setAppt(updated);
+      setRescheduleModalVisible(false);
+      setRescheduleDate("");
+      setRescheduleTime("");
+      setRescheduleReason("");
+      Alert.alert("Request Sent", "Your reschedule request has been sent. The business will respond shortly.");
+    } catch (err: any) {
+      Alert.alert("Error", err?.message ?? "Could not send reschedule request.");
+    } finally {
+      setSubmittingReschedule(false);
+    }
+  };
+  const handleGetDirections = () => {
+    const address = appt?.locationAddress;
+    if (!address) return;
+    const encoded = encodeURIComponent(address);
+    const url = Platform.OS === "ios"
+      ? `maps://?q=${encoded}`
+      : `https://maps.google.com/?q=${encoded}`;
+    Linking.openURL(url).catch(() => {
+      Linking.openURL(`https://maps.google.com/?q=${encoded}`);
+    });
+  };
+  const handleShareBusiness = async () => {
+    if (!appt?.businessSlug) return;
+    const url = `https://lime-of-time.com/book/${appt.businessSlug}`;
+    try {
+      await Share.share({
+        message: `Book an appointment with ${appt.businessName}: ${url}`,
+        url,
+        title: `Book with ${appt.businessName}`,
+      });
+    } catch { /* user cancelled */ }
   };
   const handleCancelRequest = () => {
     Alert.alert(
@@ -403,6 +456,106 @@ export default function ClientAppointmentDetailScreen() {
           ) : null}
         </View>
 
+        {/* ── Payment Summary Card ────────────────────────────────── */}
+        {appt.paymentStatus != null && appt.paymentStatus !== "unpaid" || appt.paymentMethod != null && appt.paymentMethod !== "unpaid" && appt.paymentMethod !== "free" ? (
+          <View style={{ backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.12)", marginBottom: 12, overflow: "hidden" }}>
+            {/* Card header */}
+            <View style={{ flexDirection: "row", alignItems: "center", padding: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
+              <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: "rgba(143,191,106,0.18)", alignItems: "center", justifyContent: "center" }}>
+                <IconSymbol name="creditcard.fill" size={18} color={GREEN_ACCENT} />
+              </View>
+              <Text style={{ fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY, flex: 1 }}>Payment Summary</Text>
+              {/* Status badge */}
+              {appt.paymentStatus === "paid" && (
+                <View style={{ backgroundColor: "rgba(74,222,128,0.2)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                  <Text style={{ fontSize: 12, fontWeight: "700", color: "#4ADE80" }}>✅ Paid</Text>
+                </View>
+              )}
+              {appt.paymentStatus === "pending_cash" && (
+                <View style={{ backgroundColor: "rgba(251,191,36,0.2)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                  <Text style={{ fontSize: 12, fontWeight: "700", color: "#FBBF24" }}>💵 Cash Due</Text>
+                </View>
+              )}
+            </View>
+            {/* Payment method */}
+            {appt.paymentMethod && appt.paymentMethod !== "unpaid" && appt.paymentMethod !== "free" && (
+              <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)" }}>
+                <Text style={{ fontSize: 13, color: TEXT_MUTED, flex: 1 }}>Payment Method</Text>
+                <Text style={{ fontSize: 13, fontWeight: "600", color: TEXT_PRIMARY, textTransform: "capitalize" }}>
+                  {appt.paymentMethod === "cashapp" ? "Cash App" : appt.paymentMethod.charAt(0).toUpperCase() + appt.paymentMethod.slice(1)}
+                </Text>
+              </View>
+            )}
+            {/* Price breakdown */}
+            {(() => {
+              const basePrice = appt.price != null ? Number(appt.price) : appt.totalPrice != null ? Number(appt.totalPrice) : null;
+              const discount = appt.discountAmount ? Number(appt.discountAmount) : 0;
+              const gift = appt.giftUsedAmount ? Number(appt.giftUsedAmount) : 0;
+              const travel = (appt as any).travelFee ? Number((appt as any).travelFee) : 0;
+              const extras: any[] = appt.extraItems ?? [];
+              const extrasTotal = extras.reduce((sum: number, e: any) => sum + (Number(e.price ?? 0) * (e.qty ?? 1)), 0);
+              const hasBreakdown = discount > 0 || gift > 0 || travel > 0 || extras.length > 0;
+              if (!hasBreakdown || basePrice == null) return null;
+              return (
+                <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)" }}>
+                  <Text style={{ fontSize: 11, fontWeight: "700", color: TEXT_MUTED, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>Price Breakdown</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                    <Text style={{ fontSize: 13, color: TEXT_MUTED }}>{appt.serviceName}</Text>
+                    <Text style={{ fontSize: 13, color: TEXT_PRIMARY }}>${basePrice.toFixed(2)}</Text>
+                  </View>
+                  {extras.map((e: any, i: number) => (
+                    <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                      <Text style={{ fontSize: 13, color: TEXT_MUTED }}>{e.name ?? "Add-on"}{e.qty > 1 ? ` ×${e.qty}` : ""}</Text>
+                      <Text style={{ fontSize: 13, color: TEXT_PRIMARY }}>+${(Number(e.price ?? 0) * (e.qty ?? 1)).toFixed(2)}</Text>
+                    </View>
+                  ))}
+                  {travel > 0 && (
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                      <Text style={{ fontSize: 13, color: TEXT_MUTED }}>Travel Fee</Text>
+                      <Text style={{ fontSize: 13, color: "#0891b2" }}>+${travel.toFixed(2)}</Text>
+                    </View>
+                  )}
+                  {discount > 0 && (
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                      <Text style={{ fontSize: 13, color: TEXT_MUTED }}>{appt.discountName ? `Discount (${appt.discountName})` : "Discount"}</Text>
+                      <Text style={{ fontSize: 13, color: "#4ADE80" }}>-${discount.toFixed(2)}</Text>
+                    </View>
+                  )}
+                  {gift > 0 && (
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                      <Text style={{ fontSize: 13, color: TEXT_MUTED }}>Gift Card Applied</Text>
+                      <Text style={{ fontSize: 13, color: "#4ADE80" }}>-${gift.toFixed(2)}</Text>
+                    </View>
+                  )}
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)" }}>
+                    <Text style={{ fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY }}>Total</Text>
+                    <Text style={{ fontSize: 14, fontWeight: "700", color: GREEN_ACCENT }}>${appt.totalPrice ? Number(appt.totalPrice).toFixed(2) : "0.00"}</Text>
+                  </View>
+                </View>
+              );
+            })()}
+            {/* Confirmation number for card payments */}
+            {appt.paymentConfirmationNumber && (
+              <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)" }}>
+                <Text style={{ fontSize: 13, color: TEXT_MUTED, flex: 1 }}>Confirmation #</Text>
+                <Text style={{ fontSize: 12, fontWeight: "600", color: TEXT_MUTED, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace" }}>{appt.paymentConfirmationNumber}</Text>
+              </View>
+            )}
+            {/* Refund notice */}
+            {appt.refundedAt && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12 }}>
+                <IconSymbol name="arrow.clockwise" size={16} color="#60A5FA" />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: "#60A5FA" }}>Refund Issued</Text>
+                  {appt.refundedAmount && (
+                    <Text style={{ fontSize: 12, color: TEXT_MUTED, marginTop: 2 }}>${Number(appt.refundedAmount).toFixed(2)} refunded on {new Date(appt.refundedAt).toLocaleDateString()}</Text>
+                  )}
+                </View>
+              </View>
+            )}
+          </View>
+        ) : null}
+
         {/* ── Package Sessions Accordion ──────────────────────────────── */}
         {(appt as any).packageGroupId && (appt as any).packageSiblings && (
           <View style={{ backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.12)", marginBottom: 12, overflow: "hidden" }}>
@@ -577,6 +730,24 @@ export default function ClientAppointmentDetailScreen() {
             <Text style={[styles.actionBtnText, { color: GREEN_DARK }]}>Message Business</Text>
           </Pressable>
 
+          {/* Request Reschedule */}
+          {canCancel && !hasPendingReschedule && !hasPendingCancel && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionBtn,
+                { backgroundColor: "rgba(251,191,36,0.1)", borderColor: "rgba(251,191,36,0.3)", borderWidth: 1 },
+                pressed && { opacity: 0.85 },
+              ]}
+              onPress={() => {
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setRescheduleModalVisible(true);
+              }}
+            >
+              <IconSymbol name="calendar.badge.clock" size={18} color="#FBBF24" />
+              <Text style={[styles.actionBtnText, { color: "#FBBF24" }]}>Request Reschedule</Text>
+            </Pressable>
+          )}
+
           {/* Cancel Request */}
           {canCancel && !hasPendingCancel && !hasPendingReschedule && (
             <Pressable
@@ -608,6 +779,17 @@ export default function ClientAppointmentDetailScreen() {
               <Text style={[styles.actionBtnText, { color: GREEN_ACCENT }]}>Add to Calendar</Text>
             </Pressable>
           )}
+          {/* Get Directions */}
+          {appt.locationAddress && (appt as any).serviceType !== "mobile" ? (
+            <Pressable
+              style={({ pressed }) => [styles.actionBtn, styles.actionBtnGhost, pressed && { opacity: 0.85 }]}
+              onPress={handleGetDirections}
+            >
+              <IconSymbol name="arrow.triangle.turn.up.right.diamond.fill" size={18} color={TEXT_MUTED} />
+              <Text style={[styles.actionBtnText, { color: TEXT_MUTED }]}>Get Directions</Text>
+            </Pressable>
+          ) : null}
+
           {/* View Business */}
           {appt.businessSlug ? (
             <Pressable
@@ -619,6 +801,17 @@ export default function ClientAppointmentDetailScreen() {
             >
               <IconSymbol name="safari.fill" size={18} color={TEXT_MUTED} />
               <Text style={[styles.actionBtnText, { color: TEXT_MUTED }]}>View Business</Text>
+            </Pressable>
+          ) : null}
+
+          {/* Share Business */}
+          {appt.businessSlug ? (
+            <Pressable
+              style={({ pressed }) => [styles.actionBtn, styles.actionBtnGhost, pressed && { opacity: 0.85 }]}
+              onPress={handleShareBusiness}
+            >
+              <IconSymbol name="square.and.arrow.up" size={18} color={TEXT_MUTED} />
+              <Text style={[styles.actionBtnText, { color: TEXT_MUTED }]}>Share Business</Text>
             </Pressable>
           ) : null}
         </View>
@@ -741,6 +934,82 @@ export default function ClientAppointmentDetailScreen() {
               </Pressable>
             </ScrollView>
           )}
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Reschedule Request Modal ──────────────────────────────────── */}
+      <Modal
+        visible={rescheduleModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => !submittingReschedule && setRescheduleModalVisible(false)}
+      >
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: GREEN_DARK, padding: 24 }}>
+          <ClientPortalBackground />
+          {/* Header */}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 24, marginTop: 12 }}>
+            <Pressable
+              onPress={() => !submittingReschedule && setRescheduleModalVisible(false)}
+              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+            >
+              <Text style={{ fontSize: 16, color: TEXT_MUTED }}>Cancel</Text>
+            </Pressable>
+            <Text style={{ fontSize: 17, fontWeight: "700", color: TEXT_PRIMARY }}>Request Reschedule</Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 20, lineHeight: 20 }}>
+              Enter your preferred date and time. The business will review and confirm or suggest an alternative.
+            </Text>
+            {/* Requested Date */}
+            <Text style={{ fontSize: 12, fontWeight: "700", color: TEXT_MUTED, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>Preferred Date</Text>
+            <TextInput
+              placeholder="e.g. June 20, 2025"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              value={rescheduleDate}
+              onChangeText={setRescheduleDate}
+              style={{ backgroundColor: CARD_BG, borderRadius: 12, padding: 14, fontSize: 15, color: TEXT_PRIMARY, borderWidth: 1, borderColor: CARD_BORDER, marginBottom: 16 }}
+            />
+            {/* Requested Time */}
+            <Text style={{ fontSize: 12, fontWeight: "700", color: TEXT_MUTED, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>Preferred Time</Text>
+            <TextInput
+              placeholder="e.g. 2:00 PM"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              value={rescheduleTime}
+              onChangeText={setRescheduleTime}
+              style={{ backgroundColor: CARD_BG, borderRadius: 12, padding: 14, fontSize: 15, color: TEXT_PRIMARY, borderWidth: 1, borderColor: CARD_BORDER, marginBottom: 16 }}
+            />
+            {/* Reason (optional) */}
+            <Text style={{ fontSize: 12, fontWeight: "700", color: TEXT_MUTED, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>Reason (optional)</Text>
+            <TextInput
+              placeholder="Let the business know why you need to reschedule..."
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              value={rescheduleReason}
+              onChangeText={setRescheduleReason}
+              multiline
+              numberOfLines={3}
+              style={{ backgroundColor: CARD_BG, borderRadius: 12, padding: 14, fontSize: 15, color: TEXT_PRIMARY, borderWidth: 1, borderColor: CARD_BORDER, minHeight: 90, textAlignVertical: "top", marginBottom: 24 }}
+            />
+            {/* Submit */}
+            <Pressable
+              style={({ pressed }) => ({
+                backgroundColor: "#FBBF24",
+                borderRadius: 14,
+                paddingVertical: 16,
+                alignItems: "center",
+                marginBottom: 32,
+                opacity: pressed || submittingReschedule ? 0.8 : 1,
+              })}
+              onPress={handleRescheduleRequest}
+              disabled={submittingReschedule}
+            >
+              {submittingReschedule ? (
+                <ActivityIndicator size="small" color={GREEN_DARK} />
+              ) : (
+                <Text style={{ fontSize: 16, fontWeight: "700", color: GREEN_DARK }}>Send Request</Text>
+              )}
+            </Pressable>
+          </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
     </View>

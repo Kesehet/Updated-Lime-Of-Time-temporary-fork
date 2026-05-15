@@ -928,6 +928,34 @@ const appointmentsRouter = router({
         } catch (emailErr) {
           console.error("[Email] Failed to send payment receipt email:", emailErr);
         }
+        // Push notification to client when business confirms payment
+        try {
+          const enrichedForPush = await db.getEnrichedAppointment(localId, businessOwnerId).catch(() => null);
+          const clientPhoneForPush = enrichedForPush?.clientPhone ?? null;
+          if (clientPhoneForPush) {
+            const normalizedClientPhone = db.normalizePhone(clientPhoneForPush);
+            const clientAcc = await db.getClientAccountByPhone(normalizedClientPhone);
+            if (clientAcc?.expoPushToken) {
+              const clientPrefs = (clientAcc as any).notificationPreferences ?? {};
+              const paymentPushEnabled = clientPrefs.paymentConfirmed !== false; // default on
+              if (paymentPushEnabled) {
+                const enrichedForMsg = enrichedForPush;
+                const totalDisplay = enrichedForMsg?.totalPrice ? `$${Number(enrichedForMsg.totalPrice).toFixed(2)}` : "";
+                const svcDisplay = enrichedForMsg?.serviceName ?? "your appointment";
+                const dateDisplay = enrichedForMsg?.date ?? "";
+                await sendExpoPush(clientAcc.expoPushToken, {
+                  title: "\u2705 Payment Confirmed",
+                  body: `Your${totalDisplay ? ` ${totalDisplay}` : ""} payment for ${svcDisplay}${dateDisplay ? ` on ${dateDisplay}` : ""} has been received. Thank you!`,
+                  data: { type: "payment_confirmed", appointmentId: localId, businessOwnerId },
+                  channelId: "appointments",
+                  sound: "default",
+                });
+              }
+            }
+          }
+        } catch (pushErr) {
+          console.error("[Push] Failed to send payment confirmed push to client:", pushErr);
+        }
       }
 
       return { success: true };

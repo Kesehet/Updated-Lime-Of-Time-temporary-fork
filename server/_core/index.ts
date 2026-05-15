@@ -65,16 +65,18 @@ async function startServer() {
     next();
   });
 
-  // Preserve raw body for Stripe webhook signature verification
-  // The webhook handler needs the raw Buffer, not the parsed JSON object
-  app.use(
-    express.json({
-      limit: "50mb",
-      verify: (req: any, _res, buf) => {
-        req.rawBody = buf;
-      },
-    }),
-  );
+  // Preserve raw body for Stripe webhook signature verification.
+  // The webhook routes use express.raw() at the route level to get the raw Buffer.
+  // We must NOT run express.json() on those paths, otherwise the body is consumed
+  // as a parsed object before express.raw() can capture it.
+  const WEBHOOK_PATHS = ["/api/stripe/webhook", "/api/stripe-connect/webhook"];
+  app.use((req, res, next) => {
+    if (WEBHOOK_PATHS.some((p) => req.path === p)) {
+      // Skip JSON parsing for webhook routes — express.raw() handles them
+      return next();
+    }
+    express.json({ limit: "50mb" })(req, res, next);
+  });
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   registerStorageProxy(app);

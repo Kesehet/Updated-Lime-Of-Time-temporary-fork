@@ -30198,14 +30198,13 @@ async function startServer() {
     }
     next();
   });
-  app.use(
-    import_express3.default.json({
-      limit: "50mb",
-      verify: (req, _res, buf) => {
-        req.rawBody = buf;
-      }
-    })
-  );
+  const WEBHOOK_PATHS = ["/api/stripe/webhook", "/api/stripe-connect/webhook"];
+  app.use((req, res, next) => {
+    if (WEBHOOK_PATHS.some((p) => req.path === p)) {
+      return next();
+    }
+    import_express3.default.json({ limit: "50mb" })(req, res, next);
+  });
   app.use(import_express3.default.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);

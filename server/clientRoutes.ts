@@ -678,6 +678,64 @@ export function registerClientRoutes(app: Express) {
     }
   });
 
+  /**
+   * POST /api/client/appointments/:id/reschedule-request
+   * Submits a reschedule request for the appointment (authenticated client portal).
+   * Body: { requestedDate: string, requestedTime: string, reason?: string }
+   */
+  app.post("/api/client/appointments/:id/reschedule-request", async (req: Request, res: Response) => {
+    try {
+      const { clientAccount } = await getClientAccount(req);
+      const apptId = parseInt(req.params.id);
+      if (isNaN(apptId)) {
+        res.status(400).json({ error: "Invalid appointment id" });
+        return;
+      }
+      const { requestedDate, requestedTime, reason } = req.body;
+      if (!requestedDate || !requestedTime) {
+        res.status(400).json({ error: "requestedDate and requestedTime are required" });
+        return;
+      }
+      let phone = clientAccount!.phone.startsWith("oauth:") ? clientAccount!.email : clientAccount!.phone;
+      if (phone) phone = db.normalizePhone(phone);
+      const rawAppts = await db.getAppointmentsByClientPhone(phone ?? "");
+      const appt = rawAppts.find((a) => a.id === apptId);
+      if (!appt) {
+        res.status(404).json({ error: "Appointment not found" });
+        return;
+      }
+      if (appt.status !== "confirmed" && appt.status !== "pending") {
+        res.status(400).json({ error: "Cannot request reschedule for this appointment" });
+        return;
+      }
+      const existingRR = (appt as any).rescheduleRequest as any;
+      if (existingRR?.status === "pending") {
+        res.status(400).json({ error: "A reschedule request is already pending. Please wait for the business to respond." });
+        return;
+      }
+      const rescheduleRequest = {
+        status: "pending" as const,
+        requestedDate,
+        requestedTime,
+        reason: reason ?? null,
+        submittedAt: new Date().toISOString(),
+      };
+      await db.updateAppointment(appt.localId, appt.businessOwnerId, { rescheduleRequest } as any);
+      // Notify business owner via push
+      const owner = await db.getBusinessOwnerById(appt.businessOwnerId);
+      if (owner?.expoPushToken) {
+        await sendExpoPush(owner.expoPushToken, {
+          title: "Reschedule Request",
+          body: `${clientAccount!.name ?? "A client"} requested to reschedule their appointment to ${requestedDate} at ${requestedTime}.`,
+          data: { type: "reschedule_request", appointmentId: appt.localId },
+        }).catch(() => {});
+      }
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });
+    }
+  });
+
   // ── Messages ──────────────────────────────────────────────────────────────
 
   /** GET /api/client/messages — inbox: list of conversations with businesses */

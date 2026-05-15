@@ -168,6 +168,7 @@ const MAPPING = {
   "ellipsis.circle.fill": "more-horiz",
   "eyebrow": "face-retouching-natural",
   "car.fill": "directions-car",
+  "arrow.triangle.turn.up.right.diamond.fill": "directions",
 } as unknown as IconMapping;
 
 export function IconSymbol({

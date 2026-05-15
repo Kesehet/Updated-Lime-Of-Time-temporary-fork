@@ -157,7 +157,7 @@ export function registerPublicRoutes(app: Express) {
   // ── Serve static assets (screenshots, lifestyle images, etc.) ─────
   import("path").then((pathMod) => {
     import("express").then((expressLib) => {
-      const assetsDir = pathMod.join(__dirname, "public/assets");
+      const assetsDir = pathMod.join(process.cwd(), "public/assets");
       app.use("/assets", expressLib.default.static(assetsDir));
     });
   });
@@ -166,7 +166,7 @@ export function registerPublicRoutes(app: Express) {
   app.get("/", (_req: Request, res: Response) => {
     import("path").then((pathMod) => {
       import("fs").then((fsMod) => {
-        const landingPath = pathMod.join(__dirname, "public/landing.html");
+        const landingPath = pathMod.join(process.cwd(), "public/landing.html");
         try {
           const html = fsMod.readFileSync(landingPath, "utf-8");
           res.setHeader("Content-Type", "text/html");

@@ -314,10 +314,22 @@ export default function BookingsScreen() {
                   <Text style={[s.apptService, { color: TEXT_PRIMARY }]}>{item.serviceName}</Text>
                   <Text style={[s.apptBusiness, { color: GREEN_ACCENT }]}>{item.businessName}</Text>
                 </View>
-                <View style={[s.statusBadge, { backgroundColor: statusColor(item.status) + "30" }]}>
-                  <Text style={[s.statusText, { color: statusColor(item.status) }]}>
-                    {statusLabel(item.status)}
-                  </Text>
+                <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                  <View style={[s.statusBadge, { backgroundColor: statusColor(item.status) + "30" }]}>
+                    <Text style={[s.statusText, { color: statusColor(item.status) }]}>
+                      {statusLabel(item.status)}
+                    </Text>
+                  </View>
+                  {item.paymentStatus === "paid" && (
+                    <View style={{ backgroundColor: "rgba(74,222,128,0.18)", borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3 }}>
+                      <Text style={{ fontSize: 10, fontWeight: "700", color: "#4ADE80" }}>PAID</Text>
+                    </View>
+                  )}
+                  {item.paymentStatus === "pending_cash" && (
+                    <View style={{ backgroundColor: "rgba(251,191,36,0.18)", borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3 }}>
+                      <Text style={{ fontSize: 10, fontWeight: "700", color: "#FBBF24" }}>CASH DUE</Text>
+                    </View>
+                  )}
                 </View>
               </View>
               <View style={[s.apptDivider, { backgroundColor: CARD_BORDER }]} />

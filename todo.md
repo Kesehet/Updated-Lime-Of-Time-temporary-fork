@@ -2269,3 +2269,15 @@
 - [ ] server/stripeRoutes.ts(302,329,333): isTrialEligible not defined — import or define it
 - [ ] server/stripeRoutes.ts(568): screen not in PushNotificationData — remove or use correct field
 - [ ] server/stripeRoutes.ts(589): bizName not defined — fix variable reference
+
+## Phase: Client Portal Improvements (May 2026)
+- [ ] lib/client-store.tsx: Extend ClientAppointment interface with payment fields (paymentStatus, paymentMethod, discountAmount, discountName, extraItems, giftUsedAmount, refundedAt, refundedAmount, paymentConfirmationNumber)
+- [ ] app/client-appointment-detail.tsx: Add Payment Summary card (status, method, breakdown, refund, confirmation number)
+- [ ] app/client-appointment-detail.tsx: Add "Request Reschedule" button in actions section
+- [ ] app/client-appointment-detail.tsx: Add "Get Directions" button for fixed-location appointments
+- [ ] app/client-appointment-detail.tsx: Add "Share Business" button using React Native Share API
+- [ ] app/(client-tabs)/profile.tsx: Add stats row (visits, total spent, member since)
+- [ ] server/clientRoutes.ts: Add POST /api/client/appointments/:id/reschedule-request endpoint
+- [ ] server/routers.ts: Send push notification to client when business marks payment as paid
+- [ ] app/client-notifications.tsx: Add "Payment Confirmed" push toggle
+- [ ] app/(client-tabs)/bookings.tsx: Add payment status pill to booking cards

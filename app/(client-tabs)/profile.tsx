@@ -426,6 +426,35 @@ export default function ClientProfileScreen() {
           >
             <Text style={styles.editBtnText}>Edit Profile</Text>
           </Pressable>
+
+          {/* Stats Row */}
+          {(() => {
+            const appts = state.appointments ?? [];
+            const completedAppts = appts.filter((a: any) => a.status === "completed");
+            const totalVisits = completedAppts.length;
+            const totalSpent = completedAppts.reduce((sum: number, a: any) => sum + (a.totalPrice ? Number(a.totalPrice) : 0), 0);
+            const memberSince = state.account?.createdAt
+              ? new Date(state.account.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })
+              : null;
+            return (
+              <View style={{ flexDirection: "row", gap: 10, marginTop: 16, marginBottom: 4 }}>
+                <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 12, padding: 12, alignItems: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}>
+                  <Text style={{ fontSize: 20, fontWeight: "800", color: GREEN_ACCENT }}>{totalVisits}</Text>
+                  <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2, textAlign: "center" }}>Visits</Text>
+                </View>
+                <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 12, padding: 12, alignItems: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}>
+                  <Text style={{ fontSize: 20, fontWeight: "800", color: GREEN_ACCENT }}>${totalSpent.toFixed(0)}</Text>
+                  <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2, textAlign: "center" }}>Spent</Text>
+                </View>
+                {memberSince ? (
+                  <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 12, padding: 12, alignItems: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}>
+                    <Text style={{ fontSize: 14, fontWeight: "800", color: GREEN_ACCENT, marginTop: 3 }}>{memberSince}</Text>
+                    <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2, textAlign: "center" }}>Member Since</Text>
+                  </View>
+                ) : null}
+              </View>
+            );
+          })()}
         </View>
 
         {/* Menu Sections */}

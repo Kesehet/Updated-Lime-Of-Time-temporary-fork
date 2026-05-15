@@ -42,6 +42,7 @@ interface NotificationPrefs {
   reminder30m: boolean;
   bookingConfirmation: boolean;
   cancellationAlerts: boolean;
+  paymentConfirmed: boolean;
 }
 
 const DEFAULT_PREFS: NotificationPrefs = {
@@ -52,6 +53,7 @@ const DEFAULT_PREFS: NotificationPrefs = {
   reminder30m: false,
   bookingConfirmation: false,
   cancellationAlerts: false,
+  paymentConfirmed: true,
 };
 
 export default function ClientNotificationsScreen() {
@@ -217,13 +219,26 @@ export default function ClientNotificationsScreen() {
             disabled={!prefs.smsEnabled}
           />
           <View style={styles.divider} />
-          <ToggleRow
+                    <ToggleRow
             icon="xmark.circle.fill"
             label="Cancellation Alerts"
             subtitle="SMS if your appointment is cancelled"
             value={prefs.cancellationAlerts}
             onToggle={(v) => updatePref("cancellationAlerts", v)}
             disabled={!prefs.smsEnabled}
+          />
+        </View>
+
+        {/* Push — Payment Confirmed */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>PAYMENT</Text>
+          <ToggleRow
+            icon="creditcard.fill"
+            label="Payment Confirmed"
+            subtitle="Push when business confirms your payment"
+            value={prefs.paymentConfirmed && prefs.pushEnabled && pushPermission === "granted"}
+            onToggle={(v) => updatePref("paymentConfirmed", v)}
+            disabled={!prefs.pushEnabled || pushPermission !== "granted"}
           />
         </View>
 

@@ -973,6 +973,7 @@ export default function ClientBookingWizardScreen() {
               const { error: initError } = await initPaymentSheet({
                 merchantDisplayName: businessDisplayName || effectiveSlug,
                 paymentIntentClientSecret: paymentIntent,
+                stripeAccountId: accountId,
                 style: "alwaysDark",
               });
               if (!initError) {

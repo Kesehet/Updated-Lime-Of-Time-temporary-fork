@@ -475,6 +475,7 @@ export default function AppointmentDetailScreen() {
       const { error: initError } = await initPaymentSheet({
         merchantDisplayName: biz.businessName || 'Business',
         paymentIntentClientSecret: paymentIntent,
+        stripeAccountId: accountId,
         style: 'alwaysDark',
       });
       if (initError) {
