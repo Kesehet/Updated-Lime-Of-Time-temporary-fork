@@ -334,7 +334,8 @@ export function registerStripeRoutes(app: Express): void {
       res.json({ url: session.url, sessionId: session.id, trialEligible: isTrialEligible });
     } catch (err) {
       console.error("[Stripe] create-checkout error:", err);
-      res.status(500).json({ error: "Failed to create checkout session" });
+      const errMsg = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ error: "Failed to create checkout session", detail: errMsg });
     }
   });
 
