@@ -2281,3 +2281,21 @@
 - [ ] server/routers.ts: Send push notification to client when business marks payment as paid
 - [ ] app/client-notifications.tsx: Add "Payment Confirmed" push toggle
 - [ ] app/(client-tabs)/bookings.tsx: Add payment status pill to booking cards
+
+## Phase: Bug Fixes & New Features (May 15, 2026)
+
+- [ ] Fix stats card design on profile screen (Visits/Spent/Member Since layout)
+- [ ] Add unread message badge on Messages tab icon
+- [ ] Add upcoming appointment countdown hero card on Home screen
+- [ ] Fix Address tab Continue button not responding
+- [ ] Fix Staff page Back button skipping Location step when auto-selected
+- [ ] Fix time slot availability: exclude slots where appointment duration would run past business closing time
+
+## Phase: Bug Fixes & UX Improvements (May 15 2026)
+- [x] Fix stats card design (compact "May '26" format, consistent font size, adjustsFontSizeToFit)
+- [x] Add Next Appointment countdown hero card to Home screen with Get Directions button
+- [x] Unread message badge on Messages tab (already implemented)
+- [x] Fix Address tab Continue button (converted Pressable to TouchableOpacity)
+- [x] Fix Staff page Back button skipping Location when auto-selected
+- [x] Fix total booking duration to include extra services + travel time in slot availability check
+- [ ] Investigate and fix time slot availability bug (slots showing available when appointment would run past closing time)

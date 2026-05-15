@@ -99,6 +99,7 @@ interface PublicService {
   serviceType?: 'in_store' | 'mobile' | null;
   travelFee?: number | null;
   maxTravelDistance?: number | null;
+  travelDuration?: number | null;
 }
 interface PublicPackage {
   localId: string;
@@ -364,6 +365,22 @@ export default function ClientBookingWizardScreen() {
   const STEP_PROMO = hasProducts ? (showLocationStep ? 5 + _addrOff : 4 + _addrOff) : (showLocationStep ? 4 + _addrOff : 3 + _addrOff);
   const STEP_PAYMENT = hasProducts ? (showLocationStep ? 6 + _addrOff : 5 + _addrOff) : (showLocationStep ? 5 + _addrOff : 4 + _addrOff);
   const STEP_CONFIRM = hasProducts ? (showLocationStep ? 7 + _addrOff : 6 + _addrOff) : (showLocationStep ? 6 + _addrOff : 5 + _addrOff);
+
+  // Compute total booking duration: primary service + extra selected services + travel (round trip for mobile)
+  const totalBookingDuration = useMemo(() => {
+    if (!selectedService) return 0;
+    // Primary service duration
+    let dur = selectedService.duration;
+    // Add extra selected services
+    if (selectedServices.length > 0) {
+      dur += selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0);
+    }
+    // Add travel duration (round trip) for mobile services
+    if (isMobileService && selectedService.travelDuration && selectedService.travelDuration > 0) {
+      dur += selectedService.travelDuration * 2;
+    }
+    return dur;
+  }, [selectedService, selectedServices, isMobileService]);
 
   // Compute the net amount due for the current booking (used to bypass Payment step when $0)
   const wizardAmountDue = useMemo(() => {
@@ -650,7 +667,14 @@ export default function ClientBookingWizardScreen() {
       const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
       const staffParam = staffId !== "any" ? `&staffId=${encodeURIComponent(staffId)}` : "";
       const locParam = location ? `&locationId=${encodeURIComponent(location.localId)}` : "";
-      const url = `${apiBase}/api/public/business/${effectiveSlug}/slots?date=${dateStr}&duration=${service.duration}${staffParam}${locParam}&clientToday=${todayStr}&nowMinutes=${nowMinutes}`;
+      // Use total booking duration (primary + extras + travel) so slots that would run past closing are excluded
+      const svcTotalDur = (() => {
+        let d = service.duration;
+        if (selectedServices.length > 0) d += selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0);
+        if (service.serviceType === 'mobile' && (service as any).travelDuration > 0) d += (service as any).travelDuration * 2;
+        return d;
+      })();
+      const url = `${apiBase}/api/public/business/${effectiveSlug}/slots?date=${dateStr}&duration=${svcTotalDur}${staffParam}${locParam}&clientToday=${todayStr}&nowMinutes=${nowMinutes}`;
       // Determine if the day is a working day per weeklyDays/customDays
       const weekdayKey = WEEKDAY_KEYS[dateObj.getDay()];
       const customOverride = customDays[dateStr];
@@ -747,7 +771,7 @@ export default function ClientBookingWizardScreen() {
         // Use LOCAL date string (not toISOString which is UTC and can be off by a day near midnight)
         const clientToday = `${_cn.getFullYear()}-${String(_cn.getMonth()+1).padStart(2,'0')}-${String(_cn.getDate()).padStart(2,'0')}`;
         const stepParam = slotStep > 0 ? `&step=${slotStep}` : "";
-        const url = `${apiBase}/api/public/business/${effectiveSlug}/slots?date=${dateStr}&duration=${selectedService.duration}${staffParam}${locParam}&clientToday=${clientToday}&nowMinutes=${nowMinutes}${stepParam}`;
+        const url = `${apiBase}/api/public/business/${effectiveSlug}/slots?date=${dateStr}&duration=${totalBookingDuration}${staffParam}${locParam}&clientToday=${clientToday}&nowMinutes=${nowMinutes}${stepParam}`;
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
@@ -807,7 +831,14 @@ export default function ClientBookingWizardScreen() {
       return;
     }
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setStep((s) => Math.max(s - 1, 0));
+    const prevStep = step - 1;
+    // When going back from Staff step and Location was auto-skipped (single location),
+    // skip the Location step and go directly to the step before it (Service).
+    if (prevStep === STEP_LOCATION && locations.length === 1 && selectedLocation) {
+      setStep(Math.max(prevStep - 1, 0));
+    } else {
+      setStep(Math.max(prevStep, 0));
+    }
   };
 
   const handleSubmit = async () => {
@@ -898,7 +929,7 @@ export default function ClientBookingWizardScreen() {
           serviceLocalId: selectedService.localId,
           date: dateStr,
           time: selectedSlot.time,
-          duration: selectedService.duration,
+          duration: totalBookingDuration,
           notes: notes.trim() || null,
           staffId: selectedStaffId !== "any" ? selectedStaffId : undefined,
           locationId: selectedLocation?.localId ?? undefined,
@@ -2676,18 +2707,18 @@ export default function ClientBookingWizardScreen() {
       {/* Bottom Action — inside KeyboardAvoidingView so it rises above the keyboard */}
       <View style={[s.bottomAction, { backgroundColor: PORTAL_BG, borderTopColor: DIVIDER }]}>
         {step < STEPS.length - 1 ? (
-          <Pressable
-            style={({ pressed }) => [
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[
               s.nextBtn,
               { opacity: canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length, STEP_ADDRESS, addrStreet, addrCity, addrState, addrZip) ? 1 : 0.4 },
-              pressed && canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length, STEP_ADDRESS, addrStreet, addrCity, addrState, addrZip) && { transform: [{ scale: 0.97 }] },
             ]}
             onPress={handleNext}
             disabled={!canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length, STEP_ADDRESS, addrStreet, addrCity, addrState, addrZip)}
           >
             <Text style={s.nextBtnText}>Continue</Text>
             <IconSymbol name="chevron.right" size={16} color="#FFFFFF" />
-          </Pressable>
+          </TouchableOpacity>
         ) : (
           <Pressable
             style={({ pressed }) => [s.nextBtn, submitting && { opacity: 0.7 }, pressed && { transform: [{ scale: 0.97 }] }]}

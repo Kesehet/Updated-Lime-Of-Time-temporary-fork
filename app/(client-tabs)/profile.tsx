@@ -433,24 +433,45 @@ export default function ClientProfileScreen() {
             const completedAppts = appts.filter((a: any) => a.status === "completed");
             const totalVisits = completedAppts.length;
             const totalSpent = completedAppts.reduce((sum: number, a: any) => sum + (a.totalPrice ? Number(a.totalPrice) : 0), 0);
+            // Format as "May '26" to keep it compact and single-line
             const memberSince = state.account?.createdAt
-              ? new Date(state.account.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })
+              ? (() => {
+                  const d = new Date(state.account!.createdAt);
+                  const mon = d.toLocaleDateString(undefined, { month: "short" });
+                  const yr = String(d.getFullYear()).slice(2);
+                  return `${mon} '${yr}`;
+                })()
               : null;
+            const statCell = (value: string, label: string) => (
+              <View style={{ flex: 1, alignItems: "center", paddingVertical: 14, paddingHorizontal: 4 }}>
+                <Text
+                  style={{ fontSize: 20, fontWeight: "800", color: GREEN_ACCENT, lineHeight: 24 }}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >{value}</Text>
+                <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 3, letterSpacing: 0.3, textTransform: "uppercase" }}>{label}</Text>
+              </View>
+            );
             return (
-              <View style={{ flexDirection: "row", gap: 10, marginTop: 16, marginBottom: 4 }}>
-                <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 12, padding: 12, alignItems: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}>
-                  <Text style={{ fontSize: 20, fontWeight: "800", color: GREEN_ACCENT }}>{totalVisits}</Text>
-                  <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2, textAlign: "center" }}>Visits</Text>
-                </View>
-                <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 12, padding: 12, alignItems: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}>
-                  <Text style={{ fontSize: 20, fontWeight: "800", color: GREEN_ACCENT }}>${totalSpent.toFixed(0)}</Text>
-                  <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2, textAlign: "center" }}>Spent</Text>
-                </View>
+              <View style={{
+                flexDirection: "row",
+                backgroundColor: "rgba(255,255,255,0.07)",
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.1)",
+                marginTop: 16,
+                marginBottom: 4,
+                overflow: "hidden",
+              }}>
+                {statCell(String(totalVisits), "Visits")}
+                <View style={{ width: 1, backgroundColor: "rgba(255,255,255,0.1)", marginVertical: 12 }} />
+                {statCell(`$${totalSpent.toFixed(0)}`, "Spent")}
                 {memberSince ? (
-                  <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 12, padding: 12, alignItems: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}>
-                    <Text style={{ fontSize: 14, fontWeight: "800", color: GREEN_ACCENT, marginTop: 3 }}>{memberSince}</Text>
-                    <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2, textAlign: "center" }}>Member Since</Text>
-                  </View>
+                  <>
+                    <View style={{ width: 1, backgroundColor: "rgba(255,255,255,0.1)", marginVertical: 12 }} />
+                    {statCell(memberSince, "Since")}
+                  </>
                 ) : null}
               </View>
             );

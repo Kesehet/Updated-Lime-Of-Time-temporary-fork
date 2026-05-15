@@ -38,6 +38,7 @@ import Animated, {
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Linking } from "react-native";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface GiftCertificate {
@@ -688,6 +689,121 @@ export default function ClientHomeScreen() {
               </AnimCard>
             </View>
           )}
+          {/* ── Next Appointment Countdown Hero Card ── */}
+          {(() => {
+            const nextAppt = upcoming.find((a) => a.status === "confirmed");
+            if (!nextAppt) return null;
+            const apptDateTime = new Date(nextAppt.date + "T" + (nextAppt.time || "00:00") + ":00");
+            const now = new Date();
+            const diffMs = apptDateTime.getTime() - now.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            let countdownLabel = "";
+            let countdownSub = "";
+            if (diffMs < 0) {
+              countdownLabel = "Now";
+              countdownSub = "Your appointment is starting";
+            } else if (diffMins < 60) {
+              countdownLabel = `${diffMins}m`;
+              countdownSub = "Starting very soon";
+            } else if (diffHours < 24) {
+              countdownLabel = `${diffHours}h`;
+              countdownSub = `Today at ${nextAppt.time}`;
+            } else if (diffDays === 1) {
+              countdownLabel = "Tomorrow";
+              countdownSub = `at ${nextAppt.time}`;
+            } else {
+              countdownLabel = `${diffDays} days`;
+              countdownSub = `${formatDate(nextAppt.date)} at ${nextAppt.time}`;
+            }
+            const address = nextAppt.clientAddress || nextAppt.locationAddress;
+            const handleDirections = () => {
+              if (!address) return;
+              const encoded = encodeURIComponent(address);
+              const url = Platform.OS === "ios"
+                ? `maps://?q=${encoded}`
+                : `geo:0,0?q=${encoded}`;
+              Linking.openURL(url).catch(() => Linking.openURL(`https://maps.google.com/?q=${encoded}`));
+            };
+            return (
+              <Animated.View style={[{ paddingHorizontal: 16, marginBottom: 8 }, contentStyle]}>
+                <AnimCard
+                  onPress={() => router.push({ pathname: "/client-appointment-detail", params: { id: String(nextAppt.id) } } as any)}
+                >
+                  <LinearGradient
+                    colors={["#2D5A3D", "#1A3A28"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      borderRadius: 20,
+                      borderWidth: 1,
+                      borderColor: GREEN_ACCENT + "40",
+                      padding: 16,
+                      gap: 12,
+                    }}
+                  >
+                    {/* Top row: label + countdown badge */}
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: GREEN_ACCENT }} />
+                        <Text style={{ color: GREEN_ACCENT, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" }}>Next Appointment</Text>
+                      </View>
+                      <View style={{ backgroundColor: GREEN_ACCENT + "25", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: GREEN_ACCENT + "50" }}>
+                        <Text style={{ color: GREEN_ACCENT, fontSize: 13, fontWeight: "800" }}>{countdownLabel} away</Text>
+                      </View>
+                    </View>
+                    {/* Service + business */}
+                    <View style={{ gap: 2 }}>
+                      <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "800", letterSpacing: -0.3 }} numberOfLines={1}>{nextAppt.serviceName}</Text>
+                      <Text style={{ color: TEXT_MUTED, fontSize: 13, fontWeight: "500" }} numberOfLines={1}>{nextAppt.businessName}</Text>
+                    </View>
+                    {/* Date/time row */}
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <IconSymbol name="calendar" size={14} color={TEXT_MUTED} />
+                      <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>{countdownSub}</Text>
+                    </View>
+                    {/* Staff row */}
+                    {nextAppt.staffName ? (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <IconSymbol name="person.fill" size={14} color={TEXT_MUTED} />
+                        <Text style={{ color: TEXT_MUTED, fontSize: 13 }}>{nextAppt.staffName}</Text>
+                      </View>
+                    ) : null}
+                    {/* Bottom row: address + directions button */}
+                    {address ? (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }}>
+                        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 6 }}>
+                          <IconSymbol name="mappin" size={13} color={TEXT_MUTED} />
+                          <Text style={{ color: TEXT_MUTED, fontSize: 12, flex: 1 }} numberOfLines={1}>{address}</Text>
+                        </View>
+                        <Pressable
+                          style={({ pressed }) => ({
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 5,
+                            backgroundColor: GREEN_ACCENT,
+                            borderRadius: 10,
+                            paddingHorizontal: 12,
+                            paddingVertical: 7,
+                            opacity: pressed ? 0.8 : 1,
+                          })}
+                          onPress={(e) => {
+                            e.stopPropagation?.();
+                            if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            handleDirections();
+                          }}
+                        >
+                          <IconSymbol name="arrow.triangle.turn.up.right.diamond.fill" size={13} color="#1A3A28" />
+                          <Text style={{ color: "#1A3A28", fontSize: 12, fontWeight: "700" }}>Directions</Text>
+                        </Pressable>
+                      </View>
+                    ) : null}
+                  </LinearGradient>
+                </AnimCard>
+              </Animated.View>
+            );
+          })()}
           {/* Upcoming Appointments */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
