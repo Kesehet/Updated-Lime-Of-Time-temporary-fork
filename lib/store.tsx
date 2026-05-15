@@ -1087,7 +1087,7 @@ export function dbOwnerToSettings(owner: any): Partial<BusinessSettings> {
   };
 }
 
-export function StoreProvider({ children }: { children: React.ReactNode }) {
+export function StoreProvider({ children, onStoreLoaded }: { children: React.ReactNode; onStoreLoaded?: () => void }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const trpcUtils = trpc.useUtils();
   const businessOwnerIdRef = useRef<number | null>(null);
@@ -1096,6 +1096,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     businessOwnerIdRef.current = state.businessOwnerId;
   }, [state.businessOwnerId]);
+
+  // Notify parent when store data is fully loaded from AsyncStorage
+  const storeLoadedNotified = useRef(false);
+  useEffect(() => {
+    if (state.loaded && !storeLoadedNotified.current) {
+      storeLoadedNotified.current = true;
+      onStoreLoaded?.();
+    }
+  }, [state.loaded, onStoreLoaded]);
 
   // --- tRPC mutations ---
   const createServiceMut = trpc.services.create.useMutation();

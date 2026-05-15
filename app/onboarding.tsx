@@ -662,6 +662,19 @@ export default function OnboardingScreen() {
   const sendOtpMut = trpc.otp.send.useMutation();
   const verifyOtpMut = trpc.otp.verify.useMutation();
 
+  // ─── Screen mount animation (whole-screen fade+scale on entry) ─────────
+  const mountOpacity = useSharedValue(0);
+  const mountScale = useSharedValue(0.96);
+  useEffect(() => {
+    mountOpacity.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) });
+    mountScale.value = withTiming(1, { duration: 350, easing: Easing.out(Easing.cubic) });
+  }, []);
+  const mountStyle = useAnimatedStyle(() => ({
+    flex: 1,
+    opacity: mountOpacity.value,
+    transform: [{ scale: mountScale.value }],
+  }));
+
   // ─── Entrance animations ─────────────────────────────────────────
   const logoScale = useSharedValue(0.6);
   const logoOpacity = useSharedValue(0);
@@ -1203,7 +1216,7 @@ export default function OnboardingScreen() {
   ];
 
   return (
-    <View style={{ flex: 1 }}>
+    <Animated.View style={mountStyle}>
       {/* ─── Animated Gradient Background ─────────────────────── */}
       <LinearGradient
         colors={["#1A3A28", "#2D5A3D", "#4A7C59", "#3D6B4A"]}
@@ -1923,7 +1936,7 @@ export default function OnboardingScreen() {
           </GestureDetector>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </Animated.View>
   );
 }
 

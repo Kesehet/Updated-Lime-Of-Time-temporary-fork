@@ -102,6 +102,19 @@ function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
   const router = useRouter();
 
+  // Gate: splash animation + store must both be ready before navigating
+  const splashAnimDoneRef = useRef(false);
+  const storeReadyRef = useRef(false);
+  const navigatedRef = useRef(false);
+
+  const maybeNavigate = useCallback(async () => {
+    if (!splashAnimDoneRef.current || !storeReadyRef.current || navigatedRef.current) return;
+    navigatedRef.current = true;
+    // Run the session validation + navigation logic
+    await doNavigate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // NOTE: Navigation to /profile-select is handled exclusively by handleSplashFinish
   // (called when the AnimatedSplash overlay completes). The AnimatedSplash covers
   // the entire screen with pointerEvents="none" during startup, so there is no
@@ -109,10 +122,8 @@ function RootLayout() {
   // A redundant mount-time router.replace() was previously here but caused the
   // portal selector to appear twice on cold launch — it has been removed.
 
-  const handleSplashFinish = useCallback(async () => {
-    // NOTE: Do NOT call setSplashDone(true) here yet.
-    // We first navigate to portal-select, then remove the splash overlay
-    // so the user never sees the last-visited route flash underneath.
+  // Extracted navigation logic shared by both paths
+  const doNavigate = useCallback(async () => {
     // Helper: decode JWT payload and check if token is expired (client-side only, no verification)
     const isTokenExpired = (token: string): boolean => {
       try {
@@ -167,6 +178,16 @@ function RootLayout() {
     // Small delay to let the navigation commit before removing the splash overlay
     setTimeout(() => setSplashDone(true), 80);
   }, [router, setSplashDone]);
+
+  const handleSplashFinish = useCallback(async () => {
+    splashAnimDoneRef.current = true;
+    await maybeNavigate();
+  }, [maybeNavigate]);
+
+  const handleStoreLoaded = useCallback(() => {
+    storeReadyRef.current = true;
+    maybeNavigate();
+  }, [maybeNavigate]);
   const onLayoutRootView = useCallback(() => {
     // No-op: SplashScreen.hideAsync is now called in a useEffect after first render
     // to ensure our AnimatedSplash overlay is painted before the native splash disappears.
@@ -277,7 +298,7 @@ function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
-          <StoreProvider>
+          <StoreProvider onStoreLoaded={handleStoreLoaded}>
             <LogoMigration />
             <ClientStoreProvider>
             <SplashDoneProvider splashDone={splashDone}>

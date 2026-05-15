@@ -87,6 +87,56 @@ const PARTICLES = [
   { x: "65%", y: "12%", size: 3, delay: 900, duration: 2700, opacity: 0.22 },
 ] as const;
 
+// ─── Bouncing Dot ────────────────────────────────────────────────────────────
+function BouncingDot({ delay }: { delay: number }) {
+  const translateY = useSharedValue(0);
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0.4);
+
+  useEffect(() => {
+    translateY.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(-10, { duration: 320, easing: Easing.out(Easing.quad) }),
+          withTiming(0, { duration: 320, easing: Easing.in(Easing.quad) }),
+        ),
+        -1,
+        false,
+      ),
+    );
+    scale.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(1.3, { duration: 320, easing: Easing.out(Easing.quad) }),
+          withTiming(1, { duration: 320, easing: Easing.in(Easing.quad) }),
+        ),
+        -1,
+        false,
+      ),
+    );
+    opacity.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 320 }),
+          withTiming(0.4, { duration: 320 }),
+        ),
+        -1,
+        false,
+      ),
+    );
+  }, []);
+
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }, { scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  return <Animated.View style={[styles.transitionDot, style]} />;
+}
+
 // ─── Portal Transition Overlay ────────────────────────────────────────────────
 function PortalTransitionOverlay({
   visible,
@@ -129,9 +179,9 @@ function PortalTransitionOverlay({
           />
           <Text style={styles.transitionLabel}>{label}</Text>
           <View style={styles.transitionDots}>
-            <View style={styles.transitionDot} />
-            <View style={[styles.transitionDot, { opacity: 0.6 }]} />
-            <View style={[styles.transitionDot, { opacity: 0.3 }]} />
+            <BouncingDot delay={0} />
+            <BouncingDot delay={160} />
+            <BouncingDot delay={320} />
           </View>
         </View>
       </LinearGradient>
