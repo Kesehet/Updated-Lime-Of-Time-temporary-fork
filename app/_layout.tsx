@@ -35,9 +35,11 @@ import { StripeProvider } from "@/lib/stripe-provider";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { initSentry, withSentryWrapper } from "@/lib/sentry";
 import { AnimatedSplash } from "@/components/animated-splash";
+import { ErrorBoundary } from "@/components/error-boundary";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Auth from "@/lib/_core/auth";
 import { SessionExpiredToast } from "@/components/session-expired-toast";
+import { SyncErrorToast } from "@/components/sync-error-toast";
 import {
   businessNeedsReauth,
   clientNeedsLogout,
@@ -284,6 +286,7 @@ function RootLayout() {
             {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
             {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
             {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
+            <ErrorBoundary screenName="App">
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" />
@@ -361,8 +364,10 @@ function RootLayout() {
               <Stack.Screen name="client-saved-businesses" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
               <Stack.Screen name="client-message-thread-business" options={{ presentation: "fullScreenModal", contentStyle: { backgroundColor: "#0D2318" } , gestureEnabled: true}} />
             </Stack>
+            </ErrorBoundary>
             <StatusBar style="auto" />
             <SessionExpiredToast />
+            <SyncErrorToast />
             </NotificationProvider>
             </AppLockProvider>
             </SplashDoneProvider>

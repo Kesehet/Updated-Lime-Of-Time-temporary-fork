@@ -135,6 +135,8 @@ export interface Appointment {
   } | null;
   /** Reason provided when owner reschedules the appointment */
   rescheduleReason?: string;
+  /** Internal staff-only notes (never sent to clients or shown on public pages) */
+  staffNotes?: string;
 }
 
 export interface Review {

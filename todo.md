@@ -2300,3 +2300,10 @@
 - [x] Fix total booking duration to include extra services + travel time in slot availability check
 - [ ] Investigate and fix time slot availability bug (slots showing available when appointment would run past closing time)
 - [x] Add payment due nudge amber banner on Home screen for pending_cash appointments
+
+## Phase: Business Portal Improvements (May 15, 2026)
+- [x] Add text search bar to Bookings tab (filter by client name, service, notes)
+- [x] Add "Book Again" button to Appointment Detail screen
+- [x] Add internal staff notes field to appointments (separate from client-visible notes)
+- [x] Add ErrorBoundary component around tab screens
+- [x] Add syncToDb error toast with retry button

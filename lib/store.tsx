@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useReducer, useCallback, u
 import { AppState as RNAppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logger } from "@/lib/logger";
+import { emitSyncError } from "@/lib/_core/sync-error-events";
 import {
   Service,
   Client,
@@ -2451,6 +2452,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         // Log clearly so it's visible in crash reports / Sentry
         logger.captureError(err, { context: "DB sync", action: action.type });
+        // Emit to SyncErrorToast so the user sees a non-blocking retry prompt
+        emitSyncError(action.type, () => {
+          syncToDb(action, ownerIdOverride).catch(() => {});
+        });
         // NOTE: Local state is already updated. The AsyncStorage cache will be written by the
         // useEffect watchers. On next app launch, if DB is reachable, the bootstrap will load
         // the correct data from DB. If DB is still unreachable, the cache will be used.

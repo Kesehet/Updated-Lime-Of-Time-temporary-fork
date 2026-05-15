@@ -55,15 +55,15 @@ export default function NewBookingScreen() {
   const colors = useColors();
   const router = useRouter();
   const { isTablet, hp, width: screenWidth, modalMaxWidth, maxContentWidth, fs, buttonHeight, iconButtonSize } = useResponsive();
-  const params = useLocalSearchParams<{ date?: string }>();
+  const params = useLocalSearchParams<{ date?: string; prefillServiceId?: string; prefillClientId?: string; prefillStaffId?: string }>();
 
    const sendSmsMutation = trpc.twilio.sendSms.useMutation();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [chargingCard, setChargingCard] = useState(false);
   const [step, setStep] = useState<Step>(1);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(params.prefillServiceId ?? null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(params.prefillClientId ?? null);
   const [selectedDate, setSelectedDate] = useState(params.date ?? formatDateStr(new Date()));
   const todayStr2 = formatDateStr(new Date());
   // Calendar month view: track which month is displayed (offset from today's month)
@@ -96,7 +96,7 @@ export default function NewBookingScreen() {
   // Product quantity map: productId → quantity (0 = not in cart)
   const [productQty, setProductQty] = useState<Record<string, number>>({});
   const [recurring, setRecurring] = useState<"none" | "weekly" | "biweekly" | "monthly">("none");
-  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(params.prefillStaffId ?? null);
   // Address step gate: shown between date/time (step 3) and review (step 4) for mobile services
   const [onAddressStep, setOnAddressStep] = useState(false);
   // Pre-select the currently active location (single source of truth).

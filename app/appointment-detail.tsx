@@ -102,6 +102,26 @@ export default function AppointmentDetailScreen() {
   const [lastSessionId, setLastSessionId] = useState<string | null>(null);
   // Track if we've already notified the owner about auto-detected payment
   const pollingNotifiedRef = useRef(false);
+  // Staff notes state (internal, not visible to clients)
+  const [staffNotesValue, setStaffNotesValue] = useState(appointment?.staffNotes ?? "");
+  const [staffNotesSaving, setStaffNotesSaving] = useState(false);
+  const staffNotesTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveStaffNotes = useCallback((value: string) => {
+    if (!appointment) return;
+    const updated = { ...appointment, staffNotes: value };
+    dispatch({ type: "UPDATE_APPOINTMENT", payload: updated });
+    syncToDb({ type: "UPDATE_APPOINTMENT", payload: updated }).catch(() => {});
+    setStaffNotesSaving(false);
+  }, [appointment, dispatch, syncToDb]);
+
+  const handleStaffNotesChange = useCallback((value: string) => {
+    setStaffNotesValue(value);
+    setStaffNotesSaving(true);
+    if (staffNotesTimer.current) clearTimeout(staffNotesTimer.current);
+    staffNotesTimer.current = setTimeout(() => saveStaffNotes(value), 800);
+  }, [saveStaffNotes]);
+
   // Discount modal state
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [discountInput, setDiscountInput] = useState("");
@@ -1738,6 +1758,24 @@ Would you also like to charge a no-show fee via Stripe?`,
           </View>
         ) : null}
 
+        {/* Staff Notes — internal only, auto-saves on change */}
+        <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+            <IconSymbol name="lock.fill" size={13} color={colors.muted} />
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: 0.5, marginLeft: 5 }}>Staff Notes</Text>
+            <Text style={{ fontSize: fs.xs, color: colors.muted, marginLeft: 6 }}>(internal only)</Text>
+            {staffNotesSaving && <Text style={{ fontSize: fs.xs, color: colors.primary, marginLeft: "auto" }}>Saving…</Text>}
+          </View>
+          <TextInput
+            value={staffNotesValue}
+            onChangeText={handleStaffNotesChange}
+            placeholder="Add internal notes visible only to staff…"
+            placeholderTextColor={colors.muted}
+            multiline
+            style={{ fontSize: fs.sm, color: colors.foreground, minHeight: 60, textAlignVertical: "top" }}
+          />
+        </View>
+
         {/* Message Client Button */}
         {client?.phone && (
           <Pressable
@@ -2071,6 +2109,24 @@ Would you also like to charge a no-show fee via Stripe?`,
             </Pressable>
           </View>
         )}
+
+        {/* Book Again — pre-fills new booking with same service, client, and staff */}
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: "/new-booking" as any,
+              params: {
+                prefillServiceId: appointment.serviceId,
+                prefillClientId: appointment.clientId,
+                ...(appointment.staffId ? { prefillStaffId: appointment.staffId } : {}),
+              },
+            })
+          }
+          style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, opacity: pressed ? 0.7 : 1, marginBottom: 8 }]}
+        >
+          <IconSymbol name="arrow.clockwise" size={18} color={colors.primary} />
+          <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.primary, marginLeft: 8 }}>Book Again</Text>
+        </Pressable>
 
         <Pressable
           onPress={handleDelete}

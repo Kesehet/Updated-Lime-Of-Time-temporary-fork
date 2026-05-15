@@ -179,6 +179,9 @@ export default function BookingsScreen() {
   // ─── Date filter (from collapsible calendar) ──────────────────────────
   const [selectedDateFilter, setSelectedDateFilter] = useState<string | null>(null);
 
+  // ─── Search state ─────────────────────────────────────────────────────
+  const [bookingSearch, setBookingSearch] = useState("");
+
   // ─── Collapsible calendar state ───────────────────────────────────────
   const [calendarExpanded, setCalendarExpanded] = useState(false);
   const calendarAnim = useRef(new Animated.Value(0)).current;
@@ -471,6 +474,26 @@ export default function BookingsScreen() {
       .sort((a, b) => a.localeCompare(b))
       .map((date) => ({ date, items: map[date] }));
   }, [filteredAppointments]);
+
+  // ─── Search-filtered sections (applied on top of all existing filters) ─
+  const searchFilteredSections = useMemo(() => {
+    if (!bookingSearch.trim()) return filteredSections;
+    const q = bookingSearch.trim().toLowerCase();
+    return filteredSections
+      .map(({ date, items }) => ({
+        date,
+        items: items.filter((a) => {
+          const client = getClientById(a.clientId);
+          const svc = getServiceById(a.serviceId);
+          return (
+            (client?.name ?? "").toLowerCase().includes(q) ||
+            (svc?.name ?? "").toLowerCase().includes(q) ||
+            (a.notes ?? "").toLowerCase().includes(q)
+          );
+        }),
+      }))
+      .filter(({ items }) => items.length > 0);
+  }, [filteredSections, bookingSearch, getClientById, getServiceById]);
 
   const formatSectionDate = (dateStr: string): string => {
     const [y, m, d] = dateStr.split("-").map(Number);
@@ -1047,19 +1070,37 @@ export default function BookingsScreen() {
         </View>
       )}
 
+      {/* Search bar */}
+      <View style={{ paddingHorizontal: hp, marginBottom: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10, paddingVertical: 6 }}>
+          <IconSymbol name="magnifyingglass" size={16} color={colors.muted} />
+          <TextInput
+            value={bookingSearch}
+            onChangeText={setBookingSearch}
+            placeholder="Search client, service, notes…"
+            placeholderTextColor={colors.muted}
+            style={{ flex: 1, marginLeft: 8, fontSize: fs.sm, color: colors.foreground }}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+          />
+        </View>
+      </View>
+
       {/* Appointment list */}
       <View style={{ paddingHorizontal: hp }}>
-        {filteredSections.length === 0 ? (
+        {searchFilteredSections.length === 0 ? (
           <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <IconSymbol name="calendar.badge.clock" size={32} color={colors.muted} />
             <Text style={{ fontSize: fs.sm, fontWeight: "600", color: colors.muted, marginTop: 10 }}>
-              {selectedDateFilter
+              {bookingSearch.trim()
+                ? `No results for "${bookingSearch.trim()}"`
+                : selectedDateFilter
                 ? `No ${activeFilter} appointments on ${formatSectionDate(selectedDateFilter)}`
                 : `No ${activeFilter} appointments`}
             </Text>
           </View>
         ) : (
-          filteredSections.map(({ date, items }) => (
+          searchFilteredSections.map(({ date, items }) => (
             <View key={date}>
               {/* Date section header */}
               <View style={[styles.sectionHeader, { backgroundColor: colors.surface, borderColor: colors.border }]}>
