@@ -555,6 +555,8 @@ export const staffMembers = mysqlTable("staff_members", {
   photoUri: varchar("photoUri", { length: 2048 }),
   /** Commission rate as a percentage (0-100) */
   commissionRate: int("commissionRate"),
+  /** Override max travel distance in miles for mobile services (null = use service-level default) */
+  maxTravelDistance: decimal("maxTravelDistance", { precision: 8, scale: 2 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

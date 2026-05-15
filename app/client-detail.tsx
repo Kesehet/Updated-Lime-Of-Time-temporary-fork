@@ -79,6 +79,51 @@ export default function ClientDetailScreen() {
   const [editBirthday, setEditBirthday] = useState(client?.birthday ?? "");
   const [editSavedAddress, setEditSavedAddress] = useState(client?.savedAddress ?? "");
 
+  // OSRM drive time estimate from business location to client's saved address
+  const [savedAddrDriveTime, setSavedAddrDriveTime] = useState<string | null>(null);
+  const [savedAddrDriveLoading, setSavedAddrDriveLoading] = useState(false);
+
+  useEffect(() => {
+    const addr = client?.savedAddress;
+    if (!addr) { setSavedAddrDriveTime(null); return; }
+    const locs = state.locations;
+    const bizLoc = locs.length > 0 ? locs[0] : null;
+    const bizAddr = bizLoc
+      ? [bizLoc.address, bizLoc.city, bizLoc.state, bizLoc.zipCode].filter(Boolean).join(', ')
+      : [profile.address, profile.city, profile.state, profile.zipCode].filter(Boolean).join(', ');
+    if (!bizAddr) { setSavedAddrDriveTime(null); return; }
+    let cancelled = false;
+    const geocode = async (a: string): Promise<[number, number] | null> => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(a)}&format=json&limit=1`, { headers: { 'User-Agent': 'LimeOfTime/1.0' } });
+        const data = await res.json();
+        if (!data || data.length === 0) return null;
+        return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+      } catch { return null; }
+    };
+    const run = async () => {
+      setSavedAddrDriveLoading(true); setSavedAddrDriveTime(null);
+      const [origin, dest] = await Promise.all([geocode(bizAddr), geocode(addr)]);
+      if (cancelled) return;
+      if (!origin || !dest) { setSavedAddrDriveLoading(false); return; }
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${origin[0]},${origin[1]};${dest[0]},${dest[1]}?overview=false`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (cancelled) return;
+        if (data?.routes?.[0]) {
+          const route = data.routes[0];
+          const mins = Math.round(route.duration / 60);
+          const distMiles = (route.distance as number) / 1609.344;
+          setSavedAddrDriveTime(`~${mins} min drive · ${distMiles.toFixed(1)} mi from business`);
+        }
+      } catch { /* ignore */ }
+      setSavedAddrDriveLoading(false);
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [client?.savedAddress]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Inline edit errors
   const [editErrors, setEditErrors] = useState<{ name?: string; phone?: string; email?: string }>({});
 
@@ -606,6 +651,12 @@ export default function ClientDetailScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 2 }}>Saved Address</Text>
                   <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }} numberOfLines={2}>{client.savedAddress}</Text>
+                  {savedAddrDriveLoading && (
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 3, fontStyle: 'italic' }}>Calculating drive time...</Text>
+                  )}
+                  {!savedAddrDriveLoading && savedAddrDriveTime && (
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 3 }}>🚗 {savedAddrDriveTime}</Text>
+                  )}
                 </View>
                 <IconSymbol name="chevron.right" size={14} color={colors.muted} />
               </Pressable>

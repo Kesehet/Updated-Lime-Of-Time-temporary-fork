@@ -198,7 +198,10 @@ export default function PublicBookingScreen() {
           const distMiles = (route.distance as number) / 1609.344;
           setRouteDistanceMiles(distMiles);
           setTravelTimeEstimate(`~${mins} min drive · ${distMiles.toFixed(1)} mi`);
-          if ((selectedService as any)?.maxTravelDistance && distMiles > (selectedService as any).maxTravelDistance) setOutsideServiceArea(true);
+          // Use staff-level maxTravelDistance override if staff is selected and has one set; else fall back to service-level
+          const selectedStaffObj = selectedStaffId ? state.staff.find((m) => m.id === selectedStaffId) : null;
+          const effectiveMaxDist = (selectedStaffObj as any)?.maxTravelDistance ?? (selectedService as any)?.maxTravelDistance;
+          if (effectiveMaxDist && distMiles > effectiveMaxDist) setOutsideServiceArea(true);
           if ((selectedService as any)?.distanceFeeEnabled) {
             const rate = (selectedService as any).travelRatePerMile ?? 0.67;
             const freeThreshold = (selectedService as any).freeMiles ?? 0;

@@ -972,6 +972,7 @@ export function dbStaffToLocal(s: any): StaffMember {
     active: s.active ?? true,
     photoUri: s.photoUri ?? undefined,
     commissionRate: s.commissionRate != null ? parseFloat(s.commissionRate) : null,
+    maxTravelDistance: s.maxTravelDistance != null ? parseFloat(s.maxTravelDistance) : null,
     createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : new Date().toISOString(),
   };
 }
@@ -2273,6 +2274,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               active: staff.active,
               photoUri: staff.photoUri ?? undefined,
               commissionRate: staff.commissionRate ?? undefined,
+              maxTravelDistance: staff.maxTravelDistance ?? undefined,
             });
             break;
           }
@@ -2292,6 +2294,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               active: staff.active,
               photoUri: staff.photoUri ?? undefined,
               commissionRate: staff.commissionRate ?? undefined,
+              maxTravelDistance: staff.maxTravelDistance ?? undefined,
             });
             break;
           }

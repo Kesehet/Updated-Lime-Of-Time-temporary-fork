@@ -271,6 +271,8 @@ export interface StaffMember {
   commissionRate?: number | null;
   /** Profile photo URI (local file URI or remote URL) */
   photoUri?: string | null;
+  /** Override max travel distance in miles for mobile services (null = use service-level default) */
+  maxTravelDistance?: number | null;
 }
 
 export const STAFF_COLORS = [

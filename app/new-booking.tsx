@@ -132,10 +132,11 @@ export default function NewBookingScreen() {
   const [travelTimeLoading, setTravelTimeLoading] = useState(false);
   const [dynamicTravelFee, setDynamicTravelFee] = useState<number | null>(null);
   const [routeDistanceMiles, setRouteDistanceMiles] = useState<number | null>(null);
+  const [outsideServiceArea, setOutsideServiceArea] = useState(false);
 
   useEffect(() => {
     const allFilled = addrStreet.trim() && addrCity.trim() && addrState.trim() && addrZip.trim();
-    if (!allFilled) { setTravelTimeEstimate(null); setDynamicTravelFee(null); setRouteDistanceMiles(null); return; }
+    if (!allFilled) { setTravelTimeEstimate(null); setDynamicTravelFee(null); setRouteDistanceMiles(null); setOutsideServiceArea(false); return; }
     // Get business origin address
     const bizAddr = activeLocation
       ? [activeLocation.address, activeLocation.city, activeLocation.state, activeLocation.zipCode].filter(Boolean).join(', ')
@@ -175,6 +176,10 @@ export default function NewBookingScreen() {
           setTravelTimeEstimate(`~${mins} min drive · ${distMiles.toFixed(1)} mi`);
           // Calculate dynamic fee if service has distanceFeeEnabled
           const svc = selectedServiceId ? state.services.find(s => s.id === selectedServiceId) : null;
+          // Staff-level maxTravelDistance override: if selected staff has one set, use it; else fall back to service-level
+          const staffObj = selectedStaffId ? state.staff.find(m => m.id === selectedStaffId) : null;
+          const effectiveMaxDist = (staffObj as any)?.maxTravelDistance ?? svc?.maxTravelDistance;
+          if (effectiveMaxDist && distMiles > effectiveMaxDist) setOutsideServiceArea(true);
           if (svc?.distanceFeeEnabled) {
             const rate = svc.travelRatePerMile ?? 0.67;
             const freeThreshold = svc.freeMiles ?? 0;
@@ -2098,6 +2103,11 @@ export default function NewBookingScreen() {
                       </Text>
                     </View>
                   )}
+                  {outsideServiceArea && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 0, marginTop: 4 }}>
+                      <Text style={{ fontSize: fs.xs, color: colors.error, fontWeight: '700' }}>⚠️ This address is outside the service area for this appointment.</Text>
+                    </View>
+                  )}
                 </View>
               ) : null}
             </View>
@@ -2127,12 +2137,16 @@ export default function NewBookingScreen() {
                   Alert.alert("Address Required", "Please fill in all address fields (Street, City, State, ZIP) before continuing.");
                   return;
                 }
+                if (outsideServiceArea) {
+                  Alert.alert("Outside Service Area", "This address is outside the service area for the selected staff member or service. Please choose a different address or staff member.");
+                  return;
+                }
                 setOnAddressStep(false);
                 setStep(4);
               }}
               style={({ pressed }) => [
                 styles.bookButton,
-                { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
+                { backgroundColor: outsideServiceArea ? colors.muted : colors.primary, opacity: pressed ? 0.8 : 1 },
               ]}
             >
               <Text className="text-base font-semibold text-white">Continue →</Text>

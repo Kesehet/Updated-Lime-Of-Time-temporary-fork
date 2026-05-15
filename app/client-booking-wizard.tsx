@@ -392,8 +392,10 @@ export default function ClientBookingWizardScreen() {
           const distMiles = (route.distance as number) / 1609.344;
           setRouteDistanceMiles(distMiles);
           setTravelTimeEstimate(`~${mins} min drive · ${distMiles.toFixed(1)} mi`);
-          // Check max travel distance
-          if (selectedService?.maxTravelDistance && distMiles > selectedService.maxTravelDistance) {
+          // Check max travel distance — use staff-level override if staff is selected and has one set; else fall back to service-level
+          const selectedStaffMemberForDist = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
+          const effectiveMaxDist = (selectedStaffMemberForDist as any)?.maxTravelDistance ?? selectedService?.maxTravelDistance;
+          if (effectiveMaxDist && distMiles > effectiveMaxDist) {
             setOutsideServiceArea(true);
           }
           // Calculate dynamic fee if service has distanceFeeEnabled
@@ -884,10 +886,13 @@ export default function ClientBookingWizardScreen() {
     }
     // Address step: sync address and handle travel zone warning
     if (step === STEP_ADDRESS) {
-      if (selectedService?.maxTravelDistance) {
+      // Use staff-level maxTravelDistance override if staff is selected and has one set; else fall back to service-level
+      const staffForAlert = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
+      const effectiveMaxDistAlert = (staffForAlert as any)?.maxTravelDistance ?? selectedService?.maxTravelDistance;
+      if (effectiveMaxDistAlert) {
         Alert.alert(
           "⚠️ Check Service Area",
-          `This service has a maximum travel distance of ${selectedService.maxTravelDistance} miles. Please confirm your address is within the service area before continuing.`,
+          `This service has a maximum travel distance of ${effectiveMaxDistAlert} miles. Please confirm your address is within the service area before continuing.`,
           [
             { text: "Go Back", style: "cancel" },
             {
@@ -2458,14 +2463,18 @@ export default function ClientBookingWizardScreen() {
                   )}
                 </View>
               )}
-              {!travelTimeLoading && outsideServiceArea && (
-                <View style={{ marginTop: 10, backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 8, padding: 10 }}>
-                  <Text style={{ fontSize: 12, color: '#EF4444', fontWeight: '600' }}>⚠️ Outside service area</Text>
-                  <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>
-                    This address is beyond the {selectedService?.maxTravelDistance} mile service radius. Please enter a closer address.
-                  </Text>
-                </View>
-              )}
+              {!travelTimeLoading && outsideServiceArea && (() => {
+                const staffForErr = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
+                const effMaxDist = (staffForErr as any)?.maxTravelDistance ?? selectedService?.maxTravelDistance;
+                return (
+                  <View style={{ marginTop: 10, backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 8, padding: 10 }}>
+                    <Text style={{ fontSize: 12, color: '#EF4444', fontWeight: '600' }}>⚠️ Outside service area</Text>
+                    <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>
+                      This address is beyond the {effMaxDist} mile service radius. Please enter a closer address.
+                    </Text>
+                  </View>
+                );
+              })()}
             </View>
             <View style={{ flex: 1 }} />
           </View>

@@ -79,6 +79,9 @@ export default function StaffFormScreen() {
   const [commissionRate, setCommissionRate] = useState<string>(
     existing?.commissionRate != null ? String(existing.commissionRate) : ""
   );
+  const [maxTravelDistance, setMaxTravelDistance] = useState<string>(
+    existing?.maxTravelDistance != null ? String(existing.maxTravelDistance) : ""
+  );
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(
     existing?.serviceIds ?? []
   );
@@ -254,6 +257,7 @@ export default function StaffFormScreen() {
       active,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
       commissionRate: commissionRate.trim() ? parseFloat(commissionRate) : null,
+      maxTravelDistance: maxTravelDistance.trim() ? parseFloat(maxTravelDistance) : null,
       photoUri: photoUri ?? null,
     };
 
@@ -353,6 +357,18 @@ export default function StaffFormScreen() {
             value={commissionRate}
             onChangeText={(v) => setCommissionRate(v.replace(/[^0-9.]/g, ""))}
             placeholder="e.g. 40 (staff earns 40% of revenue)"
+            placeholderTextColor={colors.muted}
+            keyboardType="decimal-pad"
+            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
+            returnKeyType="done"
+          />
+
+          <Text className="text-xs font-medium text-muted mb-1 mt-3">Max Travel Distance (miles)</Text>
+          <Text className="text-xs text-muted mb-2">For mobile services — overrides the service-level limit. Leave blank to use the service default.</Text>
+          <TextInput
+            value={maxTravelDistance}
+            onChangeText={(v) => setMaxTravelDistance(v.replace(/[^0-9.]/g, ""))}
+            placeholder="e.g. 25 (leave blank = use service default)"
             placeholderTextColor={colors.muted}
             keyboardType="decimal-pad"
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}

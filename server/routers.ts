@@ -1305,6 +1305,7 @@ const staffRouter = router({
         photoUri: z.string().optional().nullable(),
         active: z.boolean().default(true),
         commissionRate: z.number().optional().nullable(),
+        maxTravelDistance: z.number().optional().nullable(),
       })
     )
     .mutation(async ({ input }) => {
@@ -1328,6 +1329,7 @@ const staffRouter = router({
         photoUri: z.string().optional().nullable(),
         active: z.boolean().optional(),
         commissionRate: z.number().optional().nullable(),
+        maxTravelDistance: z.number().optional().nullable(),
       })
     )
     .mutation(async ({ input }) => {
