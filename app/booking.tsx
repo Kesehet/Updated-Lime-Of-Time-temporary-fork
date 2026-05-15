@@ -199,18 +199,32 @@ export default function PublicBookingScreen() {
           const distMiles = (route.distance as number) / 1609.344;
           setRouteDistanceMiles(distMiles);
           setTravelTimeEstimate(`~${mins} min drive · ${distMiles.toFixed(1)} mi`);
-          // Use staff-level maxTravelDistance override if staff is selected and has one set; else fall back to service-level
+          // Only block Continue if a specific staff member is selected AND that staff member
+          // has their own maxTravelDistance override that is exceeded.
+          // Service-level maxTravelDistance is informational only (shown as a warning) but does
+          // NOT block the booking — the business owner can still accept it.
           const selectedStaffObj = selectedStaffId ? state.staff.find((m) => m.id === selectedStaffId) : null;
-          const effectiveMaxDist = (selectedStaffObj as any)?.maxTravelDistance ?? (selectedService as any)?.maxTravelDistance;
-          if (effectiveMaxDist && distMiles > effectiveMaxDist) {
+          const staffMaxDist = (selectedStaffObj as any)?.maxTravelDistance;
+          const serviceMaxDist = (selectedService as any)?.maxTravelDistance;
+          // Hard block: selected staff member has a personal limit that is exceeded
+          const hardBlock = staffMaxDist != null && distMiles > staffMaxDist;
+          // Soft warning: no specific staff selected but service-level limit exceeded
+          const softWarn = !selectedStaffId && serviceMaxDist != null && distMiles > serviceMaxDist;
+          if (hardBlock) {
             setOutsideServiceArea(true);
             const covering = state.staff.filter((m) => {
               if (!m.active) return false;
-              const mDist = (m as any).maxTravelDistance ?? (selectedService as any)?.maxTravelDistance;
+              const mDist = (m as any).maxTravelDistance ?? serviceMaxDist;
               return mDist == null || distMiles <= mDist;
             });
             setCoveringStaffIds(covering.map((m) => m.id));
+          } else if (softWarn) {
+            // Show warning but do NOT block Continue
+            setOutsideServiceArea(false);
+            setCoveringStaffIds([]);
+            setTravelTimeEstimate(`~${mins} min drive · ${distMiles.toFixed(1)} mi ⚠️ outside typical service area`);
           } else {
+            setOutsideServiceArea(false);
             setCoveringStaffIds([]);
           }
           if ((selectedService as any)?.distanceFeeEnabled) {
