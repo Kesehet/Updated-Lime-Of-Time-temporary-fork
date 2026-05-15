@@ -2307,3 +2307,8 @@
 - [x] Add internal staff notes field to appointments (separate from client-visible notes)
 - [x] Add ErrorBoundary component around tab screens
 - [x] Add syncToDb error toast with retry button
+
+## Phase: Bug Fix + UX (May 15, 2026)
+- [x] Fix time slot availability bug (slots showing available when appointment would run past closing time)
+- [x] Add "Jump to Today" floating button on Calendar tab
+- [x] Add swipe-to-delete on Clients list

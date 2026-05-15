@@ -2644,6 +2644,33 @@ export default function CalendarScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* Jump to Today floating button — visible when viewing a different month */}
+      {(currentMonth !== liveNow.getMonth() || currentYear !== liveNow.getFullYear()) && (
+        <Pressable
+          onPress={jumpToToday}
+          style={({ pressed }) => ({
+            position: "absolute",
+            bottom: 90,
+            alignSelf: "center",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            backgroundColor: colors.primary,
+            paddingHorizontal: 16,
+            paddingVertical: 9,
+            borderRadius: 20,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.2,
+            shadowRadius: 6,
+            elevation: 6,
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <IconSymbol name="calendar" size={15} color="#FFF" />
+          <Text style={{ color: "#FFF", fontSize: 13, fontWeight: "700" }}>Today</Text>
+        </Pressable>
+      )}
       {/* Undo toast — appears after bulk Mark All Paid */}
       {undoToast && (
         <View style={styles.undoToast}>

@@ -909,9 +909,17 @@ export default function CalendarBookingScreen() {
         const step0EffectiveInterval = step0SlotInterval !== null
           ? (step0SlotInterval === 0 ? 30 : step0SlotInterval)
           : (globalInterval > 0 ? globalInterval : 30);
-        // Default service duration — must match what the Calendar tab uses so slot counts are identical.
-        // Calendar tab uses state.settings.defaultDuration ?? 30 as serviceDuration in generateCalendarSlots.
-        const step0DefaultDuration = Math.max(1, state.settings.defaultDuration ?? 30);
+        // Default service duration for Step 0 slot generation.
+        // Use the SHORTEST active service duration so that only slots that can fit at least one service
+        // are shown. This prevents showing e.g. a 16:30 slot when all services are 90+ min and closing
+        // is 17:00. Falls back to state.settings.defaultDuration if no active services exist.
+        const shortestActiveSvcDuration = state.services
+          .filter((s: any) => s.active !== false)
+          .reduce((min: number, s: any) => Math.min(min, Math.max(1, s.duration ?? 9999)), Infinity);
+        const step0DefaultDuration = Math.max(
+          1,
+          isFinite(shortestActiveSvcDuration) ? shortestActiveSvcDuration : (state.settings.defaultDuration ?? 30)
+        );
 
         // Step 0 location-aware working hours and appointments
         // Use selectedLocationId (which is updated by the location chip selector) so that

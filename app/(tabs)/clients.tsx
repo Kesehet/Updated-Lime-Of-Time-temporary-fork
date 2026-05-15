@@ -18,6 +18,7 @@ import * as Contacts from "expo-contacts";
 import { usePlanLimitCheck } from "@/hooks/use-plan-limit-check";
 import { UpgradePlanSheet } from "@/components/upgrade-plan-sheet";
 import { BirthdayPicker } from "@/components/birthday-picker";
+import { SwipeableClientRow } from "@/components/swipeable-client-row";
 import { apiCall } from "@/lib/_core/api";
 import * as Auth from "@/lib/_core/auth";
 import { useFocusEffect } from "expo-router";
@@ -830,7 +831,25 @@ export default function ClientsScreen() {
                 const relevantAppt = getRelevantAppt(item.id);
                 const filterActions = FILTER_ACTIONS[clientFilter];
                 const svc = relevantAppt ? getServiceById(relevantAppt.serviceId) : null;
+                const handleSwipeDelete = () => {
+                  Alert.alert(
+                    "Delete Client",
+                    `Remove ${item.name} from your client list? This cannot be undone.`,
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: () => {
+                          dispatch({ type: "DELETE_CLIENT", payload: item.id });
+                          syncToDb({ type: "DELETE_CLIENT", payload: item.id });
+                        },
+                      },
+                    ]
+                  );
+                };
                 return (
+                  <SwipeableClientRow onDelete={handleSwipeDelete}>
                   <View>
                     <Pressable
                       onPress={() => router.push({ pathname: "/client-detail", params: { id: item.id } })}
@@ -900,6 +919,7 @@ export default function ClientsScreen() {
                       )}
                     </Pressable>
                   </View>
+                  </SwipeableClientRow>
                 );
               }}
               ListEmptyComponent={
