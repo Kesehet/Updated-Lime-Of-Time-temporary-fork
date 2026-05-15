@@ -1633,84 +1633,85 @@ export default function ClientBookingWizardScreen() {
               </View>
             )}
             <View style={s.calGrid}>
-              {Array.from({ length: new Date(calYear, calMonth, 1).getDay() }).map((_, i) => (
-                <View key={`empty-${i}`} style={s.calCell} />
-              ))}
-              {calDays.map((day) => {
-                // Use string comparison (YYYY-MM-DD) to match public booking page logic:
-                // today itself is treated as past/disabled so clients can't book same-day.
+              {(() => {
                 const todayDateStr = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })();
-                const dateStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
-                const isPast = dateStr <= todayDateStr;
-                const isUnavailable = !isPast && unavailableDates.has(dateStr);
-                const isClosed = !isPast && closedDates.has(dateStr);
-                const isFull = !isPast && fullDates.has(dateStr);
-                const isSelected = selectedDate?.toDateString() === day.toDateString();
-                const isToday = dateStr === todayDateStr;
-                // Buffer enforcement for multi-session packages
-                const isBeforeBuffer = selectedPackage && sessionDates.length > 1 && activeSessionIdx > 0 && sessionDates[activeSessionIdx - 1]?.date != null
-                  ? (() => {
-                      const minDate = new Date(sessionDates[activeSessionIdx - 1]!.date!);
-                      minDate.setDate(minDate.getDate() + 7);
-                      return day < minDate;
-                    })()
-                  : false;
-                const isDisabled = isPast || isUnavailable || isBeforeBuffer;
+                const leadingEmpties = new Date(calYear, calMonth, 1).getDay();
+                const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+                const totalCells = leadingEmpties + daysInMonth;
+                // Pad to a complete 7-column row so no trailing empty row remains
+                const trailingEmpties = (7 - (totalCells % 7)) % 7;
                 return (
-                  <Pressable
-                    key={day.toISOString()}
-                    style={({ pressed }) => [
-                      s.calCell,
-                      isSelected && { backgroundColor: LIME_GREEN, borderRadius: 20 },
-                      isToday && !isSelected && { borderWidth: 1.5, borderColor: LIME_GREEN, borderRadius: 20, opacity: 0.45 },
-                      !isToday && isPast && { opacity: isClosed ? 0.25 : 0.45 },
-                      !isToday && isUnavailable && { opacity: isClosed ? 0.25 : 0.45 },
-                      pressed && !isDisabled && { opacity: 0.7 },
-                    ]}
-                    onPress={() => {
-                      if (isDisabled) return;
-                      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setSelectedDate(day);
-                      setSelectedSlot(null); // reset time when date changes
-                      // For packages: save to sessionDates
-                      if (selectedPackage && sessionDates.length > 1) {
-                        setSessionDates(prev => prev.map((sd, i) => i === activeSessionIdx ? { ...sd, date: day, slot: null } : sd));
-                      }
-                    }}
-                    disabled={isDisabled}
-                  >
-                    <Text style={{ color: isSelected ? "#FFFFFF" : (isPast || isUnavailable) ? TEXT_MUTED : TEXT_PRIMARY, fontSize: 14, fontWeight: isToday ? "700" : "400" }}>
-                      {day.getDate()}
-                    </Text>
-                    {isToday && (
-                      <Text style={{ fontSize: 7, fontWeight: "700", color: isSelected ? "rgba(255,255,255,0.85)" : LIME_GREEN, marginTop: 1, lineHeight: 9, textTransform: "uppercase", letterSpacing: 0.3 }}>
-                        Today
-                      </Text>
-                    )}
-                    {!isToday && isClosed && !isPast && (
-                      <Text style={{ fontSize: 7, fontWeight: "600", color: TEXT_MUTED, marginTop: 1, lineHeight: 9 }}>
-                        Closed
-                      </Text>
-                    )}
-                    {!isToday && isFull && !isPast && (
-                      <Text style={{ fontSize: 7, fontWeight: "600", color: "#F59E0B", marginTop: 1, lineHeight: 9 }}>
-                        Full
-                      </Text>
-                    )}
-                    {!isToday && !isUnavailable && !isPast && slotCounts[dateStr] != null && (
-                      <Text style={{
-                        fontSize: 9,
-                        fontWeight: "700",
-                        color: isSelected ? "rgba(255,255,255,0.85)" : LIME_GREEN,
-                        marginTop: 1,
-                        lineHeight: 11,
-                      }}>
-                        {slotCounts[dateStr]}
-                      </Text>
-                    )}
-                  </Pressable>
+                  <>
+                    {Array.from({ length: leadingEmpties }).map((_, i) => (
+                      <View key={`lead-${i}`} style={s.calCell} />
+                    ))}
+                    {calDays.map((day) => {
+                      const dateStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+                      const isPast = dateStr <= todayDateStr;
+                      const isUnavailable = !isPast && unavailableDates.has(dateStr);
+                      const isClosed = !isPast && closedDates.has(dateStr);
+                      const isFull = !isPast && fullDates.has(dateStr);
+                      const isSelected = selectedDate?.toDateString() === day.toDateString();
+                      const isToday = dateStr === todayDateStr;
+                      // Buffer enforcement for multi-session packages
+                      const isBeforeBuffer = selectedPackage && sessionDates.length > 1 && activeSessionIdx > 0 && sessionDates[activeSessionIdx - 1]?.date != null
+                        ? (() => {
+                            const minDate = new Date(sessionDates[activeSessionIdx - 1]!.date!);
+                            minDate.setDate(minDate.getDate() + 7);
+                            return day < minDate;
+                          })()
+                        : false;
+                      const isDisabled = isPast || isUnavailable || isBeforeBuffer;
+                      return (
+                        <Pressable
+                          key={day.toISOString()}
+                          style={({ pressed }) => [
+                            s.calCell,
+                            isSelected && { backgroundColor: LIME_GREEN, borderRadius: 20 },
+                            isToday && !isSelected && { borderWidth: 1.5, borderColor: LIME_GREEN, borderRadius: 20, opacity: 0.45 },
+                            !isToday && isPast && { opacity: isClosed ? 0.25 : 0.45 },
+                            !isToday && isUnavailable && { opacity: isClosed ? 0.25 : 0.45 },
+                            pressed && !isDisabled && { opacity: 0.7 },
+                          ]}
+                          onPress={() => {
+                            if (isDisabled) return;
+                            if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setSelectedDate(day);
+                            setSelectedSlot(null);
+                            if (selectedPackage && sessionDates.length > 1) {
+                              setSessionDates(prev => prev.map((sd, i) => i === activeSessionIdx ? { ...sd, date: day, slot: null } : sd));
+                            }
+                          }}
+                          disabled={isDisabled}
+                        >
+                          <Text style={{ color: isSelected ? "#FFFFFF" : (isPast || isUnavailable) ? TEXT_MUTED : TEXT_PRIMARY, fontSize: 14, fontWeight: isToday ? "700" : "400" }}>
+                            {day.getDate()}
+                          </Text>
+                          {isToday && (
+                            <Text style={{ fontSize: 7, fontWeight: "700", color: isSelected ? "rgba(255,255,255,0.85)" : LIME_GREEN, marginTop: 1, lineHeight: 9, textTransform: "uppercase", letterSpacing: 0.3 }}>
+                              Today
+                            </Text>
+                          )}
+                          {!isToday && isClosed && !isPast && (
+                            <Text style={{ fontSize: 7, fontWeight: "600", color: TEXT_MUTED, marginTop: 1, lineHeight: 9 }}>Closed</Text>
+                          )}
+                          {!isToday && isFull && !isPast && (
+                            <Text style={{ fontSize: 7, fontWeight: "600", color: "#F59E0B", marginTop: 1, lineHeight: 9 }}>Full</Text>
+                          )}
+                          {!isToday && !isUnavailable && !isPast && slotCounts[dateStr] != null && (
+                            <Text style={{ fontSize: 9, fontWeight: "700", color: isSelected ? "rgba(255,255,255,0.85)" : LIME_GREEN, marginTop: 1, lineHeight: 11 }}>
+                              {slotCounts[dateStr]}
+                            </Text>
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                    {Array.from({ length: trailingEmpties }).map((_, i) => (
+                      <View key={`trail-${i}`} style={s.calCell} />
+                    ))}
+                  </>
                 );
-              })}
+              })()}
             </View>
 
             {/* ── Available Times (shown below calendar once a date is selected) ── */}
@@ -1729,7 +1730,33 @@ export default function ClientBookingWizardScreen() {
                     <IconSymbol name="arrow.clockwise" size={16} color={LIME_GREEN} />
                   </Pressable>
                 </View>
-                {/* Interval picker hidden from client portal — uses business default interval */}
+                {/* Interval picker — lets client choose slot granularity */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8, marginTop: 2 }} contentContainerStyle={{ flexDirection: "row", gap: 6, paddingHorizontal: 2 }}>
+                  {([0, 5, 10, 15, 20, 25, 30] as const).map((mins) => {
+                    const isActive = slotStep === mins;
+                    return (
+                      <Pressable
+                        key={mins}
+                        onPress={() => {
+                          setSlotStep(mins);
+                          setSelectedSlot(null);
+                          setRefreshCounter((c) => c + 1);
+                        }}
+                        style={({ pressed }) => [{
+                          paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
+                          borderWidth: 1.5,
+                          borderColor: isActive ? LIME_GREEN : CARD_BORDER,
+                          backgroundColor: isActive ? `${LIME_GREEN}20` : CARD_BG,
+                          opacity: pressed ? 0.7 : 1,
+                        }]}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: "600", color: isActive ? LIME_GREEN : TEXT_MUTED }}>
+                          {mins === 0 ? "Auto" : `${mins}m`}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
                 {loadingSlots ? (
                   <ActivityIndicator color={LIME_GREEN} style={{ marginTop: 16 }} />
                 ) : slots.length === 0 ? (
