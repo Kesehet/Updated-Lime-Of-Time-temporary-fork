@@ -8,8 +8,12 @@
  * Timing:
  *   0 ms    → logo + text fade/scale in (420 ms)
  *   500 ms  → logo pulse: 1.0 → 1.06 → 1.0 (400 ms)
+ *   200 ms  → loading bar starts animating from 60% → 100% (800 ms)
  *   1 800 ms → entire screen fades out (380 ms)
  *   2 180 ms → onFinish() called
+ *
+ * The loading bar starts at 60% to seamlessly continue from where the
+ * native splash screen's static loading bar left off.
  */
 
 import { useEffect, useRef } from "react";
@@ -20,6 +24,12 @@ const BRAND_BG = "#0D2318";
 const BRAND_ACCENT = "#8FBF6A";
 const BRAND_TEXT = "#ECEDEE";
 const BRAND_MUTED = "rgba(236,237,238,0.55)";
+const BRAND_MUTED_GREEN = "rgba(100,140,110,0.8)";
+
+// Loading bar dimensions — must match the native splash bar
+const BAR_TOTAL_WIDTH = 220;
+const BAR_HEIGHT = 14;
+const BAR_RADIUS = 7;
 
 interface AnimatedSplashProps {
   onFinish: () => void;
@@ -41,6 +51,15 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
 
   // Accent line width: grows from 0 → 40
   const accentWidth = useRef(new Animated.Value(0)).current;
+
+  // Loading bar: starts at 60% fill, animates to 100%
+  // Value represents the fill width in pixels (0 → BAR_TOTAL_WIDTH)
+  const loadingBarWidth = useRef(
+    new Animated.Value(BAR_TOTAL_WIDTH * 0.6)
+  ).current;
+
+  // Loading label opacity: fades in with text block
+  const loadingLabelOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Step 1: logo appears (scale + fade)
@@ -95,7 +114,27 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
       ]).start();
     }, 500);
 
-    // Step 5: after 1 800 ms total, fade the whole screen out
+    // Step 5: loading label fades in with text block
+    const loadingLabelTimer = setTimeout(() => {
+      Animated.timing(loadingLabelOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, 180);
+
+    // Step 6: loading bar animates from 60% → 100% starting at 200 ms
+    // Duration 800 ms so it completes well before the exit fade at 1800 ms
+    const loadingBarTimer = setTimeout(() => {
+      Animated.timing(loadingBarWidth, {
+        toValue: BAR_TOTAL_WIDTH,
+        duration: 800,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false, // width cannot use native driver
+      }).start();
+    }, 200);
+
+    // Step 7: after 1 800 ms total, fade the whole screen out
     const exitTimer = setTimeout(() => {
       Animated.timing(screenOpacity, {
         toValue: 0,
@@ -111,9 +150,21 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
       clearTimeout(textTimer);
       clearTimeout(accentTimer);
       clearTimeout(pulseTimer);
+      clearTimeout(loadingLabelTimer);
+      clearTimeout(loadingBarTimer);
       clearTimeout(exitTimer);
     };
-  }, [logoScale, logoOpacity, pulseScale, textOpacity, accentWidth, screenOpacity, onFinish]);
+  }, [
+    logoScale,
+    logoOpacity,
+    pulseScale,
+    textOpacity,
+    accentWidth,
+    loadingBarWidth,
+    loadingLabelOpacity,
+    screenOpacity,
+    onFinish,
+  ]);
 
   return (
     <Animated.View style={[styles.container, { opacity: screenOpacity }]} pointerEvents="none">
@@ -149,6 +200,21 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
           <View style={styles.byLineDash} />
           <Text style={styles.byLine}>BY INNOVANCIO</Text>
           <View style={styles.byLineDash} />
+        </View>
+      </Animated.View>
+
+      {/* Loading section: label + animated progress bar */}
+      <Animated.View style={[styles.loadingSection, { opacity: loadingLabelOpacity }]}>
+        <Text style={styles.loadingLabel}>LOADING....</Text>
+        {/* Bar track */}
+        <View style={styles.barTrack}>
+          {/* Animated fill */}
+          <Animated.View
+            style={[
+              styles.barFill,
+              { width: loadingBarWidth },
+            ]}
+          />
         </View>
       </Animated.View>
 
@@ -235,6 +301,30 @@ const styles = StyleSheet.create({
     color: BRAND_MUTED,
     letterSpacing: 2,
     opacity: 0.7,
+  },
+  // Loading section sits below the text block
+  loadingSection: {
+    alignItems: "center",
+    marginTop: 36,
+    gap: 10,
+  },
+  loadingLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: BRAND_ACCENT,
+    letterSpacing: 2,
+  },
+  barTrack: {
+    width: BAR_TOTAL_WIDTH,
+    height: BAR_HEIGHT,
+    borderRadius: BAR_RADIUS,
+    backgroundColor: "rgba(25,55,38,1)",
+    overflow: "hidden",
+  },
+  barFill: {
+    height: BAR_HEIGHT,
+    borderRadius: BAR_RADIUS,
+    backgroundColor: BRAND_ACCENT,
   },
   accentLine: {
     position: "absolute",
