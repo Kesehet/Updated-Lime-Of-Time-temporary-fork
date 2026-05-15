@@ -77,6 +77,7 @@ export default function ClientDetailScreen() {
   const [editEmail, setEditEmail] = useState(client?.email ?? "");
   const [editNotes, setEditNotes] = useState(client?.notes ?? "");
   const [editBirthday, setEditBirthday] = useState(client?.birthday ?? "");
+  const [editSavedAddress, setEditSavedAddress] = useState(client?.savedAddress ?? "");
 
   // Inline edit errors
   const [editErrors, setEditErrors] = useState<{ name?: string; phone?: string; email?: string }>({});
@@ -122,12 +123,12 @@ export default function ClientDetailScreen() {
     setEditErrors({});
     const action = {
       type: "UPDATE_CLIENT" as const,
-      payload: { ...client, name: editName.trim(), phone: editPhone.trim(), email: editEmail.trim(), notes: editNotes.trim(), birthday: editBirthday.trim() },
+      payload: { ...client, name: editName.trim(), phone: editPhone.trim(), email: editEmail.trim(), notes: editNotes.trim(), birthday: editBirthday.trim(), savedAddress: editSavedAddress.trim() || undefined },
     };
     dispatch(action);
     syncToDb(action);
     setEditing(false);
-  }, [editName, editPhone, editEmail, editNotes, editBirthday, client, dispatch]);
+  }, [editName, editPhone, editEmail, editNotes, editBirthday, editSavedAddress, client, dispatch]);
 
   const handleDelete = useCallback(() => {
     if (!client) return;
@@ -492,7 +493,7 @@ export default function ClientDetailScreen() {
           <Text style={{ fontSize: fs.md, fontWeight: "600", color: colors.foreground }}>Client</Text>
           {!editing ? (
             <Pressable
-              onPress={() => { setEditName(client.name); setEditPhone(client.phone); setEditEmail(client.email); setEditNotes(client.notes); setEditBirthday(client.birthday ?? ""); setEditing(true); }}
+              onPress={() => { setEditName(client.name); setEditPhone(client.phone); setEditEmail(client.email); setEditNotes(client.notes); setEditBirthday(client.birthday ?? ""); setEditSavedAddress(client.savedAddress ?? ""); setEditing(true); }}
               style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
             >
               <IconSymbol name="pencil" size={20} color={colors.primary} />
@@ -542,6 +543,15 @@ export default function ClientDetailScreen() {
               onChange={setEditBirthday}
               placeholder="Birthday (optional)"
             />
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
+              placeholder="📍 Saved address (for mobile service)"
+              placeholderTextColor={colors.muted}
+              value={editSavedAddress}
+              onChangeText={setEditSavedAddress}
+              returnKeyType="done"
+              autoCapitalize="words"
+            />
             <View style={styles.editActions}>
               <Pressable onPress={() => setEditing(false)} style={({ pressed }) => [styles.cancelBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}>
                 <Text style={{ fontSize: fs.sm, color: colors.foreground }}>Cancel</Text>
@@ -583,6 +593,22 @@ export default function ClientDetailScreen() {
                 <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 2 }}>Notes</Text>
                 <Text style={{ fontSize: fs.xs, color: colors.foreground, lineHeight: 18 }}>{client.notes}</Text>
               </View>
+            ) : null}
+            {client.savedAddress ? (
+              <Pressable
+                onPress={() => {
+                  const url = `https://maps.apple.com/?q=${encodeURIComponent(client.savedAddress!)}`;
+                  Linking.openURL(url).catch(() => {});
+                }}
+                style={[styles.notesBox, { backgroundColor: colors.background, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: 8 }]}
+              >
+                <Text style={{ fontSize: 16 }}>📍</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 2 }}>Saved Address</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: "600" }} numberOfLines={2}>{client.savedAddress}</Text>
+                </View>
+                <IconSymbol name="chevron.right" size={14} color={colors.muted} />
+              </Pressable>
             ) : null}
             {client.birthday ? (
               <View style={[styles.notesBox, { backgroundColor: colors.background, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: 8 }]}>
