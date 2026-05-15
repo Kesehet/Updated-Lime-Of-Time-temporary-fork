@@ -2062,11 +2062,8 @@ async function getAppointmentsByClientPhone(phone) {
   const db = await getDb();
   if (!db) return [];
   const normalizedPhone = normalizePhone(phone);
-  let matchingClients = await db.select().from(clients).where((0, import_drizzle_orm.eq)(clients.phone, normalizedPhone));
-  if (matchingClients.length === 0) {
-    const allClients = await db.select().from(clients);
-    matchingClients = allClients.filter((c) => c.phone && normalizePhone(c.phone) === normalizedPhone);
-  }
+  const allClients = await db.select().from(clients);
+  const matchingClients = allClients.filter((c) => c.phone && normalizePhone(c.phone) === normalizedPhone);
   if (matchingClients.length === 0) return [];
   const allAppointments = [];
   for (const client of matchingClients) {

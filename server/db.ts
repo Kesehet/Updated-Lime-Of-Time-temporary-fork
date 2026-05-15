@@ -1481,13 +1481,13 @@ export async function getAppointmentsByClientPhone(phone: string) {
   if (!db) return [];
   // Normalize to E.164 for consistent lookup
   const normalizedPhone = normalizePhone(phone);
-  // Find all clients with this phone number across all businesses
-  // Try exact E.164 match first, then fallback scan for legacy 10-digit records
-  let matchingClients = await db.select().from(clients).where(eq(clients.phone, normalizedPhone));
-  if (matchingClients.length === 0) {
-    const allClients = await db.select().from(clients);
-    matchingClients = allClients.filter((c) => c.phone && normalizePhone(c.phone) === normalizedPhone);
-  }
+  // Always do a full normalized scan across ALL clients so we find every business
+  // where this phone number has a client record — regardless of whether the stored
+  // phone is in E.164 (+14124827733) or raw 10-digit (4124827733) format.
+  // A simple exact-match on the normalized value would miss clients stored without
+  // the country-code prefix, causing their appointments to be invisible in the portal.
+  const allClients = await db.select().from(clients);
+  const matchingClients = allClients.filter((c) => c.phone && normalizePhone(c.phone) === normalizedPhone);
   if (matchingClients.length === 0) return [];
   // Get appointments for each client
   const allAppointments: (typeof appointments.$inferSelect)[] = [];
