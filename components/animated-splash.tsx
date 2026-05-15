@@ -19,7 +19,7 @@
  * make the bar feel alive and polished.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -76,6 +76,9 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
   // Shimmer position: translateX sweeping from -SHIMMER_WIDTH to BAR_TOTAL_WIDTH
   // Loops continuously while the bar is visible
   const shimmerX = useRef(new Animated.Value(-SHIMMER_WIDTH)).current;
+
+  // Animated dot cycling for LOADING text: 1 → 2 → 3 → 4 dots
+  const [dotCount, setDotCount] = useState(4);
 
   useEffect(() => {
     // Step 1: logo appears (scale + fade)
@@ -179,6 +182,11 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
       shimmerLoop.start();
     }, 200);
 
+    // Step 7b: animate loading dots cycling 1→2→3→4→1…
+    const dotInterval = setInterval(() => {
+      setDotCount((prev) => (prev >= 4 ? 1 : prev + 1));
+    }, 350);
+
     // Step 8: after 1 800 ms total, fade the whole screen out
     const exitTimer = setTimeout(() => {
       shimmerLoop.stop();
@@ -193,6 +201,7 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
     }, 1800);
 
     return () => {
+      clearInterval(dotInterval);
       clearTimeout(textTimer);
       clearTimeout(accentTimer);
       clearTimeout(pulseTimer);
@@ -254,7 +263,7 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
 
       {/* Loading section: label + animated progress bar with shimmer */}
       <Animated.View style={[styles.loadingSection, { opacity: loadingLabelOpacity }]}>
-        <Text style={styles.loadingLabel}>LOADING....</Text>
+        <Text style={styles.loadingLabel}>{"LOADING" + ".".repeat(dotCount)}</Text>
 
         {/* Bar track */}
         <View style={styles.barTrack}>
@@ -308,34 +317,34 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(143,191,106,0.04)",
   },
   logoWrapper: {
-    width: 104,
-    height: 104,
-    borderRadius: 26,
+    width: 130,
+    height: 130,
+    borderRadius: 32,
     overflow: "hidden",
-    marginBottom: 28,
+    marginBottom: 32,
     // Soft glow ring
     shadowColor: BRAND_ACCENT,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 22,
-    elevation: 14,
+    shadowOpacity: 0.6,
+    shadowRadius: 28,
+    elevation: 16,
   },
   logo: {
-    width: 104,
-    height: 104,
+    width: 130,
+    height: 130,
   },
   textBlock: {
     alignItems: "center",
     gap: 6,
   },
   appName: {
-    fontSize: 30,
-    fontWeight: "700",
+    fontSize: 36,
+    fontWeight: "800",
     color: BRAND_TEXT,
     letterSpacing: 0.5,
   },
   tagline: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "400",
     color: BRAND_MUTED,
     letterSpacing: 0.3,
@@ -362,14 +371,16 @@ const styles = StyleSheet.create({
   // Loading section sits below the text block
   loadingSection: {
     alignItems: "center",
-    marginTop: 36,
-    gap: 10,
+    marginTop: 44,
+    gap: 12,
   },
   loadingLabel: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: "600",
     color: BRAND_ACCENT,
     letterSpacing: 2,
+    minWidth: 120,
+    textAlign: "center",
   },
   barTrack: {
     width: BAR_TOTAL_WIDTH,

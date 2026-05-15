@@ -2,16 +2,20 @@
  * Profile Selection Screen
  * Premium redesign — gradient cards with glass morphism, bold typography,
  * animated entry, and clear visual hierarchy for Business vs Client portals.
+ *
+ * Layout: ScrollView-based so content never clips on small devices.
+ * Transition: branded full-screen overlay fades in when a portal card is tapped.
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Text,
   View,
   StyleSheet,
   Image,
-  Dimensions,
   Platform,
+  ScrollView,
+  Animated as RNAnimated,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -34,8 +38,6 @@ import { useStore } from "@/lib/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { recordBusinessActivity, recordClientActivity, CLIENT_BIOMETRIC_ENABLED_KEY } from "@/hooks/use-app-lock";
 import * as LocalAuthentication from "expo-local-authentication";
-
-const { width, height } = Dimensions.get("window");
 
 // ─── Floating Particle ────────────────────────────────────────────────────────
 function FloatingParticle({
@@ -75,20 +77,71 @@ function FloatingParticle({
 }
 
 const PARTICLES = [
-  { x: width * 0.08, y: height * 0.12, size: 5, delay: 200, duration: 2800, opacity: 0.35 },
-  { x: width * 0.85, y: height * 0.09, size: 4, delay: 600, duration: 3200, opacity: 0.28 },
-  { x: width * 0.15, y: height * 0.35, size: 3, delay: 400, duration: 2600, opacity: 0.22 },
-  { x: width * 0.78, y: height * 0.28, size: 6, delay: 800, duration: 3600, opacity: 0.3 },
-  { x: width * 0.5,  y: height * 0.08, size: 4, delay: 300, duration: 3000, opacity: 0.25 },
-  { x: width * 0.92, y: height * 0.45, size: 3, delay: 700, duration: 2900, opacity: 0.2 },
-  { x: width * 0.05, y: height * 0.55, size: 5, delay: 500, duration: 3400, opacity: 0.28 },
-  { x: width * 0.65, y: height * 0.15, size: 3, delay: 900, duration: 2700, opacity: 0.22 },
-];
+  { x: "8%",  y: "10%", size: 5, delay: 200, duration: 2800, opacity: 0.35 },
+  { x: "85%", y: "8%",  size: 4, delay: 600, duration: 3200, opacity: 0.28 },
+  { x: "15%", y: "32%", size: 3, delay: 400, duration: 2600, opacity: 0.22 },
+  { x: "78%", y: "25%", size: 6, delay: 800, duration: 3600, opacity: 0.3  },
+  { x: "50%", y: "6%",  size: 4, delay: 300, duration: 3000, opacity: 0.25 },
+  { x: "92%", y: "42%", size: 3, delay: 700, duration: 2900, opacity: 0.2  },
+  { x: "5%",  y: "52%", size: 5, delay: 500, duration: 3400, opacity: 0.28 },
+  { x: "65%", y: "12%", size: 3, delay: 900, duration: 2700, opacity: 0.22 },
+] as const;
+
+// ─── Portal Transition Overlay ────────────────────────────────────────────────
+function PortalTransitionOverlay({
+  visible,
+  colors,
+  label,
+}: {
+  visible: boolean;
+  colors: [string, string, string];
+  label: string;
+}) {
+  const opacity = useRef(new RNAnimated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      RNAnimated.timing(opacity, {
+        toValue: 1,
+        duration: 280,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      opacity.setValue(0);
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <RNAnimated.View style={[StyleSheet.absoluteFillObject, { opacity, zIndex: 9999 }]}>
+      <LinearGradient
+        colors={colors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[StyleSheet.absoluteFillObject, styles.transitionOverlay]}
+      >
+        <View style={styles.transitionContent}>
+          <Image
+            source={require("@/assets/images/icon.png")}
+            style={styles.transitionLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.transitionLabel}>{label}</Text>
+          <View style={styles.transitionDots}>
+            <View style={styles.transitionDot} />
+            <View style={[styles.transitionDot, { opacity: 0.6 }]} />
+            <View style={[styles.transitionDot, { opacity: 0.3 }]} />
+          </View>
+        </View>
+      </LinearGradient>
+    </RNAnimated.View>
+  );
+}
 
 // ─── Premium Portal Card ──────────────────────────────────────────────────────
 function PortalCard({
   gradientColors,
-  accentLight,
   icon,
   logoUri,
   badgeLabel,
@@ -146,7 +199,7 @@ function PortalCard({
           end={{ x: 1, y: 1 }}
           style={styles.cardGradient}
         >
-          {/* Decorative circle top-right */}
+          {/* Decorative circles */}
           <View style={[styles.cardCircle1, { backgroundColor: "rgba(255,255,255,0.08)" }]} />
           <View style={[styles.cardCircle2, { backgroundColor: "rgba(255,255,255,0.05)" }]} />
 
@@ -209,11 +262,14 @@ export default function ProfileSelectScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  // Welcome-back hints — loaded from AsyncStorage on mount
   const [returnBusinessName, setReturnBusinessName] = useState<string | null>(null);
   const [returnClientName, setReturnClientName] = useState<string | null>(null);
+  const [transitionVisible, setTransitionVisible] = useState(false);
+  const [transitionConfig, setTransitionConfig] = useState<{
+    colors: [string, string, string];
+    label: string;
+  }>({ colors: ["#1E5C3A", "#2D7A50", "#3A9463"], label: "Business Portal" });
 
-  // Business logo — shown in the Business Portal card
   const { state } = useStore();
   const businessLogoUri = state.settings.businessLogoUri ||
     state.settings.profile?.businessLogoUri ||
@@ -269,19 +325,14 @@ export default function ProfileSelectScreen() {
   const byLineStyle = useAnimatedStyle(() => ({ opacity: byLineOpacity.value }));
   const footerStyle = useAnimatedStyle(() => ({ opacity: footerOpacity.value }));
 
-  /**
-   * Attempt biometric authentication if the device supports it and the given
-   * storage key has biometric enabled. Returns true if auth passed or is not
-   * required; returns false if the user cancelled / failed.
-   */
   const tryBiometric = async (enabledKey: string, promptLabel: string): Promise<boolean> => {
     if (Platform.OS === "web") return true;
     try {
       const enabled = await AsyncStorage.getItem(enabledKey);
-      if (enabled !== "true") return true; // biometric not enabled — no gate
+      if (enabled !== "true") return true;
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      if (!hasHardware || !isEnrolled) return true; // no hardware — no gate
+      if (!hasHardware || !isEnrolled) return true;
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: promptLabel,
         disableDeviceFallback: false,
@@ -289,40 +340,50 @@ export default function ProfileSelectScreen() {
       });
       return result.success;
     } catch {
-      return true; // on error, don't block the user
+      return true;
     }
   };
 
   const handleSelect = async (mode: "business" | "client") => {
+    // Show transition overlay immediately
+    if (mode === "business") {
+      setTransitionConfig({ colors: ["#1E5C3A", "#2D7A50", "#3A9463"], label: "Business Portal" });
+    } else {
+      setTransitionConfig({ colors: ["#4C2D8A", "#6B3FAD", "#8B5CF6"], label: "Client Portal" });
+    }
+    setTransitionVisible(true);
+
     await setProfileMode(mode);
     if (mode === "business") {
       try {
         const storedOwnerId = await AsyncStorage.getItem("@bookease_business_owner_id");
         if (storedOwnerId) {
-          // Existing session — gate with Face ID if enabled
           const passed = await tryBiometric(
             "@bookease_biometric_enabled",
             "Unlock Business Portal",
           );
-          if (!passed) return; // user cancelled — stay on portal selector
+          if (!passed) {
+            setTransitionVisible(false);
+            return;
+          }
           await recordBusinessActivity();
           router.replace("/(tabs)" as any);
           return;
         }
       } catch { /* ignore */ }
-      // No existing session — go to onboarding (no biometric gate needed)
       router.push("/onboarding");
     } else {
-      // Client portal
       try {
         const clientToken = await AsyncStorage.getItem("client_session_token");
         if (clientToken) {
-          // Existing client session — gate with Face ID if enabled
           const passed = await tryBiometric(
             CLIENT_BIOMETRIC_ENABLED_KEY,
             "Unlock Client Portal",
           );
-          if (!passed) return; // user cancelled — stay on portal selector
+          if (!passed) {
+            setTransitionVisible(false);
+            return;
+          }
         }
       } catch { /* ignore */ }
       await recordClientActivity();
@@ -339,13 +400,33 @@ export default function ProfileSelectScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
-      {PARTICLES.map((p, i) => <FloatingParticle key={i} {...p} />)}
-
+      {/* Decorative waves — absolute, behind content */}
       <View style={styles.wave1} />
       <View style={styles.wave2} />
 
-      <View style={[styles.content, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 10 }]}>
+      {/* Floating particles — absolute, behind content */}
+      {PARTICLES.map((p, i) => (
+        <FloatingParticle
+          key={i}
+          x={parseFloat(p.x) / 100 * 390} // approximate, particles are decorative
+          y={parseFloat(p.y) / 100 * 844}
+          size={p.size}
+          delay={p.delay}
+          duration={p.duration}
+          opacity={p.opacity}
+        />
+      ))}
 
+      {/* Scrollable content — fills screen, scrolls if needed */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+      >
         {/* ─── Logo + App Name ─── */}
         <View style={styles.logoContainer}>
           <Animated.View style={logoStyle}>
@@ -359,7 +440,7 @@ export default function ProfileSelectScreen() {
           </Animated.View>
           <Animated.Text style={[styles.appName, appNameStyle]}>Lime Of Time</Animated.Text>
           <Animated.Text style={[styles.appTagline, taglineStyle]}>Book Appointments Near You</Animated.Text>
-          <Animated.View style={[{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 }, byLineStyle]}>
+          <Animated.View style={[{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 }, byLineStyle]}>
             <View style={{ width: 24, height: 1, backgroundColor: "rgba(255,255,255,0.3)" }} />
             <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", letterSpacing: 1.5, textTransform: "uppercase" }}>by Innovancio</Text>
             <View style={{ width: 24, height: 1, backgroundColor: "rgba(255,255,255,0.3)" }} />
@@ -401,7 +482,14 @@ export default function ProfileSelectScreen() {
         <Animated.Text style={[styles.footerNote, footerStyle]}>
           You can switch between portals at any time from Settings
         </Animated.Text>
-      </View>
+      </ScrollView>
+
+      {/* ─── Portal Transition Overlay ─── */}
+      <PortalTransitionOverlay
+        visible={transitionVisible}
+        colors={transitionConfig.colors}
+        label={transitionConfig.label}
+      />
     </View>
   );
 }
@@ -415,59 +503,62 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: height * 0.38,
+    height: "38%",
     backgroundColor: "rgba(255,255,255,0.04)",
-    borderTopLeftRadius: width * 0.5,
-    borderTopRightRadius: width * 0.5,
+    borderTopLeftRadius: 300,
+    borderTopRightRadius: 300,
   },
   wave2: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    height: height * 0.28,
+    height: "28%",
     backgroundColor: "rgba(255,255,255,0.03)",
-    borderTopLeftRadius: width * 0.6,
-    borderTopRightRadius: width * 0.6,
+    borderTopLeftRadius: 400,
+    borderTopRightRadius: 400,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
+  scrollContent: {
     alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
+    paddingHorizontal: 20,
+    gap: 20,
   },
   logoContainer: {
     alignItems: "center",
     marginBottom: 4,
   },
   logoRing: {
-    width: 96,
-    height: 96,
-    borderRadius: 26,
+    width: 110,
+    height: 110,
+    borderRadius: 30,
     backgroundColor: "rgba(255,255,255,0.12)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
     borderColor: "rgba(255,255,255,0.2)",
-    marginBottom: 10,
+    marginBottom: 12,
+    shadowColor: "#8FBF6A",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 12,
   },
   logo: {
-    width: 72,
-    height: 72,
-    borderRadius: 18,
+    width: 82,
+    height: 82,
+    borderRadius: 20,
   },
   appName: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "800",
     color: "#FFFFFF",
     letterSpacing: 0.2,
     marginTop: 2,
   },
   appTagline: {
-    fontSize: 13,
+    fontSize: 14,
     color: "rgba(255,255,255,0.65)",
-    marginTop: 3,
+    marginTop: 4,
     letterSpacing: 0.2,
   },
   cardsContainer: {
@@ -609,5 +700,40 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "rgba(255,255,255,0.92)",
     letterSpacing: 0.1,
+  },
+  // ─── Transition Overlay ───────────────────────────────────────────────────
+  transitionOverlay: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  transitionContent: {
+    alignItems: "center",
+    gap: 16,
+  },
+  transitionLogo: {
+    width: 88,
+    height: 88,
+    borderRadius: 22,
+    shadowColor: "#fff",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+  },
+  transitionLabel: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 0.3,
+  },
+  transitionDots: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  transitionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.85)",
   },
 });
