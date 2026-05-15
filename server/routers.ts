@@ -406,6 +406,7 @@ const clientsRouter = router({
         email: z.string().optional(),
         notes: z.string().optional(),
         birthday: z.string().optional(),
+        savedAddress: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {

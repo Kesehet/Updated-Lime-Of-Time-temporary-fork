@@ -26,6 +26,8 @@ export interface Client {
   notes: string;
   birthday: string; // MM-DD format, e.g. "03-15" for March 15 (empty string = not set)
   createdAt: string;
+  /** Saved service address for mobile bookings — pre-fills address fields on new bookings */
+  savedAddress?: string;
 }
 
 /** A before/after photo attached to a client profile */

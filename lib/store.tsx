@@ -691,6 +691,7 @@ export function dbClientToLocal(c: any): Client {
     notes: c.notes ?? "",
     birthday: c.birthday ?? "",
     createdAt: c.createdAt ? new Date(c.createdAt).toISOString() : new Date().toISOString(),
+    savedAddress: c.savedAddress ?? undefined,
   };
 }
 
@@ -1910,6 +1911,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               email: cl.email || undefined,
               notes: cl.notes || undefined,
               birthday: cl.birthday || undefined,
+              savedAddress: cl.savedAddress || undefined,
             });
             break;
           }

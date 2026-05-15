@@ -1,0 +1,1 @@
+ALTER TABLE `clients` ADD `savedAddress` varchar(512);

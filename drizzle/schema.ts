@@ -218,6 +218,8 @@ export const clients = mysqlTable(
     email: varchar("email", { length: 320 }),
     notes: text("notes"),
     birthday: varchar("birthday", { length: 20 }),
+    /** Saved service address for mobile bookings — pre-fills address fields on new bookings */
+    savedAddress: varchar("savedAddress", { length: 512 }),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },

@@ -82,8 +82,9 @@ export default function NewBookingScreen() {
   const [addrZip, setAddrZip] = useState("");
   const clientAddress = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(", ");
 
-  // Auto-prefill address fields from the selected client's most recent appointment
-  // that has a clientAddress. Only fires when fields are empty so manual edits are preserved.
+  // Auto-prefill address fields from the selected client's savedAddress (profile)
+  // or their most recent appointment that has a clientAddress.
+  // Only fires when fields are empty so manual edits are preserved.
   useEffect(() => {
     if (!selectedClientId) {
       // Clear address fields when client is deselected
@@ -94,11 +95,14 @@ export default function NewBookingScreen() {
       return;
     }
     if (addrStreet) return; // Don't overwrite if already filled
-    // Find most recent appointment for this client that has a clientAddress
+    // Priority 1: client's saved profile address
+    const client = getClientById(selectedClientId);
+    const savedAddr = (client as any)?.savedAddress ?? "";
+    // Priority 2: most recent appointment with a clientAddress
     const past = state.appointments
       .filter((a) => a.clientLocalId === selectedClientId && (a as any).clientAddress)
       .sort((a, b) => ((b as any).date ?? "").localeCompare((a as any).date ?? ""));
-    const lastAddr: string = (past[0] as any)?.clientAddress ?? "";
+    const lastAddr: string = savedAddr || ((past[0] as any)?.clientAddress ?? "");
     if (!lastAddr) return;
     // Parse "Street, City, State ZIP" or "Street, City, State, ZIP" format
     const parts = lastAddr.split(",").map((p: string) => p.trim()).filter(Boolean);
@@ -854,12 +858,46 @@ export default function NewBookingScreen() {
         setChargingCard(false);
       }
     }
-    // Navigate to the newly created appointment detail
-    if (firstAppointmentId) {
-      router.replace({ pathname: "/appointment-detail", params: { id: firstAppointmentId } });
-    } else {
-      router.back();
+    // Prompt to save address to client profile (mobile services only)
+    // Only show if address is new or different from what's already saved
+    const doNavigate = () => {
+      if (firstAppointmentId) {
+        router.replace({ pathname: "/appointment-detail", params: { id: firstAppointmentId } });
+      } else {
+        router.back();
+      }
+    };
+
+    if (isMobileService && clientAddress.trim() && selectedClientId && selectedClient) {
+      const existingSaved = (selectedClient as any)?.savedAddress ?? "";
+      const addressChanged = clientAddress.trim() !== existingSaved.trim();
+      if (addressChanged) {
+        Alert.alert(
+          "Save Address to Profile?",
+          `Save "${clientAddress.trim()}" to ${selectedClient.name}'s profile so it pre-fills automatically on future bookings?`,
+          [
+            {
+              text: "Don't Save",
+              style: "cancel",
+              onPress: doNavigate,
+            },
+            {
+              text: "Save Address",
+              onPress: () => {
+                const updatedClient = { ...selectedClient, savedAddress: clientAddress.trim() };
+                dispatch({ type: "UPDATE_CLIENT", payload: updatedClient });
+                syncToDb({ type: "UPDATE_CLIENT", payload: updatedClient });
+                doNavigate();
+              },
+            },
+          ]
+        );
+        return; // Wait for user to respond to the alert
+      }
     }
+
+    // Navigate to the newly created appointment detail
+    doNavigate();
   }, [selectedServiceId, selectedClientId, selectedDate, selectedTime, totalDuration, notes, cart, recurring, dispatch, router, appliedDiscount, discountAmount, totalPrice, subtotal, grandTotal, clientAddress, isMobileService, travelFeeAmount, selectedStaffId, selectedLocationId, syncToDb, selectedService, selectedClient, state.settings, sendSmsMutation, selectedPaymentMethod, initPaymentSheet, presentPaymentSheet, state.businessOwnerId, chargingCard]);
 
   const getInitials = (name: string) => {
