@@ -25,7 +25,6 @@ import { useActiveLocation } from "@/hooks/use-active-location";
 import { useResponsive } from "@/hooks/use-responsive";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { useStripe } from "@/lib/use-stripe";
-import { useStripeKey } from "@/lib/stripe-key-context";
 import { apiCall } from "@/lib/_core/api";
 
 
@@ -60,7 +59,6 @@ export default function NewBookingScreen() {
 
    const sendSmsMutation = trpc.twilio.sendSms.useMutation();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
-  const { setStripePublishableKey } = useStripeKey();
   const [chargingCard, setChargingCard] = useState(false);
   const [step, setStep] = useState<Step>(1);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
@@ -778,8 +776,6 @@ export default function NewBookingScreen() {
             }),
           }
         );
-        // Sync StripeProvider key with the one used to create the PaymentIntent
-        if (sheetData.publishableKey) setStripePublishableKey(sheetData.publishableKey);
         const { error: initError } = await initPaymentSheet({
           merchantDisplayName: state.settings.businessName ?? 'Business',
           paymentIntentClientSecret: sheetData.paymentIntent,

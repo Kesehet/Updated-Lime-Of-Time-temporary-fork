@@ -1603,7 +1603,8 @@ export function registerStripeConnectRoutes(app: Express): void {
             const chargeId = src?.charge ?? src?.payment_intent ?? null;
             if (chargeId) {
               // Retrieve the charge (expanded with payment_intent) to get PI metadata
-              const charge = await stripe.charges.retrieve(
+              // Note: stripeAccount goes inside the options object (3rd arg not supported in this SDK version)
+              const charge = await (stripe.charges.retrieve as any)(
                 chargeId,
                 { expand: ["payment_intent"] },
                 { stripeAccount: accountId }

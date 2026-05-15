@@ -32,7 +32,6 @@ import { AppLockProvider, ClientAppLockProvider } from "@/lib/app-lock-provider"
 import { SplashDoneProvider } from "@/lib/splash-done-context";
 import { NotificationProvider } from "@/lib/notification-provider";
 import { StripeProvider } from "@/lib/stripe-provider";
-import { StripeKeyProvider, useStripeKey } from "@/lib/stripe-key-context";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { initSentry, withSentryWrapper } from "@/lib/sentry";
 import { AnimatedSplash } from "@/components/animated-splash";
@@ -239,12 +238,12 @@ function RootLayout() {
       }),
   );
   const [trpcClient] = useState(() => createTRPCClient());
-  const [stripePublishableKeyBase, setStripePublishableKeyBase] = useState("");
+  const [stripePublishableKey, setStripePublishableKey] = useState("");
   useEffect(() => {
     const apiBase = getApiBaseUrl();
     fetch(`${apiBase}/api/public/stripe-config`)
       .then((r) => r.json())
-      .then((d) => { if (d?.publishableKey) setStripePublishableKeyBase(d.publishableKey); })
+      .then((d) => { if (d?.publishableKey) setStripePublishableKey(d.publishableKey); })
       .catch(() => {});
   }, []);
 
@@ -274,8 +273,7 @@ function RootLayout() {
         <AnimatedSplash onFinish={handleSplashFinish} />
       </View>
     )}
-    <StripeKeyProvider>
-    <StripeProviderWrapper baseKey={stripePublishableKeyBase}>
+    <StripeProvider publishableKey={stripePublishableKey || "pk_test_placeholder"}>
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
@@ -378,8 +376,7 @@ function RootLayout() {
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>
-    </StripeProviderWrapper>
-    </StripeKeyProvider>
+    </StripeProvider>
     </View>
   );
   const shouldOverrideSafeArea = Platform.OS === "web";
@@ -404,24 +401,6 @@ function RootLayout() {
         {content}
       </SafeAreaProvider>
     </ThemeProvider>
-  );
-}
-
-/**
- * StripeProviderWrapper — reads the active key from StripeKeyContext and uses it
- * to initialize StripeProvider. Child screens can call setStripePublishableKey()
- * (from useStripeKey()) to update the key before presenting a payment sheet,
- * ensuring the StripeProvider key always matches the PaymentIntent's account.
- */
-function StripeProviderWrapper({ baseKey, children }: { baseKey: string; children: React.ReactNode }) {
-  const { stripePublishableKey: contextKey } = useStripeKey();
-  // Prefer the key set by a child screen (from create-payment-sheet response),
-  // fall back to the key fetched on mount, then to a placeholder.
-  const activeKey = contextKey || baseKey || "pk_test_placeholder";
-  return (
-    <StripeProvider publishableKey={activeKey}>
-      {children as React.ReactElement}
-    </StripeProvider>
   );
 }
 
