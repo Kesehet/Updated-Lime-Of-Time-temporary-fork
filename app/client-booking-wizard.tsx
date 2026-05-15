@@ -1637,13 +1637,16 @@ export default function ClientBookingWizardScreen() {
                 <View key={`empty-${i}`} style={s.calCell} />
               ))}
               {calDays.map((day) => {
-                const isPast = day < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                const dateStr = day.toISOString().split("T")[0];
+                // Use string comparison (YYYY-MM-DD) to match public booking page logic:
+                // today itself is treated as past/disabled so clients can't book same-day.
+                const todayDateStr = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })();
+                const dateStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+                const isPast = dateStr <= todayDateStr;
                 const isUnavailable = !isPast && unavailableDates.has(dateStr);
                 const isClosed = !isPast && closedDates.has(dateStr);
                 const isFull = !isPast && fullDates.has(dateStr);
                 const isSelected = selectedDate?.toDateString() === day.toDateString();
-                const isToday = day.toDateString() === today.toDateString();
+                const isToday = dateStr === todayDateStr;
                 // Buffer enforcement for multi-session packages
                 const isBeforeBuffer = selectedPackage && sessionDates.length > 1 && activeSessionIdx > 0 && sessionDates[activeSessionIdx - 1]?.date != null
                   ? (() => {
@@ -1659,8 +1662,9 @@ export default function ClientBookingWizardScreen() {
                     style={({ pressed }) => [
                       s.calCell,
                       isSelected && { backgroundColor: LIME_GREEN, borderRadius: 20 },
-                      isToday && !isSelected && { borderWidth: 1.5, borderColor: LIME_GREEN, borderRadius: 20 },
-                      (isPast || isUnavailable) && { opacity: isClosed ? 0.25 : 0.45 },
+                      isToday && !isSelected && { borderWidth: 1.5, borderColor: LIME_GREEN, borderRadius: 20, opacity: 0.45 },
+                      !isToday && isPast && { opacity: isClosed ? 0.25 : 0.45 },
+                      !isToday && isUnavailable && { opacity: isClosed ? 0.25 : 0.45 },
                       pressed && !isDisabled && { opacity: 0.7 },
                     ]}
                     onPress={() => {
@@ -1675,20 +1679,25 @@ export default function ClientBookingWizardScreen() {
                     }}
                     disabled={isDisabled}
                   >
-                    <Text style={{ color: isSelected ? "#FFFFFF" : isUnavailable ? TEXT_MUTED : TEXT_PRIMARY, fontSize: 14, fontWeight: isToday ? "700" : "400" }}>
+                    <Text style={{ color: isSelected ? "#FFFFFF" : (isPast || isUnavailable) ? TEXT_MUTED : TEXT_PRIMARY, fontSize: 14, fontWeight: isToday ? "700" : "400" }}>
                       {day.getDate()}
                     </Text>
-                    {isClosed && !isPast && (
+                    {isToday && (
+                      <Text style={{ fontSize: 7, fontWeight: "700", color: isSelected ? "rgba(255,255,255,0.85)" : LIME_GREEN, marginTop: 1, lineHeight: 9, textTransform: "uppercase", letterSpacing: 0.3 }}>
+                        Today
+                      </Text>
+                    )}
+                    {!isToday && isClosed && !isPast && (
                       <Text style={{ fontSize: 7, fontWeight: "600", color: TEXT_MUTED, marginTop: 1, lineHeight: 9 }}>
                         Closed
                       </Text>
                     )}
-                    {isFull && !isPast && (
+                    {!isToday && isFull && !isPast && (
                       <Text style={{ fontSize: 7, fontWeight: "600", color: "#F59E0B", marginTop: 1, lineHeight: 9 }}>
                         Full
                       </Text>
                     )}
-                    {!isUnavailable && !isPast && slotCounts[dateStr] != null && (
+                    {!isToday && !isUnavailable && !isPast && slotCounts[dateStr] != null && (
                       <Text style={{
                         fontSize: 9,
                         fontWeight: "700",
@@ -1706,7 +1715,7 @@ export default function ClientBookingWizardScreen() {
 
             {/* ── Available Times (shown below calendar once a date is selected) ── */}
             {selectedDate && (
-              <View style={{ marginTop: 4 }}>
+              <View style={{ marginTop: 0 }}>
                 <View style={s.timeSectionHeader}>
                   <IconSymbol name="clock" size={15} color={LIME_GREEN} />
                   <Text style={[s.timeSectionTitle, { color: TEXT_PRIMARY, flex: 1 }]}>
@@ -1720,33 +1729,7 @@ export default function ClientBookingWizardScreen() {
                     <IconSymbol name="arrow.clockwise" size={16} color={LIME_GREEN} />
                   </Pressable>
                 </View>
-                {/* Interval picker */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10, marginTop: 2 }} contentContainerStyle={{ flexDirection: "row", gap: 6, paddingHorizontal: 2 }}>
-                  {([0, 5, 10, 15, 20, 25, 30] as const).map((mins) => {
-                    const isActive = slotStep === mins;
-                    return (
-                      <Pressable
-                        key={mins}
-                        onPress={() => {
-                          setSlotStep(mins);
-                          setSelectedSlot(null);
-                          setRefreshCounter((c) => c + 1);
-                        }}
-                        style={({ pressed }) => [{
-                          paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
-                          borderWidth: 1.5,
-                          borderColor: isActive ? LIME_GREEN : CARD_BORDER,
-                          backgroundColor: isActive ? `${LIME_GREEN}20` : CARD_BG,
-                          opacity: pressed ? 0.7 : 1,
-                        }]}
-                      >
-                        <Text style={{ fontSize: 12, fontWeight: "600", color: isActive ? LIME_GREEN : TEXT_MUTED }}>
-                          {mins === 0 ? "Auto" : `${mins}m`}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
+                {/* Interval picker hidden from client portal — uses business default interval */}
                 {loadingSlots ? (
                   <ActivityIndicator color={LIME_GREEN} style={{ marginTop: 16 }} />
                 ) : slots.length === 0 ? (
@@ -2786,7 +2769,7 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     stepDot: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
     stepLine: { width: 20, height: 2, marginHorizontal: 1 },
     stepLabel: { textAlign: "center", fontSize: 13, fontWeight: "600", marginTop: 6, marginBottom: 4 },
-    stepContent: { paddingTop: 16, gap: 12 },
+    stepContent: { paddingTop: 16, gap: 10 },
     stepTitle: { fontSize: 20, fontWeight: "700", marginBottom: 4 },
     stepSubtitle: { fontSize: 14, marginBottom: 4 },
     optionCard: { flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1, padding: 14, gap: 12 },
@@ -2805,9 +2788,9 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     calGrid: { flexDirection: "row", flexWrap: "wrap" },
     calCell: { width: "14.28%" as any, aspectRatio: 1.1, alignItems: "center", justifyContent: "center" },
     selectedDateLabel: { textAlign: "center", fontSize: 14, fontWeight: "600", marginTop: 12 },
-    timeSectionHeader: { flexDirection: "row" as const, alignItems: "center" as const, gap: 6, marginBottom: 10 },
+    timeSectionHeader: { flexDirection: "row" as const, alignItems: "center" as const, gap: 6, marginBottom: 6 },
     timeSectionTitle: { fontSize: 15, fontWeight: "700" as const },
-    noSlots: { alignItems: "center", paddingTop: 40, gap: 12 },
+    noSlots: { alignItems: "center", paddingTop: 16, gap: 12 },
     noSlotsText: { fontSize: 14 },
     slotsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     slotBtn: { borderRadius: 20, borderWidth: 1.5, paddingVertical: 10, alignItems: "center", width: "23%" as any, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 1 },
