@@ -327,6 +327,21 @@ export default function ClientBookingWizardScreen() {
     if (!lastUsedAddress || addrStreet) return;
     // Pre-fill the search box display
     setAddrSearchQuery(lastUsedAddress);
+    // Helper: convert full US state name to 2-char abbreviation (handles legacy stored addresses)
+    const STATE_ABBR: Record<string, string> = {
+      'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA',
+      'Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA',
+      'Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS',
+      'Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA',
+      'Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT',
+      'Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM',
+      'New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK',
+      'Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC',
+      'South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT',
+      'Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY',
+      'District of Columbia':'DC'
+    };
+    const toAbbr = (s: string) => STATE_ABBR[s] ?? s;
     const parts = lastUsedAddress.split(",").map((p: string) => p.trim());
     if (parts.length >= 3) {
       setAddrStreet(parts[0] ?? "");
@@ -334,10 +349,10 @@ export default function ClientBookingWizardScreen() {
       const last = parts[parts.length - 1] ?? "";
       const stateZip = last.split(" ").filter(Boolean);
       if (stateZip.length >= 2) {
-        setAddrState(stateZip[0]);
+        setAddrState(toAbbr(stateZip[0]));
         setAddrZip(stateZip.slice(1).join(" "));
       } else {
-        setAddrState(last);
+        setAddrState(toAbbr(last));
         if (parts.length >= 4) setAddrZip(parts[parts.length - 2] ?? "");
       }
     } else {
@@ -909,14 +924,21 @@ export default function ClientBookingWizardScreen() {
       // Use staff-level maxTravelDistance override if staff is selected and has one set; else fall back to service-level
       const staffForAlert = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
       const effectiveMaxDistAlert = (staffForAlert as any)?.maxTravelDistance ?? selectedService?.maxTravelDistance;
-      if (effectiveMaxDistAlert) {
+      // Only show the soft-warning Alert when the actual route distance EXCEEDS the limit.
+      // Hard blocks (outsideServiceArea=true) are already handled by the disabled button.
+      // If distance is within range OR unknown (OSRM not yet loaded), proceed silently.
+      const distanceExceedsLimit =
+        effectiveMaxDistAlert != null &&
+        routeDistanceMiles != null &&
+        routeDistanceMiles > effectiveMaxDistAlert;
+      if (distanceExceedsLimit) {
         Alert.alert(
-          "⚠️ Check Service Area",
-          `This service has a maximum travel distance of ${effectiveMaxDistAlert} miles. Please confirm your address is within the service area before continuing.`,
+          "⚠️ Outside Typical Service Area",
+          `Your address is ${routeDistanceMiles!.toFixed(1)} mi away. This service's typical range is ${effectiveMaxDistAlert} miles. Do you want to continue anyway?`,
           [
             { text: "Go Back", style: "cancel" },
             {
-              text: "I'm in Range",
+              text: "Continue Anyway",
               onPress: () => {
                 setClientAddress(fullClientAddress);
                 setStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -2285,6 +2307,8 @@ export default function ClientBookingWizardScreen() {
                 <Pressable
                   onPress={() => {
                     // Parse "Street, City, State ZIP" or "Street, City, State, ZIP"
+                    const SA: Record<string,string> = {'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA','Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA','Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS','Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA','Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT','Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM','New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK','Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC','South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT','Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY','District of Columbia':'DC'};
+                    const toAbbr2 = (s: string) => SA[s] ?? s;
                     const parts = lastUsedAddress.split(",").map((p: string) => p.trim());
                     if (parts.length >= 3) {
                       setAddrStreet(parts[0] ?? "");
@@ -2293,10 +2317,10 @@ export default function ClientBookingWizardScreen() {
                       const last = parts[parts.length - 1] ?? "";
                       const stateZip = last.split(" ").filter(Boolean);
                       if (stateZip.length >= 2) {
-                        setAddrState(stateZip[0]);
+                        setAddrState(toAbbr2(stateZip[0]));
                         setAddrZip(stateZip.slice(1).join(" "));
                       } else {
-                        setAddrState(last);
+                        setAddrState(toAbbr2(last));
                         if (parts.length >= 4) setAddrZip(parts[parts.length - 2] ?? "");
                       }
                     } else {

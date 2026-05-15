@@ -2658,11 +2658,26 @@ export function registerPublicRoutes(app: Express) {
       const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=5&countrycodes=us`;
       const nomRes = await fetch(nomUrl, { headers: { "Accept-Language": "en", "User-Agent": "ManusScheduler/1.0" } });
       const nomData = await nomRes.json() as any[];
+      // Map full US state names to 2-char abbreviations (Nominatim returns full names)
+      const NOM_STATE_ABBR: Record<string, string> = {
+        'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA',
+        'Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA',
+        'Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS',
+        'Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA',
+        'Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT',
+        'Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM',
+        'New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK',
+        'Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC',
+        'South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT',
+        'Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY',
+        'District of Columbia':'DC'
+      };
       const results = nomData.map((item: any) => {
         const a = item.address ?? {};
         const street = [a.house_number, a.road].filter(Boolean).join(" ");
         const city = a.city ?? a.town ?? a.village ?? a.county ?? "";
-        const state = a.state ?? "";
+        const rawState = a.state ?? "";
+        const state = NOM_STATE_ABBR[rawState] ?? rawState;
         const zip = a.postcode ?? "";
         return { display: item.display_name, street, city, state, zip };
       }).filter((r: any) => r.street);
