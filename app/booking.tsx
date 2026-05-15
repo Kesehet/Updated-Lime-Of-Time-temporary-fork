@@ -43,7 +43,7 @@ import {
 } from "@/lib/types";
 
 // "location" is the new first step when the business has multiple active locations
-type BookingStep = "location" | "info" | "service" | "staff" | "datetime" | "products" | "confirm" | "done";
+type BookingStep = "location" | "info" | "service" | "staff" | "address" | "datetime" | "products" | "confirm" | "done";
 
 export default function PublicBookingScreen() {
   const { state, dispatch, getServiceById, syncToDb, getStaffById } = useStore();
@@ -89,6 +89,12 @@ export default function PublicBookingScreen() {
   const [notes, setNotes] = useState("");
   const [giftCode, setGiftCode] = useState("");
   const [giftApplied, setGiftApplied] = useState<string | null>(null);
+
+  // ── Client address (mobile services only) ─────────────────────────────────
+  const [addrStreet, setAddrStreet] = useState("");
+  const [addrCity, setAddrCity] = useState("");
+  const [addrState, setAddrState] = useState("");
+  const [addrZip, setAddrZip] = useState("");
 
   // ── Service drill-down state ───────────────────────────────────────────────
   // null = show category tiles; string = show services in that category; "__all__" = no categories exist
@@ -139,6 +145,10 @@ export default function PublicBookingScreen() {
     if (!selectedServiceId || selectedServiceId.startsWith("pkg:")) return null;
     return getServiceById(selectedServiceId);
   }, [selectedServiceId, getServiceById]);
+
+  const isMobileService = selectedService?.serviceType === 'mobile';
+  const travelFeeAmount = (isMobileService && addrStreet.trim() && selectedService?.travelFee) ? (selectedService.travelFee as unknown as number) : 0;
+  const fullClientAddress = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(", ");
 
   const businessName = state.settings.businessName || "Our Business";
   const profile = state.settings.profile;
@@ -356,6 +366,8 @@ export default function PublicBookingScreen() {
       locationId: selectedLocationId ?? undefined,
       staffId: selectedStaffId ?? undefined,
       extraItems: cartExtraItems.length > 0 ? cartExtraItems : undefined,
+      clientAddress: isMobileService && fullClientAddress.trim() ? fullClientAddress.trim() : undefined,
+      travelFee: travelFeeAmount > 0 ? travelFeeAmount : undefined,
       // Auto-mark as paid when total charge is $0 (fully discounted / gift card / free service)
       ...(priceInfo.final + cartTotal <= 0 ? { paymentStatus: 'paid' as const, paymentMethod: 'free' as any } : {}),
     };
@@ -485,8 +497,13 @@ export default function PublicBookingScreen() {
       {/* Step Progress Indicator */}
       {step !== "done" && (
         <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: 14 }}>
-          {(hasMultipleLocations ? ["location", "info", "service", "staff", "datetime", "products", "confirm"] : ["info", "service", "staff", "datetime", "products", "confirm"]).map((s, i) => {
-            const steps = hasMultipleLocations ? ["location", "info", "service", "staff", "datetime", "products", "confirm"] : ["info", "service", "staff", "datetime", "products", "confirm"];
+          {(hasMultipleLocations
+            ? (isMobileService ? ["location", "info", "service", "staff", "address", "datetime", "products", "confirm"] : ["location", "info", "service", "staff", "datetime", "products", "confirm"])
+            : (isMobileService ? ["info", "service", "staff", "address", "datetime", "products", "confirm"] : ["info", "service", "staff", "datetime", "products", "confirm"])
+          ).map((s, i) => {
+            const steps = hasMultipleLocations
+              ? (isMobileService ? ["location", "info", "service", "staff", "address", "datetime", "products", "confirm"] : ["location", "info", "service", "staff", "datetime", "products", "confirm"])
+              : (isMobileService ? ["info", "service", "staff", "address", "datetime", "products", "confirm"] : ["info", "service", "staff", "datetime", "products", "confirm"]);
             const currentIdx = steps.indexOf(step);
             const isActive = s === step;
             const isPast = steps.indexOf(s) < currentIdx;
@@ -1109,7 +1126,7 @@ export default function PublicBookingScreen() {
               <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 14 }}>Optional — skip to let us assign someone</Text>
               {/* No preference option */}
               <Pressable
-                onPress={() => { setSelectedStaffId(null); setStep("datetime"); }}
+                onPress={() => { setSelectedStaffId(null); setStep(isMobileService ? "address" : "datetime"); }}
                 style={({ pressed }) => [styles.serviceOption, { backgroundColor: selectedStaffId === null ? colors.primary + "15" : colors.surface, borderColor: selectedStaffId === null ? colors.primary : colors.border, opacity: pressed ? 0.7 : 1 }]}
               >
                 <View style={[styles.colorDot, { backgroundColor: colors.muted }]} />
@@ -1124,7 +1141,7 @@ export default function PublicBookingScreen() {
                 return (
                   <Pressable
                     key={member.id}
-                    onPress={() => { setSelectedStaffId(member.id); setStep("datetime"); }}
+                    onPress={() => { setSelectedStaffId(member.id); setStep(isMobileService ? "address" : "datetime"); }}
                     style={({ pressed }) => [styles.serviceOption, { backgroundColor: selectedStaffId === member.id ? member.color + "15" : colors.surface, borderColor: selectedStaffId === member.id ? member.color : colors.border, opacity: pressed ? 0.7 : 1 }]}
                   >
                     <View style={[styles.colorDot, { backgroundColor: member.color }]} />
@@ -1154,10 +1171,116 @@ export default function PublicBookingScreen() {
             </View>
           );
         })()}
+        {/* ── Step: Address (mobile services only) ─────────────────────────── */}
+        {step === "address" && (
+          <View>
+            <Pressable onPress={() => setStep("staff")} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, marginBottom: 12 }]}>
+              <Text style={{ color: colors.primary, fontSize: fs.sm }}>← Back</Text>
+            </Pressable>
+
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={styles.iconRow}>
+                <View style={[styles.iconCircle, { backgroundColor: colors.primary + "15" }]}>
+                  <IconSymbol name="mappin" size={22} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={{ fontSize: fs.md, fontWeight: "600", color: colors.foreground }}>Your Service Address</Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>This service is performed at your location. Please enter the address where you'd like the service performed.</Text>
+                </View>
+              </View>
+
+              {/* Mobile service info banner */}
+              {selectedService && (
+                <View style={{ backgroundColor: colors.primary + "12", borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: colors.primary + "30" }}>
+                  <Text style={{ fontSize: fs.sm, fontWeight: "700", color: colors.primary, marginBottom: 4 }}>🚗 {selectedService.name} — Mobile Service</Text>
+                  {(selectedService as any).travelDuration ? (
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>Travel time: ~{(selectedService as any).travelDuration} min each way (added to your appointment slot)</Text>
+                  ) : null}
+                  {(selectedService as any).travelFee ? (
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>Travel fee: ${Number((selectedService as any).travelFee).toFixed(2)} (included in total)</Text>
+                  ) : null}
+                  {(selectedService as any).maxTravelDistance ? (
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>Service radius: up to {(selectedService as any).maxTravelDistance} miles</Text>
+                  ) : null}
+                </View>
+              )}
+
+              {/* Street Address */}
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 6 }}>Street Address <Text style={{ color: colors.error }}>*</Text></Text>
+              <TextInput
+                style={[styles.notesInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground, marginBottom: 12 }]}
+                placeholder="123 Main St"
+                placeholderTextColor={colors.muted}
+                value={addrStreet}
+                onChangeText={setAddrStreet}
+                returnKeyType="next"
+                autoCapitalize="words"
+              />
+
+              {/* City */}
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 6 }}>City <Text style={{ color: colors.error }}>*</Text></Text>
+              <TextInput
+                style={[styles.notesInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground, marginBottom: 12 }]}
+                placeholder="Pittsburgh"
+                placeholderTextColor={colors.muted}
+                value={addrCity}
+                onChangeText={setAddrCity}
+                returnKeyType="next"
+                autoCapitalize="words"
+              />
+
+              {/* State + ZIP in a row */}
+              <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 6 }}>State <Text style={{ color: colors.error }}>*</Text></Text>
+                  <TextInput
+                    style={[styles.notesInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
+                    placeholder="PA"
+                    placeholderTextColor={colors.muted}
+                    value={addrState}
+                    onChangeText={(t) => setAddrState(t.toUpperCase())}
+                    maxLength={2}
+                    returnKeyType="next"
+                    autoCapitalize="characters"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 6 }}>ZIP Code <Text style={{ color: colors.error }}>*</Text></Text>
+                  <TextInput
+                    style={[styles.notesInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
+                    placeholder="15220"
+                    placeholderTextColor={colors.muted}
+                    value={addrZip}
+                    onChangeText={setAddrZip}
+                    keyboardType="number-pad"
+                    maxLength={5}
+                    returnKeyType="done"
+                  />
+                </View>
+              </View>
+
+              <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 16 }}>We'll come to you at this address.</Text>
+
+              <Pressable
+                onPress={() => {
+                  if (!addrStreet.trim() || !addrCity.trim() || !addrState.trim() || !addrZip.trim()) return;
+                  setStep("datetime");
+                }}
+                style={({ pressed }) => [styles.continueButton, {
+                  backgroundColor: (addrStreet.trim() && addrCity.trim() && addrState.trim() && addrZip.trim()) ? colors.primary : colors.muted,
+                  opacity: pressed ? 0.8 : 1,
+                }]}
+              >
+                <Text style={styles.continueText}>Continue</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
         {/* ── Step: Date & Time ─────────────────────────────────────────────── */}
         {step === "datetime" && (
           <View>
-            <Pressable onPress={() => setStep("staff")} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, marginBottom: 12 }]}>
+            <Pressable onPress={() => setStep(isMobileService ? "address" : "staff")} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, marginBottom: 12 }]}>
               <Text style={{ color: colors.primary, fontSize: fs.sm }}>← Back</Text>
             </Pressable>
             <Text style={{ fontSize: fs.md, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>Pick a Date</Text>

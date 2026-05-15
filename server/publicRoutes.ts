@@ -5598,20 +5598,24 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         <div class="step-dot" id="dot-3">4</div>
         <span class="step-label">Staff</span>
       </div>
-      <div class="step-item" id="step-item-4">
+      <div class="step-item" id="step-item-4" style="display:none">
         <div class="step-dot" id="dot-4">5</div>
-        <span class="step-label">Date</span>
+        <span class="step-label">Address</span>
       </div>
       <div class="step-item" id="step-item-5">
         <div class="step-dot" id="dot-5">6</div>
-        <span class="step-label">Extras</span>
+        <span class="step-label">Date</span>
       </div>
       <div class="step-item" id="step-item-6">
         <div class="step-dot" id="dot-6">7</div>
-        <span class="step-label">Payment</span>
+        <span class="step-label">Extras</span>
       </div>
       <div class="step-item" id="step-item-7">
         <div class="step-dot" id="dot-7">8</div>
+        <span class="step-label">Payment</span>
+      </div>
+      <div class="step-item" id="step-item-8">
+        <div class="step-dot" id="dot-8">9</div>
         <span class="step-label">Confirm</span>
       </div>
     </div>
@@ -6672,6 +6676,9 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       document.getElementById('btnToStaff').disabled = selectedServices.length === 0;
       // Update staff list for the primary service
       if (selectedService) renderStaffForService(selectedService.localId);
+      // Show/hide Address step dot based on whether selected service is mobile
+      var addrStepItem = document.getElementById('step-item-4');
+      if (addrStepItem) addrStepItem.style.display = isMobileService() ? '' : 'none';
     }
     function selectService(id) {
       // Legacy single-select: called from detail sheet. Now delegates to toggle.
@@ -7017,13 +7024,20 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       const stepEl = document.getElementById("step-" + step);
       if (stepEl) stepEl.style.display = "block";
       currentStep = step;
-      // Update step indicators (treat 4b as between staff(3) and date(4))
-      const stepNum = step === '4b' ? 3.5 : Number(step);
-      for (let i = 0; i < 8; i++) {
+      // Update step indicators
+      // step mapping: 0=Location,1=Info,2=Service,3=Staff,4b=Address(dot4),4=Date(dot5),5=Extras(dot6),6=Payment(dot7),7=Confirm(dot8)
+      var dotIndex;
+      if (step === '4b') { dotIndex = 4; }
+      else if (step === 4) { dotIndex = 5; }
+      else if (step === 5) { dotIndex = 6; }
+      else if (step === 6) { dotIndex = 7; }
+      else if (step === 7) { dotIndex = 8; }
+      else { dotIndex = Number(step); }
+      for (let i = 0; i <= 8; i++) {
         const dot = document.getElementById("dot-" + i);
-        if (dot) dot.className = "step-dot" + (i < stepNum ? " done" : i === Math.floor(stepNum) ? " active" : "");
+        if (dot) dot.className = "step-dot" + (i < dotIndex ? " done" : i === dotIndex ? " active" : "");
         const item = document.getElementById("step-item-" + i);
-        if (item) item.className = "step-item" + (i < stepNum ? " done" : i === Math.floor(stepNum) ? " active" : "");
+        if (item) item.className = "step-item" + (i < dotIndex ? " done" : i === dotIndex ? " active" : "");
       }
       updateSelectedLocBanner();
       if (step === 3) renderStaffStep();
