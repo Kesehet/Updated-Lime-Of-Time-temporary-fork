@@ -589,13 +589,6 @@
       "when": 1778782019638,
       "tag": "0083_uneven_deathbird",
       "breakpoints": true
-    },
-    {
-      "idx": 84,
-      "version": "5",
-      "when": 1778862072710,
-      "tag": "0084_bitter_reaper",
-      "breakpoints": true
     }
   ]
 }

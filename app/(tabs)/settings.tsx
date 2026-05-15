@@ -530,7 +530,6 @@ export default function SettingsScreen() {
         { title: "Schedule & Hours",  subtitle: hasMultipleLocations && activeLocation ? `${activeLocation.name} hours` : "Working hours, buffer time, custom days", icon: "calendar.badge.clock", route: "/schedule-settings", color: "#10B981", status: "ok" },
         { title: "Booking Policies",  subtitle: "Cancellation fees, booking URL, temp closure",  icon: "exclamationmark.triangle.fill", route: "/booking-policies",  color: "#FF9800" },
         { title: "Locations",         subtitle: `${state.locations.length} location${state.locations.length !== 1 ? "s" : ""} configured`, icon: "building.2.fill", route: "/locations", color: "#3B82F6", status: state.locations.length > 0 ? "ok" : "warn" },
-        { title: "Waitlist",           subtitle: "Clients waiting for a slot to open up",          icon: "clock.badge.fill",              route: "/waitlist-view",        color: "#14B8A6" },
       ])}
 
       {/* Goals & Targets */}

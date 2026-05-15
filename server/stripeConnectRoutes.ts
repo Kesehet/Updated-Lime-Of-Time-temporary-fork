@@ -1584,12 +1584,8 @@ export function registerStripeConnectRoutes(app: Express): void {
         let description = tx.description ?? "";
         if (src?.description) description = src.description;
         if (src?.metadata?.feeType) description = `${src.metadata.feeType.replace(/_/g, " ")} fee`;
-        // Client name/phone from metadata if available
+        // Client name from metadata if available
         const clientName = src?.metadata?.clientName ?? src?.metadata?.client_name ?? null;
-        const clientPhone = src?.metadata?.clientPhone ?? null;
-        const serviceName = src?.metadata?.serviceName ?? null;
-        const appointmentDate = src?.metadata?.appointmentDate ?? null;
-        const appointmentLocalId = src?.metadata?.appointmentLocalId ?? null;
         return {
           id: tx.id,
           type: tx.type,          // "charge", "refund", "payout", "stripe_fee", etc.
@@ -1601,10 +1597,6 @@ export function registerStripeConnectRoutes(app: Express): void {
           created: tx.created,    // Unix timestamp
           description,
           clientName,
-          clientPhone,
-          serviceName,
-          appointmentDate,
-          appointmentLocalId,
           sourceId: typeof tx.source === "string" ? tx.source : src?.id ?? null,
         };
       });
@@ -1729,17 +1721,13 @@ export function registerStripeConnectRoutes(app: Express): void {
   // Returns: { publishableKey, paymentIntent (client_secret), accountId }
   app.post("/api/stripe-connect/create-payment-sheet", async (req: Request, res: Response) => {
     try {
-      const { businessOwnerId, appointmentLocalId, amount, currency = "usd", description, clientEmail, clientName, clientPhone, serviceName, appointmentDate } = req.body as {
+      const { businessOwnerId, appointmentLocalId, amount, currency = "usd", description, clientEmail } = req.body as {
         businessOwnerId: number;
         appointmentLocalId: string;
         amount: number;
         currency?: string;
         description?: string;
         clientEmail?: string;
-        clientName?: string;
-        clientPhone?: string;
-        serviceName?: string;
-        appointmentDate?: string;
       };
       if (!businessOwnerId || !appointmentLocalId || !amount) {
         res.status(400).json({ error: "businessOwnerId, appointmentLocalId, and amount are required" }); return;
@@ -1770,10 +1758,6 @@ export function registerStripeConnectRoutes(app: Express): void {
           metadata: {
             appointmentLocalId,
             businessOwnerId: String(businessOwnerId),
-            ...(clientName ? { clientName } : {}),
-            ...(clientPhone ? { clientPhone } : {}),
-            ...(serviceName ? { serviceName } : {}),
-            ...(appointmentDate ? { appointmentDate } : {}),
           },
         },
         { stripeAccount: accountId }

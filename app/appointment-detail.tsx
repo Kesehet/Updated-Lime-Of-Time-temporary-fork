@@ -1890,10 +1890,10 @@ Would you also like to charge a no-show fee via Stripe?`,
                           if (isPaidByCard) {
                             try {
                               if (feeApplies && fee > 0) {
-                                await apiCall('/api/stripe-connect/cancellation-fee', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentLocalId: appointment.id, businessOwnerId: state.businessOwnerId, feeAmount: fee }) });
+                                await apiCall('/api/stripe-connect/cancellation-fee', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId: appointment.id, businessOwnerId: state.businessOwnerId, feeAmount: fee }) });
                               }
                               const refundAmt = feeApplies ? total - fee : undefined;
-                              const result = await apiCall<{ ok: boolean; refundId: string; amount: number }>('/api/stripe-connect/refund', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentLocalId: appointment.id, businessOwnerId: state.businessOwnerId, amount: refundAmt }) });
+                              const result = await apiCall<{ ok: boolean; refundId: string; amount: number }>('/api/stripe-connect/refund', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId: appointment.id, businessOwnerId: state.businessOwnerId, amount: refundAmt }) });
                               const refundedAppt = { ...updatedAppt, status: 'cancelled' as const, refundedAmount: result.amount, stripeRefundId: result.refundId, cancellationReason: appointment.cancelRequest?.reason || 'Client requested cancellation' };
                               dispatch({ type: 'UPDATE_APPOINTMENT', payload: refundedAppt });
                               syncToDb({ type: 'UPDATE_APPOINTMENT', payload: refundedAppt });
