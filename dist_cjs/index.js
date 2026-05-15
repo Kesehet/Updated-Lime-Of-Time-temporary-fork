@@ -13160,7 +13160,7 @@ function bookingPage(slug, owner, preselectedLocationId, prefetchedLocations, pl
       }
       for (let day = 1; day <= daysInMonth; day++) {
         const ds = calYear + "-" + String(calMonth+1).padStart(2,"0") + "-" + String(day).padStart(2,"0");
-        const isPast = ds < todayStr || (pkgMinDate && ds < pkgMinDate);
+        const isPast = ds <= todayStr || (pkgMinDate && ds < pkgMinDate);
         const isWorking = isWorkingDay(ds);
         // For package sessions, highlight the current session's already-selected date
         const isSelected = selectedPackage

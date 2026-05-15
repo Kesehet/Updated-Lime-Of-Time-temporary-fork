@@ -54,6 +54,16 @@ const CARD_BG      = "rgba(255,255,255,0.07)";
 const CARD_BORDER  = "rgba(255,255,255,0.12)";
 const DIVIDER      = "rgba(255,255,255,0.10)";
 
+/** Convert "HH:MM" 24-hour string to "H:MM AM/PM" */
+function formatTime12(t: string): string {
+  const [hStr, mStr] = t.split(":");
+  const h = parseInt(hStr, 10);
+  const m = mStr || "00";
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${h12}:${m} ${ampm}`;
+}
+
 interface PublicService {
   localId: string;
   name: string;
@@ -599,17 +609,19 @@ export default function ClientBookingWizardScreen() {
     const newClosed = new Set<string>();
     const newFull = new Set<string>();
     const newSlotCounts: Record<string, number> = {};
-    const todayStr = new Date().toISOString().split("T")[0];
-    const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+    const _now = new Date();
+    // Use LOCAL date string (not toISOString which is UTC and can be off by a day near midnight)
+    const todayStr = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
+    const nowMinutes = _now.getHours() * 60 + _now.getMinutes();
     // Build list of future dates in this month
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const todayDate = new Date();
+    const todayDate = _now;
     const WEEKDAY_KEYS = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
     const promises: Promise<void>[] = [];
     for (let d = 1; d <= daysInMonth; d++) {
       const dateObj = new Date(year, month, d);
       if (dateObj < new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate())) continue;
-      const dateStr = dateObj.toISOString().split("T")[0];
+      const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
       const staffParam = staffId !== "any" ? `&staffId=${encodeURIComponent(staffId)}` : "";
       const locParam = location ? `&locationId=${encodeURIComponent(location.localId)}` : "";
       const url = `${apiBase}/api/public/business/${effectiveSlug}/slots?date=${dateStr}&duration=${service.duration}${staffParam}${locParam}&clientToday=${todayStr}&nowMinutes=${nowMinutes}`;
@@ -700,11 +712,14 @@ export default function ClientBookingWizardScreen() {
       setSlots([]);
       setSelectedSlot(null);
       try {
-        const dateStr = selectedDate.toISOString().split("T")[0];
+        const _sd = selectedDate;
+        const dateStr = `${_sd.getFullYear()}-${String(_sd.getMonth()+1).padStart(2,'0')}-${String(_sd.getDate()).padStart(2,'0')}`;
         const staffParam = selectedStaffId !== "any" ? `&staffId=${encodeURIComponent(selectedStaffId)}` : "";
         const locParam = selectedLocation ? `&locationId=${encodeURIComponent(selectedLocation.localId)}` : "";
-        const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
-        const clientToday = new Date().toISOString().split("T")[0];
+        const _cn = new Date();
+        const nowMinutes = _cn.getHours() * 60 + _cn.getMinutes();
+        // Use LOCAL date string (not toISOString which is UTC and can be off by a day near midnight)
+        const clientToday = `${_cn.getFullYear()}-${String(_cn.getMonth()+1).padStart(2,'0')}-${String(_cn.getDate()).padStart(2,'0')}`;
         const stepParam = slotStep > 0 ? `&step=${slotStep}` : "";
         const url = `${apiBase}/api/public/business/${effectiveSlug}/slots?date=${dateStr}&duration=${selectedService.duration}${staffParam}${locParam}&clientToday=${clientToday}&nowMinutes=${nowMinutes}${stepParam}`;
         const res = await fetch(url);
@@ -805,7 +820,8 @@ export default function ClientBookingWizardScreen() {
     }
     setSubmitting(true);
     try {
-      const dateStr = selectedDate.toISOString().split("T")[0];
+      const _bookDate = selectedDate;
+      const dateStr = `${_bookDate.getFullYear()}-${String(_bookDate.getMonth()+1).padStart(2,'0')}-${String(_bookDate.getDate()).padStart(2,'0')}`;
       const clientName = state.account?.name ?? "Guest";
       const clientEmail = state.account?.email ?? undefined;
       const rawPhone = state.account?.phone ?? "";
@@ -870,7 +886,7 @@ export default function ClientBookingWizardScreen() {
           giftSaving: giftApplied ? Math.min(giftApplied.value, Math.max(0, servicePrice - (discountAmount ?? 0) - (promoSaving ?? 0))) : undefined,
           packageLocalId: packageLocalId ?? undefined,
           sessionDates: selectedPackage && sessionDates.length > 1
-            ? sessionDates.map(sd => ({ date: sd.date?.toISOString().split("T")[0] ?? null, time: sd.slot?.time ?? null }))
+            ? sessionDates.map(sd => ({ date: sd.date ? `${sd.date.getFullYear()}-${String(sd.date.getMonth()+1).padStart(2,'0')}-${String(sd.date.getDate()).padStart(2,'0')}` : null, time: sd.slot?.time ?? null }))
             : undefined,
           discountName,
           discountPercentage,
@@ -922,7 +938,7 @@ export default function ClientBookingWizardScreen() {
                 appointmentLocalId: appointmentId,
                 amount: finalPrice,
                 currency: "usd",
-                description: `${selectedService.name} — ${dateStr} at ${selectedSlot.time}`,
+                description: `${selectedService.name} — ${dateStr} at ${formatTime12(selectedSlot.time)}`,
                 clientEmail: state.account?.email ?? undefined,
               }),
             });
@@ -972,7 +988,7 @@ export default function ClientBookingWizardScreen() {
                 appointmentId,
                 businessSlug: effectiveSlug,
                 amount: finalPrice,
-                description: `${selectedService.name} — ${dateStr} at ${selectedSlot.time}`,
+                description: `${selectedService.name} — ${dateStr} at ${formatTime12(selectedSlot.time)}`,
                 clientEmail: state.account?.email ?? undefined,
               }),
             });
@@ -1800,7 +1816,7 @@ export default function ClientBookingWizardScreen() {
                           }}
                         >
                           <Text style={{ color: isSelected ? "#FFFFFF" : TEXT_PRIMARY, fontSize: 14, fontWeight: "600", letterSpacing: 0.3 }}>
-                            {slot.time}
+                            {formatTime12(slot.time)}
                           </Text>
                         </Pressable>
                       );
@@ -2545,7 +2561,7 @@ export default function ClientBookingWizardScreen() {
                   <Row label="Total" value={`$${finalPrice.toFixed(2)}`} colors={colors} />
                 )}
                 <Row label="Date" value={formatDateLabel(selectedDate)} />
-                <Row label="Time" value={selectedSlot.time} />
+                <Row label="Time" value={formatTime12(selectedSlot.time)} />
                 {selectedLocation && (
                   <Row label="Location" value={selectedLocation.name} />
                 )}
