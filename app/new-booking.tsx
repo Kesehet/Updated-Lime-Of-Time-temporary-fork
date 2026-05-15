@@ -133,10 +133,12 @@ export default function NewBookingScreen() {
   const [dynamicTravelFee, setDynamicTravelFee] = useState<number | null>(null);
   const [routeDistanceMiles, setRouteDistanceMiles] = useState<number | null>(null);
   const [outsideServiceArea, setOutsideServiceArea] = useState(false);
+  // Staff members who DO cover the entered address (used when outsideServiceArea is true)
+  const [coveringStaffIds, setCoveringStaffIds] = useState<string[]>([]);
 
   useEffect(() => {
     const allFilled = addrStreet.trim() && addrCity.trim() && addrState.trim() && addrZip.trim();
-    if (!allFilled) { setTravelTimeEstimate(null); setDynamicTravelFee(null); setRouteDistanceMiles(null); setOutsideServiceArea(false); return; }
+    if (!allFilled) { setTravelTimeEstimate(null); setDynamicTravelFee(null); setRouteDistanceMiles(null); setOutsideServiceArea(false); setCoveringStaffIds([]); return; }
     // Get business origin address
     const bizAddr = activeLocation
       ? [activeLocation.address, activeLocation.city, activeLocation.state, activeLocation.zipCode].filter(Boolean).join(', ')
@@ -179,7 +181,18 @@ export default function NewBookingScreen() {
           // Staff-level maxTravelDistance override: if selected staff has one set, use it; else fall back to service-level
           const staffObj = selectedStaffId ? state.staff.find(m => m.id === selectedStaffId) : null;
           const effectiveMaxDist = (staffObj as any)?.maxTravelDistance ?? svc?.maxTravelDistance;
-          if (effectiveMaxDist && distMiles > effectiveMaxDist) setOutsideServiceArea(true);
+          if (effectiveMaxDist && distMiles > effectiveMaxDist) {
+            setOutsideServiceArea(true);
+            // Find which other staff members DO cover this distance
+            const covering = state.staff.filter((m) => {
+              if (!m.active) return false;
+              const mDist = (m as any).maxTravelDistance ?? svc?.maxTravelDistance;
+              return mDist == null || distMiles <= mDist;
+            });
+            setCoveringStaffIds(covering.map((m) => m.id));
+          } else {
+            setCoveringStaffIds([]);
+          }
           if (svc?.distanceFeeEnabled) {
             const rate = svc.travelRatePerMile ?? 0.67;
             const freeThreshold = svc.freeMiles ?? 0;
@@ -2104,8 +2117,38 @@ export default function NewBookingScreen() {
                     </View>
                   )}
                   {outsideServiceArea && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 0, marginTop: 4 }}>
-                      <Text style={{ fontSize: fs.xs, color: colors.error, fontWeight: '700' }}>⚠️ This address is outside the service area for this appointment.</Text>
+                    <View style={{ marginLeft: 0, marginTop: 6, gap: 4 }}>
+                      <Text style={{ fontSize: fs.xs, color: colors.error, fontWeight: '700' }}>⚠️ This address is outside the service area for the selected staff member.</Text>
+                      {coveringStaffIds.length > 0 ? (
+                        <View style={{ marginTop: 4 }}>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 4 }}>These staff members cover this area:</Text>
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                            {coveringStaffIds.map((sid) => {
+                              const m = state.staff.find((s) => s.id === sid);
+                              if (!m) return null;
+                              return (
+                                <Pressable
+                                  key={sid}
+                                  onPress={() => { setSelectedStaffId(sid); setOutsideServiceArea(false); setCoveringStaffIds([]); }}
+                                  style={({ pressed }) => ({
+                                    flexDirection: 'row', alignItems: 'center', gap: 5,
+                                    backgroundColor: (m.color || colors.primary) + '18',
+                                    borderColor: m.color || colors.primary,
+                                    borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4,
+                                    opacity: pressed ? 0.7 : 1,
+                                  })}
+                                >
+                                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: m.color || colors.primary }} />
+                                  <Text style={{ fontSize: fs.xs, fontWeight: '600', color: m.color || colors.primary }}>{m.name}</Text>
+                                </Pressable>
+                              );
+                            })}
+                          </View>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>Tap a name to switch to that staff member.</Text>
+                        </View>
+                      ) : (
+                        <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>No staff members are available for this distance. Please enter a closer address.</Text>
+                      )}
                     </View>
                   )}
                 </View>

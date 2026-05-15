@@ -361,6 +361,63 @@ export default function CalendarScreen() {
   const [calRefundLoading, setCalRefundLoading] = useState(false);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Route optimization state (day view) ──────────────────────────────────
+  // null = chronological order; string[] = optimized appointment IDs in drive order
+  const [routeOptimizedOrder, setRouteOptimizedOrder] = useState<string[] | null>(null);
+  const [routeOptimizing, setRouteOptimizing] = useState(false);
+  // Reset optimized order when the selected date changes
+  useEffect(() => { setRouteOptimizedOrder(null); }, [selectedDate]);
+
+  const handleReorderByRoute = useCallback(async (appts: { id: string; clientAddress?: string | null }[]) => {
+    const mobileAppts = appts.filter((a) => a.clientAddress);
+    if (mobileAppts.length < 2) return;
+    setRouteOptimizing(true);
+    try {
+      const locs = state.locations;
+      const bizLoc = locs.length > 0 ? locs[0] : null;
+      const bizAddr = bizLoc
+        ? [bizLoc.address, bizLoc.city, bizLoc.state, bizLoc.zipCode].filter(Boolean).join(', ')
+        : [state.settings.profile?.address, state.settings.profile?.city, state.settings.profile?.state, state.settings.profile?.zipCode].filter(Boolean).join(', ');
+      const geocode = async (addr: string): Promise<[number, number] | null> => {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1`, { headers: { 'User-Agent': 'LimeOfTime/1.0' } });
+          const data = await res.json();
+          if (!data || data.length === 0) return null;
+          return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+        } catch { return null; }
+      };
+      const bizCoord = bizAddr ? await geocode(bizAddr) : null;
+      const clientCoords = await Promise.all(mobileAppts.map((a) => geocode(a.clientAddress!)));
+      // Build coordinate list: [business, ...clients]
+      const allCoords: [number, number][] = [];
+      if (bizCoord) allCoords.push(bizCoord);
+      const validIndices: number[] = [];
+      clientCoords.forEach((c, i) => { if (c) { allCoords.push(c); validIndices.push(i); } });
+      if (allCoords.length < 2) { setRouteOptimizing(false); return; }
+      // OSRM trip endpoint for optimal ordering
+      const coordStr = allCoords.map(([lon, lat]) => `${lon},${lat}`).join(';');
+      const source = bizCoord ? 'first' : 'any';
+      const url = `https://router.project-osrm.org/trip/v1/driving/${coordStr}?source=${source}&destination=last&roundtrip=false`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data?.waypoints) {
+        // OSRM returns waypoints sorted by trip order; map back to appointment IDs
+        const waypointOrder = (data.waypoints as { waypoint_index: number; trips_index: number }[])
+          .sort((a, b) => a.waypoint_index - b.waypoint_index);
+        // Skip the first waypoint if it's the business origin
+        const clientWaypoints = bizCoord ? waypointOrder.slice(1) : waypointOrder;
+        const orderedIds = clientWaypoints.map((wp) => {
+          const clientIdx = validIndices[wp.waypoint_index - (bizCoord ? 1 : 0)];
+          return mobileAppts[clientIdx]?.id;
+        }).filter(Boolean) as string[];
+        // Append any appointments without addresses at the end (in their original time order)
+        const nonMobileIds = appts.filter((a) => !a.clientAddress).map((a) => a.id);
+        setRouteOptimizedOrder([...orderedIds, ...nonMobileIds]);
+      }
+    } catch { /* ignore */ }
+    setRouteOptimizing(false);
+  }, [state.locations, state.settings.profile]);
+
   const doMarkPaid = useCallback(async (appts: Appointment[], method: PaymentMethodKey) => {
     if (appts.length === 0) return;
     if (appts.length === 1) {
@@ -1927,9 +1984,20 @@ export default function CalendarScreen() {
 
   const renderDayView = () => {
     // Use locationAppointments which already respects the active location filter (null = all)
-    const dayAppts = locationAppointments
+    const dayApptsChron = locationAppointments
       .filter((a) => a.date === selectedDate)
       .sort((a, b) => a.time.localeCompare(b.time));
+    // Apply route-optimized order if active, otherwise use chronological
+    const dayAppts = routeOptimizedOrder
+      ? (() => {
+          const ordered = routeOptimizedOrder
+            .map((id) => dayApptsChron.find((a) => a.id === id))
+            .filter(Boolean) as typeof dayApptsChron;
+          // Append any appointments not in the optimized list (safety net)
+          const missing = dayApptsChron.filter((a) => !routeOptimizedOrder.includes(a.id));
+          return [...ordered, ...missing];
+        })()
+      : dayApptsChron;
 
     return (
       <>
@@ -2035,34 +2103,38 @@ export default function CalendarScreen() {
             </View>
           )}
 
-          {/* Bulk Route Planning — shown when 2+ mobile appointments have addresses */}
+          {/* Bulk Route Planning — shown when 1+ mobile appointments have addresses */}
           {(() => {
-            const mobileAppts = dayAppts
-              .filter((a) => a.clientAddress && a.status !== 'cancelled')
-              .sort((a, b) => a.time.localeCompare(b.time));
+            const mobileAppts = dayApptsChron
+              .filter((a) => a.clientAddress && a.status !== 'cancelled');
             if (mobileAppts.length < 1) return null;
             const handleGetDirections = () => {
-              const addresses = mobileAppts.map((a) => encodeURIComponent(a.clientAddress!));
+              // Use optimized order for directions if available
+              const orderedAddresses = routeOptimizedOrder
+                ? (routeOptimizedOrder
+                    .map((id) => mobileAppts.find((a) => a.id === id))
+                    .filter(Boolean) as typeof mobileAppts)
+                    .map((a) => encodeURIComponent(a.clientAddress!))
+                : mobileAppts.map((a) => encodeURIComponent(a.clientAddress!));
               let url: string;
               if (Platform.OS === 'ios') {
-                // Apple Maps: origin + destination + waypoints
-                if (addresses.length === 1) {
-                  url = `https://maps.apple.com/?daddr=${addresses[0]}&dirflg=d`;
+                if (orderedAddresses.length === 1) {
+                  url = `https://maps.apple.com/?daddr=${orderedAddresses[0]}&dirflg=d`;
                 } else {
-                  // Apple Maps doesn't support multi-stop natively; open Google Maps instead
-                  const waypoints = addresses.slice(0, -1).join('/');
-                  const dest = addresses[addresses.length - 1];
+                  const waypoints = orderedAddresses.slice(0, -1).join('/');
+                  const dest = orderedAddresses[orderedAddresses.length - 1];
                   url = `https://www.google.com/maps/dir/${waypoints}/${dest}`;
                 }
               } else {
-                const waypoints = addresses.slice(0, -1).join('/');
-                const dest = addresses[addresses.length - 1];
+                const waypoints = orderedAddresses.slice(0, -1).join('/');
+                const dest = orderedAddresses[orderedAddresses.length - 1];
                 url = `https://www.google.com/maps/dir/${waypoints}/${dest}`;
               }
               Linking.openURL(url).catch(() => Alert.alert('Maps', 'Could not open Maps app.'));
             };
             return (
-              <View style={{ paddingHorizontal: hp, marginBottom: 12 }}>
+              <View style={{ paddingHorizontal: hp, marginBottom: 12, gap: 8 }}>
+                {/* Get Directions button */}
                 <Pressable
                   onPress={handleGetDirections}
                   style={({ pressed }) => ({
@@ -2078,6 +2150,35 @@ export default function CalendarScreen() {
                     Get Directions · {mobileAppts.length} stop{mobileAppts.length !== 1 ? 's' : ''}
                   </Text>
                 </Pressable>
+                {/* Reorder by route button — only shown when 2+ mobile appointments */}
+                {mobileAppts.length >= 2 && (
+                  <Pressable
+                    onPress={() => {
+                      if (routeOptimizedOrder) {
+                        // Toggle back to chronological
+                        setRouteOptimizedOrder(null);
+                      } else {
+                        handleReorderByRoute(dayApptsChron);
+                      }
+                    }}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                      gap: 8, paddingVertical: 11, borderRadius: 14,
+                      backgroundColor: routeOptimizedOrder ? colors.success + '18' : colors.surface,
+                      borderWidth: 1, borderColor: routeOptimizedOrder ? colors.success + '60' : colors.border,
+                      opacity: pressed ? 0.75 : 1,
+                    })}
+                  >
+                    {routeOptimizing ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : (
+                      <Text style={{ fontSize: 16 }}>{routeOptimizedOrder ? '✅' : '📍'}</Text>
+                    )}
+                    <Text style={{ fontSize: fs.sm, fontWeight: '700', color: routeOptimizedOrder ? colors.success : colors.foreground }}>
+                      {routeOptimizing ? 'Optimizing route...' : routeOptimizedOrder ? 'Route Optimized — Tap to Reset' : 'Reorder by Route'}
+                    </Text>
+                  </Pressable>
+                )}
               </View>
             );
           })()}

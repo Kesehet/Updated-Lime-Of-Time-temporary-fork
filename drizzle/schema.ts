@@ -10,6 +10,7 @@ import {
   decimal,
   json,
   uniqueIndex,
+  tinyint,
 } from "drizzle-orm/mysql-core";
 
 // ─── Users (Auth) ────────────────────────────────────────────────────

@@ -122,6 +122,51 @@ export default function AppointmentDetailScreen() {
     staffNotesTimer.current = setTimeout(() => saveStaffNotes(value), 800);
   }, [saveStaffNotes]);
 
+  // OSRM drive time estimate from business to client address (for mobile appointments)
+  const [apptDriveTime, setApptDriveTime] = useState<string | null>(null);
+  const [apptDriveLoading, setApptDriveLoading] = useState(false);
+
+  useEffect(() => {
+    const addr = appointment?.clientAddress;
+    if (!addr) { setApptDriveTime(null); return; }
+    const locs = state.locations;
+    const bizLoc = locs.length > 0 ? locs[0] : null;
+    const bizAddr = bizLoc
+      ? [bizLoc.address, bizLoc.city, bizLoc.state, bizLoc.zipCode].filter(Boolean).join(', ')
+      : [profile?.address, profile?.city, profile?.state, profile?.zipCode].filter(Boolean).join(', ');
+    if (!bizAddr) { setApptDriveTime(null); return; }
+    let cancelled = false;
+    const geocode = async (a: string): Promise<[number, number] | null> => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(a)}&format=json&limit=1`, { headers: { 'User-Agent': 'LimeOfTime/1.0' } });
+        const data = await res.json();
+        if (!data || data.length === 0) return null;
+        return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+      } catch { return null; }
+    };
+    const run = async () => {
+      setApptDriveLoading(true); setApptDriveTime(null);
+      const [origin, dest] = await Promise.all([geocode(bizAddr), geocode(addr)]);
+      if (cancelled) return;
+      if (!origin || !dest) { setApptDriveLoading(false); return; }
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${origin[0]},${origin[1]};${dest[0]},${dest[1]}?overview=false`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (cancelled) return;
+        if (data?.routes?.[0]) {
+          const route = data.routes[0];
+          const mins = Math.round(route.duration / 60);
+          const distMiles = (route.distance as number) / 1609.344;
+          setApptDriveTime(`~${mins} min drive · ${distMiles.toFixed(1)} mi from business`);
+        }
+      } catch { /* ignore */ }
+      setApptDriveLoading(false);
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [appointment?.clientAddress]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Discount modal state
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [discountInput, setDiscountInput] = useState("");
@@ -1708,6 +1753,17 @@ Would you also like to charge a no-show fee via Stripe?`,
               colors={colors}
               onPress={() => Linking.openURL(getMapUrl(appointment.clientAddress!)).catch(() => {})}
             />
+          ) : null}
+          {/* OSRM drive time estimate */}
+          {appointment.clientAddress && (apptDriveLoading || apptDriveTime) ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, paddingVertical: 6 }}>
+              <Text style={{ fontSize: 14 }}>🚗</Text>
+              {apptDriveLoading ? (
+                <Text style={{ fontSize: fs.xs, color: colors.muted, fontStyle: 'italic' }}>Calculating drive time...</Text>
+              ) : (
+                <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: '600' }}>{apptDriveTime}</Text>
+              )}
+            </View>
           ) : null}
           {/* Estimated depart time for mobile services */}
           {(service?.serviceType === 'mobile' || appointment.clientAddress) && service?.travelDuration && service.travelDuration > 0 && (() => {

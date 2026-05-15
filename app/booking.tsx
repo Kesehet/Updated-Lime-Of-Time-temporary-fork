@@ -101,6 +101,7 @@ export default function PublicBookingScreen() {
   const [dynamicTravelFee, setDynamicTravelFee] = useState<number | null>(null);
   const [routeDistanceMiles, setRouteDistanceMiles] = useState<number | null>(null);
   const [outsideServiceArea, setOutsideServiceArea] = useState(false);
+  const [coveringStaffIds, setCoveringStaffIds] = useState<string[]>([]);
 
   // ── Service drill-down state ───────────────────────────────────────────────
   // null = show category tiles; string = show services in that category; "__all__" = no categories exist
@@ -183,7 +184,7 @@ export default function PublicBookingScreen() {
       } catch { return null; }
     };
     const estimate = async () => {
-      setTravelTimeLoading(true); setTravelTimeEstimate(null); setDynamicTravelFee(null); setRouteDistanceMiles(null); setOutsideServiceArea(false);
+      setTravelTimeLoading(true); setTravelTimeEstimate(null); setDynamicTravelFee(null); setRouteDistanceMiles(null); setOutsideServiceArea(false); setCoveringStaffIds([]);
       const [origin, dest] = await Promise.all([geocode(bizAddr), geocode(destAddr)]);
       if (cancelled) return;
       if (!origin || !dest) { setTravelTimeLoading(false); return; }
@@ -201,7 +202,17 @@ export default function PublicBookingScreen() {
           // Use staff-level maxTravelDistance override if staff is selected and has one set; else fall back to service-level
           const selectedStaffObj = selectedStaffId ? state.staff.find((m) => m.id === selectedStaffId) : null;
           const effectiveMaxDist = (selectedStaffObj as any)?.maxTravelDistance ?? (selectedService as any)?.maxTravelDistance;
-          if (effectiveMaxDist && distMiles > effectiveMaxDist) setOutsideServiceArea(true);
+          if (effectiveMaxDist && distMiles > effectiveMaxDist) {
+            setOutsideServiceArea(true);
+            const covering = state.staff.filter((m) => {
+              if (!m.active) return false;
+              const mDist = (m as any).maxTravelDistance ?? (selectedService as any)?.maxTravelDistance;
+              return mDist == null || distMiles <= mDist;
+            });
+            setCoveringStaffIds(covering.map((m) => m.id));
+          } else {
+            setCoveringStaffIds([]);
+          }
           if ((selectedService as any)?.distanceFeeEnabled) {
             const rate = (selectedService as any).travelRatePerMile ?? 0.67;
             const freeThreshold = (selectedService as any).freeMiles ?? 0;
@@ -1340,9 +1351,41 @@ export default function PublicBookingScreen() {
                   Travel fee: ${dynamicTravelFee.toFixed(2)}{(selectedService as any)?.freeMiles ? ` — first ${(selectedService as any).freeMiles} mi free` : ""}
                 </Text>
               )}
-              {/* Outside service area error */}
+              {/* Outside service area error + covering staff indicator */}
               {outsideServiceArea && (
-                <Text style={{ fontSize: fs.xs, color: colors.error, marginBottom: 8, fontWeight: "600" }}>⚠️ This address is outside our service area.</Text>
+                <View style={{ marginBottom: 12, gap: 6 }}>
+                  <Text style={{ fontSize: fs.xs, color: colors.error, fontWeight: '700' }}>⚠️ This address is outside the service area for the selected staff member.</Text>
+                  {coveringStaffIds.length > 0 ? (
+                    <View style={{ gap: 4 }}>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted }}>These staff members cover this area:</Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                        {coveringStaffIds.map((sid) => {
+                          const m = state.staff.find((s) => s.id === sid);
+                          if (!m) return null;
+                          return (
+                            <Pressable
+                              key={sid}
+                              onPress={() => { setSelectedStaffId(sid); setOutsideServiceArea(false); setCoveringStaffIds([]); }}
+                              style={({ pressed }) => ({
+                                flexDirection: 'row', alignItems: 'center', gap: 5,
+                                backgroundColor: (m.color || colors.primary) + '18',
+                                borderColor: m.color || colors.primary,
+                                borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4,
+                                opacity: pressed ? 0.7 : 1,
+                              })}
+                            >
+                              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: m.color || colors.primary }} />
+                              <Text style={{ fontSize: fs.xs, fontWeight: '600', color: m.color || colors.primary }}>{m.name}</Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                      <Text style={{ fontSize: fs.xs, color: colors.muted }}>Tap a name to switch to that staff member.</Text>
+                    </View>
+                  ) : (
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>No staff members are available for this distance. Please enter a closer address.</Text>
+                  )}
+                </View>
               )}
 
               <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 16 }}>We'll come to you at this address.</Text>
