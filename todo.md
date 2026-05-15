@@ -2312,3 +2312,11 @@
 - [x] Fix time slot availability bug (slots showing available when appointment would run past closing time)
 - [x] Add "Jump to Today" floating button on Calendar tab
 - [x] Add swipe-to-delete on Clients list
+## Phase: Payment + Address Fixes (May 15, 2026)
+- [ ] Fix Stripe Pay-on-behalf: call initStripe with connected account before initPaymentSheet in appointment-detail.tsx
+- [ ] Fix Stripe card payment: call initStripe with connected account before initPaymentSheet in calendar-booking.tsx
+- [ ] Fix Stripe card payment: call initStripe with connected account before initPaymentSheet in client-booking-wizard.tsx
+- [ ] Replace single clientAddress field with split Street/City/State/ZIP + autocomplete in calendar-booking.tsx
+- [ ] Add address auto-populate useEffect in calendar-booking.tsx (from savedAddress or past appointments)
+- [ ] Remove "Save Address to Profile?" alert in new-booking.tsx — auto-save silently
+- [ ] Auto-save address silently after mobile booking confirm in calendar-booking.tsx

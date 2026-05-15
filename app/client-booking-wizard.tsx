@@ -43,7 +43,7 @@ import { getCategoryDef, ALL_CATEGORY } from "@/constants/categories";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as WebBrowser from "expo-web-browser";
 import * as Clipboard from "expo-clipboard";
-import { useStripe } from "@/lib/use-stripe";
+import { useStripe, initStripe } from "@/lib/use-stripe";
 
 const LIME_GREEN = "#4A7C59";
 // ─── Portal palette (same as business detail) ────────────────────────────────
@@ -1114,10 +1114,12 @@ export default function ClientBookingWizardScreen() {
             });
             if (sheetRes.ok) {
               const { publishableKey, paymentIntent, accountId } = await sheetRes.json();
+              // Re-initialize Stripe SDK with the connected account context so the
+              // PaymentIntent lookup resolves on the correct Stripe account.
+              await initStripe({ publishableKey, stripeAccountId: accountId });
               const { error: initError } = await initPaymentSheet({
                 merchantDisplayName: businessDisplayName || effectiveSlug,
                 paymentIntentClientSecret: paymentIntent,
-                stripeAccountId: accountId,
                 style: "alwaysDark",
               });
               if (!initError) {

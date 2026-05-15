@@ -1,5 +1,5 @@
 /**
- * Web stub for useStripe hook.
+ * Web stub for useStripe hook and initStripe.
  * @stripe/stripe-react-native is native-only and cannot run on web.
  * This file is loaded by Metro on web builds instead of use-stripe.ts.
  */
@@ -15,4 +15,8 @@ export function useStripe() {
       error: { code: "WebNotSupported", message: "Card payments are not supported on web" },
     }),
   };
+}
+
+export async function initStripe(_params: Record<string, unknown>): Promise<void> {
+  // No-op on web — Stripe React Native is native-only
 }

@@ -206,7 +206,15 @@ export default function CalendarBookingScreen() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(() => params.clientId ?? null);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
-  const [clientAddress, setClientAddress] = useState("");
+  const [addrStreet, setAddrStreet] = useState("");
+  const [addrCity, setAddrCity] = useState("");
+  const [addrState, setAddrState] = useState("");
+  const [addrZip, setAddrZip] = useState("");
+  // Address autocomplete
+  const [addrSearchQuery, setAddrSearchQuery] = useState("");
+  const [addrSuggestions, setAddrSuggestions] = useState<Array<{ display_name: string; address: any }>>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [addrSearchLoading, setAddrSearchLoading] = useState(false);
+  const clientAddress = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(", ");
   const [clientSearch, setClientSearch] = useState("");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [quickName, setQuickName] = useState("");
@@ -513,6 +521,67 @@ export default function CalendarBookingScreen() {
     }
   }, [activeLocations.length, selectedLocationId]);
 
+  // Address autocomplete: debounced Nominatim search
+  useEffect(() => {
+    if (!addrSearchQuery || addrSearchQuery.length < 4) { setAddrSuggestions([]); return; }
+    let cancelled = false;
+    const search = async () => {
+      setAddrSearchLoading(true);
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=us&q=${encodeURIComponent(addrSearchQuery)}`;
+        const res = await fetch(url, { headers: { 'User-Agent': 'LimeOfTimeApp/1.0' } });
+        const data = await res.json();
+        if (!cancelled) setAddrSuggestions(data || []);
+      } catch { if (!cancelled) setAddrSuggestions([]); }
+      if (!cancelled) setAddrSearchLoading(false);
+    };
+    const debounce = setTimeout(search, 500);
+    return () => { cancelled = true; clearTimeout(debounce); };
+  }, [addrSearchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-populate address from client's savedAddress when a client is selected
+  useEffect(() => {
+    if (!selectedClientId) return;
+    const client = getClientById(selectedClientId);
+    if (!client) return;
+    // Use savedAddress if available
+    const saved = (client as any).savedAddress as string | undefined;
+    if (saved && saved.trim()) {
+      // Parse "Street, City, State ZIP" format
+      const parts = saved.split(',').map((p: string) => p.trim());
+      if (parts.length >= 3) {
+        setAddrStreet(parts[0]);
+        setAddrCity(parts[1]);
+        // Last part may be "State ZIP" e.g. "PA 15220"
+        const stateZip = parts[2].trim().split(' ');
+        setAddrState(stateZip[0] ?? '');
+        setAddrZip(stateZip[1] ?? '');
+        setAddrSearchQuery(saved);
+      } else {
+        setAddrStreet(saved);
+      }
+      return;
+    }
+    // Fall back to most recent mobile appointment with a clientAddress
+    const pastMobileAppt = [...state.appointments]
+      .filter((a) => a.clientId === selectedClientId && (a as any).clientAddress)
+      .sort((a, b) => (b.date > a.date ? 1 : -1))[0];
+    if (pastMobileAppt && (pastMobileAppt as any).clientAddress) {
+      const addr = (pastMobileAppt as any).clientAddress as string;
+      const parts = addr.split(',').map((p: string) => p.trim());
+      if (parts.length >= 3) {
+        setAddrStreet(parts[0]);
+        setAddrCity(parts[1]);
+        const stateZip = parts[2].trim().split(' ');
+        setAddrState(stateZip[0] ?? '');
+        setAddrZip(stateZip[1] ?? '');
+        setAddrSearchQuery(addr);
+      } else {
+        setAddrStreet(addr);
+      }
+    }
+  }, [selectedClientId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleBook = useCallback(() => {
     // For package multi-session bookings, require at least client and sessions
     const isPackageBooking = packageSessions.length > 0;
@@ -628,9 +697,20 @@ export default function CalendarBookingScreen() {
       paymentMethod: (selectedPaymentMethod ?? undefined) as "free" | "zelle" | "venmo" | "cashapp" | "cash" | "card" | "unpaid" | undefined,
       extraItems: extraItems.length > 0 ? extraItems : undefined,
     };
-    dispatch({ type: "ADD_APPOINTMENT", payload: appointment });
+        dispatch({ type: "ADD_APPOINTMENT", payload: appointment });
     syncToDb({ type: "ADD_APPOINTMENT", payload: appointment });
-
+    // Silently save client address to profile after mobile booking
+    if (clientAddress.trim() && selectedClientId) {
+      const clientForSave = getClientById(selectedClientId);
+      if (clientForSave) {
+        const existingSaved = (clientForSave as any)?.savedAddress ?? "";
+        if (clientAddress.trim() !== existingSaved.trim()) {
+          const updatedClient = { ...clientForSave, savedAddress: clientAddress.trim() };
+          dispatch({ type: "UPDATE_CLIENT", payload: updatedClient });
+          syncToDb({ type: "UPDATE_CLIENT", payload: updatedClient });
+        }
+      }
+    }
     // Persist promo code usedCount increment to DB if a promo code was applied
     if (appliedPromoCode) {
       const newUsedCount = (appliedPromoCode.usedCount ?? 0) + 1;
@@ -662,7 +742,8 @@ export default function CalendarBookingScreen() {
       const clientForCard = getClientById(selectedClientId);
       if (clientForCard?.phone) {
         setRequestingCardPayment(true);
-        apiCall<{ ok: boolean; url: string; sessionId: string }>("/api/stripe-connect/request-payment", {
+        // Delay 1.5s to allow syncToDb to persist the appointment before the server looks it up
+        const doRequestPayment = () => apiCall<{ ok: boolean; url: string; sessionId: string }>("/api/stripe-connect/request-payment", {
           method: "POST",
           body: JSON.stringify({ businessOwnerId: state.businessOwnerId, appointmentLocalId: appointment.id }),
         }).then((result) => {
@@ -681,6 +762,7 @@ export default function CalendarBookingScreen() {
         }).catch(() => {
           Alert.alert("Card Payment", "Appointment booked. Could not create card payment link — you can send it from the appointment detail.");
         }).finally(() => setRequestingCardPayment(false));
+        setTimeout(doRequestPayment, 1500);
       }
     }
 
@@ -3525,32 +3607,104 @@ export default function CalendarBookingScreen() {
             if (selectedSvc?.serviceType !== 'mobile') return null;
             return (
               <View style={{ marginTop: 12 }}>
-                <Text style={{
-                  fontSize: fs.xs,
-                  fontWeight: "600",
-                  color: colors.foreground,
-                  marginBottom: 6,
-                }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 6 }}>
                   Client Address <Text style={{ color: colors.error }}>*</Text>
                 </Text>
+                {/* Pre-fill hint */}
+                {addrStreet ? (
+                  <View style={{ backgroundColor: colors.primary + "12", borderWidth: 1, borderColor: colors.primary + "40", borderRadius: 10, padding: 10, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Text style={{ fontSize: 14 }}>📍</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.primary, flex: 1, fontWeight: "600" }}>Pre-filled from client profile — verify before continuing</Text>
+                  </View>
+                ) : null}
+                {/* Search autocomplete */}
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 4 }}>Search Address</Text>
                 <TextInput
-                  placeholder="Enter client's full address..."
+                  placeholder="Start typing to search..."
                   placeholderTextColor={colors.muted}
-                  value={clientAddress}
-                  onChangeText={setClientAddress}
-                  style={[
-                    styles.notesInput,
-                    {
-                      color: colors.foreground,
-                      borderColor: clientAddress.trim() ? colors.border : colors.error + "80",
-                      backgroundColor: colors.surface,
-                    },
-                  ]}
-                  returnKeyType="done"
+                  value={addrSearchQuery}
+                  onChangeText={setAddrSearchQuery}
+                  style={[styles.notesInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.surface, marginBottom: addrSuggestions.length > 0 ? 0 : 10 }]}
+                  returnKeyType="search"
                 />
-                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 4 }}>
-                  Required — we will travel to this address
-                </Text>
+                {addrSearchLoading && (
+                  <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 6 }}>Searching...</Text>
+                )}
+                {addrSuggestions.length > 0 && (
+                  <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, marginBottom: 10, overflow: 'hidden' }}>
+                    {addrSuggestions.map((s, i) => (
+                      <Pressable
+                        key={i}
+                        onPress={() => {
+                          const a = s.address || {};
+                          const street = [a.house_number, a.road].filter(Boolean).join(' ');
+                          const city = a.city || a.town || a.village || a.hamlet || '';
+                          const stateAbbr = a.state ? a.state.substring(0, 2).toUpperCase() : '';
+                          const zip = a.postcode ? a.postcode.substring(0, 5) : '';
+                          setAddrStreet(street);
+                          setAddrCity(city);
+                          setAddrState(stateAbbr);
+                          setAddrZip(zip);
+                          setAddrSearchQuery(s.display_name);
+                          setAddrSuggestions([]);
+                        }}
+                        style={({ pressed }) => ({ padding: 10, borderBottomWidth: i < addrSuggestions.length - 1 ? 1 : 0, borderBottomColor: colors.border, backgroundColor: pressed ? colors.background : 'transparent' })}
+                      >
+                        <Text style={{ fontSize: fs.xs, color: colors.foreground }} numberOfLines={2}>{s.display_name}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
+                {/* Street */}
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 4 }}>Street Address</Text>
+                <TextInput
+                  placeholder="123 Main St"
+                  placeholderTextColor={colors.muted}
+                  value={addrStreet}
+                  onChangeText={setAddrStreet}
+                  returnKeyType="next"
+                  style={[styles.notesInput, { color: colors.foreground, borderColor: addrStreet.trim() ? colors.border : colors.error + "80", backgroundColor: colors.surface, marginBottom: 10 }]}
+                />
+                {/* City */}
+                <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 4 }}>City</Text>
+                <TextInput
+                  placeholder="Pittsburgh"
+                  placeholderTextColor={colors.muted}
+                  value={addrCity}
+                  onChangeText={setAddrCity}
+                  returnKeyType="next"
+                  style={[styles.notesInput, { color: colors.foreground, borderColor: addrCity.trim() ? colors.border : colors.error + "80", backgroundColor: colors.surface, marginBottom: 10 }]}
+                />
+                {/* State + ZIP */}
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 4 }}>State</Text>
+                    <TextInput
+                      placeholder="PA"
+                      placeholderTextColor={colors.muted}
+                      value={addrState}
+                      onChangeText={setAddrState}
+                      autoCapitalize="characters"
+                      maxLength={2}
+                      returnKeyType="next"
+                      style={[styles.notesInput, { color: colors.foreground, borderColor: addrState.trim() ? colors.border : colors.error + "80", backgroundColor: colors.surface }]}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 4 }}>ZIP Code</Text>
+                    <TextInput
+                      placeholder="15220"
+                      placeholderTextColor={colors.muted}
+                      value={addrZip}
+                      onChangeText={setAddrZip}
+                      keyboardType="number-pad"
+                      maxLength={10}
+                      returnKeyType="done"
+                      style={[styles.notesInput, { color: colors.foreground, borderColor: addrZip.trim() ? colors.border : colors.error + "80", backgroundColor: colors.surface }]}
+                    />
+                  </View>
+                </View>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 8 }}>Required — we will travel to this address.</Text>
               </View>
             );
           })()}

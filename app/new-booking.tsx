@@ -985,31 +985,13 @@ export default function NewBookingScreen() {
       }
     };
 
+    // Silently save address to client profile on mobile booking (no alert needed)
     if (isMobileService && clientAddress.trim() && selectedClientId && selectedClient) {
       const existingSaved = (selectedClient as any)?.savedAddress ?? "";
-      const addressChanged = clientAddress.trim() !== existingSaved.trim();
-      if (addressChanged) {
-        Alert.alert(
-          "Save Address to Profile?",
-          `Save "${clientAddress.trim()}" to ${selectedClient.name}'s profile so it pre-fills automatically on future bookings?`,
-          [
-            {
-              text: "Don't Save",
-              style: "cancel",
-              onPress: doNavigate,
-            },
-            {
-              text: "Save Address",
-              onPress: () => {
-                const updatedClient = { ...selectedClient, savedAddress: clientAddress.trim() };
-                dispatch({ type: "UPDATE_CLIENT", payload: updatedClient });
-                syncToDb({ type: "UPDATE_CLIENT", payload: updatedClient });
-                doNavigate();
-              },
-            },
-          ]
-        );
-        return; // Wait for user to respond to the alert
+      if (clientAddress.trim() !== existingSaved.trim()) {
+        const updatedClient = { ...selectedClient, savedAddress: clientAddress.trim() };
+        dispatch({ type: "UPDATE_CLIENT", payload: updatedClient });
+        syncToDb({ type: "UPDATE_CLIENT", payload: updatedClient });
       }
     }
 

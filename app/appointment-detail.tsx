@@ -14,7 +14,7 @@ import { usePlanLimitCheck } from "@/hooks/use-plan-limit-check";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
-import { useStripe } from "@/lib/use-stripe";
+import { useStripe, initStripe } from "@/lib/use-stripe";
 
 import {
   minutesToTime,
@@ -537,10 +537,12 @@ export default function AppointmentDetailScreen() {
         throw new Error(err?.error ?? 'Could not create payment session.');
       }
       const { publishableKey, paymentIntent, accountId } = await sheetRes.json();
+      // Re-initialize Stripe SDK with the connected account context so the
+      // PaymentIntent lookup resolves on the correct Stripe account (not the platform account).
+      await initStripe({ publishableKey, stripeAccountId: accountId });
       const { error: initError } = await initPaymentSheet({
         merchantDisplayName: biz.businessName || 'Business',
         paymentIntentClientSecret: paymentIntent,
-        stripeAccountId: accountId,
         style: 'alwaysDark',
       });
       if (initError) {
