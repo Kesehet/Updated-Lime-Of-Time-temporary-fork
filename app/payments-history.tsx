@@ -26,6 +26,11 @@ type Transaction = {
   created: number;
   description: string;
   clientName: string | null;
+  clientPhone: string | null;
+  clientEmail: string | null;
+  serviceName: string | null;
+  appointmentDate: string | null;
+  appointmentLocalId: string | null;
   sourceId: string | null;
 };
 
@@ -123,25 +128,61 @@ export default function PaymentsHistoryScreen() {
   const renderItem = ({ item }: { item: Transaction }) => {
     const cfg = getTxConfig(item.type);
     const isPositive = item.net >= 0;
+    // Format appointment date nicely if available
+    const apptDateStr = item.appointmentDate
+      ? new Date(item.appointmentDate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      : null;
     return (
-      <View style={[styles.txRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <TouchableOpacity
+        activeOpacity={item.appointmentLocalId ? 0.7 : 1}
+        onPress={() => {
+          if (item.appointmentLocalId) {
+            router.push({ pathname: "/appointment-detail", params: { id: item.appointmentLocalId } } as any);
+          }
+        }}
+        style={[styles.txRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      >
         {/* Type badge */}
         <View style={[styles.txBadge, { backgroundColor: cfg.color + "18" }]}>
           <Text style={{ fontSize: 16, color: cfg.color }}>{cfg.icon}</Text>
         </View>
         {/* Details */}
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {/* Type label + service */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}>{cfg.label}</Text>
-            {item.clientName ? (
-              <Text style={{ fontSize: 11, color: colors.muted }}>· {item.clientName}</Text>
+            {item.serviceName ? (
+              <Text style={{ fontSize: 11, color: colors.muted }}>· {item.serviceName}</Text>
             ) : null}
           </View>
-          {item.description ? (
+          {/* Client name */}
+          {item.clientName ? (
+            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.foreground, marginTop: 3 }}>
+              {item.clientName}
+            </Text>
+          ) : null}
+          {/* Client phone + email */}
+          {(item.clientPhone || item.clientEmail) ? (
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 2, flexWrap: "wrap" }}>
+              {item.clientPhone ? (
+                <Text style={{ fontSize: 11, color: colors.muted }}>{item.clientPhone}</Text>
+              ) : null}
+              {item.clientEmail ? (
+                <Text style={{ fontSize: 11, color: colors.muted }}>{item.clientEmail}</Text>
+              ) : null}
+            </View>
+          ) : null}
+          {/* Appointment date */}
+          {apptDateStr ? (
+            <Text style={{ fontSize: 11, color: colors.primary, marginTop: 2 }}>Appt: {apptDateStr}</Text>
+          ) : null}
+          {/* Description */}
+          {item.description && !item.serviceName ? (
             <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }} numberOfLines={1}>
               {item.description}
             </Text>
           ) : null}
+          {/* Transaction date + fees */}
           <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
             {formatDate(item.created)} · {formatTime(item.created)}
           </Text>
@@ -151,11 +192,16 @@ export default function PaymentsHistoryScreen() {
             </Text>
           ) : null}
         </View>
-        {/* Net amount */}
-        <Text style={{ fontSize: 15, fontWeight: "700", color: isPositive ? "#22C55E" : "#EF4444" }}>
-          {isPositive ? "+" : ""}${item.net.toFixed(2)}
-        </Text>
-      </View>
+        {/* Net amount + chevron if tappable */}
+        <View style={{ alignItems: "flex-end", gap: 4 }}>
+          <Text style={{ fontSize: 15, fontWeight: "700", color: isPositive ? "#22C55E" : "#EF4444" }}>
+            {isPositive ? "+" : ""}${item.net.toFixed(2)}
+          </Text>
+          {item.appointmentLocalId ? (
+            <IconSymbol name="chevron.right" size={12} color={colors.muted} />
+          ) : null}
+        </View>
+      </TouchableOpacity>
     );
   };
 

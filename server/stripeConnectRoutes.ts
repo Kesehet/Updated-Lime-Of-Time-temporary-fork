@@ -1558,6 +1558,8 @@ export function registerStripeConnectRoutes(app: Express): void {
   // ── Transactions: recent charges + refunds ────────────────────────────────────────
   // GET /api/stripe-connect/transactions?businessOwnerId=123&limit=20
   // Returns recent balance transactions (charges, refunds, payouts) for audit trail.
+  // Each row is enriched with client name/phone/email, service name, and appointment date
+  // by joining against the local DB using appointmentLocalId stored in PaymentIntent metadata.
   app.get("/api/stripe-connect/transactions", async (req: Request, res: Response) => {
     try {
       const businessOwnerId = parseInt(String(req.query.businessOwnerId ?? "0"), 10);
@@ -1572,39 +1574,353 @@ export function registerStripeConnectRoutes(app: Express): void {
       const accountId = (owner as any).stripeConnectAccountId as string | null;
       if (!accountId) { res.status(404).json({ error: "No Stripe account connected" }); return; }
 
+      const db = await getDb();
+
       // Fetch recent balance transactions (includes charges, refunds, payouts, fees)
       const txList = await stripe.balanceTransactions.list(
         { limit, expand: ["data.source"] },
         { stripeAccount: accountId }
       );
 
-      const transactions = txList.data.map((tx) => {
+      // Build enriched transactions — for each tx that has an appointmentLocalId in metadata,
+      // look up client + service info from the local DB.
+      const transactions = await Promise.all(txList.data.map(async (tx) => {
         const src = tx.source as any;
         // Try to extract a human-readable description
         let description = tx.description ?? "";
         if (src?.description) description = src.description;
         if (src?.metadata?.feeType) description = `${src.metadata.feeType.replace(/_/g, " ")} fee`;
-        // Client name from metadata if available
-        const clientName = src?.metadata?.clientName ?? src?.metadata?.client_name ?? null;
+
+        // Pull metadata from the source (PaymentIntent or Refund → original PaymentIntent)
+        const meta = src?.metadata ?? {};
+        const appointmentLocalId: string | null = meta.appointmentLocalId ?? null;
+
+        // Base fields from Stripe metadata (may be populated from create-payment-sheet)
+        let clientName: string | null = meta.clientName ?? meta.client_name ?? null;
+        let clientPhone: string | null = meta.clientPhone ?? null;
+        let clientEmail: string | null = meta.clientEmail ?? null;
+        let serviceName: string | null = meta.serviceName ?? null;
+        let appointmentDate: string | null = meta.appointmentDate ?? null;
+
+        // Enrich from local DB if we have an appointmentLocalId
+        if (appointmentLocalId && db) {
+          try {
+            const apptRows = await db
+              .select()
+              .from(appointments)
+              .where(and(eq(appointments.localId, appointmentLocalId), eq(appointments.businessOwnerId, businessOwnerId)))
+              .limit(1);
+            const appt = apptRows[0];
+            if (appt) {
+              // Appointment date
+              if (!appointmentDate) appointmentDate = (appt as any).date ?? null;
+              // Client info
+              const clientLocalId = (appt as any).clientLocalId ?? "";
+              if (clientLocalId) {
+                const clientRows = await db
+                  .select({ name: clients.name, phone: clients.phone, email: clients.email })
+                  .from(clients)
+                  .where(and(eq(clients.localId, clientLocalId), eq(clients.businessOwnerId, businessOwnerId)))
+                  .limit(1);
+                const cl = clientRows[0];
+                if (cl) {
+                  if (!clientName) clientName = cl.name ?? null;
+                  if (!clientPhone) clientPhone = cl.phone ?? null;
+                  if (!clientEmail) clientEmail = cl.email ?? null;
+                }
+              }
+              // Service info
+              const serviceLocalId = (appt as any).serviceLocalId ?? "";
+              if (serviceLocalId && !serviceName) {
+                const svcRows = await db
+                  .select({ name: services.name })
+                  .from(services)
+                  .where(and(eq(services.localId, serviceLocalId), eq(services.businessOwnerId, businessOwnerId)))
+                  .limit(1);
+                if (svcRows[0]) serviceName = svcRows[0].name ?? null;
+              }
+            }
+          } catch {
+            // DB lookup failure should not block the response
+          }
+        }
+
         return {
           id: tx.id,
-          type: tx.type,          // "charge", "refund", "payout", "stripe_fee", etc.
+          type: tx.type,           // "charge", "refund", "payout", "stripe_fee", etc.
           amount: tx.amount / 100, // positive = credit, negative = debit
           fee: tx.fee / 100,
           net: tx.net / 100,
           currency: tx.currency.toUpperCase(),
           status: tx.status,
-          created: tx.created,    // Unix timestamp
+          created: tx.created,     // Unix timestamp
           description,
           clientName,
+          clientPhone,
+          clientEmail,
+          serviceName,
+          appointmentDate,
+          appointmentLocalId,
           sourceId: typeof tx.source === "string" ? tx.source : src?.id ?? null,
         };
-      });
+      }));
 
       res.json({ transactions });
     } catch (err: any) {
       console.error("[StripeConnect] transactions error:", err);
       res.status(500).json({ error: err?.message ?? "Failed to fetch transactions" });
+    }
+  });
+
+  // ── Refund on cancellation (with optional cancellation fee) ──────────────────────
+  // POST /api/stripe-connect/refund-on-cancel
+  // Body: { businessOwnerId, appointmentLocalId }
+  // Reads the business cancellation policy, computes fee if applicable,
+  // charges the cancellation fee off-session (if any), then issues a partial/full refund.
+  // Returns: { ok, refundAmount, feeAmount, refundId, feeCharged }
+  app.post("/api/stripe-connect/refund-on-cancel", async (req: Request, res: Response) => {
+    try {
+      const { businessOwnerId, appointmentLocalId } = req.body as {
+        businessOwnerId: number;
+        appointmentLocalId: string;
+      };
+
+      if (!businessOwnerId || !appointmentLocalId) {
+        res.status(400).json({ error: "businessOwnerId and appointmentLocalId are required" }); return;
+      }
+
+      const stripe = await getStripe();
+      if (!stripe) { res.status(503).json({ error: "Stripe not configured" }); return; }
+
+      const owner = await getOwner(businessOwnerId);
+      if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
+      const accountId = (owner as any)?.stripeConnectAccountId as string | null;
+      if (!accountId) { res.status(400).json({ error: "Business has no connected Stripe account" }); return; }
+
+      const db = await getDb();
+      if (!db) { res.status(503).json({ error: "DB unavailable" }); return; }
+
+      // Load appointment
+      const apptRows = await db
+        .select()
+        .from(appointments)
+        .where(and(eq(appointments.localId, appointmentLocalId), eq(appointments.businessOwnerId, businessOwnerId)))
+        .limit(1);
+      const appt = apptRows[0];
+      if (!appt) { res.status(404).json({ error: "Appointment not found" }); return; }
+
+      // Resolve PaymentIntent ID (native sheet or checkout session)
+      const directPiId = (appt as any).stripePaymentIntentId as string | null;
+      const sessionId = (appt as any).stripeCheckoutSessionId as string | null;
+      let paymentIntentId: string | null = directPiId;
+      if (!paymentIntentId && sessionId) {
+        const session = await stripe.checkout.sessions.retrieve(sessionId, {}, { stripeAccount: accountId });
+        paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+      }
+      if (!paymentIntentId) {
+        res.status(400).json({ error: "No Stripe payment found for this appointment — nothing to refund" }); return;
+      }
+
+      // Retrieve the PaymentIntent to get the charged amount
+      const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {}, { stripeAccount: accountId });
+      const totalChargedCents = pi.amount_received ?? pi.amount ?? 0;
+      const totalCharged = totalChargedCents / 100;
+
+      // Compute cancellation fee from business policy
+      const policy = (owner as any).cancellationPolicy as { enabled?: boolean; hoursBeforeAppointment?: number; feePercentage?: number } | null;
+      const apptDate = (appt as any).date as string ?? "";
+      const apptTime = (appt as any).time as string ?? "00:00";
+      let feeAmount = 0;
+      let feeApplies = false;
+
+      if (policy?.enabled && policy.feePercentage && policy.feePercentage > 0 && apptDate) {
+        const apptDateTime = new Date(`${apptDate}T${apptTime}:00`);
+        const now = new Date();
+        const hoursUntil = (apptDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+        const windowHours = policy.hoursBeforeAppointment ?? 24;
+        if (hoursUntil <= windowHours) {
+          feeApplies = true;
+          feeAmount = Math.round((totalCharged * policy.feePercentage) / 100 * 100) / 100;
+        }
+      }
+
+      const refundAmount = Math.max(0, totalCharged - feeAmount);
+      let feeChargeId: string | null = null;
+
+      // Step 1: Charge cancellation fee off-session (if applicable)
+      if (feeApplies && feeAmount > 0) {
+        try {
+          const paymentMethodId = typeof pi.payment_method === "string" ? pi.payment_method : pi.payment_method?.id;
+          const customerId = typeof pi.customer === "string" ? pi.customer : (pi.customer as any)?.id;
+          if (paymentMethodId) {
+            const feeCents = Math.round(feeAmount * 100);
+            const feePercent = await getPlatformFeePercent();
+            const platformFeeCents = Math.round(feeCents * feePercent);
+            // Fetch service name for description
+            const svcRows = await db
+              .select({ name: services.name })
+              .from(services)
+              .where(and(eq(services.localId, (appt as any).serviceLocalId ?? ""), eq(services.businessOwnerId, businessOwnerId)))
+              .limit(1);
+            const svcName = svcRows[0]?.name ?? "Appointment";
+            const clientRows = await db
+              .select({ name: clients.name })
+              .from(clients)
+              .where(and(eq(clients.localId, (appt as any).clientLocalId ?? ""), eq(clients.businessOwnerId, businessOwnerId)))
+              .limit(1);
+            const clientName = clientRows[0]?.name ?? "client";
+            const feePI = await stripe.paymentIntents.create(
+              {
+                amount: feeCents,
+                currency: pi.currency ?? "usd",
+                payment_method: paymentMethodId,
+                ...(customerId ? { customer: customerId } : {}),
+                confirm: true,
+                off_session: true,
+                application_fee_amount: platformFeeCents,
+                description: `Cancellation fee — ${svcName} (${clientName})`,
+                metadata: {
+                  appointmentLocalId,
+                  businessOwnerId: String(businessOwnerId),
+                  feeType: "cancellation",
+                },
+              } as any,
+              { stripeAccount: accountId }
+            );
+            feeChargeId = feePI.id;
+            console.log(`[StripeConnect] refund-on-cancel: cancellation fee $${feeAmount} charged piId=${feePI.id}`);
+          }
+        } catch (feeErr: any) {
+          // Fee charge failed — still proceed with full refund to avoid leaving client out-of-pocket
+          console.error("[StripeConnect] refund-on-cancel: fee charge failed, issuing full refund instead:", feeErr?.message);
+          feeAmount = 0;
+        }
+      }
+
+      // Step 2: Issue refund (partial if fee was charged, full otherwise)
+      const refundCents = Math.round(Math.max(0, totalCharged - feeAmount) * 100);
+      let refund: Stripe.Refund | null = null;
+      if (refundCents > 0) {
+        refund = await stripe.refunds.create(
+          { payment_intent: paymentIntentId, amount: refundCents },
+          { stripeAccount: accountId }
+        );
+        console.log(`[StripeConnect] refund-on-cancel: refund $${refundCents / 100} issued refundId=${refund.id}`);
+      }
+
+      // Step 3: Persist refund info on appointment
+      await db
+        .update(appointments)
+        .set({
+          paymentStatus: "unpaid",
+          paymentMethod: null,
+          refundedAt: new Date(),
+          refundedAmount: String(refundCents / 100),
+          stripeRefundId: refund?.id ?? null,
+        } as any)
+        .where(and(eq(appointments.localId, appointmentLocalId), eq(appointments.businessOwnerId, businessOwnerId)));
+
+      // Step 4: Send SMS to client
+      try {
+        const accountSid = await getPlatformConfig("TWILIO_ACCOUNT_SID");
+        const authToken = await getPlatformConfig("TWILIO_AUTH_TOKEN");
+        const fromNumber = await getPlatformConfig("TWILIO_FROM_NUMBER");
+        const testMode = await getPlatformConfig("TWILIO_TEST_MODE");
+        if (accountSid && authToken && fromNumber) {
+          const clientRows2 = await db
+            .select({ phone: clients.phone, name: clients.name })
+            .from(clients)
+            .where(and(eq(clients.localId, (appt as any).clientLocalId ?? ""), eq(clients.businessOwnerId, businessOwnerId)))
+            .limit(1);
+          const clientPhone = clientRows2[0]?.phone;
+          const clientName = clientRows2[0]?.name ?? "there";
+          const svcRows2 = await db
+            .select({ name: services.name })
+            .from(services)
+            .where(and(eq(services.localId, (appt as any).serviceLocalId ?? ""), eq(services.businessOwnerId, businessOwnerId)))
+            .limit(1);
+          const svcName = svcRows2[0]?.name ?? "your appointment";
+          const formattedDate = apptDate
+            ? new Date(apptDate + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+            : "your appointment";
+          const bizName = (owner as any).businessName ?? "Your provider";
+          let smsBody: string;
+          if (feeApplies && feeAmount > 0 && refundCents > 0) {
+            smsBody = [
+              `Hi ${clientName}, your appointment for ${svcName} on ${formattedDate} has been cancelled by ${bizName}.`,
+              ``,
+              `Cancellation fee kept: $${feeAmount.toFixed(2)}`,
+              `Refund issued: $${(refundCents / 100).toFixed(2)} (will appear on your card in 5–10 business days)`,
+              ``,
+              `— Lime Of Time`,
+            ].join("\n");
+          } else if (refundCents > 0) {
+            smsBody = `Hi ${clientName}, your appointment for ${svcName} on ${formattedDate} has been cancelled. A full refund of $${(refundCents / 100).toFixed(2)} has been issued and will appear on your card in 5–10 business days. — Lime Of Time`;
+          } else {
+            smsBody = `Hi ${clientName}, your appointment for ${svcName} on ${formattedDate} has been cancelled. — Lime Of Time`;
+          }
+          if (clientPhone) {
+            if (testMode === "true") {
+              console.log(`[SMS TEST MODE] refund-on-cancel SMS to ${clientPhone}: ${smsBody}`);
+            } else {
+              const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+              const params = new URLSearchParams();
+              params.append("From", fromNumber);
+              params.append("To", clientPhone);
+              params.append("Body", smsBody);
+              const credentials = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+              await fetch(url, {
+                method: "POST",
+                headers: { Authorization: `Basic ${credentials}`, "Content-Type": "application/x-www-form-urlencoded" },
+                body: params.toString(),
+              }).catch((smsErr) => console.error("[StripeConnect] refund-on-cancel SMS error:", smsErr));
+            }
+          }
+        }
+      } catch (smsErr) {
+        console.error("[StripeConnect] refund-on-cancel SMS send error:", smsErr);
+      }
+
+      // Step 5: Send push notification to client (if they have a portal account)
+      try {
+        const { clientAccounts } = await import("../drizzle/schema");
+        const caRows = await db
+          .select({ expoPushToken: (clientAccounts as any).expoPushToken })
+          .from(clientAccounts as any)
+          .where(eq((clientAccounts as any).businessOwnerId, businessOwnerId))
+          .limit(50);
+        // Match by clientLocalId via appointments
+        const clientLocalId = (appt as any).clientLocalId ?? "";
+        const clientRows3 = await db
+          .select({ email: clients.email })
+          .from(clients)
+          .where(and(eq(clients.localId, clientLocalId), eq(clients.businessOwnerId, businessOwnerId)))
+          .limit(1);
+        const clientEmail = clientRows3[0]?.email;
+        if (clientEmail) {
+          const caMatch = caRows.find((ca: any) => ca.email === clientEmail);
+          if (caMatch?.expoPushToken) {
+            const refundMsg = refundCents > 0
+              ? `A refund of $${(refundCents / 100).toFixed(2)} has been issued to your card.`
+              : "No refund was issued.";
+            await sendExpoPush(caMatch.expoPushToken, "Appointment Cancelled", refundMsg, { type: "cancellation" }).catch(() => {});
+          }
+        }
+      } catch {
+        // Push failure should not block the response
+      }
+
+      res.json({
+        ok: true,
+        refundAmount: refundCents / 100,
+        feeAmount,
+        feeCharged: feeChargeId !== null,
+        feeChargeId,
+        refundId: refund?.id ?? null,
+      });
+    } catch (err: any) {
+      console.error("[StripeConnect] refund-on-cancel error:", err);
+      res.status(500).json({ error: err?.message ?? "Failed to process refund on cancellation" });
     }
   });
 
