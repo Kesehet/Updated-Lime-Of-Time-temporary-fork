@@ -100,6 +100,10 @@ interface PublicService {
   travelFee?: number | null;
   maxTravelDistance?: number | null;
   travelDuration?: number | null;
+  distanceFeeEnabled?: boolean;
+  freeMiles?: number | null;
+  travelRatePerMile?: number | null;
+  minTravelFee?: number | null;
 }
 interface PublicPackage {
   localId: string;
@@ -209,6 +213,12 @@ export default function ClientBookingWizardScreen() {
   const [addrSearchLoading, setAddrSearchLoading] = useState(false);
   const addrSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saveAddressToProfile, setSaveAddressToProfile] = useState(false);
+  // OSRM travel time + distance estimate
+  const [travelTimeEstimate, setTravelTimeEstimate] = useState<string | null>(null);
+  const [travelTimeLoading, setTravelTimeLoading] = useState(false);
+  const [dynamicTravelFee, setDynamicTravelFee] = useState<number | null>(null);
+  const [routeDistanceMiles, setRouteDistanceMiles] = useState<number | null>(null);
+  const [outsideServiceArea, setOutsideServiceArea] = useState(false);
   // Derived full address from sub-fields
   const fullClientAddress = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(", ");
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
@@ -333,6 +343,76 @@ export default function ClientBookingWizardScreen() {
       setAddrStreet(lastUsedAddress);
     }
   }, [lastUsedAddress]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // OSRM distance + travel time estimate for mobile services
+  useEffect(() => {
+    const allFilled = addrStreet.trim() && addrCity.trim() && addrState.trim() && addrZip.trim();
+    if (!allFilled || !isMobileService) {
+      setTravelTimeEstimate(null);
+      setDynamicTravelFee(null);
+      setRouteDistanceMiles(null);
+      setOutsideServiceArea(false);
+      return;
+    }
+    // Build business origin address from selected location or first available location
+    const bizLoc = selectedLocation ?? (locations.length > 0 ? locations[0] : null);
+    const bizAddr = bizLoc
+      ? [bizLoc.address, bizLoc.city, bizLoc.state, bizLoc.zipCode].filter(Boolean).join(', ')
+      : null;
+    if (!bizAddr) { setTravelTimeEstimate(null); return; }
+    const destAddr = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(', ');
+    let cancelled = false;
+    const geocode = async (addr: string): Promise<[number, number] | null> => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1`, {
+          headers: { 'User-Agent': 'LimeOfTime/1.0' },
+        });
+        const data = await res.json();
+        if (!data || data.length === 0) return null;
+        return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+      } catch { return null; }
+    };
+    const estimate = async () => {
+      setTravelTimeLoading(true);
+      setTravelTimeEstimate(null);
+      setDynamicTravelFee(null);
+      setRouteDistanceMiles(null);
+      setOutsideServiceArea(false);
+      const [origin, dest] = await Promise.all([geocode(bizAddr), geocode(destAddr)]);
+      if (cancelled) return;
+      if (!origin || !dest) { setTravelTimeLoading(false); return; }
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${origin[0]},${origin[1]};${dest[0]},${dest[1]}?overview=false`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (cancelled) return;
+        if (data?.routes?.[0]) {
+          const route = data.routes[0];
+          const mins = Math.round(route.duration / 60);
+          const distMiles = (route.distance as number) / 1609.344;
+          setRouteDistanceMiles(distMiles);
+          setTravelTimeEstimate(`~${mins} min drive · ${distMiles.toFixed(1)} mi`);
+          // Check max travel distance
+          if (selectedService?.maxTravelDistance && distMiles > selectedService.maxTravelDistance) {
+            setOutsideServiceArea(true);
+          }
+          // Calculate dynamic fee if service has distanceFeeEnabled
+          if (selectedService?.distanceFeeEnabled) {
+            const rate = selectedService.travelRatePerMile ?? 0.67;
+            const freeThreshold = selectedService.freeMiles ?? 0;
+            const billableMiles = Math.max(0, distMiles - freeThreshold);
+            let fee = billableMiles * rate;
+            if (selectedService.minTravelFee != null && fee < selectedService.minTravelFee && billableMiles > 0) fee = selectedService.minTravelFee;
+            setDynamicTravelFee(Math.round(fee * 100) / 100);
+          }
+        }
+      } catch { /* ignore */ }
+      setTravelTimeLoading(false);
+    };
+    const debounce = setTimeout(estimate, 800);
+    return () => { cancelled = true; clearTimeout(debounce); };
+  }, [addrStreet, addrCity, addrState, addrZip, isMobileService]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const eligibleStaff = useMemo(() => {
     let filtered = selectedService
       ? staff.filter((m) => !m.serviceIds?.length || m.serviceIds.includes(selectedService.localId))
@@ -398,9 +478,13 @@ export default function ClientBookingWizardScreen() {
       : 0;
     const afterPromo = Math.max(0, afterDiscount - promoSaving);
     const giftSaving = giftApplied ? Math.min(giftApplied.value, afterPromo) : 0;
-    const travelFee = (isMobileService && selectedService.travelFee && selectedService.travelFee > 0) ? selectedService.travelFee : 0;
+    const travelFee = isMobileService
+      ? (selectedService.distanceFeeEnabled && dynamicTravelFee != null
+          ? dynamicTravelFee
+          : (selectedService.travelFee && selectedService.travelFee > 0 ? selectedService.travelFee : 0))
+      : 0;
     return Math.max(0, afterPromo - giftSaving) + productCartTotal + travelFee;
-  }, [selectedService, discounts, promoApplied, giftApplied, isMobileService, productCartTotal]);
+  }, [selectedService, discounts, promoApplied, giftApplied, isMobileService, productCartTotal, dynamicTravelFee]);
 
   // Load services, staff, locations, and discounts
   useEffect(() => {
@@ -917,7 +1001,11 @@ export default function ClientBookingWizardScreen() {
       // Add travel fee for mobile services when client address is provided
       // Sync fullClientAddress into clientAddress before submission
       const effectiveClientAddress = isMobileService ? fullClientAddress || clientAddress : clientAddress;
-      const travelFeeAmount = (isMobileService && effectiveClientAddress.trim() && selectedService.travelFee) ? selectedService.travelFee : 0;
+      const travelFeeAmount = isMobileService && effectiveClientAddress.trim()
+        ? (selectedService.distanceFeeEnabled && dynamicTravelFee != null
+            ? dynamicTravelFee
+            : (selectedService.travelFee ? selectedService.travelFee : 0))
+        : 0;
       finalPrice += travelFeeAmount;
       const res = await fetch(`${apiBase}/api/public/business/${effectiveSlug}/book`, {
         method: "POST",
@@ -1965,7 +2053,11 @@ export default function ClientBookingWizardScreen() {
           const _afterPromo = Math.max(0, _afterDiscount - _promoSaving);
           const _giftSaving = giftApplied ? Math.min(giftApplied.value, _afterPromo) : 0;
           // Travel fee for mobile services
-          const _travelFee = (isMobileService && selectedService.travelFee && selectedService.travelFee > 0) ? selectedService.travelFee : 0;
+          const _travelFee = isMobileService
+            ? (selectedService.distanceFeeEnabled && dynamicTravelFee != null
+                ? dynamicTravelFee
+                : (selectedService.travelFee && selectedService.travelFee > 0 ? selectedService.travelFee : 0))
+            : 0;
           const _finalPrice = Math.max(0, _afterPromo - _giftSaving) + productCartTotal + _travelFee;
           const _hasDiscounts = _discSaving > 0 || _promoSaving > 0 || _giftSaving > 0 || _travelFee > 0;
           return (
@@ -2348,6 +2440,32 @@ export default function ClientBookingWizardScreen() {
               <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 8 }}>
                 We'll come to you at this address.
               </Text>
+              {/* Travel time + distance estimate */}
+              {travelTimeLoading && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 6 }}>
+                  <ActivityIndicator size="small" color={LIME_GREEN} />
+                  <Text style={{ fontSize: 12, color: TEXT_MUTED }}>Calculating travel time...</Text>
+                </View>
+              )}
+              {!travelTimeLoading && travelTimeEstimate && !outsideServiceArea && (
+                <View style={{ marginTop: 10, backgroundColor: 'rgba(0,200,100,0.08)', borderRadius: 8, padding: 10, gap: 2 }}>
+                  <Text style={{ fontSize: 12, color: LIME_GREEN, fontWeight: '600' }}>🚗 {travelTimeEstimate}</Text>
+                  {selectedService?.distanceFeeEnabled && dynamicTravelFee != null && (
+                    <Text style={{ fontSize: 12, color: TEXT_MUTED }}>
+                      Travel fee: ${dynamicTravelFee.toFixed(2)}
+                      {selectedService.freeMiles ? ` — first ${selectedService.freeMiles} mi free` : ''}
+                    </Text>
+                  )}
+                </View>
+              )}
+              {!travelTimeLoading && outsideServiceArea && (
+                <View style={{ marginTop: 10, backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 8, padding: 10 }}>
+                  <Text style={{ fontSize: 12, color: '#EF4444', fontWeight: '600' }}>⚠️ Outside service area</Text>
+                  <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>
+                    This address is beyond the {selectedService?.maxTravelDistance} mile service radius. Please enter a closer address.
+                  </Text>
+                </View>
+              )}
             </View>
             <View style={{ flex: 1 }} />
           </View>
@@ -2530,7 +2648,11 @@ export default function ClientBookingWizardScreen() {
           const afterPromo = Math.max(0, afterDiscount - promoSaving);
           const giftSaving = giftApplied ? Math.min(giftApplied.value, afterPromo) : 0;
           // Travel fee for mobile services
-          const confirmTravelFee = (isMobileService && selectedService.travelFee && selectedService.travelFee > 0) ? selectedService.travelFee : 0;
+          const confirmTravelFee = isMobileService
+            ? (selectedService.distanceFeeEnabled && dynamicTravelFee != null
+                ? dynamicTravelFee
+                : (selectedService.travelFee && selectedService.travelFee > 0 ? selectedService.travelFee : 0))
+            : 0;
           const finalPrice = Math.max(0, afterPromo - giftSaving) + confirmTravelFee;
           const effectiveAddress = fullClientAddress || clientAddress;
           return (
@@ -2711,10 +2833,10 @@ export default function ClientBookingWizardScreen() {
             activeOpacity={0.8}
             style={[
               s.nextBtn,
-              { opacity: canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length, STEP_ADDRESS, addrStreet, addrCity, addrState, addrZip) ? 1 : 0.4 },
+              { opacity: (canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length, STEP_ADDRESS, addrStreet, addrCity, addrState, addrZip) && !(step === STEP_ADDRESS && outsideServiceArea)) ? 1 : 0.4 },
             ]}
             onPress={handleNext}
-            disabled={!canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length, STEP_ADDRESS, addrStreet, addrCity, addrState, addrZip)}
+            disabled={!canProceed(step, STEP_SERVICE, STEP_STAFF, STEP_LOCATION, STEP_DATE, STEP_TIME, STEP_PAYMENT, showLocationStep, selectedService, selectedStaffId, selectedLocation, selectedDate, selectedSlot, paymentMethod, paymentConfirmationNumber, selectedServices.length, STEP_ADDRESS, addrStreet, addrCity, addrState, addrZip) || (step === STEP_ADDRESS && outsideServiceArea)}
           >
             <Text style={s.nextBtnText}>Continue</Text>
             <IconSymbol name="chevron.right" size={16} color="#FFFFFF" />

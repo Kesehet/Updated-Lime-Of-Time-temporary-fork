@@ -16,7 +16,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId, formatDateStr, formatTime, formatDateDisplay } from "@/lib/store";
 import { useColors } from "@/hooks/use-colors";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useResponsive } from "@/hooks/use-responsive";
 import { FuturisticBackground } from "@/components/futuristic-background";
 
@@ -95,6 +95,12 @@ export default function PublicBookingScreen() {
   const [addrCity, setAddrCity] = useState("");
   const [addrState, setAddrState] = useState("");
   const [addrZip, setAddrZip] = useState("");
+  // OSRM travel time + distance estimate
+  const [travelTimeEstimate, setTravelTimeEstimate] = useState<string | null>(null);
+  const [travelTimeLoading, setTravelTimeLoading] = useState(false);
+  const [dynamicTravelFee, setDynamicTravelFee] = useState<number | null>(null);
+  const [routeDistanceMiles, setRouteDistanceMiles] = useState<number | null>(null);
+  const [outsideServiceArea, setOutsideServiceArea] = useState(false);
 
   // ── Service drill-down state ───────────────────────────────────────────────
   // null = show category tiles; string = show services in that category; "__all__" = no categories exist
@@ -147,8 +153,67 @@ export default function PublicBookingScreen() {
   }, [selectedServiceId, getServiceById]);
 
   const isMobileService = selectedService?.serviceType === 'mobile';
-  const travelFeeAmount = (isMobileService && addrStreet.trim() && selectedService?.travelFee) ? (selectedService.travelFee as unknown as number) : 0;
+  const travelFeeAmount = isMobileService && addrStreet.trim()
+    ? ((selectedService as any)?.distanceFeeEnabled && dynamicTravelFee != null
+        ? dynamicTravelFee
+        : ((selectedService?.travelFee as unknown as number) || 0))
+    : 0;
   const fullClientAddress = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(", ");
+
+  // OSRM distance + travel time estimate for mobile services
+  useEffect(() => {
+    const allFilled = addrStreet.trim() && addrCity.trim() && addrState.trim() && addrZip.trim();
+    if (!allFilled || !isMobileService) {
+      setTravelTimeEstimate(null); setDynamicTravelFee(null); setRouteDistanceMiles(null); setOutsideServiceArea(false);
+      return;
+    }
+    const bizLoc = selectedLocation ?? (state.locations.length > 0 ? state.locations[0] : null);
+    const bizAddr = bizLoc
+      ? [bizLoc.address, bizLoc.city, bizLoc.state, bizLoc.zipCode].filter(Boolean).join(', ')
+      : null;
+    if (!bizAddr) { setTravelTimeEstimate(null); return; }
+    const destAddr = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(', ');
+    let cancelled = false;
+    const geocode = async (addr: string): Promise<[number, number] | null> => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1`, { headers: { 'User-Agent': 'LimeOfTime/1.0' } });
+        const data = await res.json();
+        if (!data || data.length === 0) return null;
+        return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+      } catch { return null; }
+    };
+    const estimate = async () => {
+      setTravelTimeLoading(true); setTravelTimeEstimate(null); setDynamicTravelFee(null); setRouteDistanceMiles(null); setOutsideServiceArea(false);
+      const [origin, dest] = await Promise.all([geocode(bizAddr), geocode(destAddr)]);
+      if (cancelled) return;
+      if (!origin || !dest) { setTravelTimeLoading(false); return; }
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${origin[0]},${origin[1]};${dest[0]},${dest[1]}?overview=false`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (cancelled) return;
+        if (data?.routes?.[0]) {
+          const route = data.routes[0];
+          const mins = Math.round(route.duration / 60);
+          const distMiles = (route.distance as number) / 1609.344;
+          setRouteDistanceMiles(distMiles);
+          setTravelTimeEstimate(`~${mins} min drive · ${distMiles.toFixed(1)} mi`);
+          if ((selectedService as any)?.maxTravelDistance && distMiles > (selectedService as any).maxTravelDistance) setOutsideServiceArea(true);
+          if ((selectedService as any)?.distanceFeeEnabled) {
+            const rate = (selectedService as any).travelRatePerMile ?? 0.67;
+            const freeThreshold = (selectedService as any).freeMiles ?? 0;
+            const billableMiles = Math.max(0, distMiles - freeThreshold);
+            let fee = billableMiles * rate;
+            if ((selectedService as any).minTravelFee != null && fee < (selectedService as any).minTravelFee && billableMiles > 0) fee = (selectedService as any).minTravelFee;
+            setDynamicTravelFee(Math.round(fee * 100) / 100);
+          }
+        }
+      } catch { /* ignore */ }
+      setTravelTimeLoading(false);
+    };
+    const debounce = setTimeout(estimate, 800);
+    return () => { cancelled = true; clearTimeout(debounce); };
+  }, [addrStreet, addrCity, addrState, addrZip, isMobileService]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const businessName = state.settings.businessName || "Our Business";
   const profile = state.settings.profile;
@@ -1259,15 +1324,33 @@ export default function PublicBookingScreen() {
                 </View>
               </View>
 
+              {/* Travel time + distance hint */}
+              {travelTimeLoading && (
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8 }}>Calculating travel time...</Text>
+              )}
+              {!travelTimeLoading && travelTimeEstimate && (
+                <Text style={{ fontSize: fs.xs, color: colors.primary, marginBottom: 8 }}>🚗 {travelTimeEstimate} from business location</Text>
+              )}
+              {/* Dynamic travel fee display */}
+              {!travelTimeLoading && dynamicTravelFee != null && (selectedService as any)?.distanceFeeEnabled && (
+                <Text style={{ fontSize: fs.xs, color: colors.primary, marginBottom: 8 }}>
+                  Travel fee: ${dynamicTravelFee.toFixed(2)}{(selectedService as any)?.freeMiles ? ` — first ${(selectedService as any).freeMiles} mi free` : ""}
+                </Text>
+              )}
+              {/* Outside service area error */}
+              {outsideServiceArea && (
+                <Text style={{ fontSize: fs.xs, color: colors.error, marginBottom: 8, fontWeight: "600" }}>⚠️ This address is outside our service area.</Text>
+              )}
+
               <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 16 }}>We'll come to you at this address.</Text>
 
               <Pressable
                 onPress={() => {
-                  if (!addrStreet.trim() || !addrCity.trim() || !addrState.trim() || !addrZip.trim()) return;
+                  if (!addrStreet.trim() || !addrCity.trim() || !addrState.trim() || !addrZip.trim() || outsideServiceArea) return;
                   setStep("datetime");
                 }}
                 style={({ pressed }) => [styles.continueButton, {
-                  backgroundColor: (addrStreet.trim() && addrCity.trim() && addrState.trim() && addrZip.trim()) ? colors.primary : colors.muted,
+                  backgroundColor: (addrStreet.trim() && addrCity.trim() && addrState.trim() && addrZip.trim() && !outsideServiceArea) ? colors.primary : colors.muted,
                   opacity: pressed ? 0.8 : 1,
                 }]}
               >

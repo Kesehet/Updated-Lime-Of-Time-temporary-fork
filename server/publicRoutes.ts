@@ -356,6 +356,8 @@ export function registerPublicRoutes(app: Express) {
         travelDuration: (s as any).travelDuration != null ? Number((s as any).travelDuration) : null,
         travelRatePerMile: (s as any).travelRatePerMile != null ? parseFloat(String((s as any).travelRatePerMile)) : null,
         minTravelFee: (s as any).minTravelFee != null ? parseFloat(String((s as any).minTravelFee)) : null,
+        distanceFeeEnabled: !!(s as any).distanceFeeEnabled,
+        freeMiles: (s as any).freeMiles != null ? parseFloat(String((s as any).freeMiles)) : null,
       })));
     } catch (err) {
       console.error("[Public API] Error fetching services:", err);
