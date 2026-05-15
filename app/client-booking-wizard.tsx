@@ -919,8 +919,9 @@ export default function ClientBookingWizardScreen() {
       setStep(STEP_CONFIRM);
       return;
     }
-    // Address step: sync address and handle travel zone warning
+    // Address step: sync address and proceed
     if (step === STEP_ADDRESS) {
+<<<<<<< Updated upstream
       // Use staff-level maxTravelDistance override if staff is selected and has one set; else fall back to service-level
       const staffForAlert = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
       const effectiveMaxDistAlert = (staffForAlert as any)?.maxTravelDistance ?? selectedService?.maxTravelDistance;
@@ -948,6 +949,8 @@ export default function ClientBookingWizardScreen() {
         );
         return;
       }
+=======
+>>>>>>> Stashed changes
       setClientAddress(fullClientAddress);
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
