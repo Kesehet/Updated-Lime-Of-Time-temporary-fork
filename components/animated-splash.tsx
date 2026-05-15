@@ -7,29 +7,41 @@
  *
  * Timing:
  *   0 ms    → logo + text fade/scale in (420 ms)
+ *   200 ms  → loading bar animates from 60% → 100% (800 ms)
+ *             shimmer sweeps across the fill continuously
  *   500 ms  → logo pulse: 1.0 → 1.06 → 1.0 (400 ms)
- *   200 ms  → loading bar starts animating from 60% → 100% (800 ms)
  *   1 800 ms → entire screen fades out (380 ms)
  *   2 180 ms → onFinish() called
  *
  * The loading bar starts at 60% to seamlessly continue from where the
  * native splash screen's static loading bar left off.
+ * A shimmer highlight sweeps left-to-right across the green fill to
+ * make the bar feel alive and polished.
  */
 
 import { useEffect, useRef } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import {
+  Animated,
+  Easing,
+  StyleSheet,
+  Text,
+  View,
+  Platform,
+} from "react-native";
 import { Image } from "expo-image";
 
 const BRAND_BG = "#0D2318";
 const BRAND_ACCENT = "#8FBF6A";
 const BRAND_TEXT = "#ECEDEE";
 const BRAND_MUTED = "rgba(236,237,238,0.55)";
-const BRAND_MUTED_GREEN = "rgba(100,140,110,0.8)";
 
 // Loading bar dimensions — must match the native splash bar
 const BAR_TOTAL_WIDTH = 220;
 const BAR_HEIGHT = 14;
 const BAR_RADIUS = 7;
+
+// Shimmer highlight width (the gloss stripe)
+const SHIMMER_WIDTH = 60;
 
 interface AnimatedSplashProps {
   onFinish: () => void;
@@ -53,13 +65,16 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
   const accentWidth = useRef(new Animated.Value(0)).current;
 
   // Loading bar: starts at 60% fill, animates to 100%
-  // Value represents the fill width in pixels (0 → BAR_TOTAL_WIDTH)
   const loadingBarWidth = useRef(
     new Animated.Value(BAR_TOTAL_WIDTH * 0.6)
   ).current;
 
   // Loading label opacity: fades in with text block
   const loadingLabelOpacity = useRef(new Animated.Value(0)).current;
+
+  // Shimmer position: translateX sweeping from -SHIMMER_WIDTH to BAR_TOTAL_WIDTH
+  // Loops continuously while the bar is visible
+  const shimmerX = useRef(new Animated.Value(-SHIMMER_WIDTH)).current;
 
   useEffect(() => {
     // Step 1: logo appears (scale + fade)
@@ -124,7 +139,6 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
     }, 180);
 
     // Step 6: loading bar animates from 60% → 100% starting at 200 ms
-    // Duration 800 ms so it completes well before the exit fade at 1800 ms
     const loadingBarTimer = setTimeout(() => {
       Animated.timing(loadingBarWidth, {
         toValue: BAR_TOTAL_WIDTH,
@@ -134,8 +148,34 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
       }).start();
     }, 200);
 
-    // Step 7: after 1 800 ms total, fade the whole screen out
+    // Step 7: shimmer sweeps left-to-right on a loop
+    // Each sweep takes 900 ms; loop until screen fades out
+    const shimmerLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmerX, {
+          toValue: BAR_TOTAL_WIDTH + SHIMMER_WIDTH,
+          duration: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        // Brief pause between sweeps
+        Animated.delay(200),
+        // Reset instantly (no animation)
+        Animated.timing(shimmerX, {
+          toValue: -SHIMMER_WIDTH,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    const shimmerTimer = setTimeout(() => {
+      shimmerLoop.start();
+    }, 200);
+
+    // Step 8: after 1 800 ms total, fade the whole screen out
     const exitTimer = setTimeout(() => {
+      shimmerLoop.stop();
       Animated.timing(screenOpacity, {
         toValue: 0,
         duration: 380,
@@ -152,7 +192,9 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
       clearTimeout(pulseTimer);
       clearTimeout(loadingLabelTimer);
       clearTimeout(loadingBarTimer);
+      clearTimeout(shimmerTimer);
       clearTimeout(exitTimer);
+      shimmerLoop.stop();
     };
   }, [
     logoScale,
@@ -162,6 +204,7 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
     accentWidth,
     loadingBarWidth,
     loadingLabelOpacity,
+    shimmerX,
     screenOpacity,
     onFinish,
   ]);
@@ -203,18 +246,26 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
         </View>
       </Animated.View>
 
-      {/* Loading section: label + animated progress bar */}
+      {/* Loading section: label + animated progress bar with shimmer */}
       <Animated.View style={[styles.loadingSection, { opacity: loadingLabelOpacity }]}>
         <Text style={styles.loadingLabel}>LOADING....</Text>
+
         {/* Bar track */}
         <View style={styles.barTrack}>
-          {/* Animated fill */}
-          <Animated.View
-            style={[
-              styles.barFill,
-              { width: loadingBarWidth },
-            ]}
-          />
+          {/* Animated green fill */}
+          <Animated.View style={[styles.barFill, { width: loadingBarWidth }]}>
+            {/*
+             * Shimmer highlight — a semi-transparent white diagonal stripe
+             * that slides across the fill.
+             * overflow: "hidden" on barFill clips it to the fill area.
+             */}
+            <Animated.View
+              style={[
+                styles.shimmer,
+                { transform: [{ translateX: shimmerX }] },
+              ]}
+            />
+          </Animated.View>
         </View>
       </Animated.View>
 
@@ -325,6 +376,20 @@ const styles = StyleSheet.create({
     height: BAR_HEIGHT,
     borderRadius: BAR_RADIUS,
     backgroundColor: BRAND_ACCENT,
+    overflow: "hidden", // clips the shimmer to the fill area
+  },
+  shimmer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: SHIMMER_WIDTH,
+    height: BAR_HEIGHT,
+    // Diagonal white gloss stripe using a skewed rectangle trick:
+    // We tilt the shimmer 20° by making it taller and offsetting vertically,
+    // but since overflow:hidden clips it, a simple semi-transparent white
+    // rectangle with slight skew via transform gives the gloss look.
+    backgroundColor: "rgba(255,255,255,0.30)",
+    transform: [{ skewX: "-20deg" }],
   },
   accentLine: {
     position: "absolute",
