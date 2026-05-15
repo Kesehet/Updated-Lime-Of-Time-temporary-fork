@@ -23,11 +23,12 @@ import { useEffect, useRef } from "react";
 import {
   Animated,
   Easing,
+  Platform,
   StyleSheet,
   Text,
   View,
-  Platform,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 
 const BRAND_BG = "#0D2318";
@@ -139,13 +140,18 @@ export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
     }, 180);
 
     // Step 6: loading bar animates from 60% → 100% starting at 200 ms
+    // On completion, fire a light haptic to signal the app is ready.
     const loadingBarTimer = setTimeout(() => {
       Animated.timing(loadingBarWidth, {
         toValue: BAR_TOTAL_WIDTH,
         duration: 800,
         easing: Easing.out(Easing.quad),
         useNativeDriver: false, // width cannot use native driver
-      }).start();
+      }).start(({ finished }) => {
+        if (finished && Platform.OS !== "web") {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        }
+      });
     }, 200);
 
     // Step 7: shimmer sweeps left-to-right on a loop
