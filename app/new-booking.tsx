@@ -127,6 +127,52 @@ export default function NewBookingScreen() {
     }
   }, [selectedClientId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Travel time estimate (OSRM + Nominatim geocoding, no API key needed)
+  const [travelTimeEstimate, setTravelTimeEstimate] = useState<string | null>(null);
+  const [travelTimeLoading, setTravelTimeLoading] = useState(false);
+
+  useEffect(() => {
+    const allFilled = addrStreet.trim() && addrCity.trim() && addrState.trim() && addrZip.trim();
+    if (!allFilled) { setTravelTimeEstimate(null); return; }
+    // Get business origin address
+    const bizAddr = activeLocation
+      ? [activeLocation.address, activeLocation.city, activeLocation.state, activeLocation.zipCode].filter(Boolean).join(', ')
+      : [profile.address, profile.city, profile.state, profile.zipCode].filter(Boolean).join(', ');
+    if (!bizAddr) { setTravelTimeEstimate(null); return; }
+    const destAddr = clientAddress;
+    let cancelled = false;
+    const geocode = async (addr: string): Promise<[number, number] | null> => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1`, {
+          headers: { 'User-Agent': 'LimeOfTime/1.0' },
+        });
+        const data = await res.json();
+        if (!data || data.length === 0) return null;
+        return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+      } catch { return null; }
+    };
+    const estimate = async () => {
+      setTravelTimeLoading(true);
+      setTravelTimeEstimate(null);
+      const [origin, dest] = await Promise.all([geocode(bizAddr), geocode(destAddr)]);
+      if (cancelled) return;
+      if (!origin || !dest) { setTravelTimeLoading(false); return; }
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${origin[0]},${origin[1]};${dest[0]},${dest[1]}?overview=false`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (cancelled) return;
+        if (data?.routes?.[0]?.duration) {
+          const mins = Math.round(data.routes[0].duration / 60);
+          setTravelTimeEstimate(`~${mins} min drive`);
+        }
+      } catch { /* ignore */ }
+      setTravelTimeLoading(false);
+    };
+    const debounce = setTimeout(estimate, 800);
+    return () => { cancelled = true; clearTimeout(debounce); };
+  }, [addrStreet, addrCity, addrState, addrZip]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [showTemplatesPicker, setShowTemplatesPicker] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
@@ -2010,6 +2056,16 @@ export default function NewBookingScreen() {
               </View>
 
               <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 8 }}>We'll come to you at this address.</Text>
+              {(travelTimeLoading || travelTimeEstimate) ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                  <Text style={{ fontSize: 13 }}>🚗</Text>
+                  {travelTimeLoading ? (
+                    <Text style={{ fontSize: fs.xs, color: colors.muted, fontStyle: 'italic' }}>Calculating drive time…</Text>
+                  ) : (
+                    <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: '700' }}>{travelTimeEstimate} from business location</Text>
+                  )}
+                </View>
+              ) : null}
             </View>
 
             {/* Travel fee preview */}

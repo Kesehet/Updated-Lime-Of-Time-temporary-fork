@@ -2035,6 +2035,53 @@ export default function CalendarScreen() {
             </View>
           )}
 
+          {/* Bulk Route Planning — shown when 2+ mobile appointments have addresses */}
+          {(() => {
+            const mobileAppts = dayAppts
+              .filter((a) => a.clientAddress && a.status !== 'cancelled')
+              .sort((a, b) => a.time.localeCompare(b.time));
+            if (mobileAppts.length < 1) return null;
+            const handleGetDirections = () => {
+              const addresses = mobileAppts.map((a) => encodeURIComponent(a.clientAddress!));
+              let url: string;
+              if (Platform.OS === 'ios') {
+                // Apple Maps: origin + destination + waypoints
+                if (addresses.length === 1) {
+                  url = `https://maps.apple.com/?daddr=${addresses[0]}&dirflg=d`;
+                } else {
+                  // Apple Maps doesn't support multi-stop natively; open Google Maps instead
+                  const waypoints = addresses.slice(0, -1).join('/');
+                  const dest = addresses[addresses.length - 1];
+                  url = `https://www.google.com/maps/dir/${waypoints}/${dest}`;
+                }
+              } else {
+                const waypoints = addresses.slice(0, -1).join('/');
+                const dest = addresses[addresses.length - 1];
+                url = `https://www.google.com/maps/dir/${waypoints}/${dest}`;
+              }
+              Linking.openURL(url).catch(() => Alert.alert('Maps', 'Could not open Maps app.'));
+            };
+            return (
+              <View style={{ paddingHorizontal: hp, marginBottom: 12 }}>
+                <Pressable
+                  onPress={handleGetDirections}
+                  style={({ pressed }) => ({
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                    gap: 8, paddingVertical: 11, borderRadius: 14,
+                    backgroundColor: '#0891b2' + '18',
+                    borderWidth: 1, borderColor: '#0891b2' + '50',
+                    opacity: pressed ? 0.75 : 1,
+                  })}
+                >
+                  <Text style={{ fontSize: 16 }}>🗺️</Text>
+                  <Text style={{ fontSize: fs.sm, fontWeight: '700', color: '#0891b2' }}>
+                    Get Directions · {mobileAppts.length} stop{mobileAppts.length !== 1 ? 's' : ''}
+                  </Text>
+                </Pressable>
+              </View>
+            );
+          })()}
+
           {/* Timeline */}
           <View style={{ paddingHorizontal: hp }}>
             <Text style={[styles.sectionTitle, { color: colors.foreground, marginBottom: 4 }]}>Timeline</Text>
