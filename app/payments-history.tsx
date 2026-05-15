@@ -26,6 +26,7 @@ type Transaction = {
   created: number;
   description: string;
   clientName: string | null;
+  clientPhone: string | null;
   serviceName: string | null;
   appointmentDate: string | null;
   appointmentLocalId: string | null;
@@ -155,6 +156,11 @@ export default function PaymentsHistoryScreen() {
           ) : item.description ? (
             <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }} numberOfLines={1}>
               {item.description}
+            </Text>
+          ) : null}
+          {item.clientPhone ? (
+            <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>
+              📞 {item.clientPhone}
             </Text>
           ) : null}
           {item.serviceName && item.description ? (

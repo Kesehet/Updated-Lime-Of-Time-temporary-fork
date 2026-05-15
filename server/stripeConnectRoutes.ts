@@ -1584,8 +1584,9 @@ export function registerStripeConnectRoutes(app: Express): void {
         let description = tx.description ?? "";
         if (src?.description) description = src.description;
         if (src?.metadata?.feeType) description = `${src.metadata.feeType.replace(/_/g, " ")} fee`;
-        // Client name from metadata if available
+        // Client name/phone from metadata if available
         const clientName = src?.metadata?.clientName ?? src?.metadata?.client_name ?? null;
+        const clientPhone = src?.metadata?.clientPhone ?? null;
         const serviceName = src?.metadata?.serviceName ?? null;
         const appointmentDate = src?.metadata?.appointmentDate ?? null;
         const appointmentLocalId = src?.metadata?.appointmentLocalId ?? null;
@@ -1600,6 +1601,7 @@ export function registerStripeConnectRoutes(app: Express): void {
           created: tx.created,    // Unix timestamp
           description,
           clientName,
+          clientPhone,
           serviceName,
           appointmentDate,
           appointmentLocalId,
@@ -1727,7 +1729,7 @@ export function registerStripeConnectRoutes(app: Express): void {
   // Returns: { publishableKey, paymentIntent (client_secret), accountId }
   app.post("/api/stripe-connect/create-payment-sheet", async (req: Request, res: Response) => {
     try {
-      const { businessOwnerId, appointmentLocalId, amount, currency = "usd", description, clientEmail, clientName, serviceName, appointmentDate } = req.body as {
+      const { businessOwnerId, appointmentLocalId, amount, currency = "usd", description, clientEmail, clientName, clientPhone, serviceName, appointmentDate } = req.body as {
         businessOwnerId: number;
         appointmentLocalId: string;
         amount: number;
@@ -1735,6 +1737,7 @@ export function registerStripeConnectRoutes(app: Express): void {
         description?: string;
         clientEmail?: string;
         clientName?: string;
+        clientPhone?: string;
         serviceName?: string;
         appointmentDate?: string;
       };
@@ -1768,6 +1771,7 @@ export function registerStripeConnectRoutes(app: Express): void {
             appointmentLocalId,
             businessOwnerId: String(businessOwnerId),
             ...(clientName ? { clientName } : {}),
+            ...(clientPhone ? { clientPhone } : {}),
             ...(serviceName ? { serviceName } : {}),
             ...(appointmentDate ? { appointmentDate } : {}),
           },

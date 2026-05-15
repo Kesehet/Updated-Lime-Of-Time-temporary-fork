@@ -2325,3 +2325,6 @@
 - [x] Fix #5: Add Waitlist view to Business Portal
 - [x] Fix #7: Add staffNotes DB column and migration
 - [x] Fix #8: Add tap-to-appointment navigation in Payment History
+
+## Phase: Payment History Phone (May 15, 2026)
+- [x] Add clientPhone to PaymentIntent metadata and Payment History UI rows
