@@ -680,6 +680,7 @@ export function dbServiceToLocal(s: any): Service {
     minTravelFee: s.minTravelFee != null ? parseFloat(s.minTravelFee) : null,
     distanceFeeEnabled: s.distanceFeeEnabled != null ? Boolean(s.distanceFeeEnabled) : null,
     freeMiles: s.freeMiles != null ? parseFloat(s.freeMiles) : null,
+    blockOutOfRange: s.blockOutOfRange != null ? Boolean(s.blockOutOfRange) : null,
     createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : new Date().toISOString(),
   };
 }
@@ -1860,6 +1861,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               minTravelFee: svc.minTravelFee ?? undefined,
               distanceFeeEnabled: svc.distanceFeeEnabled ?? undefined,
               freeMiles: svc.freeMiles ?? undefined,
+              blockOutOfRange: svc.blockOutOfRange ?? undefined,
             });
             break;
           }
@@ -1885,6 +1887,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               minTravelFee: svc.minTravelFee ?? undefined,
               distanceFeeEnabled: svc.distanceFeeEnabled ?? undefined,
               freeMiles: svc.freeMiles ?? undefined,
+              blockOutOfRange: svc.blockOutOfRange ?? undefined,
             });
             break;
           }

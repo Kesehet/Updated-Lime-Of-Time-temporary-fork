@@ -202,6 +202,8 @@ export const services = mysqlTable("services", {
   distanceFeeEnabled: tinyint("distanceFeeEnabled").default(0),
   /** First N miles free before per-mile rate kicks in (null = 0 free miles) */
   freeMiles: decimal("freeMiles", { precision: 6, scale: 1 }),
+  /** If true, hard-block bookings beyond maxTravelDistance; if false/null, warn only */
+  blockOutOfRange: tinyint("blockOutOfRange").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

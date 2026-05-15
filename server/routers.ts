@@ -284,10 +284,11 @@ const servicesRouter = router({
         minTravelFee: z.number().optional().nullable(),
         distanceFeeEnabled: z.boolean().optional().nullable(),
         freeMiles: z.number().optional().nullable(),
+        blockOutOfRange: z.boolean().optional().nullable(),
       })
     )
     .mutation(async ({ input }) => {
-      const { reminderHours, travelFee, maxTravelDistance, travelDuration, travelRatePerMile, minTravelFee, distanceFeeEnabled, freeMiles, ...rest } = input;
+      const { reminderHours, travelFee, maxTravelDistance, travelDuration, travelRatePerMile, minTravelFee, distanceFeeEnabled, freeMiles, blockOutOfRange, ...rest } = input;
       const id = await db.createService({
         ...rest,
         reminderHours: reminderHours != null ? String(reminderHours) : null,
@@ -298,6 +299,7 @@ const servicesRouter = router({
         minTravelFee: minTravelFee != null ? String(minTravelFee) : null,
         distanceFeeEnabled: distanceFeeEnabled ? 1 : 0,
         freeMiles: freeMiles != null ? String(freeMiles) : null,
+        blockOutOfRange: blockOutOfRange ? 1 : 0,
       } as any);
       return { id, localId: input.localId };
     }),
@@ -324,10 +326,11 @@ const servicesRouter = router({
         minTravelFee: z.number().optional().nullable(),
         distanceFeeEnabled: z.boolean().optional().nullable(),
         freeMiles: z.number().optional().nullable(),
+        blockOutOfRange: z.boolean().optional().nullable(),
       })
     )
     .mutation(async ({ input }) => {
-      const { localId, businessOwnerId, reminderHours, travelFee, maxTravelDistance, travelDuration, travelRatePerMile, minTravelFee, distanceFeeEnabled, freeMiles, ...rest } = input;
+      const { localId, businessOwnerId, reminderHours, travelFee, maxTravelDistance, travelDuration, travelRatePerMile, minTravelFee, distanceFeeEnabled, freeMiles, blockOutOfRange, ...rest } = input;
       const svc = await db.getServiceByLocalId(localId, businessOwnerId);
       if (!svc) throw new Error(`Service not found: ${localId}`);
       await db.updateService(svc.id, businessOwnerId, {
@@ -340,6 +343,7 @@ const servicesRouter = router({
         minTravelFee: minTravelFee != null ? String(minTravelFee) : null,
         distanceFeeEnabled: distanceFeeEnabled ? 1 : 0,
         freeMiles: freeMiles != null ? String(freeMiles) : null,
+        blockOutOfRange: blockOutOfRange ? 1 : 0,
       } as any);
       return { success: true };
     }),

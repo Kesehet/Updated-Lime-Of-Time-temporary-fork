@@ -80,6 +80,10 @@ export default function NewBookingScreen() {
   const [addrCity, setAddrCity] = useState("");
   const [addrState, setAddrState] = useState("");
   const [addrZip, setAddrZip] = useState("");
+  // Address autocomplete
+  const [addrSearchQuery, setAddrSearchQuery] = useState("");
+  const [addrSuggestions, setAddrSuggestions] = useState<Array<{ display_name: string; address: any }>>([]);
+  const [addrSearchLoading, setAddrSearchLoading] = useState(false);
   const clientAddress = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(", ");
 
   // Auto-prefill address fields from the selected client's savedAddress (profile)
@@ -178,19 +182,28 @@ export default function NewBookingScreen() {
           setTravelTimeEstimate(`~${mins} min drive · ${distMiles.toFixed(1)} mi`);
           // Calculate dynamic fee if service has distanceFeeEnabled
           const svc = selectedServiceId ? state.services.find(s => s.id === selectedServiceId) : null;
-          // Staff-level maxTravelDistance override: if selected staff has one set, use it; else fall back to service-level
           const staffObj = selectedStaffId ? state.staff.find(m => m.id === selectedStaffId) : null;
-          const effectiveMaxDist = (staffObj as any)?.maxTravelDistance ?? svc?.maxTravelDistance;
-          if (effectiveMaxDist && distMiles > effectiveMaxDist) {
+          const staffMaxDist = (staffObj as any)?.maxTravelDistance;
+          const serviceMaxDist = svc?.maxTravelDistance;
+          const serviceBlocksOutOfRange = (svc as any)?.blockOutOfRange === true;
+          const staffLimitExceeded = staffMaxDist != null && distMiles > staffMaxDist;
+          const serviceLimitExceeded = serviceMaxDist != null && distMiles > serviceMaxDist;
+          const hardBlock = staffLimitExceeded || (serviceLimitExceeded && serviceBlocksOutOfRange);
+          const softWarn = serviceLimitExceeded && !serviceBlocksOutOfRange && !staffLimitExceeded;
+          if (hardBlock) {
             setOutsideServiceArea(true);
-            // Find which other staff members DO cover this distance
             const covering = state.staff.filter((m) => {
               if (!m.active) return false;
-              const mDist = (m as any).maxTravelDistance ?? svc?.maxTravelDistance;
+              const mDist = (m as any).maxTravelDistance ?? serviceMaxDist;
               return mDist == null || distMiles <= mDist;
             });
             setCoveringStaffIds(covering.map((m) => m.id));
+          } else if (softWarn) {
+            setOutsideServiceArea(false);
+            setCoveringStaffIds([]);
+            setTravelTimeEstimate(`~${Math.round(route.duration / 60)} min drive · ${distMiles.toFixed(1)} mi ⚠️ outside typical service area`);
           } else {
+            setOutsideServiceArea(false);
             setCoveringStaffIds([]);
           }
           if (svc?.distanceFeeEnabled) {
@@ -208,6 +221,24 @@ export default function NewBookingScreen() {
     const debounce = setTimeout(estimate, 800);
     return () => { cancelled = true; clearTimeout(debounce); };
   }, [addrStreet, addrCity, addrState, addrZip]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Address autocomplete: debounced Nominatim search
+  useEffect(() => {
+    if (!addrSearchQuery || addrSearchQuery.length < 4) { setAddrSuggestions([]); return; }
+    let cancelled = false;
+    const search = async () => {
+      setAddrSearchLoading(true);
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=us&q=${encodeURIComponent(addrSearchQuery)}`;
+        const res = await fetch(url, { headers: { 'User-Agent': 'LimeOfTimeApp/1.0' } });
+        const data = await res.json();
+        if (!cancelled) setAddrSuggestions(data || []);
+      } catch { if (!cancelled) setAddrSuggestions([]); }
+      if (!cancelled) setAddrSearchLoading(false);
+    };
+    const debounce = setTimeout(search, 500);
+    return () => { cancelled = true; clearTimeout(debounce); };
+  }, [addrSearchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [showTemplatesPicker, setShowTemplatesPicker] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
@@ -2038,6 +2069,53 @@ export default function NewBookingScreen() {
             {/* Address fields */}
             <View className="bg-surface rounded-2xl p-4 mb-4 border border-border">
               <Text className="text-xs font-medium text-muted mb-3">Service Address <Text style={{ color: colors.error }}>*</Text></Text>
+
+              {/* Search Address autocomplete */}
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 4, marginLeft: 2 }}>Search Address</Text>
+              <TextInput
+                className="bg-background rounded-xl px-4 py-3 text-sm mb-3 border border-border"
+                placeholder="Start typing to search..."
+                placeholderTextColor={colors.muted}
+                value={addrSearchQuery}
+                onChangeText={setAddrSearchQuery}
+                returnKeyType="search"
+                autoCapitalize="words"
+                autoCorrect={false}
+                style={{ color: colors.foreground, borderColor: colors.border, marginBottom: addrSuggestions.length > 0 ? 0 : 12 }}
+              />
+              {addrSearchLoading && (
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8, marginTop: 4 }}>Searching...</Text>
+              )}
+              {addrSuggestions.length > 0 && (
+                <View style={{ backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, borderRadius: 10, marginBottom: 12, overflow: 'hidden' }}>
+                  {addrSuggestions.map((s, i) => (
+                    <Pressable
+                      key={i}
+                      onPress={() => {
+                        const a = s.address || {};
+                        const street = [a.house_number, a.road].filter(Boolean).join(' ');
+                        const city = a.city || a.town || a.village || a.hamlet || '';
+                        const stateAbbr = a.state ? a.state.substring(0, 2).toUpperCase() : '';
+                        const zip = a.postcode ? a.postcode.substring(0, 5) : '';
+                        setAddrStreet(street);
+                        setAddrCity(city);
+                        setAddrState(stateAbbr);
+                        setAddrZip(zip);
+                        setAddrSearchQuery(s.display_name);
+                        setAddrSuggestions([]);
+                      }}
+                      style={({ pressed }) => ({
+                        padding: 10,
+                        borderBottomWidth: i < addrSuggestions.length - 1 ? 1 : 0,
+                        borderBottomColor: colors.border,
+                        backgroundColor: pressed ? colors.surface : 'transparent',
+                      })}
+                    >
+                      <Text style={{ fontSize: fs.xs, color: colors.foreground }} numberOfLines={2}>{s.display_name}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
 
               {/* Street */}
               <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.muted, marginBottom: 4, marginLeft: 2 }}>Street Address</Text>

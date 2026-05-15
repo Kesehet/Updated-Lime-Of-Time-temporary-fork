@@ -109,6 +109,9 @@ export default function ServiceFormScreen() {
   const [freeMiles, setFreeMiles] = useState<string>(
     existing?.freeMiles != null ? String(existing.freeMiles) : ""
   );
+  const [blockOutOfRange, setBlockOutOfRange] = useState<boolean>(
+    existing?.blockOutOfRange === true
+  );
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const uploadImageMut = trpc.files.uploadImage.useMutation();
   const isEdit = !!existing;
@@ -181,6 +184,7 @@ export default function ServiceFormScreen() {
       minTravelFee: minTravelFee.trim() !== "" ? (parseFloat(minTravelFee) || null) : null,
       distanceFeeEnabled: distanceFeeEnabled,
       freeMiles: freeMiles.trim() !== "" ? (parseFloat(freeMiles) || null) : null,
+      blockOutOfRange: blockOutOfRange,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     if (isEdit) {
@@ -560,6 +564,35 @@ export default function ServiceFormScreen() {
             <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
               Clients outside this radius will see a distance warning during booking.
             </Text>
+            {/* Block vs Warn toggle — only shown when maxTravelDistance is set */}
+            {maxTravelDistance.trim() !== "" && (
+              <TouchableOpacity
+                onPress={() => setBlockOutOfRange((v) => !v)}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, paddingVertical: 6 }}
+                activeOpacity={0.7}
+              >
+                <View style={{
+                  width: 44, height: 24, borderRadius: 12,
+                  backgroundColor: blockOutOfRange ? colors.primary : colors.border,
+                  justifyContent: 'center', paddingHorizontal: 2,
+                }}>
+                  <View style={{
+                    width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff',
+                    transform: [{ translateX: blockOutOfRange ? 20 : 0 }],
+                  }} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.foreground }}>
+                    {blockOutOfRange ? 'Block bookings outside radius' : 'Warn only (allow booking)'}
+                  </Text>
+                  <Text style={{ fontSize: fs.xs, color: colors.muted }}>
+                    {blockOutOfRange
+                      ? 'Clients beyond the max distance cannot complete their booking.'
+                      : 'Clients beyond the max distance see a warning but can still book.'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
             {/* Travel Duration */}
             <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginTop: 16, marginBottom: 8 }}>
               Estimated Travel Time (optional)

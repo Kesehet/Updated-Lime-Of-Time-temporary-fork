@@ -394,19 +394,28 @@ export default function ClientBookingWizardScreen() {
           const distMiles = (route.distance as number) / 1609.344;
           setRouteDistanceMiles(distMiles);
           setTravelTimeEstimate(`~${mins} min drive · ${distMiles.toFixed(1)} mi`);
-          // Check max travel distance — use staff-level override if staff is selected and has one set; else fall back to service-level
           const selectedStaffMemberForDist = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
-          const effectiveMaxDist = (selectedStaffMemberForDist as any)?.maxTravelDistance ?? selectedService?.maxTravelDistance;
-          if (effectiveMaxDist && distMiles > effectiveMaxDist) {
+          const staffMaxDist2 = (selectedStaffMemberForDist as any)?.maxTravelDistance;
+          const serviceMaxDist2 = selectedService?.maxTravelDistance;
+          const serviceBlocksOutOfRange2 = (selectedService as any)?.blockOutOfRange === true;
+          const staffLimitExceeded2 = staffMaxDist2 != null && distMiles > staffMaxDist2;
+          const serviceLimitExceeded2 = serviceMaxDist2 != null && distMiles > serviceMaxDist2;
+          const hardBlock2 = staffLimitExceeded2 || (serviceLimitExceeded2 && serviceBlocksOutOfRange2);
+          const softWarn2 = serviceLimitExceeded2 && !serviceBlocksOutOfRange2 && !staffLimitExceeded2;
+          if (hardBlock2) {
             setOutsideServiceArea(true);
-            // Find which staff members DO cover this distance
             const covering = staff.filter((m) => {
               if (!m.active) return false;
-              const mDist = (m as any).maxTravelDistance ?? selectedService?.maxTravelDistance;
+              const mDist = (m as any).maxTravelDistance ?? serviceMaxDist2;
               return mDist == null || distMiles <= mDist;
             });
             setCoveringStaffIds(covering.map((m) => m.localId));
+          } else if (softWarn2) {
+            setOutsideServiceArea(false);
+            setCoveringStaffIds([]);
+            setTravelTimeEstimate(`~${mins} min drive · ${distMiles.toFixed(1)} mi ⚠️ outside typical service area`);
           } else {
+            setOutsideServiceArea(false);
             setCoveringStaffIds([]);
           }
           // Calculate dynamic fee if service has distanceFeeEnabled

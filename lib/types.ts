@@ -17,6 +17,7 @@ export interface Service {
   minTravelFee?: number | null; // minimum travel fee floor in dollars (null = no minimum)
   distanceFeeEnabled?: boolean | null; // if true, use distance-based fee instead of fixed travelFee
   freeMiles?: number | null; // first N miles are free before rate kicks in (null = 0 free miles)
+  blockOutOfRange?: boolean | null; // if true, hard-block bookings beyond maxTravelDistance; if false/null, warn only
   createdAt: string;
 }
 

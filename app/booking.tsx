@@ -95,6 +95,10 @@ export default function PublicBookingScreen() {
   const [addrCity, setAddrCity] = useState("");
   const [addrState, setAddrState] = useState("");
   const [addrZip, setAddrZip] = useState("");
+  // Address autocomplete
+  const [addrSearchQuery, setAddrSearchQuery] = useState("");
+  const [addrSuggestions, setAddrSuggestions] = useState<Array<{ display_name: string; address: any }>>([]);
+  const [addrSearchLoading, setAddrSearchLoading] = useState(false);
   // OSRM travel time + distance estimate
   const [travelTimeEstimate, setTravelTimeEstimate] = useState<string | null>(null);
   const [travelTimeLoading, setTravelTimeLoading] = useState(false);
@@ -199,17 +203,16 @@ export default function PublicBookingScreen() {
           const distMiles = (route.distance as number) / 1609.344;
           setRouteDistanceMiles(distMiles);
           setTravelTimeEstimate(`~${mins} min drive · ${distMiles.toFixed(1)} mi`);
-          // Only block Continue if a specific staff member is selected AND that staff member
-          // has their own maxTravelDistance override that is exceeded.
-          // Service-level maxTravelDistance is informational only (shown as a warning) but does
-          // NOT block the booking — the business owner can still accept it.
           const selectedStaffObj = selectedStaffId ? state.staff.find((m) => m.id === selectedStaffId) : null;
           const staffMaxDist = (selectedStaffObj as any)?.maxTravelDistance;
           const serviceMaxDist = (selectedService as any)?.maxTravelDistance;
-          // Hard block: selected staff member has a personal limit that is exceeded
-          const hardBlock = staffMaxDist != null && distMiles > staffMaxDist;
-          // Soft warning: no specific staff selected but service-level limit exceeded
-          const softWarn = !selectedStaffId && serviceMaxDist != null && distMiles > serviceMaxDist;
+          const serviceBlocksOutOfRange = (selectedService as any)?.blockOutOfRange === true;
+          // Hard block: staff member limit exceeded, OR service-level limit exceeded AND blockOutOfRange is ON
+          const staffLimitExceeded = staffMaxDist != null && distMiles > staffMaxDist;
+          const serviceLimitExceeded = serviceMaxDist != null && distMiles > serviceMaxDist;
+          const hardBlock = staffLimitExceeded || (serviceLimitExceeded && serviceBlocksOutOfRange);
+          // Soft warning: service-level limit exceeded but blockOutOfRange is OFF (warn only)
+          const softWarn = serviceLimitExceeded && !serviceBlocksOutOfRange && !staffLimitExceeded;
           if (hardBlock) {
             setOutsideServiceArea(true);
             const covering = state.staff.filter((m) => {
@@ -242,6 +245,24 @@ export default function PublicBookingScreen() {
     const debounce = setTimeout(estimate, 800);
     return () => { cancelled = true; clearTimeout(debounce); };
   }, [addrStreet, addrCity, addrState, addrZip, isMobileService]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Address autocomplete: debounced Nominatim search
+  useEffect(() => {
+    if (!addrSearchQuery || addrSearchQuery.length < 4) { setAddrSuggestions([]); return; }
+    let cancelled = false;
+    const search = async () => {
+      setAddrSearchLoading(true);
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=us&q=${encodeURIComponent(addrSearchQuery)}`;
+        const res = await fetch(url, { headers: { 'User-Agent': 'LimeOfTimeApp/1.0' } });
+        const data = await res.json();
+        if (!cancelled) setAddrSuggestions(data || []);
+      } catch { if (!cancelled) setAddrSuggestions([]); }
+      if (!cancelled) setAddrSearchLoading(false);
+    };
+    const debounce = setTimeout(search, 500);
+    return () => { cancelled = true; clearTimeout(debounce); };
+  }, [addrSearchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const businessName = state.settings.businessName || "Our Business";
   const profile = state.settings.profile;
@@ -1321,6 +1342,51 @@ export default function PublicBookingScreen() {
                 </View>
               )}
 
+              {/* Search Address autocomplete */}
+              <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 6 }}>Search Address</Text>
+              <TextInput
+                style={[styles.notesInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground, marginBottom: addrSuggestions.length > 0 ? 0 : 12 }]}
+                placeholder="Start typing your address..."
+                placeholderTextColor={colors.muted}
+                value={addrSearchQuery}
+                onChangeText={setAddrSearchQuery}
+                returnKeyType="search"
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+              {addrSearchLoading && (
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 8, marginTop: 4 }}>Searching...</Text>
+              )}
+              {addrSuggestions.length > 0 && (
+                <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, marginBottom: 12, overflow: 'hidden' }}>
+                  {addrSuggestions.map((s, i) => (
+                    <Pressable
+                      key={i}
+                      onPress={() => {
+                        const a = s.address || {};
+                        const street = [a.house_number, a.road].filter(Boolean).join(' ');
+                        const city = a.city || a.town || a.village || a.hamlet || '';
+                        const stateAbbr = a.state ? a.state.substring(0, 2).toUpperCase() : '';
+                        const zip = a.postcode ? a.postcode.substring(0, 5) : '';
+                        setAddrStreet(street);
+                        setAddrCity(city);
+                        setAddrState(stateAbbr);
+                        setAddrZip(zip);
+                        setAddrSearchQuery(s.display_name);
+                        setAddrSuggestions([]);
+                      }}
+                      style={({ pressed }) => ({
+                        padding: 10,
+                        borderBottomWidth: i < addrSuggestions.length - 1 ? 1 : 0,
+                        borderBottomColor: colors.border,
+                        backgroundColor: pressed ? colors.background : 'transparent',
+                      })}
+                    >
+                      <Text style={{ fontSize: fs.xs, color: colors.foreground }} numberOfLines={2}>{s.display_name}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
               {/* Street Address */}
               <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.foreground, marginBottom: 6 }}>Street Address <Text style={{ color: colors.error }}>*</Text></Text>
               <TextInput
