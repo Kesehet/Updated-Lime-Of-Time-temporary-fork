@@ -997,6 +997,9 @@ export default function ClientBookingWizardScreen() {
                 currency: "usd",
                 description: `${selectedService.name} — ${dateStr} at ${formatTime12(selectedSlot.time)}`,
                 clientEmail: state.account?.email ?? undefined,
+                clientName: state.account?.name ?? undefined,
+                serviceName: selectedService.name,
+                appointmentDate: dateStr,
               }),
             });
             if (sheetRes.ok) {

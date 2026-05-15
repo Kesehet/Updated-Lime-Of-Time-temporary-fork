@@ -337,6 +337,8 @@ export const appointments = mysqlTable("appointments", {
   sessionTotal: int("sessionTotal"),
   /** Package name for display in appointment detail */
   packageName: varchar("packageName", { length: 255 }),
+  /** Internal staff-only notes — never shown to clients */
+  staffNotes: text("staffNotes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

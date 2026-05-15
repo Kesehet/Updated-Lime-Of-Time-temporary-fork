@@ -26,6 +26,9 @@ type Transaction = {
   created: number;
   description: string;
   clientName: string | null;
+  serviceName: string | null;
+  appointmentDate: string | null;
+  appointmentLocalId: string | null;
   sourceId: string | null;
 };
 
@@ -123,8 +126,16 @@ export default function PaymentsHistoryScreen() {
   const renderItem = ({ item }: { item: Transaction }) => {
     const cfg = getTxConfig(item.type);
     const isPositive = item.net >= 0;
+    const canNavigate = !!item.appointmentLocalId;
+    const Wrapper = canNavigate ? TouchableOpacity : View;
+    const wrapperProps = canNavigate
+      ? {
+          onPress: () => router.push({ pathname: "/appointment-detail", params: { localId: item.appointmentLocalId! } }),
+          activeOpacity: 0.75,
+        }
+      : {};
     return (
-      <View style={[styles.txRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <Wrapper {...wrapperProps} style={[styles.txRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         {/* Type badge */}
         <View style={[styles.txBadge, { backgroundColor: cfg.color + "18" }]}>
           <Text style={{ fontSize: 16, color: cfg.color }}>{cfg.icon}</Text>
@@ -137,8 +148,17 @@ export default function PaymentsHistoryScreen() {
               <Text style={{ fontSize: 11, color: colors.muted }}>· {item.clientName}</Text>
             ) : null}
           </View>
-          {item.description ? (
+          {item.serviceName ? (
+            <Text style={{ fontSize: 12, color: colors.foreground, marginTop: 2, fontWeight: "500" }} numberOfLines={1}>
+              {item.serviceName}{item.appointmentDate ? ` · ${item.appointmentDate}` : ""}
+            </Text>
+          ) : item.description ? (
             <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }} numberOfLines={1}>
+              {item.description}
+            </Text>
+          ) : null}
+          {item.serviceName && item.description ? (
+            <Text style={{ fontSize: 10, color: colors.muted, marginTop: 1 }} numberOfLines={1}>
               {item.description}
             </Text>
           ) : null}
@@ -152,10 +172,15 @@ export default function PaymentsHistoryScreen() {
           ) : null}
         </View>
         {/* Net amount */}
-        <Text style={{ fontSize: 15, fontWeight: "700", color: isPositive ? "#22C55E" : "#EF4444" }}>
-          {isPositive ? "+" : ""}${item.net.toFixed(2)}
-        </Text>
-      </View>
+        <View style={{ alignItems: "flex-end", gap: 2 }}>
+          <Text style={{ fontSize: 15, fontWeight: "700", color: isPositive ? "#22C55E" : "#EF4444" }}>
+            {isPositive ? "+" : ""}${item.net.toFixed(2)}
+          </Text>
+          {canNavigate ? (
+            <Text style={{ fontSize: 10, color: colors.primary }}>View →</Text>
+          ) : null}
+        </View>
+      </Wrapper>
     );
   };
 

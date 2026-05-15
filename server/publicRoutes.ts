@@ -1585,6 +1585,57 @@ export function registerPublicRoutes(app: Express) {
       }
       // If client has no phone on record, allow action without phone verification
       await db.updateAppointment(appointmentId, owner.id, { status: "cancelled" });
+
+      // ── Stripe refund (if appointment was paid by card) ────────────────────
+      // Attempt refund silently — cancellation always succeeds even if refund fails.
+      const isPaidByCard = appt.paymentMethod === 'card' && appt.paymentStatus === 'paid';
+      const stripePaymentIntentId = (appt as any).stripePaymentIntentId as string | null;
+      const stripeCheckoutSessionId = (appt as any).stripeCheckoutSessionId as string | null;
+      if (isPaidByCard && (stripePaymentIntentId || stripeCheckoutSessionId)) {
+        try {
+          const Stripe = (await import("stripe")).default;
+          const stripeKey = await getPlatformConfig("STRIPE_CONNECT_SECRET_KEY").catch(() => "") ||
+            await getPlatformConfig("STRIPE_SECRET_KEY").catch(() => "") ||
+            await getPlatformConfig("STRIPE_LIVE_SECRET_KEY").catch(() => "");
+          if (stripeKey) {
+            const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" as any });
+            const accountId = (owner as any).stripeConnectAccountId as string | null;
+            if (accountId) {
+              // Resolve payment intent ID
+              let piId = stripePaymentIntentId;
+              if (!piId && stripeCheckoutSessionId) {
+                const session = await stripe.checkout.sessions.retrieve(stripeCheckoutSessionId, {}, { stripeAccount: accountId });
+                piId = typeof session.payment_intent === "string" ? session.payment_intent : (session.payment_intent as any)?.id ?? null;
+              }
+              if (piId) {
+                // Apply cancellation fee if policy is enabled and within the window
+                const cp = (owner as any).cancellationPolicy as { enabled?: boolean; hoursBeforeAppointment?: number; feePercentage?: number } | null;
+                let refundAmountCents: number | undefined;
+                if (cp?.enabled && cp.feePercentage && cp.feePercentage > 0) {
+                  const apptDateTime = new Date(`${appt.date}T${appt.time}`);
+                  const hoursUntil = (apptDateTime.getTime() - Date.now()) / 3_600_000;
+                  const windowHours = cp.hoursBeforeAppointment ?? 2;
+                  if (hoursUntil >= 0 && hoursUntil < windowHours) {
+                    // Within cancellation window — refund (100 - feePercentage)% of total
+                    const totalCents = Math.round(Number(appt.totalPrice ?? 0) * 100);
+                    const feeCents = Math.round(totalCents * cp.feePercentage / 100);
+                    refundAmountCents = totalCents - feeCents;
+                  }
+                }
+                const refundParams: any = { payment_intent: piId };
+                if (refundAmountCents !== undefined && refundAmountCents > 0) {
+                  refundParams.amount = refundAmountCents;
+                }
+                await stripe.refunds.create(refundParams, { stripeAccount: accountId });
+              }
+            }
+          }
+        } catch (refundErr) {
+          console.warn("[Public API] Stripe refund failed (cancellation still processed):", refundErr);
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────────
+
       // Notify business owner
       const cancelNotifPrefs = (owner as any).notificationPreferences ?? {};
       const pushOnCancellationEnabled = cancelNotifPrefs.pushOnCancellation !== false;

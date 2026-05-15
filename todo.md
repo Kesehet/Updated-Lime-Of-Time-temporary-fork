@@ -2312,3 +2312,16 @@
 - [x] Fix time slot availability bug (slots showing available when appointment would run past closing time)
 - [x] Add "Jump to Today" floating button on Calendar tab
 - [x] Add swipe-to-delete on Clients list
+
+## Phase: Stripe Refund + Portal Audit (May 15, 2026)
+- [x] Implement Stripe refund on appointment cancellation (full refund or partial if cancellation fee applies)
+- [x] Audit Business Portal vs Client Portal/Public Booking for mismatches (report only)
+
+## Phase: Audit Fixes (May 15, 2026)
+- [x] Fix #1: appointmentId → appointmentLocalId in client cancel approval refund (critical bug)
+- [x] Fix #2: Add clientName/serviceName/appointmentDate to PaymentIntent metadata in create-payment-sheet
+- [x] Fix #3: Enrich Payment History UI with client phone, service name, appointment date
+- [x] Fix #4: Enforce cancellation policy on public HTML page client cancellations
+- [x] Fix #5: Add Waitlist view to Business Portal
+- [x] Fix #7: Add staffNotes DB column and migration
+- [x] Fix #8: Add tap-to-appointment navigation in Payment History

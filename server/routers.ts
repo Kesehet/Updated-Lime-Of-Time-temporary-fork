@@ -539,6 +539,7 @@ const appointmentsRouter = router({
         paymentConfirmationNumber: z.string().optional(),
         cancelRequest: z.any().optional(),
         rescheduleRequest: z.any().optional(),
+        staffNotes: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
