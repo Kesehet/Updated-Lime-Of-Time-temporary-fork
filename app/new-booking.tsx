@@ -81,6 +81,48 @@ export default function NewBookingScreen() {
   const [addrState, setAddrState] = useState("");
   const [addrZip, setAddrZip] = useState("");
   const clientAddress = [addrStreet.trim(), addrCity.trim(), addrState.trim(), addrZip.trim()].filter(Boolean).join(", ");
+
+  // Auto-prefill address fields from the selected client's most recent appointment
+  // that has a clientAddress. Only fires when fields are empty so manual edits are preserved.
+  useEffect(() => {
+    if (!selectedClientId) {
+      // Clear address fields when client is deselected
+      setAddrStreet("");
+      setAddrCity("");
+      setAddrState("");
+      setAddrZip("");
+      return;
+    }
+    if (addrStreet) return; // Don't overwrite if already filled
+    // Find most recent appointment for this client that has a clientAddress
+    const past = state.appointments
+      .filter((a) => a.clientLocalId === selectedClientId && (a as any).clientAddress)
+      .sort((a, b) => ((b as any).date ?? "").localeCompare((a as any).date ?? ""));
+    const lastAddr: string = (past[0] as any)?.clientAddress ?? "";
+    if (!lastAddr) return;
+    // Parse "Street, City, State ZIP" or "Street, City, State, ZIP" format
+    const parts = lastAddr.split(",").map((p: string) => p.trim()).filter(Boolean);
+    if (parts.length >= 3) {
+      setAddrStreet(parts[0]);
+      setAddrCity(parts[1]);
+      // Last part may be "State ZIP" or just "State"
+      const last = parts[parts.length - 1];
+      const stateZip = last.split(" ").filter(Boolean);
+      if (stateZip.length >= 2) {
+        setAddrState(stateZip[0]);
+        setAddrZip(stateZip.slice(1).join(" "));
+      } else if (parts.length >= 4) {
+        setAddrState(parts[parts.length - 2]);
+        setAddrZip(last);
+      } else {
+        setAddrState(last);
+      }
+    } else {
+      // Fallback: put everything in street
+      setAddrStreet(lastAddr);
+    }
+  }, [selectedClientId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [showTemplatesPicker, setShowTemplatesPicker] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
@@ -1848,6 +1890,26 @@ export default function NewBookingScreen() {
                 </View>
               </View>
             )}
+
+            {/* Pre-fill hint — shown when address was auto-populated from a previous appointment */}
+            {addrStreet ? (
+              <View style={{
+                backgroundColor: colors.primary + "12",
+                borderWidth: 1,
+                borderColor: colors.primary + "40",
+                borderRadius: 10,
+                padding: 10,
+                marginBottom: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+              }}>
+                <Text style={{ fontSize: 14 }}>📍</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.primary, flex: 1, fontWeight: "600" }}>
+                  Pre-filled from client's previous appointment — verify before continuing
+                </Text>
+              </View>
+            ) : null}
 
             {/* Address fields */}
             <View className="bg-surface rounded-2xl p-4 mb-4 border border-border">
