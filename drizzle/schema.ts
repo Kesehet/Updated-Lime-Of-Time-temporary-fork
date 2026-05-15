@@ -197,6 +197,10 @@ export const services = mysqlTable("services", {
   travelRatePerMile: decimal("travelRatePerMile", { precision: 6, scale: 2 }),
   /** Minimum travel fee floor in dollars (null = no minimum) */
   minTravelFee: decimal("minTravelFee", { precision: 10, scale: 2 }),
+  /** If true, use distance-based fee instead of fixed travelFee */
+  distanceFeeEnabled: tinyint("distanceFeeEnabled").default(0),
+  /** First N miles free before per-mile rate kicks in (null = 0 free miles) */
+  freeMiles: decimal("freeMiles", { precision: 6, scale: 1 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

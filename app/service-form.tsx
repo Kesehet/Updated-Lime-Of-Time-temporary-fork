@@ -1,6 +1,6 @@
 import {
   Text, View, Pressable, StyleSheet, TextInput, ScrollView,
-  Alert, Platform, Image, ActivityIndicator, Modal, TouchableOpacity,   KeyboardAvoidingView,
+  Alert, Platform, Image, ActivityIndicator, Modal, TouchableOpacity, KeyboardAvoidingView, Switch,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -103,6 +103,12 @@ export default function ServiceFormScreen() {
   const [minTravelFee, setMinTravelFee] = useState<string>(
     existing?.minTravelFee != null ? String(existing.minTravelFee) : ""
   );
+  const [distanceFeeEnabled, setDistanceFeeEnabled] = useState<boolean>(
+    existing?.distanceFeeEnabled === true
+  );
+  const [freeMiles, setFreeMiles] = useState<string>(
+    existing?.freeMiles != null ? String(existing.freeMiles) : ""
+  );
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const uploadImageMut = trpc.files.uploadImage.useMutation();
   const isEdit = !!existing;
@@ -173,6 +179,8 @@ export default function ServiceFormScreen() {
       travelDuration: travelDuration.trim() !== "" ? (parseInt(travelDuration) || null) : null,
       travelRatePerMile: travelRatePerMile.trim() !== "" ? (parseFloat(travelRatePerMile) || null) : null,
       minTravelFee: minTravelFee.trim() !== "" ? (parseFloat(minTravelFee) || null) : null,
+      distanceFeeEnabled: distanceFeeEnabled,
+      freeMiles: freeMiles.trim() !== "" ? (parseFloat(freeMiles) || null) : null,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     if (isEdit) {
@@ -610,6 +618,48 @@ export default function ServiceFormScreen() {
             <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
               Minimum fee charged even for short trips (e.g. $10 floor regardless of distance).
             </Text>
+
+            {/* Distance-based fee toggle */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, marginBottom: 4 }}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.foreground }}>Distance-Based Fee</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
+                  {distanceFeeEnabled
+                    ? 'Dynamic fee = (miles − free miles) × rate. Fixed fee above is ignored.'
+                    : 'Enable to charge per mile instead of a fixed travel fee.'}
+                </Text>
+              </View>
+              <Switch
+                value={distanceFeeEnabled}
+                onValueChange={setDistanceFeeEnabled}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={distanceFeeEnabled ? '#fff' : colors.muted}
+              />
+            </View>
+
+            {/* Free Miles (only shown when distance fee is on) */}
+            {distanceFeeEnabled && (
+              <>
+                <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.foreground, marginTop: 14, marginBottom: 8 }}>
+                  Free Miles
+                </Text>
+                <View style={[styles.inputRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <TextInput
+                    style={[styles.input, { color: colors.foreground, flex: 1 }]}
+                    placeholder="e.g. 5"
+                    placeholderTextColor={colors.muted}
+                    keyboardType="decimal-pad"
+                    value={freeMiles}
+                    onChangeText={setFreeMiles}
+                    returnKeyType="done"
+                  />
+                  <Text style={{ fontSize: fs.sm, color: colors.muted, marginLeft: 4 }}>mi free</Text>
+                </View>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 6 }}>
+                  First N miles are free. Fee only applies to distance beyond this threshold.
+                </Text>
+              </>
+            )}
           </View>
         )}
         {/* ── Delete ── */}

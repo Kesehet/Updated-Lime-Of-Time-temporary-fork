@@ -127,18 +127,20 @@ export default function NewBookingScreen() {
     }
   }, [selectedClientId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Travel time estimate (OSRM + Nominatim geocoding, no API key needed)
+  // Travel time + distance estimate (OSRM + Nominatim geocoding, no API key needed)
   const [travelTimeEstimate, setTravelTimeEstimate] = useState<string | null>(null);
   const [travelTimeLoading, setTravelTimeLoading] = useState(false);
+  const [dynamicTravelFee, setDynamicTravelFee] = useState<number | null>(null);
+  const [routeDistanceMiles, setRouteDistanceMiles] = useState<number | null>(null);
 
   useEffect(() => {
     const allFilled = addrStreet.trim() && addrCity.trim() && addrState.trim() && addrZip.trim();
-    if (!allFilled) { setTravelTimeEstimate(null); return; }
+    if (!allFilled) { setTravelTimeEstimate(null); setDynamicTravelFee(null); setRouteDistanceMiles(null); return; }
     // Get business origin address
     const bizAddr = activeLocation
       ? [activeLocation.address, activeLocation.city, activeLocation.state, activeLocation.zipCode].filter(Boolean).join(', ')
       : [profile.address, profile.city, profile.state, profile.zipCode].filter(Boolean).join(', ');
-    if (!bizAddr) { setTravelTimeEstimate(null); return; }
+    if (!bizAddr) { setTravelTimeEstimate(null); setDynamicTravelFee(null); setRouteDistanceMiles(null); return; }
     const destAddr = clientAddress;
     let cancelled = false;
     const geocode = async (addr: string): Promise<[number, number] | null> => {
@@ -154,6 +156,8 @@ export default function NewBookingScreen() {
     const estimate = async () => {
       setTravelTimeLoading(true);
       setTravelTimeEstimate(null);
+      setDynamicTravelFee(null);
+      setRouteDistanceMiles(null);
       const [origin, dest] = await Promise.all([geocode(bizAddr), geocode(destAddr)]);
       if (cancelled) return;
       if (!origin || !dest) { setTravelTimeLoading(false); return; }
@@ -162,9 +166,23 @@ export default function NewBookingScreen() {
         const res = await fetch(url);
         const data = await res.json();
         if (cancelled) return;
-        if (data?.routes?.[0]?.duration) {
-          const mins = Math.round(data.routes[0].duration / 60);
-          setTravelTimeEstimate(`~${mins} min drive`);
+        if (data?.routes?.[0]) {
+          const route = data.routes[0];
+          const mins = Math.round(route.duration / 60);
+          const distMeters = route.distance as number;
+          const distMiles = distMeters / 1609.344;
+          setRouteDistanceMiles(distMiles);
+          setTravelTimeEstimate(`~${mins} min drive · ${distMiles.toFixed(1)} mi`);
+          // Calculate dynamic fee if service has distanceFeeEnabled
+          const svc = selectedServiceId ? state.services.find(s => s.id === selectedServiceId) : null;
+          if (svc?.distanceFeeEnabled) {
+            const rate = svc.travelRatePerMile ?? 0.67;
+            const freeThreshold = svc.freeMiles ?? 0;
+            const billableMiles = Math.max(0, distMiles - freeThreshold);
+            let fee = billableMiles * rate;
+            if (svc.minTravelFee != null && fee < svc.minTravelFee && billableMiles > 0) fee = svc.minTravelFee;
+            setDynamicTravelFee(Math.round(fee * 100) / 100);
+          }
         }
       } catch { /* ignore */ }
       setTravelTimeLoading(false);
@@ -326,7 +344,11 @@ export default function NewBookingScreen() {
 
   const totalPrice = subtotal - discountAmount;
   const isMobileService = selectedService?.serviceType === 'mobile';
-  const travelFeeAmount = (isMobileService && clientAddress.trim() && selectedService?.travelFee) ? (selectedService.travelFee as unknown as number) : 0;
+  const travelFeeAmount = isMobileService && clientAddress.trim()
+    ? (selectedService?.distanceFeeEnabled && dynamicTravelFee != null
+        ? dynamicTravelFee
+        : (selectedService?.travelFee ? (selectedService.travelFee as unknown as number) : 0))
+    : 0;
   const grandTotal = totalPrice + travelFeeAmount;
 
   // Per-location time-slot availability: when a time is selected, check whether that specific
@@ -2057,12 +2079,24 @@ export default function NewBookingScreen() {
 
               <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 8 }}>We'll come to you at this address.</Text>
               {(travelTimeLoading || travelTimeEstimate) ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
-                  <Text style={{ fontSize: 13 }}>🚗</Text>
-                  {travelTimeLoading ? (
-                    <Text style={{ fontSize: fs.xs, color: colors.muted, fontStyle: 'italic' }}>Calculating drive time…</Text>
-                  ) : (
-                    <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: '700' }}>{travelTimeEstimate} from business location</Text>
+                <View style={{ marginTop: 8, gap: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={{ fontSize: 13 }}>🚗</Text>
+                    {travelTimeLoading ? (
+                      <Text style={{ fontSize: fs.xs, color: colors.muted, fontStyle: 'italic' }}>Calculating drive time…</Text>
+                    ) : (
+                      <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: '700' }}>{travelTimeEstimate} from business location</Text>
+                    )}
+                  </View>
+                  {!travelTimeLoading && selectedService?.distanceFeeEnabled && dynamicTravelFee != null && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 20 }}>
+                      <Text style={{ fontSize: fs.xs, color: colors.foreground }}>
+                        Travel fee: <Text style={{ fontWeight: '700', color: colors.success }}>${dynamicTravelFee.toFixed(2)}</Text>
+                        {(selectedService.freeMiles ?? 0) > 0 && routeDistanceMiles != null
+                          ? ` (first ${selectedService.freeMiles} mi free)`
+                          : ''}
+                      </Text>
+                    </View>
                   )}
                 </View>
               ) : null}

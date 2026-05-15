@@ -282,10 +282,12 @@ const servicesRouter = router({
         travelDuration: z.number().int().optional().nullable(),
         travelRatePerMile: z.number().optional().nullable(),
         minTravelFee: z.number().optional().nullable(),
+        distanceFeeEnabled: z.boolean().optional().nullable(),
+        freeMiles: z.number().optional().nullable(),
       })
     )
     .mutation(async ({ input }) => {
-      const { reminderHours, travelFee, maxTravelDistance, travelDuration, travelRatePerMile, minTravelFee, ...rest } = input;
+      const { reminderHours, travelFee, maxTravelDistance, travelDuration, travelRatePerMile, minTravelFee, distanceFeeEnabled, freeMiles, ...rest } = input;
       const id = await db.createService({
         ...rest,
         reminderHours: reminderHours != null ? String(reminderHours) : null,
@@ -294,6 +296,8 @@ const servicesRouter = router({
         travelDuration: travelDuration ?? null,
         travelRatePerMile: travelRatePerMile != null ? String(travelRatePerMile) : null,
         minTravelFee: minTravelFee != null ? String(minTravelFee) : null,
+        distanceFeeEnabled: distanceFeeEnabled ? 1 : 0,
+        freeMiles: freeMiles != null ? String(freeMiles) : null,
       } as any);
       return { id, localId: input.localId };
     }),
@@ -318,10 +322,12 @@ const servicesRouter = router({
         travelDuration: z.number().int().optional().nullable(),
         travelRatePerMile: z.number().optional().nullable(),
         minTravelFee: z.number().optional().nullable(),
+        distanceFeeEnabled: z.boolean().optional().nullable(),
+        freeMiles: z.number().optional().nullable(),
       })
     )
     .mutation(async ({ input }) => {
-      const { localId, businessOwnerId, reminderHours, travelFee, maxTravelDistance, travelDuration, travelRatePerMile, minTravelFee, ...rest } = input;
+      const { localId, businessOwnerId, reminderHours, travelFee, maxTravelDistance, travelDuration, travelRatePerMile, minTravelFee, distanceFeeEnabled, freeMiles, ...rest } = input;
       const svc = await db.getServiceByLocalId(localId, businessOwnerId);
       if (!svc) throw new Error(`Service not found: ${localId}`);
       await db.updateService(svc.id, businessOwnerId, {
@@ -332,6 +338,8 @@ const servicesRouter = router({
         travelDuration: travelDuration ?? null,
         travelRatePerMile: travelRatePerMile != null ? String(travelRatePerMile) : null,
         minTravelFee: minTravelFee != null ? String(minTravelFee) : null,
+        distanceFeeEnabled: distanceFeeEnabled ? 1 : 0,
+        freeMiles: freeMiles != null ? String(freeMiles) : null,
       } as any);
       return { success: true };
     }),
