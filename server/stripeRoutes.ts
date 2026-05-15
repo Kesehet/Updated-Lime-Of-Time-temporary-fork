@@ -363,11 +363,14 @@ export function registerStripeRoutes(app: Express): void {
 
     const webhookSecret = await getStripeWebhookSecret();
     try {
+      // Use rawBody (Buffer preserved by express.json verify callback) for signature verification
+      const rawPayload = (req as any).rawBody ?? req.body;
       if (webhookSecret && sig) {
-        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+        event = stripe.webhooks.constructEvent(rawPayload, sig, webhookSecret);
       } else {
         // In test mode without webhook secret, parse directly
-        event = JSON.parse(req.body.toString()) as Stripe.Event;
+        const bodyStr = Buffer.isBuffer(rawPayload) ? rawPayload.toString() : JSON.stringify(rawPayload);
+        event = JSON.parse(bodyStr) as Stripe.Event;
       }
     } catch (err) {
       console.error("[Stripe] Webhook signature verification failed:", err);

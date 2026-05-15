@@ -202,6 +202,8 @@ var init_schema = __esm({
       appStoreUrl: (0, import_mysql_core.varchar)("appStoreUrl", { length: 500 }),
       /** Google Play Store URL for the App Share card */
       playStoreUrl: (0, import_mysql_core.varchar)("playStoreUrl", { length: 500 }),
+      /** IANA timezone identifier for the business (e.g. "America/New_York"). Default: "America/New_York" */
+      timezone: (0, import_mysql_core.varchar)("timezone", { length: 64 }).default("America/New_York").notNull(),
       /** When the owner requested account deletion (null = not requested) */
       pendingDeletionAt: (0, import_mysql_core.timestamp)("pendingDeletionAt"),
       /** Scheduled deletion date (30 days after request) */
@@ -4143,7 +4145,9 @@ var businessRouter = router({
       tiktokHandle: import_zod2.z.string().optional(),
       // Client portal visibility
       clientPortalVisible: import_zod2.z.boolean().optional(),
-      businessCategory: import_zod2.z.string().optional().nullable()
+      businessCategory: import_zod2.z.string().optional().nullable(),
+      // Business timezone (IANA format, e.g. "America/New_York")
+      timezone: import_zod2.z.string().optional()
     })
   ).mutation(async ({ input }) => {
     const { id, ...data } = input;
@@ -6013,7 +6017,8 @@ function registerPublicRoutes(app) {
         stripeConnectEnabled: owner.stripeConnectEnabled ?? false,
         zelleHandle: owner.zelleHandle ?? "",
         cashAppHandle: owner.cashAppHandle ?? "",
-        venmoHandle: owner.venmoHandle ?? ""
+        venmoHandle: owner.venmoHandle ?? "",
+        timezone: owner.timezone ?? "America/New_York"
       });
     } catch (err) {
       console.error("[Public API] Error fetching business:", err);
@@ -7683,9 +7688,9 @@ Tap to view waitlist.`
   });
   app.get("/api/public/business/:slug/appointment-by-session", async (req, res) => {
     try {
-      const { session_id } = req.query;
+      const { sid: session_id } = req.query;
       if (!session_id) {
-        res.status(400).json({ error: "session_id required" });
+        res.status(400).json({ error: "sid required" });
         return;
       }
       const owner = await getBusinessOwnerBySlug(req.params.slug);
@@ -8219,7 +8224,7 @@ Tap to view waitlist.`
   async function loadReceipt() {
     if (!SESSION_ID) { showError(); return; }
     try {
-      const res = await fetch(API + '/appointment-by-session?session_id=' + encodeURIComponent(SESSION_ID));
+      const res = await fetch(API + '/appointment-by-session?sid=' + encodeURIComponent(SESSION_ID));
       const data = await res.json();
       if (data.ok && data.appointment) {
         renderReceipt(data.appointment);
@@ -11452,7 +11457,10 @@ function bookingPage(slug, owner, preselectedLocationId, prefetchedLocations, pl
       <div class="cal-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
       <div id="calGrid" class="cal-grid"></div>
       <div id="timeSection" style="display:none">
-        <h2 style="margin-bottom:12px;">Available Times</h2>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;">
+          <h2 style="margin:0;">Available Times</h2>
+          <span id="tzLabel" style="font-size:11px;color:var(--text-secondary);"></span>
+        </div>
         <div id="timeGrid" class="time-grid"></div>
         <div id="noSlots" style="display:none;text-align:center;padding:20px;font-size:14px;">
           <div id="noSlotsMsg" style="color:#888;">No available time slots for this date.</div>
@@ -11667,6 +11675,7 @@ function bookingPage(slug, owner, preselectedLocationId, prefetchedLocations, pl
     const WEEKLY_DAYS = ${JSON.stringify(whJson)};
     const DAYS_MAP = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
     const CANCEL_POLICY = ${JSON.stringify(owner.cancellationPolicy || { enabled: false, hoursBeforeAppointment: 2, feePercentage: 50 })};
+    const BIZ_TIMEZONE = ${JSON.stringify(owner.timezone || "America/New_York")};
     const PAYMENT_METHODS = ${JSON.stringify({ zelle: owner.zelleHandle || null, cashApp: owner.cashAppHandle || null, venmo: owner.venmoHandle || null, stripeEnabled: !!owner.stripeConnectEnabled, businessOwnerId: owner.id, platformFeePercent })};
     const CATEGORY_EMOJIS_MAP = ${JSON.stringify(owner.categoryEmojis || {})};
     let services = [];
@@ -13265,6 +13274,14 @@ function bookingPage(slug, owner, preselectedLocationId, prefetchedLocations, pl
       const grid = document.getElementById("timeGrid");
       const noSlots = document.getElementById("noSlots");
       section.style.display = "block";
+      // Populate timezone label
+      const tzLabelEl = document.getElementById('tzLabel');
+      if (tzLabelEl && typeof BIZ_TIMEZONE !== 'undefined') {
+        try {
+          const tzAbbr = new Intl.DateTimeFormat('en-US', { timeZone: BIZ_TIMEZONE, timeZoneName: 'short' }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || '';
+          tzLabelEl.textContent = tzAbbr ? '\u{1F310} ' + tzAbbr : '';
+        } catch(e) { tzLabelEl.textContent = ''; }
+      }
       grid.innerHTML = '<div class="loading" style="grid-column:1/-1;">Loading times...</div>';
       noSlots.style.display = "none";
 
@@ -14939,7 +14956,7 @@ function bookingPage(slug, owner, preselectedLocationId, prefetchedLocations, pl
         }
         window.scrollTo(0, 0);
         try {
-          const res = await fetch(API + '/appointment-by-session?session_id=' + encodeURIComponent(sessionId));
+          const res = await fetch(API + '/appointment-by-session?sid=' + encodeURIComponent(sessionId));
           const data = await res.json();
           if (data.ok && data.appointment) {
             const a = data.appointment;
@@ -25690,10 +25707,12 @@ function registerStripeRoutes(app) {
     let event;
     const webhookSecret = await getStripeWebhookSecret();
     try {
+      const rawPayload = req.rawBody ?? req.body;
       if (webhookSecret && sig) {
-        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+        event = stripe.webhooks.constructEvent(rawPayload, sig, webhookSecret);
       } else {
-        event = JSON.parse(req.body.toString());
+        const bodyStr = Buffer.isBuffer(rawPayload) ? rawPayload.toString() : JSON.stringify(rawPayload);
+        event = JSON.parse(bodyStr);
       }
     } catch (err) {
       console.error("[Stripe] Webhook signature verification failed:", err);

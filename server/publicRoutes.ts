@@ -2038,11 +2038,12 @@ export function registerPublicRoutes(app: Express) {
   });
 
   // ── Stripe payment success: look up appointment by checkout session_id ──────
-  // GET /api/public/business/:slug/appointment-by-session?session_id=cs_xxx
+  // GET /api/public/business/:slug/appointment-by-session?sid=cs_xxx
+  // Note: parameter is named 'sid' (not 'session_id') to avoid Cloudflare WAF blocking the response
   app.get("/api/public/business/:slug/appointment-by-session", async (req: Request, res: Response) => {
     try {
-      const { session_id } = req.query as { session_id?: string };
-      if (!session_id) { res.status(400).json({ error: "session_id required" }); return; }
+      const { sid: session_id } = req.query as { sid?: string };
+      if (!session_id) { res.status(400).json({ error: "sid required" }); return; }
       const owner = await db.getBusinessOwnerBySlug(req.params.slug);
       if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
       const { getDb } = await import("./db");
@@ -2528,7 +2529,7 @@ export function registerPublicRoutes(app: Express) {
   async function loadReceipt() {
     if (!SESSION_ID) { showError(); return; }
     try {
-      const res = await fetch(API + '/appointment-by-session?session_id=' + encodeURIComponent(SESSION_ID));
+      const res = await fetch(API + '/appointment-by-session?sid=' + encodeURIComponent(SESSION_ID));
       const data = await res.json();
       if (data.ok && data.appointment) {
         renderReceipt(data.appointment);
@@ -5782,7 +5783,10 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       <div class="cal-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
       <div id="calGrid" class="cal-grid"></div>
       <div id="timeSection" style="display:none">
-        <h2 style="margin-bottom:12px;">Available Times</h2>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;">
+          <h2 style="margin:0;">Available Times</h2>
+          <span id="tzLabel" style="font-size:11px;color:var(--text-secondary);"></span>
+        </div>
         <div id="timeGrid" class="time-grid"></div>
         <div id="noSlots" style="display:none;text-align:center;padding:20px;font-size:14px;">
           <div id="noSlotsMsg" style="color:#888;">No available time slots for this date.</div>
@@ -5997,6 +6001,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
     const WEEKLY_DAYS = ${JSON.stringify(whJson)};
     const DAYS_MAP = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
     const CANCEL_POLICY = ${JSON.stringify(owner.cancellationPolicy || { enabled: false, hoursBeforeAppointment: 2, feePercentage: 50 })};
+    const BIZ_TIMEZONE = ${JSON.stringify((owner as any).timezone || 'America/New_York')};
     const PAYMENT_METHODS = ${JSON.stringify({ zelle: (owner as any).zelleHandle || null, cashApp: (owner as any).cashAppHandle || null, venmo: (owner as any).venmoHandle || null, stripeEnabled: !!(owner as any).stripeConnectEnabled, businessOwnerId: owner.id, platformFeePercent })};
     const CATEGORY_EMOJIS_MAP = ${JSON.stringify((owner as any).categoryEmojis || {})};
     let services = [];
@@ -7595,6 +7600,14 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       const grid = document.getElementById("timeGrid");
       const noSlots = document.getElementById("noSlots");
       section.style.display = "block";
+      // Populate timezone label
+      const tzLabelEl = document.getElementById('tzLabel');
+      if (tzLabelEl && typeof BIZ_TIMEZONE !== 'undefined') {
+        try {
+          const tzAbbr = new Intl.DateTimeFormat('en-US', { timeZone: BIZ_TIMEZONE, timeZoneName: 'short' }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || '';
+          tzLabelEl.textContent = tzAbbr ? '🌐 ' + tzAbbr : '';
+        } catch(e) { tzLabelEl.textContent = ''; }
+      }
       grid.innerHTML = '<div class="loading" style="grid-column:1/-1;">Loading times...</div>';
       noSlots.style.display = "none";
 
@@ -9269,7 +9282,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
         }
         window.scrollTo(0, 0);
         try {
-          const res = await fetch(API + '/appointment-by-session?session_id=' + encodeURIComponent(sessionId));
+          const res = await fetch(API + '/appointment-by-session?sid=' + encodeURIComponent(sessionId));
           const data = await res.json();
           if (data.ok && data.appointment) {
             const a = data.appointment;
