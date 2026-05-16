@@ -921,36 +921,7 @@ export default function ClientBookingWizardScreen() {
     }
     // Address step: sync address and proceed
     if (step === STEP_ADDRESS) {
-<<<<<<< Updated upstream
-      // Use staff-level maxTravelDistance override if staff is selected and has one set; else fall back to service-level
-      const staffForAlert = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
-      const effectiveMaxDistAlert = (staffForAlert as any)?.maxTravelDistance ?? selectedService?.maxTravelDistance;
-      // Only show the soft-warning Alert when the actual route distance EXCEEDS the limit.
-      // Hard blocks (outsideServiceArea=true) are already handled by the disabled button.
-      // If distance is within range OR unknown (OSRM not yet loaded), proceed silently.
-      const distanceExceedsLimit =
-        effectiveMaxDistAlert != null &&
-        routeDistanceMiles != null &&
-        routeDistanceMiles > effectiveMaxDistAlert;
-      if (distanceExceedsLimit) {
-        Alert.alert(
-          "⚠️ Outside Typical Service Area",
-          `Your address is ${routeDistanceMiles!.toFixed(1)} mi away. This service's typical range is ${effectiveMaxDistAlert} miles. Do you want to continue anyway?`,
-          [
-            { text: "Go Back", style: "cancel" },
-            {
-              text: "Continue Anyway",
-              onPress: () => {
-                setClientAddress(fullClientAddress);
-                setStep((s) => Math.min(s + 1, STEPS.length - 1));
-              },
-            },
-          ]
-        );
-        return;
-      }
-=======
->>>>>>> Stashed changes
+
       setClientAddress(fullClientAddress);
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -1173,8 +1144,9 @@ export default function ClientBookingWizardScreen() {
                 body: JSON.stringify({ appointmentId, businessSlug: effectiveSlug, amount: finalPrice, clientEmail: state.account?.email ?? undefined }),
               });
               if (fallbackRes.ok) {
-                const { paymentUrl } = await fallbackRes.json();
-                if (paymentUrl) await WebBrowser.openAuthSessionAsync(paymentUrl, undefined, { showInRecents: false });
+                const fallbackData = await fallbackRes.json();
+                const fallbackUrl = fallbackData.url ?? fallbackData.paymentUrl;
+                if (fallbackUrl) await WebBrowser.openAuthSessionAsync(fallbackUrl, undefined, { showInRecents: false });
               }
             }
           } else {
@@ -1191,9 +1163,10 @@ export default function ClientBookingWizardScreen() {
               }),
             });
             if (stripeRes.ok) {
-              const { paymentUrl } = await stripeRes.json();
-              if (paymentUrl) {
-                window.location.href = paymentUrl;
+              const stripeData = await stripeRes.json();
+              const redirectUrl = stripeData.url ?? stripeData.paymentUrl;
+              if (redirectUrl) {
+                window.location.href = redirectUrl;
                 return;
               }
             }
