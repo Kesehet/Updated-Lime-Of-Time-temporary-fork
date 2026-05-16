@@ -1161,6 +1161,8 @@ export default function OnboardingScreen() {
         await WebBrowser.openBrowserAsync(data.url, {
           presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
         });
+        // Clear stored referral code so it doesn't re-appear on future visits
+        AsyncStorage.removeItem("@lot_pending_ref").catch(() => {});
         // After browser closes, sync subscription status from server
         try {
           await trpcUtils.subscription.getMyPlan.invalidate({ businessOwnerId });
@@ -1173,7 +1175,8 @@ export default function OnboardingScreen() {
           router.replace("/(tabs)");
         }
       } else if (data.activated || data.free) {
-        // Free plan activated immediately
+        // Free plan activated immediately — also clear stored ref
+        AsyncStorage.removeItem("@lot_pending_ref").catch(() => {});
         if (biometricAvailable && Platform.OS !== "web") {
           navigateToStep(3);
         } else {
@@ -1930,6 +1933,23 @@ export default function OnboardingScreen() {
                       <Text style={{ flex: 1, fontSize: 13, color: "#4ade80", fontWeight: "600" }}>
                         {`Referral applied! ${referralDiscount?.percent ?? 50}% off your first ${referralDiscount?.months ?? 3} months.`}
                       </Text>
+                      <Pressable
+                        onPress={() => {
+                          setReferralApplied(false);
+                          setAppliedReferralCodeId(null);
+                          setReferralDiscount(null);
+                          setReferralCode("");
+                          setReferralError("");
+                        }}
+                        style={({ pressed }) => ({
+                          padding: 6, borderRadius: 8,
+                          backgroundColor: "rgba(255,255,255,0.08)",
+                          opacity: pressed ? 0.6 : 1,
+                        })}
+                        hitSlop={8}
+                      >
+                        <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: "600" }}>{"✕"}</Text>
+                      </Pressable>
                     </View>
                   )}
                   {!!referralError && (
@@ -1949,6 +1969,7 @@ export default function OnboardingScreen() {
                     loadingPlanKey={subLoading ? subSelectedPlan : null}
                     isOnboarding
                     isTrialEligible={true}
+                    referralDiscountPercent={referralApplied && referralDiscount ? referralDiscount.percent : undefined}
                   />
                 </Animated.View>
                 <Animated.View style={btnStyle}>

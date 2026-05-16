@@ -62,6 +62,8 @@ type PlanCarouselProps = {
   containerWidth?: number;
   isOnboarding?: boolean;
   isTrialEligible?: boolean;
+  /** Referral discount percent (0-100) to overlay on all plan prices */
+  referralDiscountPercent?: number;
 };
 
 // ─── Plan Config ──────────────────────────────────────────────────────────────
@@ -172,6 +174,7 @@ function PlanSlide({
   onPrev,
   onNext,
   onCompare,
+  referralDiscountPercent,
 }: {
   plan: PlanData;
   isYearly: boolean;
@@ -188,6 +191,7 @@ function PlanSlide({
   onPrev: () => void;
   onNext: () => void;
   onCompare: () => void;
+  referralDiscountPercent?: number;
 }) {
   const cfg = PLAN_CONFIG[plan.planKey] ?? PLAN_CONFIG.solo;
   const features = PLAN_FEATURES[plan.planKey] ?? [];
@@ -195,8 +199,13 @@ function PlanSlide({
   const isPopular = plan.planKey === "growth";
   const effectiveMonthly = plan.effectiveMonthlyPrice ?? plan.monthlyPrice;
   const effectiveYearly = plan.effectiveYearlyPrice ?? plan.yearlyPrice;
-  const rawPrice = isYearly ? effectiveYearly / 12 : effectiveMonthly;
-  const rawOriginal = isYearly ? plan.yearlyPrice / 12 : plan.monthlyPrice;
+  // Apply referral discount on top of effective price
+  const hasReferralDiscount = !isFree && (referralDiscountPercent ?? 0) > 0;
+  const referralFactor = hasReferralDiscount ? (1 - (referralDiscountPercent! / 100)) : 1;
+  const rawPrice = isYearly
+    ? (effectiveYearly / 12) * referralFactor
+    : effectiveMonthly * referralFactor;
+  const rawOriginal = isYearly ? effectiveYearly / 12 : effectiveMonthly;
   const hasDiscount = (plan.discountPercent ?? 0) > 0;
   const savings =
     isYearly && !isFree && effectiveMonthly > 0
@@ -323,10 +332,17 @@ function PlanSlide({
             </Text>
           </View>
         )}
-        {hasDiscount && rawOriginal > rawPrice && (
+        {(hasDiscount || hasReferralDiscount) && rawOriginal > rawPrice && (
           <Text style={[ss.billedNote, { textDecorationLine: "line-through", color: "rgba(255,255,255,0.25)" }]}>
             {"Was $" + rawOriginal.toFixed(2) + "/mo"}
           </Text>
+        )}
+        {hasReferralDiscount && (
+          <View style={[ss.yearlyNote, { backgroundColor: "rgba(74,222,128,0.1)", borderColor: "rgba(74,222,128,0.3)", marginTop: 2 }]}>
+            <Text style={[ss.yearlyNoteText, { color: "#4ade80" }]}>
+              {referralDiscountPercent + "% off your first " + (plan.planKey === "solo" ? "3" : "3") + " months with referral"}
+            </Text>
+          </View>
         )}
 
         {/* Divider */}
@@ -427,6 +443,7 @@ export function PlanCarousel({
   containerWidth,
   isOnboarding = false,
   isTrialEligible = false,
+  referralDiscountPercent,
 }: PlanCarouselProps) {
   const [showCompare, setShowCompare] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -554,6 +571,7 @@ export function PlanCarousel({
             onPrev={() => scrollTo(activeIdx - 1)}
             onNext={() => scrollTo(activeIdx + 1)}
             onCompare={() => setShowCompare(true)}
+            referralDiscountPercent={referralDiscountPercent}
           />
         )}
       />
