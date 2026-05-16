@@ -1929,7 +1929,7 @@ export function registerStripeConnectRoutes(app: Express): void {
             const refundMsg = refundCents > 0
               ? `A refund of $${(refundCents / 100).toFixed(2)} has been issued to your card.`
               : "No refund was issued.";
-            await sendExpoPush(caMatch.expoPushToken, { title: "Appointment Cancelled", body: refundMsg, data: { type: "appointment_cancelled" } }).catch(() => {});
+            await sendExpoPush(caMatch.expoPushToken, { title: "Appointment Cancelled", body: refundMsg, data: { type: "cancellation" } }).catch(() => {});
           }
         }
       } catch {
