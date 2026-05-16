@@ -268,8 +268,12 @@ export default function ClientHomeScreen() {
   }));
 
   function handleBackToPortal() {
+    function navigateToPortalSelect() {
+      try { router.dismissAll(); } catch {}
+      router.replace("/profile-select" as any);
+    }
     screenSlideX.value = withTiming(SCREEN_W, { duration: 280, easing: Easing.in(Easing.cubic) }, (done) => {
-      if (done) runOnJS(router.replace)("/profile-select");
+      if (done) runOnJS(navigateToPortalSelect)();
     });
   }
 

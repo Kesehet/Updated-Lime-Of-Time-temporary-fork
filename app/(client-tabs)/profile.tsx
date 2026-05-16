@@ -171,7 +171,8 @@ export default function ClientProfileScreen() {
               if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               const { setProfileMode } = await import("@/lib/client-store");
               await setProfileMode("business");
-              // Auto-routing in _layout.tsx will send them straight to the dashboard
+              // Dismiss the fullScreenModal stack before navigating to profile-select
+              try { router.dismissAll(); } catch {}
               router.replace("/profile-select" as any);
             },
           },
@@ -190,6 +191,8 @@ export default function ClientProfileScreen() {
               if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               const { setProfileMode } = await import("@/lib/client-store");
               await setProfileMode("business");
+              // Dismiss the fullScreenModal stack before navigating to profile-select
+              try { router.dismissAll(); } catch {}
               router.replace("/profile-select" as any);
             },
           },
