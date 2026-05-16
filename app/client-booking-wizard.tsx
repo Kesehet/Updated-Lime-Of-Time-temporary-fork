@@ -1155,11 +1155,8 @@ export default function ClientBookingWizardScreen() {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
               body: JSON.stringify({
-                appointmentId,
-                businessSlug: effectiveSlug,
-                amount: finalPrice,
-                description: `${selectedService.name} — ${dateStr} at ${formatTime12(selectedSlot.time)}`,
-                clientEmail: state.account?.email ?? undefined,
+                appointmentLocalId: appointmentId,
+                businessOwnerId: businessOwnerId,
               }),
             });
             if (stripeRes.ok) {

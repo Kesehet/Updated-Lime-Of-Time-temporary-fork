@@ -421,6 +421,7 @@ export default function ProfileSelectScreen() {
           return;
         }
       } catch { /* ignore */ }
+      setTransitionVisible(false);
       router.push("/onboarding");
     } else {
       try {
@@ -437,6 +438,7 @@ export default function ProfileSelectScreen() {
         }
       } catch { /* ignore */ }
       await recordClientActivity();
+      setTransitionVisible(false);
       router.replace("/(client-tabs)/discover" as any);
     }
   };
