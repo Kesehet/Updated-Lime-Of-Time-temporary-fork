@@ -221,8 +221,11 @@ export default function ChoosePlanScreen() {
       if (data.url) {
         await WebBrowser.openBrowserAsync(data.url);
         await utils.subscription.getMyPlan.invalidate();
+        // Clear stored referral code after checkout is initiated
+        await AsyncStorage.removeItem("@lot_pending_ref");
       } else if (data.activated || data.free) {
         await utils.subscription.getMyPlan.invalidate();
+        await AsyncStorage.removeItem("@lot_pending_ref");
         Alert.alert("Plan Updated", "You are now on the " + plan.displayName + " plan.", [
           { text: "OK", onPress: () => router.back() },
         ]);
