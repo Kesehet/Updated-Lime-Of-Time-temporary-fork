@@ -1471,8 +1471,25 @@ export async function getBusinessOwnerByOpenId(openId: string): Promise<Business
   if (!db) return undefined;
   const rows = await db.select().from(businessOwners).where(eq(businessOwners.userId, user.id)).limit(1);
   if (rows[0]) return rows[0];
-  // Fallback: match by phone (phone-only signup)
-  if (user.email) return getBusinessOwnerByEmail(user.email);
+  // Fallback: match by email
+  if (user.email) {
+    const byEmail = await getBusinessOwnerByEmail(user.email);
+    if (byEmail) {
+      // Heal the link so future lookups are fast
+      await db.update(businessOwners).set({ userId: user.id }).where(eq(businessOwners.id, byEmail.id));
+      return byEmail;
+    }
+  }
+  // Fallback: match by phone (handles normalisation mismatches, e.g. "4124827733" vs "+14124827733")
+  if (user.openId.startsWith("phone:")) {
+    const rawPhone = user.openId.slice("phone:".length);
+    const byPhone = await getBusinessOwnerByPhone(rawPhone);
+    if (byPhone) {
+      // Heal the userId link so future lookups are fast
+      await db.update(businessOwners).set({ userId: user.id }).where(eq(businessOwners.id, byPhone.id));
+      return byPhone;
+    }
+  }
   return undefined;
 }
 
