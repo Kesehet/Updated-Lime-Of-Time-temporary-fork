@@ -31,7 +31,7 @@ async function main() {
     const locRows = await db.execute(
       `SELECT businessOwnerId, name, address, city, state, lat, lng, isDefault FROM locations WHERE businessOwnerId IN (${ids})`
     );
-    const locs = locRows[0] as any[];
+    const locs = locRows[0] as unknown as any[];
     console.log(`\nLocations for these businesses: ${locs.length}`);
     for (const l of locs) {
       console.log(JSON.stringify(l));

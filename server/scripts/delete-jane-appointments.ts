@@ -9,7 +9,7 @@ async function main() {
   const clientRows = await drizzleDb.execute(
     "SELECT id, localId, phone, name FROM clients WHERE phone IN ('+15559871234', '5559871234')"
   );
-  const clients = clientRows[0] as any[];
+  const clients = clientRows[0] as unknown as any[];
   console.log("Client rows:", clients.map((c: any) => ({ id: c.id, localId: c.localId, phone: c.phone, name: c.name })));
 
   const localIds: string[] = clients.map((c: any) => c.localId).filter(Boolean);
