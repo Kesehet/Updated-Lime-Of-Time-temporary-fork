@@ -206,6 +206,11 @@ function PlanSlide({
     ? (effectiveYearly / 12) * referralFactor
     : effectiveMonthly * referralFactor;
   const rawOriginal = isYearly ? effectiveYearly / 12 : effectiveMonthly;
+  // Discounted yearly total: first N months at discounted rate, rest at full rate
+  // We show a simple approximation: full yearly price with discount applied to first 3 months
+  const referralDiscountedYearly = hasReferralDiscount
+    ? effectiveYearly - (effectiveYearly / 12) * (referralDiscountPercent! / 100) * 3
+    : effectiveYearly;
   const hasDiscount = (plan.discountPercent ?? 0) > 0;
   const savings =
     isYearly && !isFree && effectiveMonthly > 0
@@ -328,7 +333,9 @@ function PlanSlide({
         {isYearly && !isFree && (
           <View style={[ss.yearlyNote, { backgroundColor: cfg.accent + "12", borderColor: cfg.accent + "30" }]}>
             <Text style={[ss.yearlyNoteText, { color: cfg.accent }]}>
-              {"Billed $" + effectiveYearly.toFixed(0) + "/year · saves $" + ((effectiveMonthly * 12) - effectiveYearly).toFixed(0) + " vs monthly"}
+              {hasReferralDiscount
+                ? "Billed ~$" + referralDiscountedYearly.toFixed(0) + "/year · saves $" + ((effectiveMonthly * 12) - referralDiscountedYearly).toFixed(0) + " vs monthly"
+                : "Billed $" + effectiveYearly.toFixed(0) + "/year · saves $" + ((effectiveMonthly * 12) - effectiveYearly).toFixed(0) + " vs monthly"}
             </Text>
           </View>
         )}
@@ -340,7 +347,7 @@ function PlanSlide({
         {hasReferralDiscount && (
           <View style={[ss.yearlyNote, { backgroundColor: "rgba(74,222,128,0.1)", borderColor: "rgba(74,222,128,0.3)", marginTop: 2 }]}>
             <Text style={[ss.yearlyNoteText, { color: "#4ade80" }]}>
-              {referralDiscountPercent + "% off your first " + (plan.planKey === "solo" ? "3" : "3") + " months with referral"}
+              {referralDiscountPercent + "% off your first 3 months with referral"}
             </Text>
           </View>
         )}

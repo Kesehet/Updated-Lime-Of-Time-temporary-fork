@@ -317,6 +317,7 @@ export default function ChoosePlanScreen() {
           loadingPlanKey={loadingPlanKey}
           currentPlanKey={planInfo?.planKey ?? null}
           isTrialEligible={isTrialEligible}
+          referralDiscountPercent={referralApplied && referralDiscount ? referralDiscount.percent : undefined}
         />
       </View>
 
@@ -379,6 +380,23 @@ export default function ChoosePlanScreen() {
             <Text style={{ flex: 1, fontSize: 13, color: "#4ade80", fontWeight: "600" }}>
               {`Referral applied! ${referralDiscount?.percent ?? 50}% off your first ${referralDiscount?.months ?? 3} months.`}
             </Text>
+            <Pressable
+              onPress={() => {
+                setReferralApplied(false);
+                setAppliedReferralCodeId(null);
+                setReferralDiscount(null);
+                setReferralCode("");
+                setReferralError("");
+              }}
+              style={({ pressed }) => ({
+                padding: 6, borderRadius: 8,
+                backgroundColor: "rgba(255,255,255,0.08)",
+                opacity: pressed ? 0.6 : 1,
+              })}
+              hitSlop={8}
+            >
+              <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: "600" }}>{"\u2715"}</Text>
+            </Pressable>
           </View>
         )}
         {!!referralError && (
