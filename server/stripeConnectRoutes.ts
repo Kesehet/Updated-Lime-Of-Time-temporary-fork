@@ -1052,7 +1052,28 @@ export function registerStripeConnectRoutes(app: Express): void {
         refundParams.amount = Math.round(amount * 100);
       }
 
-      const refund = await stripe.refunds.create(refundParams, { stripeAccount: accountId });
+      let refund: Stripe.Refund;
+      try {
+        refund = await stripe.refunds.create(refundParams, { stripeAccount: accountId });
+      } catch (piErr: any) {
+        // If the stored payment_intent ID is stale/test-mode and Stripe rejects it,
+        // retry by looking up the real payment intent from the checkout session.
+        const isInvalidPI =
+          piErr?.code === "resource_missing" ||
+          piErr?.message?.includes("No such payment_intent") ||
+          piErr?.message?.includes("No such charge");
+        if (isInvalidPI && sessionId && paymentIntentId === directPaymentIntentId) {
+          // The stored PI ID is stale — resolve the real one from the checkout session
+          const session = await stripe.checkout.sessions.retrieve(sessionId, {}, { stripeAccount: accountId });
+          const resolvedPiId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+          if (!resolvedPiId) throw piErr; // no fallback available
+          const fallbackParams: Stripe.RefundCreateParams = { payment_intent: resolvedPiId };
+          if (amount && amount > 0) fallbackParams.amount = Math.round(amount * 100);
+          refund = await stripe.refunds.create(fallbackParams, { stripeAccount: accountId });
+        } else {
+          throw piErr;
+        }
+      }
 
       await db
         .update(appointments)

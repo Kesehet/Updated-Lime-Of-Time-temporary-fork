@@ -2399,7 +2399,8 @@ Would you also like to charge a no-show fee via Stripe?`,
         </KeyboardAvoidingView>
       </Modal>
       {/* Refund Modal */}
-      <Modal visible={showRefundModal} transparent animationType="slide">
+      <Modal visible={showRefundModal} transparent animationType="slide" onRequestClose={() => { setShowRefundModal(false); setRefundAmount(''); }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
           <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -2521,6 +2522,7 @@ Would you also like to charge a no-show fee via Stripe?`,
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* No-Show Fee Modal */}
@@ -2918,26 +2920,45 @@ Would you also like to charge a no-show fee via Stripe?`,
                       proceed();
                       if (total <= 0) return;
 
-                      // Use the unified refund-on-cancel endpoint which handles
-                      // cancellation fee + partial/full refund atomically.
+                      // Use the unified refund-on-cancel endpoint (handles cancellation fee + partial/full refund).
+                      // Falls back to the basic /refund endpoint if the newer endpoint is not yet deployed.
                       try {
-                        const result = await apiCall<{
-                          ok: boolean;
-                          refundAmount: number;
-                          feeAmount: number;
-                          feeCharged: boolean;
-                          refundId: string | null;
-                        }>('/api/stripe-connect/refund-on-cancel', {
-                          method: 'POST',
-                          body: JSON.stringify({
-                            businessOwnerId: state.businessOwnerId,
-                            appointmentLocalId: appointment.id,
-                          }),
-                        });
-
-                        const refundAmt2 = result.refundAmount ?? 0;
-                        const feeAmt2 = result.feeAmount ?? 0;
-                        const feeCharged2 = result.feeCharged ?? false;
+                        let refundAmt2 = 0;
+                        let feeAmt2 = 0;
+                        let feeCharged2 = false;
+                        try {
+                          const result = await apiCall<{
+                            ok: boolean;
+                            refundAmount: number;
+                            feeAmount: number;
+                            feeCharged: boolean;
+                            refundId: string | null;
+                          }>('/api/stripe-connect/refund-on-cancel', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                              businessOwnerId: state.businessOwnerId,
+                              appointmentLocalId: appointment.id,
+                            }),
+                          });
+                          refundAmt2 = result.refundAmount ?? 0;
+                          feeAmt2 = result.feeAmount ?? 0;
+                          feeCharged2 = result.feeCharged ?? false;
+                        } catch (endpointErr: any) {
+                          // If the endpoint doesn't exist yet (404 / "Cannot POST"), fall back to basic refund
+                          const isNotFound = endpointErr?.message?.includes('Cannot POST') ||
+                            endpointErr?.message?.includes('404') ||
+                            endpointErr?.message?.includes('not found');
+                          if (!isNotFound) throw endpointErr; // re-throw real errors
+                          // Fallback: issue a full refund via the existing /refund endpoint
+                          const fallback = await apiCall<{ ok: boolean; refundId: string; amount: number }>('/api/stripe-connect/refund', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                              businessOwnerId: state.businessOwnerId,
+                              appointmentLocalId: appointment.id,
+                            }),
+                          });
+                          refundAmt2 = fallback.amount ?? 0;
+                        }
 
                         if (feeCharged2 && feeAmt2 > 0 && refundAmt2 > 0) {
                           Alert.alert(
