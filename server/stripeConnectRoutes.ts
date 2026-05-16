@@ -415,8 +415,7 @@ export function registerStripeConnectRoutes(app: Express): void {
         { stripeAccount: accountId }
       );
 
-      // Store the session ID on the appointment so webhook can match it
-      const db = await getDb();
+      // Store the session ID on the appointment so webhook can match it (reuse db from above)
       if (db) {
         await db
           .update(appointments)

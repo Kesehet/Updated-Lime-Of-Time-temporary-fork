@@ -658,6 +658,20 @@ export default function OnboardingScreen() {
   }, [deepLinkRef]);
   const [subLoading, setSubLoading] = useState(false);
   const [subSelectedPlan, setSubSelectedPlan] = useState<string | null>(null);
+  // ─── Referral code state ───────────────────────────────────────────
+  const [referralCode, setReferralCode] = useState("");
+  const [referralApplied, setReferralApplied] = useState(false);
+  const [referralError, setReferralError] = useState("");
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [referralDiscount, setReferralDiscount] = useState<{ percent: number; months: number } | null>(null);
+  const [appliedReferralCodeId, setAppliedReferralCodeId] = useState<number | null>(null);
+  const applyReferralMutation = trpc.referrals.applyCode.useMutation();
+  // Pre-fill referral code from deep link ref when subscription step is shown
+  useEffect(() => {
+    if (subPrefilledRef && !referralApplied) {
+      setReferralCode(subPrefilledRef.toUpperCase());
+    }
+  }, [subPrefilledRef]);
   const { data: publicPlans, isLoading: plansLoading } = trpc.subscription.getPublicPlans.useQuery(undefined, { staleTime: 0, refetchOnMount: true, refetchOnWindowFocus: true });
   const sendOtpMut = trpc.otp.send.useMutation();
   const verifyOtpMut = trpc.otp.verify.useMutation();
@@ -1138,6 +1152,7 @@ export default function OnboardingScreen() {
           period,
           successUrl: `${apiBase}/api/stripe/success?session_id={CHECKOUT_SESSION_ID}&boid=${businessOwnerId}`,
           cancelUrl: `${apiBase}/api/stripe/cancel?boid=${businessOwnerId}`,
+          ...(appliedReferralCodeId ? { referralCodeId: appliedReferralCodeId } : {}),
         }),
       });
       const data = await response.json();
@@ -1856,6 +1871,72 @@ export default function OnboardingScreen() {
             {/* Step Subscription: Plan Selection */}
             {displayStep === "subscription" && (
               <>
+                {/* Referral Code Entry */}
+                <Animated.View style={[inputStyle, { paddingHorizontal: 4, marginBottom: 8 }]}>
+                  {!referralApplied ? (
+                    <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+                      <TextInput
+                        style={{
+                          flex: 1, height: 44, borderRadius: 12, paddingHorizontal: 14,
+                          backgroundColor: "rgba(255,255,255,0.07)", color: "#fff",
+                          borderWidth: 1, borderColor: referralError ? "#f87171" : "rgba(74,222,128,0.25)",
+                          fontSize: 14, letterSpacing: 1,
+                        }}
+                        placeholder="Have a referral code?"
+                        placeholderTextColor="rgba(255,255,255,0.3)"
+                        value={referralCode}
+                        onChangeText={(t) => { setReferralCode(t.toUpperCase()); setReferralError(""); }}
+                        autoCapitalize="characters"
+                        returnKeyType="done"
+                      />
+                      <Pressable
+                        onPress={async () => {
+                          if (!referralCode.trim() || !appState?.businessOwnerId) return;
+                          setReferralLoading(true);
+                          setReferralError("");
+                          try {
+                            const result = await applyReferralMutation.mutateAsync({
+                              code: referralCode.trim(),
+                              referredBusinessOwnerId: appState.businessOwnerId,
+                            });
+                            setReferralApplied(true);
+                            setReferralDiscount({ percent: result.discountPercent, months: result.discountMonths });
+                            setAppliedReferralCodeId((result as any).referralCodeId ?? null);
+                          } catch (e: any) {
+                            setReferralError(e?.message ?? "Invalid code");
+                          } finally {
+                            setReferralLoading(false);
+                          }
+                        }}
+                        style={({ pressed }) => ({
+                          height: 44, paddingHorizontal: 16, borderRadius: 12, justifyContent: "center",
+                          backgroundColor: "rgba(74,222,128,0.15)", borderWidth: 1,
+                          borderColor: "rgba(74,222,128,0.4)", opacity: pressed ? 0.7 : 1,
+                        })}
+                      >
+                        {referralLoading
+                          ? <ActivityIndicator size="small" color="#4ade80" />
+                          : <Text style={{ color: "#4ade80", fontWeight: "700", fontSize: 14 }}>Apply</Text>
+                        }
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <View style={{
+                      flexDirection: "row", alignItems: "center", gap: 8, padding: 12,
+                      backgroundColor: "rgba(74,222,128,0.1)", borderRadius: 12,
+                      borderWidth: 1, borderColor: "rgba(74,222,128,0.3)",
+                    }}>
+                      <Text style={{ fontSize: 18 }}>{"🎉"}</Text>
+                      <Text style={{ flex: 1, fontSize: 13, color: "#4ade80", fontWeight: "600" }}>
+                        {`Referral applied! ${referralDiscount?.percent ?? 50}% off your first ${referralDiscount?.months ?? 3} months.`}
+                      </Text>
+                    </View>
+                  )}
+                  {!!referralError && (
+                    <Text style={{ fontSize: 12, color: "#f87171", marginTop: 4, marginLeft: 4 }}>{referralError}</Text>
+                  )}
+                </Animated.View>
+
                 {/* Carousel — break out of card horizontal padding; header is now inside the card */}
                 <Animated.View style={[inputStyle, { marginHorizontal: -hp, flex: 1 }]}>
                   <PlanCarousel
