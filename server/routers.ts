@@ -499,6 +499,10 @@ const appointmentsRouter = router({
       if (input.giftUsedAmount != null) dbInput.giftUsedAmount = String(input.giftUsedAmount);
       if (input.travelFee != null) dbInput.travelFee = String(input.travelFee);
       if (input.extraItems) dbInput.extraItems = input.extraItems;
+      // Auto-mark as paid when a gift fully covers the appointment cost
+      if (input.giftApplied && (input.totalPrice ?? 0) <= 0 && !dbInput.paymentStatus) {
+        dbInput.paymentStatus = 'paid';
+      }
       const id = await db.createAppointment(dbInput);
       // ── Auto in-app message to client on new booking ─────────────────────────
       try {
@@ -560,6 +564,10 @@ const appointmentsRouter = router({
       if (data.totalPrice != null) dbData.totalPrice = String(data.totalPrice);
       if (data.discountAmount != null) dbData.discountAmount = String(data.discountAmount);
       if (data.giftUsedAmount != null) dbData.giftUsedAmount = String(data.giftUsedAmount);
+      // Auto-mark as paid when a gift fully covers the appointment cost
+      if (data.giftApplied && (data.totalPrice ?? 0) <= 0 && !dbData.paymentStatus) {
+        dbData.paymentStatus = 'paid';
+      }
       await db.updateAppointment(localId, businessOwnerId, dbData);
 
       // Send confirmation email to client when appointment is accepted (status → confirmed)

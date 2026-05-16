@@ -897,6 +897,60 @@ export default function ClientDetailScreen() {
               </View>
             )}
 
+            {/* Gift Redemption Summary — shown in appointments tab when any gift was used */}
+            {activeTab === "appointments" && (() => {
+              const giftAppts = appointments.filter((a) => !!(a as any).giftApplied && ((a as any).giftUsedAmount > 0 || (a as any).totalPrice === 0 || (a as any).totalPrice === '0'));
+              if (giftAppts.length === 0) return null;
+              const totalGiftUsed = giftAppts.reduce((sum, a) => sum + (parseFloat((a as any).giftUsedAmount ?? '0') || 0), 0);
+              return (
+                <View style={{ marginTop: 20, marginBottom: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <Text style={[styles.sectionLabel, { color: colors.foreground }]}>🎁 Gift Cards Used</Text>
+                    <View style={{ backgroundColor: colors.success + '18', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3 }}>
+                      <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.success }}>${totalGiftUsed.toFixed(2)} total redeemed</Text>
+                    </View>
+                  </View>
+                  {giftAppts.map((appt) => {
+                    const svc = getServiceById(appt.serviceId);
+                    const giftAmt = parseFloat((appt as any).giftUsedAmount ?? '0') || 0;
+                    const remaining = Math.max(0, parseFloat(String(appt.totalPrice ?? '0')) || 0);
+                    return (
+                      <Pressable
+                        key={appt.id + '_gift'}
+                        onPress={() => router.push({ pathname: '/appointment-detail', params: { id: appt.id } })}
+                        style={({ pressed }) => [{
+                          backgroundColor: colors.surface,
+                          borderRadius: 12,
+                          padding: 12,
+                          marginBottom: 8,
+                          borderWidth: 1,
+                          borderColor: colors.border,
+                          borderLeftWidth: 3,
+                          borderLeftColor: colors.success,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          opacity: pressed ? 0.8 : 1,
+                        }]}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.foreground }}>{svc ? getServiceDisplayName(svc) : 'Service'}</Text>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>{formatDateDisplay(appt.date)} · {formatTime(appt.time)}</Text>
+                          {remaining > 0 && (
+                            <Text style={{ fontSize: fs.xs, color: colors.warning, marginTop: 2 }}>${remaining.toFixed(2)} remaining after gift</Text>
+                          )}
+                        </View>
+                        <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                          <Text style={{ fontSize: fs.sm, fontWeight: '700', color: colors.success }}>-${giftAmt > 0 ? giftAmt.toFixed(2) : (remaining === 0 ? (parseFloat(String(svc?.price ?? 0)).toFixed(2)) : '?')}</Text>
+                          <Text style={{ fontSize: 10, color: colors.muted }}>gift used</Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              );
+            })()}
+
             {/* Messages Tab */}
             {activeTab === "messages" && (
               <View>

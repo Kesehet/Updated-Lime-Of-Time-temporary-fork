@@ -1577,6 +1577,17 @@ Would you also like to charge a no-show fee via Stripe?`,
                   <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.success }}>Paid by Gift — ${_giftDeduction.toFixed(2)}</Text>
                 </View>
               </View>
+            ) : isGiftPartiallyCovered ? (
+              // Partial gift: show how much was covered and how much remains
+              <View style={{ marginBottom: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                  <View style={{ backgroundColor: colors.primary + '18', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <Text style={{ fontSize: fs.xs }}>🎁</Text>
+                    <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.primary }}>${_giftDeduction.toFixed(2)} covered by gift</Text>
+                  </View>
+                  <Text style={{ fontSize: fs.xs, color: colors.warning, fontWeight: '600' }}>${_computedTotal.toFixed(2)} remaining</Text>
+                </View>
+              </View>
             ) : (appointment.totalPrice ?? 0) <= 0 ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                 <View style={{ backgroundColor: colors.primary + '18', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
