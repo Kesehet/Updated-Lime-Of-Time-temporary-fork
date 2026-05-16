@@ -166,7 +166,7 @@ function computeEndTime(startTime: string, durationMinutes: number): string {
  * auto-complete scheduling, and notification tap deep-link navigation.
  */
 export function useNotifications() {
-  const { state, dispatch, syncToDb } = useStore();
+  const { state, dispatch, syncToDb, refreshFromDb } = useStore();
   const router = useRouter();
   const scheduledRef = useRef<Set<string>>(new Set());
   const listenerSetupRef = useRef(false);
@@ -176,6 +176,12 @@ export function useNotifications() {
   // Keep a ref to appointments so the listener can access latest without re-registering
   const appointmentsRef = useRef(state.appointments);
   useEffect(() => { appointmentsRef.current = state.appointments; }, [state.appointments]);
+
+  // Keep refs to services and clients for building clean notification body text
+  const servicesRef = useRef(state.services);
+  useEffect(() => { servicesRef.current = state.services; }, [state.services]);
+  const clientsRef = useRef(state.clients);
+  useEffect(() => { clientsRef.current = state.clients; }, [state.clients]);
 
   // Get business name for notification titles
   const businessName = state.settings.businessName || "Your Business";
@@ -438,21 +444,80 @@ export function useNotifications() {
       }
       // Add to in-app notification inbox for relevant event types
       if (data?.type === "appointment_request") {
-        const content = notification.request.content;
-        dispatch({
-          type: "ADD_INBOX_NOTIFICATION",
-          payload: {
-            id: `inbox-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-            type: "new_booking",
-            title: content.title ?? "New Booking Request",
-            body: content.body ?? "",
-            appointmentId: data.appointmentId,
-            timestamp: new Date().toISOString(),
-            read: false,
-          },
-        });
-        // Haptic pulse: new booking arrival
+        // Haptic pulse: new booking arrival (fire immediately, don't wait for refresh)
         if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Refresh the store so the new appointment is available, then build the clean body
+        const apptId = data.appointmentId;
+        const rawBody = notification.request.content.body ?? "";
+        // Helper to build clean body from store data
+        const buildCleanBody = (apptIdToFind: string | undefined): string => {
+          if (!apptIdToFind) return rawBody;
+          const appt = appointmentsRef.current.find((a) => a.id === apptIdToFind);
+          if (!appt) return rawBody;
+          const client = clientsRef.current.find((c) => c.id === appt.clientId);
+          const service = servicesRef.current.find((s) => s.id === appt.serviceId);
+          const clientName = client?.name ?? "A client";
+          const serviceName = service?.name ?? "an appointment";
+          return `${clientName} requested ${serviceName} on ${appt.date} at ${appt.time}`;
+        };
+        // Try immediately (appointment may already be in store if synced)
+        const immediateBody = buildCleanBody(apptId);
+        if (immediateBody !== rawBody) {
+          // Appointment already in store — dispatch clean notification immediately
+          dispatch({
+            type: "ADD_INBOX_NOTIFICATION",
+            payload: {
+              id: `inbox-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              type: "new_booking",
+              title: "New Booking Request",
+              body: immediateBody,
+              appointmentId: apptId,
+              timestamp: new Date().toISOString(),
+              read: false,
+            },
+          });
+        } else {
+          // Appointment not yet in store — refresh from DB then build clean body
+          const notifId = `inbox-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          // Add a placeholder immediately so the notification appears right away
+          dispatch({
+            type: "ADD_INBOX_NOTIFICATION",
+            payload: {
+              id: notifId,
+              type: "new_booking",
+              title: "New Booking Request",
+              body: rawBody,
+              appointmentId: apptId,
+              timestamp: new Date().toISOString(),
+              read: false,
+            },
+          });
+          // Refresh store and update the notification body with clean format
+          refreshFromDb().then(() => {
+            const cleanBody = buildCleanBody(apptId);
+            if (cleanBody !== rawBody) {
+              // Replace the placeholder with the clean version
+              dispatch({
+                type: "DISMISS_INBOX_NOTIFICATION",
+                payload: notifId,
+              });
+              dispatch({
+                type: "ADD_INBOX_NOTIFICATION",
+                payload: {
+                  id: notifId,
+                  type: "new_booking",
+                  title: "New Booking Request",
+                  body: cleanBody,
+                  appointmentId: apptId,
+                  timestamp: new Date().toISOString(),
+                  read: false,
+                },
+              });
+            }
+          }).catch(() => {
+            // Refresh failed — keep the placeholder with raw body
+          });
+        }
       } else if (data?.type === "appointment_cancelled") {
         const content = notification.request.content;
         dispatch({
