@@ -4269,7 +4269,12 @@ async function submitGift() {
 
     // Step 2: If card payment, create a Stripe Checkout session and redirect
     if (selectedPaymentMethod === 'card') {
-      const confirmUrl = window.location.origin + '/api/gift-confirm/' + encodeURIComponent(d.code);
+      // successUrl routes through gift-checkout-success which marks the gift as paid in DB
+      // then redirects to the confirm page with ?paid=1
+      const successUrl = window.location.origin + '/api/stripe-connect/gift-checkout-success'
+        + '?giftCode=' + encodeURIComponent(d.code)
+        + '&bizOwnerId=' + encodeURIComponent(OWNER_ID)
+        + '&redirectBase=' + encodeURIComponent(window.location.origin);
       const cancelUrl = window.location.href;
       const stripeRes = await fetch('/api/stripe-connect/create-gift-checkout', {
         method: 'POST',
@@ -4280,7 +4285,7 @@ async function submitGift() {
           recipientName: payload.recipientName,
           items: d.items || [],
           totalAmount: d.totalValue,
-          successUrl: confirmUrl + '?paid=1',
+          successUrl: successUrl,
           cancelUrl: cancelUrl,
         })
       });

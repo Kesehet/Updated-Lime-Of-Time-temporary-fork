@@ -2283,9 +2283,11 @@ export function registerStripeConnectRoutes(app: Express): void {
         }
       }
       // Redirect to the gift confirmation page
+      // If redirectBase is provided (web buy-gift page), redirect to the web confirm page
+      // Otherwise fall back to the gift redemption page
       const base = (redirectBase ? decodeURIComponent(redirectBase) : "").replace(/\/$/, "");
       const confirmUrl = base
-        ? `${base}/client-gift-confirmation?giftCode=${encodeURIComponent(giftCode ?? "")}&paymentMethod=card&paid=1`
+        ? `${base}/api/gift-confirm/${encodeURIComponent(giftCode ?? "")}?paid=1`
         : `/api/gift/${encodeURIComponent(giftCode ?? "")}?payment=success`;
       res.redirect(302, confirmUrl);
     } catch (err: any) {
