@@ -1107,6 +1107,34 @@ Would you also like to charge a no-show fee via Stripe?`,
     Linking.openURL(url).catch(() => {});
   };
 
+  // ─── Shared gift / charge calculations (used by both Charges and Payment sections) ───
+  const _extras = appointment?.extraItems ?? [];
+  const _extrasTotal = _extras.reduce((s, e) => s + (e.price || 0), 0);
+  const _discountAmt = appointment?.discountAmount ?? 0;
+  const _giftUsedAmount = appointment?.giftUsedAmount ?? 0;
+  const _svcPrice = appointment?.totalPrice != null
+    ? Math.max(0, appointment.totalPrice + _discountAmt + _giftUsedAmount - _extrasTotal)
+    : (service?.price ?? 0);
+  const _subtotal = _svcPrice + _extrasTotal;
+  const _afterDiscount = Math.max(0, _subtotal - _discountAmt);
+  let _giftDeduction = 0;
+  if (appointment?.giftApplied) {
+    if (_giftUsedAmount > 0) {
+      _giftDeduction = _giftUsedAmount;
+    } else if (appointment.totalPrice != null) {
+      _giftDeduction = Math.max(0, _afterDiscount - appointment.totalPrice);
+    } else {
+      _giftDeduction = _afterDiscount;
+    }
+  }
+  const _computedTotal = appointment?.totalPrice != null
+    ? appointment.totalPrice
+    : Math.max(0, _afterDiscount - _giftDeduction);
+  // True when gift fully covers the appointment cost
+  const isGiftFullyCovered = !!(appointment?.giftApplied) && _giftDeduction > 0 && _computedTotal <= 0;
+  // True when gift partially covers (some amount still owed)
+  const isGiftPartiallyCovered = !!(appointment?.giftApplied) && _giftDeduction > 0 && _computedTotal > 0;
+
   return (
     <ScreenContainer edges={["top", "bottom", "left", "right"]} tabletMaxWidth={680}>
       {/* Header */}
@@ -1514,10 +1542,10 @@ Would you also like to charge a no-show fee via Stripe?`,
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <View style={{
                   paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
-                  backgroundColor: appointment.paymentStatus === 'paid' ? colors.success + '20' : appointment.paymentStatus === 'pending_cash' ? '#FF980020' : colors.warning + '20',
+                  backgroundColor: appointment.paymentStatus === 'paid' ? colors.success + '20' : isGiftFullyCovered ? colors.success + '20' : appointment.paymentStatus === 'pending_cash' ? '#FF980020' : colors.warning + '20',
                 }}>
-                  <Text style={{ fontSize: fs.xs, fontWeight: '700', color: appointment.paymentStatus === 'paid' ? colors.success : appointment.paymentStatus === 'pending_cash' ? '#FF9800' : colors.warning }}>
-                    {appointment.paymentStatus === 'paid' ? '✓ Paid' : appointment.paymentStatus === 'pending_cash' ? 'Cash — Pending' : 'Unpaid'}
+                  <Text style={{ fontSize: fs.xs, fontWeight: '700', color: appointment.paymentStatus === 'paid' ? colors.success : isGiftFullyCovered ? colors.success : appointment.paymentStatus === 'pending_cash' ? '#FF9800' : colors.warning }}>
+                    {appointment.paymentStatus === 'paid' ? '✓ Paid' : isGiftFullyCovered ? '🎁 Gift' : appointment.paymentStatus === 'pending_cash' ? 'Cash — Pending' : 'Unpaid'}
                   </Text>
                 </View>
                 {/* Edit Payment button */}
@@ -1542,7 +1570,14 @@ Would you also like to charge a no-show fee via Stripe?`,
                 </Pressable>
               </View>
             </View>
-            {(appointment.totalPrice ?? 0) <= 0 ? (
+            {isGiftFullyCovered ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <View style={{ backgroundColor: colors.success + '18', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <Text style={{ fontSize: fs.xs }}>🎁</Text>
+                  <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.success }}>Paid by Gift — ${_giftDeduction.toFixed(2)}</Text>
+                </View>
+              </View>
+            ) : (appointment.totalPrice ?? 0) <= 0 ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                 <View style={{ backgroundColor: colors.primary + '18', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                   <Text style={{ fontSize: fs.xs }}>🎁</Text>
@@ -1569,7 +1604,7 @@ Would you also like to charge a no-show fee via Stripe?`,
                 </Pressable>
               </View>
             )}
-            {appointment.paymentStatus !== 'paid' && (
+            {appointment.paymentStatus !== 'paid' && !isGiftFullyCovered && (
               <View style={{ gap: 8 }}>
                 <Pressable
                   onPress={() => setShowPaymentModal(true)}
