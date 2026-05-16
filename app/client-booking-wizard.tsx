@@ -248,6 +248,22 @@ export default function ClientBookingWizardScreen() {
   const [copiedHandle, setCopiedHandle] = useState<string | null>(null);
   // Ref to hold card last4 after Stripe payment sheet succeeds (passed to confirmation screen)
   const cardLast4Ref = useRef<{ last4: string; brand: string } | null>(null);
+  // Fee breakdown modal state
+  const [feeBreakdown, setFeeBreakdown] = useState<{
+    serviceAmount: number;
+    discountAmount: number;
+    discountName: string | null;
+    platformFee: number;
+    platformFeePercent: number;
+    stripeFee: number;
+    totalCharged: number;
+    businessNetPayout: number;
+    publishableKey: string;
+    paymentIntent: string;
+    accountId: string;
+  } | null>(null);
+  const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
+  const pendingPaymentRef = useRef<{ appointmentId: string } | null>(null);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   // Build dynamic payment methods list — Card only shown when Stripe is connected
   const PAYMENT_METHODS = useMemo(() => {
@@ -946,6 +962,60 @@ export default function ClientBookingWizardScreen() {
     }
   };
 
+  // Called when user taps "Confirm & Pay" in the fee breakdown modal
+  const handleConfirmPayment = async () => {
+    if (!feeBreakdown || !pendingPaymentRef.current) return;
+    setShowFeeBreakdown(false);
+    setSubmitting(true);
+    try {
+      const { error: presentError } = await presentPaymentSheet();
+      if (presentError && presentError.code !== "Canceled") {
+        Alert.alert("Payment Failed", presentError.message ?? "Please try again.");
+      } else if (!presentError) {
+        // Payment succeeded — fetch card last4 for receipt display
+        const { appointmentId } = pendingPaymentRef.current;
+        try {
+          const last4Res = await fetch(
+            `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(appointmentId)}&businessOwnerId=${encodeURIComponent(String(businessOwnerId))}`,
+            { headers: { "Authorization": `Bearer ${state.sessionToken}` } }
+          );
+          if (last4Res.ok) {
+            const { last4, brand } = await last4Res.json();
+            if (last4) cardLast4Ref.current = { last4, brand: brand ?? "card" };
+          }
+        } catch { /* non-blocking */ }
+        // Navigate to confirmation
+        const { selectedService: svc, selectedDate: date, selectedSlot: slot, selectedStaffId: staffId, notes: notesVal } = {
+          selectedService, selectedDate, selectedSlot, selectedStaffId, notes
+        };
+        if (svc && date && slot) {
+          const dateStr = date.toISOString().split("T")[0];
+          const selectedStaffMember = staffId !== "any" ? staff.find((m) => m.localId === staffId) : null;
+          router.replace({
+            pathname: "/client-booking-confirmation" as any,
+            params: {
+              service: svc.name,
+              date: dateStr,
+              time: slot.time,
+              staff: selectedStaffMember?.name ?? "",
+              notes: notesVal,
+              paymentMethod: "card",
+              totalPrice: String(feeBreakdown.totalCharged),
+              last4: cardLast4Ref.current?.last4 ?? "",
+              cardBrand: cardLast4Ref.current?.brand ?? "",
+              businessSlug: effectiveSlug,
+              businessOwnerId: String(businessOwnerId),
+            },
+          });
+        }
+      }
+    } finally {
+      setSubmitting(false);
+      setFeeBreakdown(null);
+      pendingPaymentRef.current = null;
+    }
+  };
+
   const handleSubmit = async () => {
     if (!selectedService || !selectedDate || !selectedSlot) return;
     // When the gift fully covers the booking ($0 due), skip all payment validation
@@ -1109,7 +1179,8 @@ export default function ClientBookingWizardScreen() {
               }),
             });
             if (sheetRes.ok) {
-              const { publishableKey, paymentIntent, accountId } = await sheetRes.json();
+              const sheetData = await sheetRes.json();
+              const { publishableKey, paymentIntent, accountId, breakdown } = sheetData;
               // Re-initialize Stripe SDK with the connected account context so the
               // PaymentIntent lookup resolves on the correct Stripe account.
               await initStripe({ publishableKey, stripeAccountId: accountId });
@@ -1119,6 +1190,14 @@ export default function ClientBookingWizardScreen() {
                 style: "alwaysDark",
               });
               if (!initError) {
+                // Show fee breakdown modal before presenting payment sheet
+                if (breakdown) {
+                  pendingPaymentRef.current = { appointmentId };
+                  setFeeBreakdown({ ...breakdown, publishableKey, paymentIntent, accountId });
+                  setShowFeeBreakdown(true);
+                  setSubmitting(false);
+                  return; // payment continues in handleConfirmPayment
+                }
                 const { error: presentError } = await presentPaymentSheet();
                 if (presentError && presentError.code !== "Canceled") {
                   Alert.alert("Payment Failed", presentError.message ?? "Please try again.");
@@ -2950,6 +3029,71 @@ export default function ClientBookingWizardScreen() {
           >
             <IconSymbol name="xmark" size={18} color="#FFFFFF" />
           </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* ── Fee Breakdown Modal ────────────────────────────────────────── */}
+      <Modal visible={showFeeBreakdown} transparent animationType="slide" onRequestClose={() => setShowFeeBreakdown(false)}>
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
+          <View style={{ backgroundColor: "#1A3A28", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+            {/* Handle */}
+            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)", alignSelf: "center", marginBottom: 20 }} />
+            <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "700", marginBottom: 4 }}>Payment Summary</Text>
+            <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, marginBottom: 20 }}>Review the charge breakdown before paying</Text>
+
+            {/* Breakdown rows */}
+            {feeBreakdown && (
+              <View style={{ gap: 0 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
+                  <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Service amount</Text>
+                  <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "600" }}>${feeBreakdown.serviceAmount.toFixed(2)}</Text>
+                </View>
+                {feeBreakdown.discountAmount > 0 && (
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
+                    <Text style={{ color: "#4ADE80", fontSize: 14 }}>{feeBreakdown.discountName ? `Discount (${feeBreakdown.discountName})` : "Discount"}</Text>
+                    <Text style={{ color: "#4ADE80", fontSize: 14, fontWeight: "600" }}>-${feeBreakdown.discountAmount.toFixed(2)}</Text>
+                  </View>
+                )}
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
+                  <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Platform fee ({feeBreakdown.platformFeePercent}%)</Text>
+                  <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "600" }}>+${feeBreakdown.platformFee.toFixed(2)}</Text>
+                </View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, marginTop: 4 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700" }}>Total charged to you</Text>
+                  <Text style={{ color: "#4A7C59", fontSize: 16, fontWeight: "700" }}>${feeBreakdown.totalCharged.toFixed(2)}</Text>
+                </View>
+
+                {/* Business payout section */}
+                <View style={{ backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginTop: 4, gap: 6 }}>
+                  <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Business payout breakdown</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Stripe processing fee (2.9% + $0.30)</Text>
+                    <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>-${feeBreakdown.stripeFee.toFixed(2)}</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Business net payout</Text>
+                    <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: "600" }}>${feeBreakdown.businessNetPayout.toFixed(2)}</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Action buttons */}
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
+              <TouchableOpacity
+                onPress={() => { setShowFeeBreakdown(false); setFeeBreakdown(null); pendingPaymentRef.current = null; }}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)", alignItems: "center" }}
+              >
+                <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, fontWeight: "600" }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleConfirmPayment}
+                style={{ flex: 2, paddingVertical: 14, borderRadius: 14, backgroundColor: "#4A7C59", alignItems: "center" }}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "700" }}>Confirm & Pay</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
     </ScreenContainer>

@@ -186,6 +186,21 @@ export default function AppointmentDetailScreen() {
   // Pay on behalf of client — native Stripe payment sheet
   const [payingOnBehalf, setPayingOnBehalf] = useState(false);
   const [showPayOnBehalfSuccess, setShowPayOnBehalfSuccess] = useState(false);
+  // Fee breakdown modal state
+  const [feeBreakdown, setFeeBreakdown] = useState<{
+    serviceAmount: number;
+    discountAmount: number;
+    discountName: string | null;
+    platformFee: number;
+    platformFeePercent: number;
+    stripeFee: number;
+    totalCharged: number;
+    businessNetPayout: number;
+    publishableKey: string;
+    paymentIntent: string;
+    accountId: string;
+  } | null>(null);
+  const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   // Package sessions accordion
   const [showSessionsAccordion, setShowSessionsAccordion] = useState(false);
@@ -536,7 +551,8 @@ export default function AppointmentDetailScreen() {
         const err = await sheetRes.json().catch(() => ({}));
         throw new Error(err?.error ?? 'Could not create payment session.');
       }
-      const { publishableKey, paymentIntent, accountId } = await sheetRes.json();
+      const sheetData = await sheetRes.json();
+      const { publishableKey, paymentIntent, accountId, breakdown } = sheetData;
       // Re-initialize Stripe SDK with the connected account context so the
       // PaymentIntent lookup resolves on the correct Stripe account (not the platform account).
       await initStripe({ publishableKey, stripeAccountId: accountId });
@@ -547,6 +563,13 @@ export default function AppointmentDetailScreen() {
       });
       if (initError) {
         throw new Error(initError.message ?? 'Could not initialize payment.');
+      }
+      // Show fee breakdown modal before presenting payment sheet
+      if (breakdown) {
+        setFeeBreakdown({ ...breakdown, publishableKey, paymentIntent, accountId });
+        setShowFeeBreakdown(true);
+        setPayingOnBehalf(false);
+        return; // payment continues in handleConfirmBehalfPayment
       }
       const { error: presentError } = await presentPaymentSheet();
       if (presentError) {
@@ -570,6 +593,36 @@ export default function AppointmentDetailScreen() {
       setPayingOnBehalf(false);
     }
   }, [appointment, state.businessOwnerId, service, client, biz.businessName, initPaymentSheet, presentPaymentSheet, dispatch, syncToDb]);
+
+  // Called when owner confirms the fee breakdown modal before charging client on behalf
+  const handleConfirmBehalfPayment = useCallback(async () => {
+    if (!feeBreakdown || !appointment) return;
+    setShowFeeBreakdown(false);
+    setPayingOnBehalf(true);
+    try {
+      const { error: presentError } = await presentPaymentSheet();
+      if (presentError) {
+        if (presentError.code !== 'Canceled') {
+          Alert.alert('Payment Failed', presentError.message ?? 'Please try again.');
+        }
+        return;
+      }
+      // Payment succeeded — mark appointment as paid by card
+      const updated = {
+        ...appointment,
+        paymentStatus: 'paid' as const,
+        paymentMethod: 'card' as any,
+      };
+      dispatch({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
+      syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
+      setShowPayOnBehalfSuccess(true);
+    } catch (err: any) {
+      Alert.alert('Payment Error', err?.message ?? 'Could not process payment.');
+    } finally {
+      setPayingOnBehalf(false);
+      setFeeBreakdown(null);
+    }
+  }, [feeBreakdown, appointment, presentPaymentSheet, dispatch, syncToDb]);
 
   // ── Payment status polling — check every 30s if appointment is unpaid ──────
   // ── Immediate payment status check on mount (for notification tap) ─────────
@@ -3251,6 +3304,64 @@ Would you also like to charge a no-show fee via Stripe?`,
             </View>
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Fee Breakdown Modal ────────────────────────────────────────── */}
+      <Modal visible={showFeeBreakdown} transparent animationType="slide" onRequestClose={() => setShowFeeBreakdown(false)}>
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 20 }} />
+            <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: '700', marginBottom: 4 }}>Payment Summary</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 20 }}>Review the charge breakdown before processing</Text>
+            {feeBreakdown && (
+              <View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                  <Text style={{ color: colors.muted, fontSize: 14 }}>Service amount</Text>
+                  <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '600' }}>${feeBreakdown.serviceAmount.toFixed(2)}</Text>
+                </View>
+                {feeBreakdown.discountAmount > 0 && (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                    <Text style={{ color: colors.success, fontSize: 14 }}>{feeBreakdown.discountName ? `Discount (${feeBreakdown.discountName})` : 'Discount'}</Text>
+                    <Text style={{ color: colors.success, fontSize: 14, fontWeight: '600' }}>-${feeBreakdown.discountAmount.toFixed(2)}</Text>
+                  </View>
+                )}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                  <Text style={{ color: colors.muted, fontSize: 14 }}>Platform fee ({feeBreakdown.platformFeePercent}%)</Text>
+                  <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '600' }}>+${feeBreakdown.platformFee.toFixed(2)}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, marginTop: 4 }}>
+                  <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: '700' }}>Total charged to client</Text>
+                  <Text style={{ color: colors.primary, fontSize: 16, fontWeight: '700' }}>${feeBreakdown.totalCharged.toFixed(2)}</Text>
+                </View>
+                <View style={{ backgroundColor: colors.background, borderRadius: 12, padding: 12, marginTop: 4, gap: 6 }}>
+                  <Text style={{ color: colors.muted, fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Business payout breakdown</Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ color: colors.muted, fontSize: 12 }}>Stripe processing fee (2.9% + $0.30)</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12 }}>-${feeBreakdown.stripeFee.toFixed(2)}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ color: colors.muted, fontSize: 12 }}>Business net payout</Text>
+                    <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: '600' }}>${feeBreakdown.businessNetPayout.toFixed(2)}</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
+              <TouchableOpacity
+                onPress={() => { setShowFeeBreakdown(false); setFeeBreakdown(null); }}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+              >
+                <Text style={{ color: colors.muted, fontSize: 15, fontWeight: '600' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleConfirmBehalfPayment}
+                style={{ flex: 2, paddingVertical: 14, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center' }}
+              >
+                <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '700' }}>Confirm & Charge</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </ScreenContainer>
   );

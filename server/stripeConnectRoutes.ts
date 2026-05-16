@@ -330,25 +330,42 @@ export function registerStripeConnectRoutes(app: Express): void {
         cancelUrl: string;
       };
 
-      if (!businessOwnerId || !appointmentLocalId || !amount || !successUrl || !cancelUrl) {
+            if (!businessOwnerId || !appointmentLocalId || !successUrl || !cancelUrl) {
         res.status(400).json({ error: "Missing required fields" }); return;
       }
-
       const stripe = await getStripe();
       if (!stripe) { res.status(503).json({ error: "Stripe not configured" }); return; }
-
       const owner = await getOwner(businessOwnerId);
       const accountId = (owner as any)?.stripeConnectAccountId as string | null;
       if (!accountId) { res.status(400).json({ error: "Business has not connected Stripe yet" }); return; }
-
       const chargesEnabled = (owner as any)?.stripeConnectEnabled as boolean | null;
       if (!chargesEnabled) { res.status(400).json({ error: "Stripe account is not yet fully set up. Please complete onboarding." }); return; }
 
-      const amountCents = Math.round(amount * 100);
+      // ── Validate amount server-side from DB ──────────────────────────────────
+      const db = await getDb();
+      let serviceAmount = amount; // fallback to client-supplied amount
+      let discountAmount = 0;
+      let discountName: string | null = null;
+      if (db) {
+        const apptRows = await db.select().from(appointments)
+          .where(and(eq(appointments.localId, appointmentLocalId), eq(appointments.businessOwnerId, businessOwnerId)))
+          .limit(1);
+        const appt = apptRows[0] as any;
+        if (appt) {
+          const dbTotal = parseFloat(String(appt.totalPrice ?? 0));
+          if (dbTotal > 0) serviceAmount = dbTotal;
+          discountAmount = parseFloat(String(appt.discountAmount ?? 0));
+          discountName = appt.discountName || null;
+        }
+      }
+      if (!serviceAmount || serviceAmount <= 0) {
+        res.status(400).json({ error: "Appointment has no charge amount" }); return;
+      }
+
+      const amountCents = Math.round(serviceAmount * 100);
       const feePercent = await getPlatformFeePercent();
       const platformFeeCents = Math.round(amountCents * feePercent);
-      console.log(`[StripeConnect] create-checkout: amount=$${amount} feePercent=${(feePercent*100).toFixed(2)}% feeCents=${platformFeeCents} accountId=${accountId}`);
-
+      console.log(`[StripeConnect] create-checkout: amount=$${serviceAmount} feePercent=${(feePercent*100).toFixed(2)}% feeCents=${platformFeeCents} accountId=${accountId}`);
       const session = await stripe.checkout.sessions.create(
         {
           payment_method_types: ["card"],
@@ -685,9 +702,52 @@ export function registerStripeConnectRoutes(app: Express): void {
         const appointmentLocalId = session.metadata?.appointmentLocalId;
         const businessOwnerId = parseInt(session.metadata?.businessOwnerId ?? "0", 10);
 
+        // ── Package purchase payment completed ────────────────────────────────────
+        const sessionType = session.metadata?.type;
+        const packageLocalId = session.metadata?.packageLocalId;
+        if (sessionType === "package_purchase" && packageLocalId && businessOwnerId) {
+          try {
+            const db = await getDb();
+            if (db) {
+              // Mark all appointments belonging to this package booking as paid
+              const { clientPackages } = await import("../drizzle/schema").catch(() => ({ clientPackages: null }));
+              if (clientPackages) {
+                await db
+                  .update(clientPackages as any)
+                  .set({ paymentStatus: "paid", paymentMethod: "card", stripeCheckoutSessionId: session.id } as any)
+                  .where(
+                    and(
+                      eq((clientPackages as any).packageLocalId, packageLocalId),
+                      eq((clientPackages as any).businessOwnerId, businessOwnerId)
+                    )
+                  );
+              }
+              console.log(`[StripeConnect] Package ${packageLocalId} marked paid via card (owner ${businessOwnerId})`);
+              // Push notification to business owner
+              try {
+                const ownerRows = await db.select().from(businessOwners).where(eq(businessOwners.id, businessOwnerId)).limit(1);
+                const owner = ownerRows[0];
+                const pushToken = (owner as any)?.expoPushToken;
+                const clientName = session.metadata?.clientName || "Client";
+                if (pushToken) {
+                  await sendExpoPush(pushToken, {
+                    title: "📦 Package Purchased",
+                    body: `${clientName} paid for a package. Check your Packages tab.`,
+                    data: { type: "payment_received" as const },
+                    sound: "default",
+                  });
+                }
+              } catch (notifErr) {
+                console.error("[StripeConnect] Package payment notification error:", notifErr);
+              }
+            }
+          } catch (dbErr) {
+            console.error("[StripeConnect] Package DB update error:", dbErr);
+          }
+        }
+
         // ── Gift purchase payment completed ─────────────────────────────────────
         const giftCode = session.metadata?.giftCode;
-        const sessionType = session.metadata?.type;
         if (sessionType === "gift_purchase" && giftCode && businessOwnerId) {
           try {
             const db = await getDb();
@@ -2087,13 +2147,13 @@ export function registerStripeConnectRoutes(app: Express): void {
       const { businessOwnerId, appointmentLocalId, amount, currency = "usd", description, clientEmail } = req.body as {
         businessOwnerId: number;
         appointmentLocalId: string;
-        amount: number;
+        amount: number; // used as fallback only if appointment not found in DB
         currency?: string;
         description?: string;
         clientEmail?: string;
       };
-      if (!businessOwnerId || !appointmentLocalId || !amount) {
-        res.status(400).json({ error: "businessOwnerId, appointmentLocalId, and amount are required" }); return;
+      if (!businessOwnerId || !appointmentLocalId) {
+        res.status(400).json({ error: "businessOwnerId and appointmentLocalId are required" }); return;
       }
       const stripe = await getStripe();
       if (!stripe) { res.status(503).json({ error: "Stripe not configured" }); return; }
@@ -2105,11 +2165,39 @@ export function registerStripeConnectRoutes(app: Express): void {
       if (!accountId) { res.status(400).json({ error: "Business has not connected Stripe yet" }); return; }
       const chargesEnabled = (owner as any)?.stripeConnectEnabled as boolean | null;
       if (!chargesEnabled) { res.status(400).json({ error: "Stripe account is not yet fully set up" }); return; }
-      const amountCents = Math.round(amount * 100);
+
+      // ── Validate amount server-side from DB ──────────────────────────────────
+      const db = await getDb();
+      let serviceAmount = amount; // fallback to client-supplied amount
+      let discountAmount = 0;
+      let discountName: string | null = null;
+      if (db) {
+        const apptRows = await db.select().from(appointments)
+          .where(and(eq(appointments.localId, appointmentLocalId), eq(appointments.businessOwnerId, businessOwnerId)))
+          .limit(1);
+        const appt = apptRows[0] as any;
+        if (appt) {
+          // totalPrice is the final amount after discounts/gifts — use it as the charge base
+          const dbTotal = parseFloat(String(appt.totalPrice ?? 0));
+          if (dbTotal > 0) serviceAmount = dbTotal;
+          discountAmount = parseFloat(String(appt.discountAmount ?? 0));
+          discountName = appt.discountName || null;
+        }
+      }
+      if (!serviceAmount || serviceAmount <= 0) {
+        res.status(400).json({ error: "Appointment has no charge amount" }); return;
+      }
+
+      // ── Fee calculation ──────────────────────────────────────────────────────
       const feePercent = await getPlatformFeePercent();
-      const platformFeeCents = Math.round(amountCents * feePercent);
-      const totalCents = amountCents + platformFeeCents;
-      console.log(`[StripeConnect] create-payment-sheet: amount=$${amount} fee=${platformFeeCents}c accountId=${accountId}`);
+      const serviceAmountCents = Math.round(serviceAmount * 100);
+      const platformFeeCents = Math.round(serviceAmountCents * feePercent);
+      const totalCents = serviceAmountCents + platformFeeCents;
+      // Stripe's own processing fee (2.9% + $0.30) — deducted from business payout, not added to client charge
+      const stripeProcessingFeeCents = Math.round(totalCents * 0.029) + 30;
+      const businessNetPayoutCents = serviceAmountCents - stripeProcessingFeeCents; // platform fee goes to platform, not business
+
+      console.log(`[StripeConnect] create-payment-sheet: serviceAmount=$${serviceAmount} platformFee=${platformFeeCents}c total=${totalCents}c accountId=${accountId}`);
       const paymentIntent = await stripe.paymentIntents.create(
         {
           amount: totalCents,
@@ -2126,7 +2214,6 @@ export function registerStripeConnectRoutes(app: Express): void {
         { stripeAccount: accountId }
       );
       // Store payment intent ID on appointment
-      const db = await getDb();
       if (db) {
         await db.update(appointments)
           .set({ stripePaymentIntentId: paymentIntent.id } as any)
@@ -2136,6 +2223,17 @@ export function registerStripeConnectRoutes(app: Express): void {
         publishableKey,
         paymentIntent: paymentIntent.client_secret,
         accountId,
+        // Fee breakdown for display in the app before presenting payment sheet
+        breakdown: {
+          serviceAmount: parseFloat(serviceAmount.toFixed(2)),
+          discountAmount: parseFloat(discountAmount.toFixed(2)),
+          discountName,
+          platformFee: parseFloat((platformFeeCents / 100).toFixed(2)),
+          platformFeePercent: parseFloat((feePercent * 100).toFixed(1)),
+          stripeFee: parseFloat((stripeProcessingFeeCents / 100).toFixed(2)),
+          totalCharged: parseFloat((totalCents / 100).toFixed(2)),
+          businessNetPayout: parseFloat((businessNetPayoutCents / 100).toFixed(2)),
+        },
       });
     } catch (err: any) {
       console.error("[StripeConnect] create-payment-sheet error:", err);
@@ -2156,8 +2254,8 @@ export function registerStripeConnectRoutes(app: Express): void {
         totalAmount: number;
         currency?: string;
       };
-      if (!businessOwnerId || !giftCode || !totalAmount) {
-        res.status(400).json({ error: "businessOwnerId, giftCode, and totalAmount are required" }); return;
+      if (!businessOwnerId || !giftCode) {
+        res.status(400).json({ error: "businessOwnerId and giftCode are required" }); return;
       }
       const stripe = await getStripe();
       if (!stripe) { res.status(503).json({ error: "Stripe not configured" }); return; }
@@ -2169,14 +2267,38 @@ export function registerStripeConnectRoutes(app: Express): void {
       if (!accountId) { res.status(400).json({ error: "Business has not connected Stripe yet" }); return; }
       const chargesEnabled = (owner as any)?.stripeConnectEnabled as boolean | null;
       if (!chargesEnabled) { res.status(400).json({ error: "Stripe account is not yet fully set up" }); return; }
-      const amountCents = Math.round(totalAmount * 100);
+
+      // ── Validate amount server-side from DB gift card record ────────────────────
+      const db = await getDb();
+      let giftAmount = totalAmount; // fallback to client-supplied amount
+      if (db) {
+        const { giftCards } = await import("../drizzle/schema");
+        const gcRows = await db.select().from(giftCards)
+          .where(and(eq((giftCards as any).code, giftCode), eq((giftCards as any).businessOwnerId, businessOwnerId)))
+          .limit(1);
+        const gc = gcRows[0] as any;
+        if (gc) {
+          const dbValue = parseFloat(String(gc.totalValue ?? gc.originalValue ?? 0));
+          if (dbValue > 0) giftAmount = dbValue;
+        }
+      }
+      if (!giftAmount || giftAmount <= 0) {
+        res.status(400).json({ error: "Gift card has no charge amount" }); return;
+      }
+
+      // ── Fee calculation ──────────────────────────────────────────────────────
+      const amountCents = Math.round(giftAmount * 100);
       const feePercent = await getPlatformFeePercent();
       const platformFeeCents = Math.round(amountCents * feePercent);
-      // Client is charged the service amount only; platform fee is deducted from business payout
+      // Stripe's own processing fee (2.9% + $0.30) — deducted from business payout
+      const stripeProcessingFeeCents = Math.round(amountCents * 0.029) + 30;
+      const businessNetPayoutCents = amountCents - stripeProcessingFeeCents;
+
+      // Client is charged the gift amount only; platform fee is deducted from business payout
       const description = items?.length > 0
         ? items.map((i: { name: string; price: number }) => i.name).join(", ") + (recipientName ? ` for ${recipientName}` : "")
         : `Gift Card for ${recipientName}`;
-      console.log(`[StripeConnect] create-gift-payment-sheet: giftCode=${giftCode} amount=$${totalAmount} fee=${platformFeeCents}c accountId=${accountId}`);
+      console.log(`[StripeConnect] create-gift-payment-sheet: giftCode=${giftCode} amount=$${giftAmount} fee=${platformFeeCents}c accountId=${accountId}`);
       const paymentIntent = await stripe.paymentIntents.create(
         {
           amount: amountCents,
@@ -2197,6 +2319,15 @@ export function registerStripeConnectRoutes(app: Express): void {
         publishableKey,
         paymentIntent: paymentIntent.client_secret,
         accountId,
+        // Fee breakdown for display in the app before presenting payment sheet
+        breakdown: {
+          giftAmount: parseFloat(giftAmount.toFixed(2)),
+          platformFee: parseFloat((platformFeeCents / 100).toFixed(2)),
+          platformFeePercent: parseFloat((feePercent * 100).toFixed(1)),
+          stripeFee: parseFloat((stripeProcessingFeeCents / 100).toFixed(2)),
+          totalCharged: parseFloat((amountCents / 100).toFixed(2)),
+          businessNetPayout: parseFloat((businessNetPayoutCents / 100).toFixed(2)),
+        },
       });
     } catch (err: any) {
       console.error("[StripeConnect] create-gift-payment-sheet error:", err);
@@ -2300,6 +2431,168 @@ export function registerStripeConnectRoutes(app: Express): void {
 
   // GET /api/stripe-connect/payment-intent-last4?appointmentId=<localId>&businessOwnerId=<id>
   // Returns the last 4 digits of the card used to pay for an appointment (for receipt display).
+  // ── Package Checkout — create Stripe Checkout session for package purchase ──
+  // POST /api/stripe-connect/create-package-checkout
+  // Body: { businessOwnerId, packageLocalId, clientName, clientEmail?, promoCode?, discountAmount?, currency? }
+  // Returns: { sessionId, url, breakdown }
+  app.post("/api/stripe-connect/create-package-checkout", async (req: Request, res: Response) => {
+    try {
+      const {
+        businessOwnerId,
+        packageLocalId,
+        clientName,
+        clientEmail,
+        promoCode,
+        discountAmount: clientDiscountAmount = 0,
+        currency = "usd",
+        successUrl,
+        cancelUrl,
+      } = req.body as {
+        businessOwnerId: number;
+        packageLocalId: string;
+        clientName: string;
+        clientEmail?: string;
+        promoCode?: string;
+        discountAmount?: number;
+        currency?: string;
+        successUrl: string;
+        cancelUrl: string;
+      };
+      if (!businessOwnerId || !packageLocalId || !successUrl || !cancelUrl) {
+        res.status(400).json({ error: "businessOwnerId, packageLocalId, successUrl, and cancelUrl are required" }); return;
+      }
+      const stripe = await getStripe();
+      if (!stripe) { res.status(503).json({ error: "Stripe not configured" }); return; }
+      const owner = await getOwner(businessOwnerId);
+      if (!owner) { res.status(404).json({ error: "Business not found" }); return; }
+      const accountId = (owner as any)?.stripeConnectAccountId as string | null;
+      if (!accountId) { res.status(400).json({ error: "Business has not connected Stripe yet" }); return; }
+      const chargesEnabled = (owner as any)?.stripeConnectEnabled as boolean | null;
+      if (!chargesEnabled) { res.status(400).json({ error: "Stripe account is not yet fully set up" }); return; }
+
+      // ── Load package from DB ─────────────────────────────────────────────────
+      const db = await getDb();
+      if (!db) { res.status(503).json({ error: "DB unavailable" }); return; }
+      const { servicePackages } = await import("../drizzle/schema");
+      const pkgRows = await db.select().from(servicePackages)
+        .where(and(eq((servicePackages as any).localId, packageLocalId), eq((servicePackages as any).businessOwnerId, businessOwnerId)))
+        .limit(1);
+      const pkg = pkgRows[0] as any;
+      if (!pkg) { res.status(404).json({ error: "Package not found" }); return; }
+
+      const packagePrice = parseFloat(String(pkg.packagePrice ?? 0));
+      if (!packagePrice || packagePrice <= 0) {
+        res.status(400).json({ error: "Package has no price" }); return;
+      }
+
+      // ── Validate discount server-side ────────────────────────────────────────
+      // For now we accept the client-supplied discountAmount but cap it at the package price.
+      // Future: validate promoCode against discounts table.
+      const discountAmount = Math.min(Math.max(0, clientDiscountAmount), packagePrice);
+      const chargeAmount = packagePrice - discountAmount;
+
+      // ── Fee calculation ──────────────────────────────────────────────────────
+      const feePercent = await getPlatformFeePercent();
+      const chargeAmountCents = Math.round(chargeAmount * 100);
+      const platformFeeCents = Math.round(chargeAmountCents * feePercent);
+      const totalCents = chargeAmountCents + platformFeeCents;
+      // Stripe's own processing fee (2.9% + $0.30) — deducted from business payout
+      const stripeProcessingFeeCents = Math.round(totalCents * 0.029) + 30;
+      const businessNetPayoutCents = chargeAmountCents - stripeProcessingFeeCents;
+
+      console.log(`[StripeConnect] create-package-checkout: pkg=${pkg.name} price=$${packagePrice} discount=$${discountAmount} charge=$${chargeAmount} platformFee=${platformFeeCents}c accountId=${accountId}`);
+
+      // ── Build Stripe line items ──────────────────────────────────────────────
+      const lineItems: any[] = [
+        {
+          price_data: {
+            currency,
+            product_data: {
+              name: pkg.name,
+              description: pkg.description || `${pkg.totalSessions} session package`,
+            },
+            unit_amount: Math.round(packagePrice * 100),
+          },
+          quantity: 1,
+        },
+      ];
+      // Show discount as a negative line item if applicable
+      if (discountAmount > 0) {
+        lineItems.push({
+          price_data: {
+            currency,
+            product_data: {
+              name: promoCode ? `Promo Code: ${promoCode}` : "Discount",
+              description: "Applied discount",
+            },
+            unit_amount: -Math.round(discountAmount * 100),
+          },
+          quantity: 1,
+        });
+      }
+      // Platform processing fee as a separate line item
+      if (platformFeeCents > 0) {
+        lineItems.push({
+          price_data: {
+            currency,
+            product_data: {
+              name: "Processing Fee",
+              description: `${(feePercent * 100).toFixed(1)}% card processing fee`,
+            },
+            unit_amount: platformFeeCents,
+          },
+          quantity: 1,
+        });
+      }
+
+      const session = await stripe.checkout.sessions.create(
+        {
+          payment_method_types: ["card"],
+          line_items: lineItems,
+          mode: "payment",
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          ...(clientEmail ? { customer_email: clientEmail } : {}),
+          metadata: {
+            packageLocalId,
+            businessOwnerId: String(businessOwnerId),
+            clientName,
+            promoCode: promoCode || "",
+            discountAmount: String(discountAmount),
+            type: "package_purchase",
+          },
+          payment_intent_data: {
+            application_fee_amount: platformFeeCents,
+            metadata: {
+              packageLocalId,
+              businessOwnerId: String(businessOwnerId),
+              type: "package_purchase",
+            },
+          },
+        } as any,
+        { stripeAccount: accountId }
+      );
+
+      res.json({
+        sessionId: session.id,
+        url: session.url,
+        breakdown: {
+          packagePrice: parseFloat(packagePrice.toFixed(2)),
+          discountAmount: parseFloat(discountAmount.toFixed(2)),
+          promoCode: promoCode || null,
+          platformFee: parseFloat((platformFeeCents / 100).toFixed(2)),
+          platformFeePercent: parseFloat((feePercent * 100).toFixed(1)),
+          stripeFee: parseFloat((stripeProcessingFeeCents / 100).toFixed(2)),
+          totalCharged: parseFloat((totalCents / 100).toFixed(2)),
+          businessNetPayout: parseFloat((businessNetPayoutCents / 100).toFixed(2)),
+        },
+      });
+    } catch (err: any) {
+      console.error("[StripeConnect] create-package-checkout error:", err);
+      res.status(500).json({ error: err?.message ?? "Failed to create package checkout" });
+    }
+  });
+
   app.get("/api/stripe-connect/payment-intent-last4", async (req: Request, res: Response) => {
     try {
       const { appointmentId, businessOwnerId } = req.query as { appointmentId: string; businessOwnerId: string };

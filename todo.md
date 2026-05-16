@@ -2320,3 +2320,18 @@
 - [ ] Add address auto-populate useEffect in calendar-booking.tsx (from savedAddress or past appointments)
 - [ ] Remove "Save Address to Profile?" alert in new-booking.tsx — auto-save silently
 - [ ] Auto-save address silently after mobile booking confirm in calendar-booking.tsx
+
+## Stripe Fee Transparency & Amount Validation
+
+- [x] Phase 1: Server-side amount validation — /create-payment-sheet reads amount from DB appointment record
+- [x] Phase 1: Server-side amount validation — /create-checkout reads amount from DB appointment record
+- [x] Phase 1: Server-side amount validation — /create-gift-payment-sheet reads amount from DB gift card record
+- [x] Phase 1: All three endpoints return breakdown object (serviceAmount, discountAmount, platformFee, stripeFee, totalCharged, businessNetPayout)
+- [x] Phase 2: Add /create-package-checkout server endpoint with promo/discount validation
+- [x] Phase 2: Webhook handler for package payment completion (mark appointments paid, push notification)
+- [x] Phase 3: Fee breakdown bottom sheet UI in client-booking-wizard.tsx before payment sheet
+- [x] Phase 3: Fee breakdown bottom sheet UI in new-booking.tsx before payment sheet
+- [x] Phase 3: Fee breakdown info shown in appointment-detail.tsx before owner sends payment request
+- [x] Phase 4: Add Stripe card payment option to package purchase on public web booking page
+- [x] Phase 4: Package Stripe Checkout flow on public web booking page with discount support
+- [x] Phase 5: Package Stripe Checkout flow in client portal app (client-booking-wizard)

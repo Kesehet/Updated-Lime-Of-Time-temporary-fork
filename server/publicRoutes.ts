@@ -8633,6 +8633,39 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
             btn.textContent = 'Confirm Booking';
             return;
           }
+          // If card payment selected, redirect to Stripe Checkout
+          if (selectedPaymentMethod === 'card' && pkgData.appointmentIds && pkgData.appointmentIds.length > 0 && PAYMENT_METHODS.stripeEnabled) {
+            btn.textContent = 'Redirecting to payment…';
+            var pkgSuccessUrl = window.location.origin + '/api/stripe-connect/checkout-success?session_id={CHECKOUT_SESSION_ID}&slug=' + encodeURIComponent(SLUG) + '&appointmentId=' + encodeURIComponent(pkgData.appointmentIds[0]);
+            var pkgCancelUrl = window.location.href;
+            var pkgChargedPrice = getChargedPrice();
+            var pkgCheckoutRes = await fetch('/api/stripe-connect/create-package-checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                businessOwnerId: PAYMENT_METHODS.businessOwnerId,
+                packageLocalId: selectedPackage.localId,
+                firstAppointmentId: pkgData.appointmentIds[0],
+                clientName: document.getElementById('clientName').value.trim(),
+                clientEmail: document.getElementById('clientEmail').value.trim(),
+                amount: pkgChargedPrice,
+                discountAmount: getDiscountAmount(),
+                discountName: appliedPromo ? (appliedDiscount ? appliedDiscount.name + ' + ' + appliedPromo.label : appliedPromo.label) : (appliedDiscount ? appliedDiscount.name : null),
+                successUrl: pkgSuccessUrl,
+                cancelUrl: pkgCancelUrl,
+              }),
+            });
+            const pkgCheckoutData = await pkgCheckoutRes.json();
+            if (!pkgCheckoutRes.ok || !pkgCheckoutData.url) {
+              errEl.textContent = pkgCheckoutData.error || 'Failed to create payment session. Your booking is saved — please pay in person.';
+              errEl.style.display = 'block';
+              btn.disabled = false;
+              btn.textContent = 'Confirm Booking';
+              return;
+            }
+            window.location.href = pkgCheckoutData.url;
+            return;
+          }
           // Show success
           _showStep(8);
           var receipt = document.getElementById('successReceipt');

@@ -18,7 +18,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useStore, generateId, formatDateStr, formatTime, formatDateDisplay } from "@/lib/store";
 import { useColors } from "@/hooks/use-colors";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Appointment, Client, Product, Discount, DAYS_OF_WEEK, DEFAULT_WORKING_HOURS, generateAvailableSlots, minutesToTime, timeToMinutes, getApplicableDiscount, generateConfirmationMessage, getServiceDisplayName, stripPhoneFormat, timeSlotsOverlap, PUBLIC_BOOKING_URL, formatPhoneNumber, formatFullAddress } from "@/lib/types";
 import { trpc } from "@/lib/trpc";
 import { useActiveLocation } from "@/hooks/use-active-location";
@@ -60,6 +60,22 @@ export default function NewBookingScreen() {
    const sendSmsMutation = trpc.twilio.sendSms.useMutation();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [chargingCard, setChargingCard] = useState(false);
+  // Fee breakdown modal state
+  const [feeBreakdown, setFeeBreakdown] = useState<{
+    serviceAmount: number;
+    discountAmount: number;
+    discountName: string | null;
+    platformFee: number;
+    platformFeePercent: number;
+    stripeFee: number;
+    totalCharged: number;
+    businessNetPayout: number;
+    publishableKey: string;
+    paymentIntent: string;
+    accountId: string;
+  } | null>(null);
+  const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
+  const pendingPaymentAppointmentId = useRef<string | null>(null);
   const [step, setStep] = useState<Step>(1);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(params.prefillServiceId ?? null);
@@ -799,6 +815,40 @@ export default function NewBookingScreen() {
     });
   }, [state.products]);
 
+  // Called when owner confirms the fee breakdown modal before charging client
+  const handleConfirmNewBookingPayment = useCallback(async () => {
+    if (!feeBreakdown || !pendingPaymentAppointmentId.current) return;
+    const appointmentId = pendingPaymentAppointmentId.current;
+    setShowFeeBreakdown(false);
+    setChargingCard(true);
+    try {
+      const { error: presentError } = await presentPaymentSheet();
+      if (presentError) {
+        if (presentError.code !== 'Canceled') {
+          Alert.alert('Payment Failed', presentError.message);
+        }
+        setChargingCard(false);
+        router.replace({ pathname: '/appointment-detail', params: { id: appointmentId } });
+        return;
+      }
+      // Payment succeeded — update appointment payment status
+      const paidAppt = state.appointments.find((a) => a.id === appointmentId);
+      if (paidAppt) {
+        const updatedAppt = { ...paidAppt, paymentStatus: 'paid' as const, paymentMethod: 'card' as const };
+        dispatch({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
+        syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
+      }
+      setChargingCard(false);
+      router.replace({ pathname: '/appointment-detail', params: { id: appointmentId } });
+    } catch (err: any) {
+      Alert.alert('Payment Error', err?.message ?? 'Failed to process card payment');
+      setChargingCard(false);
+    } finally {
+      setFeeBreakdown(null);
+      pendingPaymentAppointmentId.current = null;
+    }
+  }, [feeBreakdown, presentPaymentSheet, state.appointments, dispatch, syncToDb, router]);
+
   const handleBook = useCallback(async () => {
     if (!selectedServiceId || !selectedClientId || !selectedTime) return;
     // Auto-select the only location if none is selected
@@ -926,7 +976,7 @@ export default function NewBookingScreen() {
     if (selectedPaymentMethod === 'card' && firstAppointmentId && grandTotal > 0 && state.businessOwnerId) {
       setChargingCard(true);
       try {
-        const sheetData = await apiCall<{ publishableKey: string; paymentIntent: string; accountId: string }>(
+        const sheetData = await apiCall<{ publishableKey: string; paymentIntent: string; accountId: string; breakdown?: any }>(
           '/api/stripe-connect/create-payment-sheet',
           {
             method: 'POST',
@@ -952,6 +1002,14 @@ export default function NewBookingScreen() {
           setChargingCard(false);
           router.replace({ pathname: '/appointment-detail', params: { id: firstAppointmentId } });
           return;
+        }
+        // Show fee breakdown modal before presenting payment sheet
+        if (sheetData.breakdown) {
+          pendingPaymentAppointmentId.current = firstAppointmentId;
+          setFeeBreakdown({ ...sheetData.breakdown, publishableKey: sheetData.publishableKey, paymentIntent: sheetData.paymentIntent, accountId: sheetData.accountId });
+          setShowFeeBreakdown(true);
+          setChargingCard(false);
+          return; // payment continues in handleConfirmNewBookingPayment
         }
         const { error: presentError } = await presentPaymentSheet();
         if (presentError) {
@@ -2945,6 +3003,64 @@ export default function NewBookingScreen() {
               </Pressable>
             )}
           />
+        </View>
+      </Modal>
+
+      {/* ── Fee Breakdown Modal ────────────────────────────────────────── */}
+      <Modal visible={showFeeBreakdown} transparent animationType="slide" onRequestClose={() => setShowFeeBreakdown(false)}>
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: "center", marginBottom: 20 }} />
+            <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: "700", marginBottom: 4 }}>Payment Summary</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 20 }}>Review the charge breakdown before processing</Text>
+            {feeBreakdown && (
+              <View style={{ gap: 0 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                  <Text style={{ color: colors.muted, fontSize: 14 }}>Service amount</Text>
+                  <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600" }}>${feeBreakdown.serviceAmount.toFixed(2)}</Text>
+                </View>
+                {feeBreakdown.discountAmount > 0 && (
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                    <Text style={{ color: colors.success, fontSize: 14 }}>{feeBreakdown.discountName ? `Discount (${feeBreakdown.discountName})` : "Discount"}</Text>
+                    <Text style={{ color: colors.success, fontSize: 14, fontWeight: "600" }}>-${feeBreakdown.discountAmount.toFixed(2)}</Text>
+                  </View>
+                )}
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                  <Text style={{ color: colors.muted, fontSize: 14 }}>Platform fee ({feeBreakdown.platformFeePercent}%)</Text>
+                  <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600" }}>+${feeBreakdown.platformFee.toFixed(2)}</Text>
+                </View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, marginTop: 4 }}>
+                  <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "700" }}>Total charged to client</Text>
+                  <Text style={{ color: colors.primary, fontSize: 16, fontWeight: "700" }}>${feeBreakdown.totalCharged.toFixed(2)}</Text>
+                </View>
+                <View style={{ backgroundColor: colors.background, borderRadius: 12, padding: 12, marginTop: 4, gap: 6 }}>
+                  <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Business payout breakdown</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ color: colors.muted, fontSize: 12 }}>Stripe processing fee (2.9% + $0.30)</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12 }}>-${feeBreakdown.stripeFee.toFixed(2)}</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ color: colors.muted, fontSize: 12 }}>Business net payout</Text>
+                    <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: "600" }}>${feeBreakdown.businessNetPayout.toFixed(2)}</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
+              <TouchableOpacity
+                onPress={() => { setShowFeeBreakdown(false); setFeeBreakdown(null); pendingPaymentAppointmentId.current = null; }}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: colors.border, alignItems: "center" }}
+              >
+                <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600" }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleConfirmNewBookingPayment}
+                style={{ flex: 2, paddingVertical: 14, borderRadius: 14, backgroundColor: colors.primary, alignItems: "center" }}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "700" }}>Confirm & Charge</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
     </ScreenContainer>
