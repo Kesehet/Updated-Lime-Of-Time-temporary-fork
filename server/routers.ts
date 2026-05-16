@@ -2076,7 +2076,8 @@ const referralRouter = router({
       const existing = await db.getReferralByReferredOwner(input.referredBusinessOwnerId);
       if (existing) throw new Error("A referral code has already been applied to this account");
       const referral = await db.createReferral(codeRow.id, codeRow.businessOwnerId, input.referredBusinessOwnerId);
-      return { success: true, referralId: referral?.id, referralCodeId: codeRow.id, discountPercent: codeRow.discountPercent, discountMonths: codeRow.discountMonths };
+      const referrerOwner = await db.getBusinessOwnerById(codeRow.businessOwnerId);
+      return { success: true, referralId: referral?.id, referralCodeId: codeRow.id, discountPercent: codeRow.discountPercent, discountMonths: codeRow.discountMonths, referrerBusinessName: referrerOwner?.businessName ?? null };
     }),
 
   getMyReferrals: publicProcedure

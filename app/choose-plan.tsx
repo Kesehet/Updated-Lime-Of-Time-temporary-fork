@@ -41,6 +41,7 @@ export default function ChoosePlanScreen() {
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralDiscount, setReferralDiscount] = useState<{ percent: number; months: number } | null>(null);
   const [appliedReferralCodeId, setAppliedReferralCodeId] = useState<number | null>(null);
+  const [referrerBusinessName, setReferrerBusinessName] = useState<string | null>(null);
   const { state } = useStore();
 
   const applyReferralMutation = trpc.referrals.applyCode.useMutation();
@@ -355,6 +356,7 @@ export default function ChoosePlanScreen() {
                   setReferralApplied(true);
                   setReferralDiscount({ percent: result.discountPercent, months: result.discountMonths });
                   setAppliedReferralCodeId((result as any).referralCodeId ?? null);
+                  setReferrerBusinessName((result as any).referrerBusinessName ?? null);
                 } catch (e: any) {
                   setReferralError(e?.message ?? "Invalid code");
                 } finally {
@@ -381,13 +383,16 @@ export default function ChoosePlanScreen() {
           }}>
             <Text style={{ fontSize: 18 }}>🎉</Text>
             <Text style={{ flex: 1, fontSize: 13, color: "#4ade80", fontWeight: "600" }}>
-              {`Referral applied! ${referralDiscount?.percent ?? 50}% off your first ${referralDiscount?.months ?? 3} months.`}
+              {referrerBusinessName
+                ? `Referred by ${referrerBusinessName}! ${referralDiscount?.percent ?? 50}% off your first ${referralDiscount?.months ?? 3} months.`
+                : `Referral applied! ${referralDiscount?.percent ?? 50}% off your first ${referralDiscount?.months ?? 3} months.`}
             </Text>
             <Pressable
               onPress={() => {
                 setReferralApplied(false);
                 setAppliedReferralCodeId(null);
                 setReferralDiscount(null);
+                setReferrerBusinessName(null);
                 setReferralCode("");
                 setReferralError("");
               }}
