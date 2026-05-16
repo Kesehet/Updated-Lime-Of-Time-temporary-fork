@@ -2172,14 +2172,14 @@ export function registerStripeConnectRoutes(app: Express): void {
       const amountCents = Math.round(totalAmount * 100);
       const feePercent = await getPlatformFeePercent();
       const platformFeeCents = Math.round(amountCents * feePercent);
-      const totalCents = amountCents + platformFeeCents;
+      // Client is charged the service amount only; platform fee is deducted from business payout
       const description = items?.length > 0
         ? items.map((i: { name: string; price: number }) => i.name).join(", ") + (recipientName ? ` for ${recipientName}` : "")
         : `Gift Card for ${recipientName}`;
       console.log(`[StripeConnect] create-gift-payment-sheet: giftCode=${giftCode} amount=$${totalAmount} fee=${platformFeeCents}c accountId=${accountId}`);
       const paymentIntent = await stripe.paymentIntents.create(
         {
-          amount: totalCents,
+          amount: amountCents,
           currency,
           payment_method_types: ["card"],
           application_fee_amount: platformFeeCents,
@@ -2201,6 +2201,98 @@ export function registerStripeConnectRoutes(app: Express): void {
     } catch (err: any) {
       console.error("[StripeConnect] create-gift-payment-sheet error:", err);
       res.status(500).json({ error: err?.message ?? "Failed to create gift payment sheet" });
+    }
+  });
+
+  // POST /api/stripe-connect/mark-gift-paid
+  // Body: { businessOwnerId, giftCode, paymentIntentId? }
+  // Called immediately after Stripe native payment sheet succeeds to mark the gift card as paid.
+  // This is needed because the webhook may not fire reliably for connected account events.
+  app.post("/api/stripe-connect/mark-gift-paid", async (req: Request, res: Response) => {
+    try {
+      const { businessOwnerId, giftCode } = req.body as {
+        businessOwnerId: number;
+        giftCode: string;
+      };
+      if (!businessOwnerId || !giftCode) {
+        res.status(400).json({ error: "businessOwnerId and giftCode are required" }); return;
+      }
+      const db = await getDb();
+      if (!db) { res.status(503).json({ error: "DB unavailable" }); return; }
+      const { giftCards } = await import("../drizzle/schema");
+      await db
+        .update(giftCards)
+        .set({ paymentStatus: "paid", paymentMethod: "card" } as any)
+        .where(and(eq((giftCards as any).code, giftCode), eq((giftCards as any).businessOwnerId, businessOwnerId)));
+      console.log(`[StripeConnect] Gift ${giftCode} marked paid via mark-gift-paid (owner ${businessOwnerId})`);
+      // Push notification to business owner
+      try {
+        const ownerRows = await db.select().from(businessOwners).where(eq(businessOwners.id, businessOwnerId)).limit(1);
+        const owner = ownerRows[0];
+        const pushToken = (owner as any)?.expoPushToken;
+        if (pushToken) {
+          await sendExpoPush(pushToken, {
+            title: "🎁 Gift Card Purchased",
+            body: `A gift card (${giftCode}) was paid via card. Check your Gifts tab.`,
+            data: { type: "payment_received" as const },
+            sound: "default",
+          });
+        }
+      } catch (notifErr) {
+        console.error("[StripeConnect] Gift payment notification error (mark-gift-paid):", notifErr);
+      }
+      res.json({ ok: true });
+    } catch (err: any) {
+      console.error("[StripeConnect] mark-gift-paid error:", err);
+      res.status(500).json({ error: err?.message ?? "Failed to mark gift as paid" });
+    }
+  });
+
+  // GET /api/stripe-connect/gift-checkout-success
+  // Query: { giftCode, bizOwnerId, redirectBase }
+  // Called by Stripe Checkout successUrl after a web gift card payment completes.
+  // Marks the gift as paid and redirects to the gift confirmation page.
+  app.get("/api/stripe-connect/gift-checkout-success", async (req: Request, res: Response) => {
+    try {
+      const { giftCode, bizOwnerId, redirectBase } = req.query as { giftCode: string; bizOwnerId: string; redirectBase?: string };
+      if (giftCode && bizOwnerId) {
+        const db = await getDb();
+        if (db) {
+          const { giftCards } = await import("../drizzle/schema");
+          await db
+            .update(giftCards)
+            .set({ paymentStatus: "paid", paymentMethod: "card" } as any)
+            .where(and(eq((giftCards as any).code, giftCode), eq((giftCards as any).businessOwnerId, parseInt(bizOwnerId, 10))));
+          console.log(`[StripeConnect] Gift ${giftCode} marked paid via gift-checkout-success (owner ${bizOwnerId})`);
+          // Push notification to business owner
+          try {
+            const ownerRows = await db.select().from(businessOwners).where(eq(businessOwners.id, parseInt(bizOwnerId, 10))).limit(1);
+            const owner = ownerRows[0];
+            const pushToken = (owner as any)?.expoPushToken;
+            if (pushToken) {
+              await sendExpoPush(pushToken, {
+                title: "🎁 Gift Card Purchased",
+                body: `A gift card (${giftCode}) was paid via card. Check your Gifts tab.`,
+                data: { type: "payment_received" as const },
+                sound: "default",
+              });
+            }
+          } catch (notifErr) {
+            console.error("[StripeConnect] Gift payment notification error (gift-checkout-success):", notifErr);
+          }
+        }
+      }
+      // Redirect to the gift confirmation page
+      const base = (redirectBase ? decodeURIComponent(redirectBase) : "").replace(/\/$/, "");
+      const confirmUrl = base
+        ? `${base}/client-gift-confirmation?giftCode=${encodeURIComponent(giftCode ?? "")}&paymentMethod=card&paid=1`
+        : `/api/gift/${encodeURIComponent(giftCode ?? "")}?payment=success`;
+      res.redirect(302, confirmUrl);
+    } catch (err: any) {
+      console.error("[StripeConnect] gift-checkout-success error:", err);
+      // Even on error, redirect to gift page so user isn't stranded
+      const giftCode = req.query.giftCode as string ?? "";
+      res.redirect(302, `/api/gift/${encodeURIComponent(giftCode)}?payment=success`);
     }
   });
 

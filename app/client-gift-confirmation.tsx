@@ -109,6 +109,14 @@ export default function ClientGiftConfirmationScreen() {
           }
           return;
         }
+        // Immediately mark gift as paid in DB (don't rely solely on webhook)
+        try {
+          await fetch(`${apiBase}/api/stripe-connect/mark-gift-paid`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ businessOwnerId: Number(businessOwnerId), giftCode }),
+          });
+        } catch { /* non-blocking */ }
         Alert.alert("Payment Successful", "Your gift card payment has been processed!");
       } else {
         // Web: open Stripe Checkout in browser

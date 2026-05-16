@@ -442,6 +442,7 @@ export default function ClientBuyGiftScreen() {
             const sheetData = await sheetRes.json();
             if (!sheetRes.ok || !sheetData?.paymentIntent) {
               Alert.alert("Payment Error", sheetData?.error ?? "Failed to start card payment.");
+              setSubmitting(false);
               return;
             }
             const { error: initError } = await initPaymentSheet({
@@ -450,26 +451,45 @@ export default function ClientBuyGiftScreen() {
               merchantDisplayName: businessName || "Business",
               style: "alwaysDark",
             });
-            if (initError) { Alert.alert("Payment Error", initError.message); return; }
+            if (initError) { Alert.alert("Payment Error", initError.message); setSubmitting(false); return; }
             const { error: presentError } = await presentPaymentSheet();
             if (presentError) {
               if (presentError.code !== "Canceled") Alert.alert("Payment Failed", presentError.message);
+              setSubmitting(false);
               return;
             }
-            // Payment succeeded — fetch card last4 for receipt display
+            // Payment sheet succeeded — immediately mark gift as paid in DB
+            // (don't rely solely on webhook since connected account events may not reach platform webhook)
             try {
-              const last4Res = await fetch(
-                `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(result.code ?? "")}&businessOwnerId=${encodeURIComponent(String(bizOwnerId))}`,
-              );
-              if (last4Res.ok) {
-                const { last4, brand } = await last4Res.json();
-                if (last4) cardLast4Ref.current = { last4, brand: brand ?? "card" };
-              }
-            } catch { /* non-blocking */ }
+              await fetch(`${apiBase}/api/stripe-connect/mark-gift-paid`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  businessOwnerId: bizOwnerId,
+                  giftCode: result.code,
+                }),
+              });
+            } catch { /* non-blocking — webhook will also handle this */ }
+            // Navigate to confirmation
+            router.replace({
+              pathname: "/client-gift-confirmation",
+              params: {
+                giftCode: result.code ?? "",
+                shareLink: result.shareLink ?? "",
+                totalValue: String(result.totalValue ?? totalValue),
+                recipientName: recipientName.trim(),
+                businessName,
+                businessSlug: slug,
+                paymentMethod,
+                businessOwnerId: String(bizOwnerId ?? ""),
+                cardLast4: cardLast4Ref.current?.last4 ?? "",
+                cardBrand: cardLast4Ref.current?.brand ?? "",
+              },
+            } as any);
           } else {
-            // Web: open Stripe Checkout in browser
+            // Web: redirect to Stripe Checkout — the successUrl will bring the user back
             const origin = apiBase.replace(/\/$/, "");
-            const successUrl = `${origin}/api/gift/${encodeURIComponent(result.code ?? "")}?payment=success`;
+            const successUrl = `${origin}/api/stripe-connect/gift-checkout-success?giftCode=${encodeURIComponent(result.code ?? "")}&bizOwnerId=${encodeURIComponent(String(bizOwnerId))}&redirectBase=${encodeURIComponent(apiBase)}`;
             const cancelUrl = `${origin}/api/buy-gift/${slug}`;
             const stripeRes = await fetch(`${apiBase}/api/stripe-connect/create-gift-checkout`, {
               method: "POST",
@@ -486,32 +506,21 @@ export default function ClientBuyGiftScreen() {
             });
             if (stripeRes.ok) {
               const { url } = await stripeRes.json();
-              if (url) { window.open(url, "_blank"); } else { Alert.alert("Payment Error", "Could not get payment link."); }
+              if (url) {
+                // Redirect to Stripe Checkout — user will be sent to successUrl after payment
+                if (typeof window !== "undefined") window.location.href = url;
+              } else {
+                Alert.alert("Payment Error", "Could not get payment link.");
+              }
             } else {
               const errData = await stripeRes.json().catch(() => ({}));
               Alert.alert("Payment Error", (errData as any)?.error ?? "Failed to start card payment.");
             }
+            setSubmitting(false);
           }
-           // Navigate to confirmation — gift is already created
-          // Payment status will be updated by Stripe webhook when payment completes
-          router.replace({
-            pathname: "/client-gift-confirmation",
-            params: {
-              giftCode: result.code ?? "",
-              shareLink: result.shareLink ?? "",
-              totalValue: String(result.totalValue ?? totalValue),
-              recipientName: recipientName.trim(),
-              businessName,
-              businessSlug: slug,
-              paymentMethod,
-              businessOwnerId: String(bizOwnerId ?? ""),
-              cardLast4: cardLast4Ref.current?.last4 ?? "",
-              cardBrand: cardLast4Ref.current?.brand ?? "",
-            },
-          } as any);
-        } catch {
+        } catch (err: any) {
           // Stripe call failed — gift is already created, navigate to confirmation anyway
-          Alert.alert("Payment Error", "Could not connect to payment service. Your gift was created but payment was not completed. Please contact the business to arrange payment.");
+          Alert.alert("Payment Error", `Could not connect to payment service. Your gift was created but payment was not completed.\nError: ${err?.message ?? "Unknown error"}\n\nPlease contact the business to arrange payment.`);
           router.replace({
             pathname: "/client-gift-confirmation",
             params: {
