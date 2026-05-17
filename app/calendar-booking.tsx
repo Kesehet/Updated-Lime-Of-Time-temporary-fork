@@ -276,10 +276,16 @@ export default function CalendarBookingScreen() {
     [state.locations, selectedLocationId]
   );
 
-  const totalDuration = useMemo(
-    () => selectedServices.reduce((s, i) => s + i.duration, 0) + cart.reduce((s, i) => s + i.duration, 0),
-    [selectedServices, cart]
-  );
+  const isMobileService = selectedService?.serviceType === 'mobile';
+
+  const totalDuration = useMemo(() => {
+    const baseDur = selectedServices.reduce((s, i) => s + i.duration, 0) + cart.reduce((s, i) => s + i.duration, 0);
+    // Add travel duration (round trip) for mobile services
+    if (isMobileService && (selectedService as any)?.travelDuration > 0) {
+      return baseDur + (selectedService as any).travelDuration * 2;
+    }
+    return baseDur;
+  }, [selectedServices, cart, isMobileService, selectedService]);
 
   const servicePrice = useMemo(() => {
     if (!selectedService) return 0;
@@ -292,9 +298,11 @@ export default function CalendarBookingScreen() {
   );
 
   const effectiveStep = useMemo(() => {
+    const bufferMin = (state.settings as any).bufferTime ?? 0;
+    const autoStep = Math.max(5, totalDuration + bufferMin);
     const configured = (state.settings as any).slotInterval ?? 0;
-    return configured > 0 ? configured : Math.min(totalDuration, 30);
-  }, [(state.settings as any).slotInterval, totalDuration]);
+    return configured > 0 ? configured : autoStep;
+  }, [(state.settings as any).slotInterval, (state.settings as any).bufferTime, totalDuration]);
 
   const locationWorkingHours = useMemo(() => {
     if (

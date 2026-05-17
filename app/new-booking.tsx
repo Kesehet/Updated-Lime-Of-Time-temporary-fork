@@ -361,19 +361,26 @@ export default function NewBookingScreen() {
   }, [selectedServiceId, getServiceById]);
 
   const selectedClient = selectedClientId ? getClientById(selectedClientId) : null;
+  const isMobileService = selectedService?.serviceType === 'mobile';
 
-  // Total duration includes primary service/package + cart items
+  // Total duration includes primary service/package + cart items + travel time (round trip) for mobile services
   const totalDuration = useMemo(() => {
+    let baseDur: number;
     if (selectedPackage) {
       const pkgDur = selectedPackage.serviceIds
         .map((id) => state.services.find((s) => s.id === id))
         .filter(Boolean)
         .reduce((sum, sv) => sum + (sv?.duration ?? 0), 0);
-      return pkgDur + cart.reduce((sum, item) => sum + item.duration, 0);
+      baseDur = pkgDur + cart.reduce((sum, item) => sum + item.duration, 0);
+    } else {
+      baseDur = (selectedService?.duration ?? state.settings.defaultDuration) + cart.reduce((sum, item) => sum + item.duration, 0);
     }
-    const baseDur = selectedService?.duration ?? state.settings.defaultDuration;
-    return baseDur + cart.reduce((sum, item) => sum + item.duration, 0);
-  }, [selectedService, selectedPackage, cart, state.settings.defaultDuration, state.services]);
+    // Add travel duration (round trip) for mobile services
+    if (isMobileService && (selectedService as any)?.travelDuration > 0) {
+      baseDur += (selectedService as any).travelDuration * 2;
+    }
+    return baseDur;
+  }, [selectedService, selectedPackage, cart, state.settings.defaultDuration, state.services, isMobileService]);
 
   const subtotal = useMemo(() => {
     const basePrice = selectedPackage
@@ -408,7 +415,6 @@ export default function NewBookingScreen() {
   }, [appliedDiscount, subtotal]);
 
   const totalPrice = subtotal - discountAmount;
-  const isMobileService = selectedService?.serviceType === 'mobile';
   const travelFeeAmount = isMobileService && clientAddress.trim()
     ? (selectedService?.distanceFeeEnabled && dynamicTravelFee != null
         ? dynamicTravelFee

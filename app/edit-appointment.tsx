@@ -187,7 +187,12 @@ export default function EditAppointmentScreen() {
     const extrasDur = editExtraItems
       .filter(e => e.type === 'service')
       .reduce((s, e) => s + e.duration, 0);
-    return primaryDur + extrasDur;
+    let total = primaryDur + extrasDur;
+    // Add travel duration (round trip) for mobile services
+    if (primaryService?.serviceType === 'mobile' && (primaryService as any)?.travelDuration > 0) {
+      total += (primaryService as any).travelDuration * 2;
+    }
+    return total;
   }, [primaryService, appointment, editExtraItems]);
 
   const duration = totalEditDuration;

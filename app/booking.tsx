@@ -315,22 +315,31 @@ export default function PublicBookingScreen() {
     setClientPhone(formatPhoneNumber(text));
   };
 
-  // Resolve effective duration: package total or service duration
+  // Resolve effective duration: package total or service duration + travel time (round trip) for mobile services
   const effectiveDuration = useMemo(() => {
+    let dur: number;
     if (selectedPackage) {
-      return selectedPackage.serviceIds
+      dur = selectedPackage.serviceIds
         .map((id) => state.services.find((s) => s.id === id))
         .filter(Boolean)
         .reduce((sum, sv) => sum + (sv?.duration ?? 0), 0) || state.settings.defaultDuration;
+    } else {
+      dur = selectedService?.duration ?? state.settings.defaultDuration;
     }
-    return selectedService?.duration ?? state.settings.defaultDuration;
-  }, [selectedPackage, selectedService, state.services, state.settings.defaultDuration]);
+    // Add travel duration (round trip) for mobile services
+    if (isMobileService && (selectedService as any)?.travelDuration > 0) {
+      dur += (selectedService as any).travelDuration * 2;
+    }
+    return dur;
+  }, [selectedPackage, selectedService, state.services, state.settings.defaultDuration, isMobileService]);
 
-  // Effective slot step: use configured slotInterval when non-zero, else auto (service duration capped at 30)
+  // Effective slot step: use configured slotInterval when non-zero, else auto (duration + buffer)
   const effectiveStep = useMemo(() => {
+    const bufferMin = (state.settings as any).bufferTime ?? 0;
+    const autoStep = Math.max(5, effectiveDuration + bufferMin);
     const configured = (state.settings as any).slotInterval ?? 0;
-    return configured > 0 ? configured : Math.min(effectiveDuration, 30);
-  }, [(state.settings as any).slotInterval, effectiveDuration]);
+    return configured > 0 ? configured : autoStep;
+  }, [(state.settings as any).slotInterval, (state.settings as any).bufferTime, effectiveDuration]);
 
   // Generate available time slots using location-scoped data
   const timeSlots = useMemo(() => {
