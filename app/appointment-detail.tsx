@@ -1542,10 +1542,10 @@ Would you also like to charge a no-show fee via Stripe?`,
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <View style={{
                   paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
-                  backgroundColor: appointment.paymentStatus === 'paid' ? colors.success + '20' : isGiftFullyCovered ? colors.success + '20' : appointment.paymentStatus === 'pending_cash' ? '#FF980020' : colors.warning + '20',
+                  backgroundColor: appointment.paymentStatus === 'paid' ? colors.success + '20' : isGiftFullyCovered ? colors.success + '20' : appointment.paymentMethod === 'pay_later' ? '#D9770618' : appointment.paymentStatus === 'pending_cash' ? '#FF980020' : colors.warning + '20',
                 }}>
-                  <Text style={{ fontSize: fs.xs, fontWeight: '700', color: appointment.paymentStatus === 'paid' ? colors.success : isGiftFullyCovered ? colors.success : appointment.paymentStatus === 'pending_cash' ? '#FF9800' : colors.warning }}>
-                    {appointment.paymentStatus === 'paid' ? '✓ Paid' : isGiftFullyCovered ? '🎁 Gift' : appointment.paymentStatus === 'pending_cash' ? 'Cash — Pending' : 'Unpaid'}
+                  <Text style={{ fontSize: fs.xs, fontWeight: '700', color: appointment.paymentStatus === 'paid' ? colors.success : isGiftFullyCovered ? colors.success : appointment.paymentMethod === 'pay_later' ? '#D97706' : appointment.paymentStatus === 'pending_cash' ? '#FF9800' : colors.warning }}>
+                    {appointment.paymentStatus === 'paid' ? '✓ Paid' : isGiftFullyCovered ? '🎁 Gift' : appointment.paymentMethod === 'pay_later' ? (() => { const svcForDetail = getServiceById(appointment.serviceId); return (svcForDetail as any)?.serviceType === 'mobile' ? '🤝 Pay After Service' : '🏪 Pay In Store'; })() : appointment.paymentStatus === 'pending_cash' ? 'Cash — Pending' : 'Unpaid'}
                   </Text>
                 </View>
                 {/* Edit Payment button */}

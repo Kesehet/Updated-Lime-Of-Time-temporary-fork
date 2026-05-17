@@ -106,15 +106,18 @@ export default function BookingsScreen() {
   );
 
   // ─── Filter state ─────────────────────────────────────────────────────
-  type MethodFilterKey = "cash" | "zelle" | "venmo" | "cashapp" | "card";
+  type MethodFilterKey = "cash" | "zelle" | "venmo" | "cashapp" | "card" | "pay_later";
   const METHOD_FILTER_OPTIONS: { key: MethodFilterKey; label: string; color: string }[] = [
     { key: "cash", label: "Cash", color: "#22C55E" },
     { key: "zelle", label: "Zelle", color: "#6600CC" },
     { key: "venmo", label: "Venmo", color: "#008CFF" },
     { key: "cashapp", label: "CashApp", color: "#00D632" },
     { key: "card", label: "Card", color: "#635BFF" },
+    { key: "pay_later", label: "Pay Later", color: "#D97706" },
   ];
   const [methodFilter, setMethodFilter] = useState<MethodFilterKey | null>(null);
+  // Pay-later sub-filter for Unpaid tab
+  const [unpaidPayLaterFilter, setUnpaidPayLaterFilter] = useState(false);
   // Service type filter: null = all, 'in_store' = in-store only, 'mobile' = mobile only
   const [serviceTypeFilter, setServiceTypeFilter] = useState<'in_store' | 'mobile' | null>(null);
 
@@ -135,6 +138,7 @@ export default function BookingsScreen() {
   const setActiveFilterPersisted = useCallback((key: FilterKey) => {
     setActiveFilter(key);
     AsyncStorage.setItem(FILTER_STORAGE_KEY, key).catch(() => {});
+    if (key !== "unpaid") setUnpaidPayLaterFilter(false);
   }, []);
 
   // Restore persisted filter on mount (only if no param was passed)
@@ -460,11 +464,14 @@ export default function BookingsScreen() {
         result = base.filter((a) => a.status === "confirmed" && a.date > todayStr)
           .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
         break;
-      case "unpaid":
-        result = base
-          .filter((a) => a.status !== "cancelled" && a.paymentStatus !== "paid")
-          .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+      case "unpaid": {
+        const unpaidBase = base.filter((a) => a.status !== "cancelled" && a.paymentStatus !== "paid");
+        result = (unpaidPayLaterFilter
+          ? unpaidBase.filter((a) => a.paymentMethod === "pay_later")
+          : unpaidBase
+        ).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
         break;
+      }
       case "paid": {
         const paidList = base.filter((a) => a.paymentStatus === "paid");
         const methodFiltered = methodFilter ? paidList.filter((a) => a.paymentMethod === methodFilter) : paidList;
@@ -508,7 +515,7 @@ export default function BookingsScreen() {
       });
     }
     return result;
-  }, [locationAppointments, activeFilter, methodFilter, todayStr, selectedDateFilter, packageGroupFilter, serviceTypeFilter, getServiceById]);
+  }, [locationAppointments, activeFilter, methodFilter, unpaidPayLaterFilter, todayStr, selectedDateFilter, packageGroupFilter, serviceTypeFilter, getServiceById]);
 
   // ─── Grouped sections ─────────────────────────────────────────────────
 
@@ -644,6 +651,17 @@ export default function BookingsScreen() {
               <Text style={{ fontSize: fs.xs, fontWeight: "600", color: "#C2410C" }}>💰 Payment Sent</Text>
             </View>
           )}
+          {appt.paymentMethod === "pay_later" && appt.paymentStatus !== "paid" && (() => {
+            const svcForBadge = getServiceById(appt.serviceId);
+            const isMobile = (svcForBadge as any)?.serviceType === 'mobile';
+            return (
+              <View style={{ backgroundColor: "#FEF3C718", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, borderWidth: 1, borderColor: "#F59E0B50" }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: "#D97706" }}>
+                  {isMobile ? "🤝 Pay After Service" : "🏪 Pay In Store"}
+                </Text>
+              </View>
+            );
+          })()}
           {hasMultiLoc && appt.locationId && (() => {
             const loc = getLocationById(appt.locationId);
             if (!loc) return null;
@@ -1021,6 +1039,40 @@ export default function BookingsScreen() {
           <Text style={{ fontSize: fs.xs, fontWeight: serviceTypeFilter === 'mobile' ? "700" : "500", color: serviceTypeFilter === 'mobile' ? "#0891b2" : colors.muted }}>🚗 Mobile</Text>
         </Pressable>
       </View>
+      {/* Pay Later sub-filter (only for Unpaid) */}
+      {activeFilter === "unpaid" && (() => {
+        const payLaterCount = locationAppointments.filter(
+          (a) => a.status !== "cancelled" && a.paymentStatus !== "paid" && a.paymentMethod === "pay_later"
+        ).length;
+        if (payLaterCount === 0) return null;
+        return (
+          <View style={{ paddingHorizontal: hp, marginBottom: 10, flexDirection: 'row', gap: 8 }}>
+            <Pressable
+              onPress={() => setUnpaidPayLaterFilter(false)}
+              style={({ pressed }) => [styles.filterChip, {
+                backgroundColor: !unpaidPayLaterFilter ? colors.primary + "18" : colors.surface,
+                borderColor: !unpaidPayLaterFilter ? colors.primary : colors.border,
+                opacity: pressed ? 0.7 : 1,
+              }]}
+            >
+              <Text style={{ fontSize: fs.xs, fontWeight: !unpaidPayLaterFilter ? "700" : "500", color: !unpaidPayLaterFilter ? colors.primary : colors.muted }}>All Unpaid</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setUnpaidPayLaterFilter(true)}
+              style={({ pressed }) => [styles.filterChip, {
+                backgroundColor: unpaidPayLaterFilter ? "#D9770618" : colors.surface,
+                borderColor: unpaidPayLaterFilter ? "#D97706" : colors.border,
+                opacity: pressed ? 0.7 : 1,
+              }]}
+            >
+              <Text style={{ fontSize: fs.xs, fontWeight: unpaidPayLaterFilter ? "700" : "500", color: unpaidPayLaterFilter ? "#D97706" : colors.muted }}>
+                🏪 Pay Later ({payLaterCount})
+              </Text>
+            </Pressable>
+          </View>
+        );
+      })()}
+
       {/* Method sub-filter (only for Paid) */}
       {activeFilter === "paid" && (
         <View style={{ paddingHorizontal: hp, marginBottom: 12 }}>
