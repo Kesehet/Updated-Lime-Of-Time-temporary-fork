@@ -10,6 +10,7 @@ import {
   Image,
   Platform,
   KeyboardAvoidingView,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -17,7 +18,7 @@ import { useStore, formatTime, formatDateStr } from "@/lib/store";
 import { useColors } from "@/hooks/use-colors";
 import { useResponsive } from "@/hooks/use-responsive";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import {
   DAYS_OF_WEEK,
   DEFAULT_WORKING_HOURS,
@@ -97,6 +98,85 @@ export default function EditAppointmentScreen() {
   const [editedClientAddress, setEditedClientAddress] = useState<string>(appointment?.clientAddress ?? '');
   const originalClientAddress = appointment?.clientAddress ?? '';
   const addressChanged = editedClientAddress.trim() !== originalClientAddress.trim();
+
+  // ── Travel fee auto-recalculation ─────────────────────────────────────
+  const [suggestedTravelFee, setSuggestedTravelFee] = useState<number | null>(null);
+  const [travelFeeLoading, setTravelFeeLoading] = useState(false);
+  const [travelFeeRouteInfo, setTravelFeeRouteInfo] = useState<string | null>(null);
+
+  // Recalculate travel fee whenever the edited address changes (debounced)
+  useEffect(() => {
+    const isMobileSvc = primaryService?.serviceType === 'mobile' || service?.serviceType === 'mobile';
+    if (!isMobileSvc || !addressChanged || !editedClientAddress.trim()) {
+      setSuggestedTravelFee(null);
+      setTravelFeeRouteInfo(null);
+      return;
+    }
+    // Build business address from first active location or profile
+    const biz = state.settings;
+    const profile = (biz as any).profile;
+    const locs = state.locations;
+    const bizLoc = locs.length > 0 ? locs[0] : null;
+    const bizAddr = bizLoc
+      ? [bizLoc.address, bizLoc.city, bizLoc.state, bizLoc.zipCode].filter(Boolean).join(', ')
+      : [profile?.address, profile?.city, profile?.state, profile?.zipCode].filter(Boolean).join(', ');
+    if (!bizAddr) return;
+
+    let cancelled = false;
+    const geocode = async (addr: string): Promise<[number, number] | null> => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1`,
+          { headers: { 'User-Agent': 'LimeOfTime/1.0' } }
+        );
+        const data = await res.json();
+        if (!data || data.length === 0) return null;
+        return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+      } catch { return null; }
+    };
+
+    const run = async () => {
+      setTravelFeeLoading(true);
+      setSuggestedTravelFee(null);
+      setTravelFeeRouteInfo(null);
+      const [origin, dest] = await Promise.all([geocode(bizAddr), geocode(editedClientAddress.trim())]);
+      if (cancelled) return;
+      if (!origin || !dest) { setTravelFeeLoading(false); return; }
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${origin[0]},${origin[1]};${dest[0]},${dest[1]}?overview=false`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (cancelled) return;
+        if (data?.routes?.[0]) {
+          const route = data.routes[0];
+          const mins = Math.round(route.duration / 60);
+          const distMiles = (route.distance as number) / 1609.344;
+          setTravelFeeRouteInfo(`~${mins} min drive · ${distMiles.toFixed(1)} mi`);
+          // Calculate suggested fee
+          const svc = primaryService ?? service;
+          if ((svc as any)?.distanceFeeEnabled) {
+            const rate = (svc as any).travelRatePerMile ?? 0.67;
+            const freeThreshold = (svc as any).freeMiles ?? 0;
+            const billableMiles = Math.max(0, distMiles - freeThreshold);
+            let fee = billableMiles * rate;
+            if ((svc as any).minTravelFee != null && fee < (svc as any).minTravelFee && billableMiles > 0) {
+              fee = (svc as any).minTravelFee;
+            }
+            setSuggestedTravelFee(Math.round(fee * 100) / 100);
+          } else if ((svc as any)?.travelFee != null && Number((svc as any).travelFee) > 0) {
+            // Flat fee from service — suggest same flat fee
+            setSuggestedTravelFee(Number((svc as any).travelFee));
+          } else {
+            setSuggestedTravelFee(0);
+          }
+        }
+      } catch { /* ignore */ }
+      setTravelFeeLoading(false);
+    };
+
+    const debounce = setTimeout(run, 900);
+    return () => { cancelled = true; clearTimeout(debounce); };
+  }, [editedClientAddress, addressChanged]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Closed-day tooltip
   const [closedDayMsg, setClosedDayMsg] = useState<string | null>(null);
@@ -363,10 +443,21 @@ export default function EditAppointmentScreen() {
     };
 
     // If address changed on a confirmed mobile appointment, warn about travel fee
-    if (isMobileSvc && addressChanged && appointment.status === 'confirmed' && appointment.travelFee != null && Number(appointment.travelFee) > 0) {
+    if (isMobileSvc && addressChanged && appointment.status === 'confirmed') {
+      const currentFee = appointment.travelFee != null ? Number(appointment.travelFee) : null;
+      let msg = 'The client address has changed.';
+      if (currentFee != null && currentFee > 0) {
+        msg += ` Current travel fee: $${currentFee.toFixed(2)}.`;
+      }
+      if (suggestedTravelFee != null && travelFeeRouteInfo) {
+        msg += `\n\nSuggested new fee based on new address: $${suggestedTravelFee.toFixed(2)} (${travelFeeRouteInfo}).`;
+        msg += '\n\nYou can apply the suggested fee from the address card, or save now and update it later.';
+      } else if (currentFee != null && currentFee > 0) {
+        msg += ' You may need to update the travel fee after saving.';
+      }
       Alert.alert(
         'Address Changed',
-        `The client address has changed. The current travel fee is $${Number(appointment.travelFee).toFixed(2)}. You may need to update the travel fee in the appointment detail after saving.`,
+        msg,
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Save Anyway', onPress: doSave },
@@ -377,7 +468,8 @@ export default function EditAppointmentScreen() {
 
     doSave();
   }, [appointment, selectedDate, selectedTime, selectedLocationId, activeLocations.length,
-      dispatch, syncToDb, router, editedClientAddress, addressChanged, primaryService, service, totalEditDuration, editExtraItems, newTotal]);
+      dispatch, syncToDb, router, editedClientAddress, addressChanged, primaryService, service, totalEditDuration, editExtraItems, newTotal,
+      suggestedTravelFee, travelFeeRouteInfo]);
 
   // ── Guard: appointment not found ───────────────────────────────────────
   if (!appointment) {
@@ -1276,12 +1368,52 @@ export default function EditAppointmentScreen() {
                 textAlignVertical: 'top',
               }}
             />
-            {addressChanged && appointment?.travelFee != null && Number(appointment.travelFee) > 0 && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, backgroundColor: colors.warning + '12', borderRadius: 10, padding: 10 }}>
-                <Text style={{ fontSize: 14 }}>⚠️</Text>
-                <Text style={{ fontSize: fs.xs, color: colors.warning, flex: 1 }}>
-                  Address changed — current travel fee is ${Number(appointment.travelFee).toFixed(2)}. Review the travel fee after saving.
-                </Text>
+            {/* Travel fee recalculation panel */}
+            {addressChanged && (
+              <View style={{ marginTop: 10 }}>
+                {travelFeeLoading ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 10, padding: 10 }}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={{ fontSize: fs.xs, color: colors.muted }}>Calculating travel distance…</Text>
+                  </View>
+                ) : travelFeeRouteInfo != null ? (
+                  <View style={{ backgroundColor: colors.primary + '10', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.primary + '30' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                      <Text style={{ fontSize: 14 }}>🚗</Text>
+                      <Text style={{ fontSize: fs.xs, color: colors.primary, fontWeight: '600', flex: 1 }}>{travelFeeRouteInfo}</Text>
+                    </View>
+                    {suggestedTravelFee != null && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted }}>Current fee: <Text style={{ fontWeight: '700', color: colors.foreground }}>${appointment?.travelFee != null ? Number(appointment.travelFee).toFixed(2) : '—'}</Text></Text>
+                          <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>Suggested fee: <Text style={{ fontWeight: '800', color: suggestedTravelFee > 0 ? colors.success : colors.muted }}>${suggestedTravelFee.toFixed(2)}</Text></Text>
+                        </View>
+                        <Pressable
+                          onPress={() => {
+                            if (!appointment) return;
+                            const updated = { ...appointment, travelFee: suggestedTravelFee };
+                            dispatch({ type: 'UPDATE_APPOINTMENT', payload: updated });
+                            syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updated });
+                            Alert.alert('Travel Fee Updated', `Travel fee has been updated to $${suggestedTravelFee.toFixed(2)}.`);
+                          }}
+                          style={({ pressed }) => ([
+                            { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center' },
+                            pressed && { opacity: 0.75 },
+                          ])}
+                        >
+                          <Text style={{ fontSize: fs.xs, fontWeight: '700', color: '#fff' }}>Apply ${suggestedTravelFee.toFixed(2)}</Text>
+                        </Pressable>
+                      </View>
+                    )}
+                  </View>
+                ) : appointment?.travelFee != null && Number(appointment.travelFee) > 0 ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.warning + '12', borderRadius: 10, padding: 10 }}>
+                    <Text style={{ fontSize: 14 }}>⚠️</Text>
+                    <Text style={{ fontSize: fs.xs, color: colors.warning, flex: 1 }}>
+                      Address changed — current travel fee is ${Number(appointment.travelFee).toFixed(2)}. Could not calculate route.
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             )}
           </View>
