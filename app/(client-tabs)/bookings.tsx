@@ -144,18 +144,18 @@ export default function BookingsScreen() {
     if (!reviewAppt) return;
     setSubmittingReview(true);
     try {
-      const apiBase = (await import("@/constants/oauth")).getApiBaseUrl();
-      const res = await fetch(`${apiBase}/api/public/business/${reviewAppt.businessSlug}/review`, {
+      // Use the authenticated client review endpoint so the review is linked
+      // to the specific appointment and the review-check API returns correctly.
+      const res = await apiCall<{ success: boolean }>("/api/client/reviews", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clientName: state.account?.name ?? "Guest",
-          clientPhone: state.account?.phone ?? "",
+          businessOwnerId: reviewAppt.businessOwnerId,
+          appointmentId: String(reviewAppt.id),
           rating: reviewRating,
           comment: reviewComment.trim() || null,
         }),
       });
-      if (!res.ok) throw new Error("Failed to submit review");
+      if (!res.success) throw new Error("Failed to submit review");
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Mark this appointment as reviewed in local state
       if (reviewAppt) {

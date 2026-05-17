@@ -880,7 +880,7 @@ const appointmentsRouter = router({
           console.error("[InAppMsg] Failed to send auto in-app message:", inAppErr);
         }
       }
-      // ── Package session completion: send progress message to client ──────────
+      // ── Package session completion: decrement client package counter + send progress message ──
       if (data.status === "completed") {
         try {
           const apptRowPkg = await db.getAppointmentByLocalId(localId, businessOwnerId);
@@ -888,6 +888,45 @@ const appointmentsRouter = router({
           const sessionNumber = apptRowPkg?.sessionNumber; // 1-based
           const sessionTotal = apptRowPkg?.sessionTotal;
           const packageName = apptRowPkg?.packageName;
+          // Bug #6 server-side: decrement sessionsCompleted on the client package record
+          // so the count stays accurate even though the client-side use-session endpoint
+          // no longer performs the decrement.
+          if (pkgBookingId) {
+            try {
+              const { clientPackages: cpTable } = await import("../drizzle/schema");
+              const { eq, and, or } = await import("drizzle-orm");
+              const dbase = await db.getDb();
+              if (dbase) {
+                const enrichedForPkg = await db.getEnrichedAppointment(localId, businessOwnerId);
+                if (enrichedForPkg?.clientPhone) {
+                  const normPkgPhone = db.normalizePhone(enrichedForPkg.clientPhone);
+                  const clientAccForPkg = await db.getClientAccountByPhone(normPkgPhone);
+                  if (clientAccForPkg) {
+                    const clientConditions: any[] = [eq(cpTable.clientAccountId, clientAccForPkg.id)];
+                    if (clientAccForPkg.phone) clientConditions.push(eq(cpTable.clientPhone, clientAccForPkg.phone));
+                    if (clientAccForPkg.email) clientConditions.push(eq(cpTable.clientEmail, clientAccForPkg.email));
+                    // Find the matching client package using the packageLocalId stored on the appointment.
+                    // clientPackages.packageLocalId links back to the service_packages template,
+                    // and packageBookingId on the appointment groups all sessions of a single booking.
+                    const pkgLocalId = apptRowPkg?.packageLocalId;
+                    if (!pkgLocalId) return; // no package template linked — skip
+                    const [cpRow] = await dbase.select().from(cpTable).where(
+                      and(eq(cpTable.packageLocalId, pkgLocalId), or(...clientConditions))
+                    ).limit(1);
+                    if (cpRow && cpRow.status === "active") {
+                      const newCompleted = Math.min(cpRow.sessionsCompleted + 1, cpRow.totalSessions);
+                      const newStatus = newCompleted >= cpRow.totalSessions ? "completed" : "active";
+                      await dbase.update(cpTable)
+                        .set({ sessionsCompleted: newCompleted, status: newStatus })
+                        .where(eq(cpTable.id, cpRow.id));
+                    }
+                  }
+                }
+              }
+            } catch (pkgDecrErr) {
+              console.error("[PkgDecrement] Failed to decrement client package session:", pkgDecrErr);
+            }
+          }
           if (pkgBookingId && sessionNumber != null && sessionTotal != null && sessionTotal > 1) {
             // Count how many sessions are now completed (including this one)
             const allSessions = await db.getAppointmentsByPackageBookingId(pkgBookingId, businessOwnerId);

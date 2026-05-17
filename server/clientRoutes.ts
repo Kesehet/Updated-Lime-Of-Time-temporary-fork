@@ -582,13 +582,16 @@ export function registerClientRoutes(app: Express) {
       const staff = staffList.find((st) => st.localId === appt.staffId);
       const location = locList.find((l) => l.localId === appt.locationId);
 
-      // Build packageSiblings if this is a package session
+      // Build packageSiblings if this is a package session.
+      // Bug #8 fix: query siblings directly by packageBookingId across ALL appointments
+      // (not just this client's appointments) so sessions booked under a different phone
+      // or email are still included in the sibling list.
       let packageSiblings: any[] = [];
-      const pgId = (appt as any).packageGroupId;
-      if (pgId) {
-        packageSiblings = rawAppts
-          .filter((a: any) => a.packageGroupId === pgId)
-          .sort((a: any, b: any) => (a.sessionIndex ?? 0) - (b.sessionIndex ?? 0))
+      const pkgBookingId = (appt as any).packageBookingId;
+      if (pkgBookingId) {
+        const allSiblings = await db.getAppointmentsByPackageBookingId(pkgBookingId, appt.businessOwnerId);
+        packageSiblings = allSiblings
+          .sort((a: any, b: any) => (a.sessionNumber ?? 0) - (b.sessionNumber ?? 0))
           .map((a: any) => {
             const aLoc = locList.find((l) => l.localId === a.locationId);
             const aStaff = staffList.find((s) => s.localId === a.staffId);
@@ -598,7 +601,7 @@ export function registerClientRoutes(app: Express) {
               time: a.time,
               duration: a.duration,
               status: a.status,
-              sessionIndex: a.sessionIndex ?? null,
+              sessionIndex: (a.sessionNumber ?? 1) - 1, // convert 1-based sessionNumber to 0-based index
               sessionTotal: a.sessionTotal ?? null,
               locationName: aLoc?.name ?? null,
               staffName: aStaff?.name ?? null,
@@ -1063,9 +1066,11 @@ export function registerClientRoutes(app: Express) {
   app.get("/api/client/saved-businesses", async (req: Request, res: Response) => {
     try {
       const { clientAccount } = await getClientAccount(req);
-      const savedIds = await db.getSavedBusinesses(clientAccount!.id);
+      // Bug #7 fix: use getSavedBusinessesWithTimestamp to return the real savedAt date
+      // instead of always returning the current time.
+      const savedRows = await db.getSavedBusinessesWithTimestamp(clientAccount!.id);
       const businesses = await Promise.all(
-        savedIds.map(async (businessOwnerId) => {
+        savedRows.map(async ({ businessOwnerId, savedAt }) => {
           const owner = await db.getBusinessOwnerById(businessOwnerId);
           if (!owner) return null;
           const businessSlug = (owner as any).customSlug ?? db.sanitizeSlug(owner.businessName ?? "");
@@ -1078,7 +1083,7 @@ export function registerClientRoutes(app: Express) {
             businessAddress: owner.address ?? null,
             businessPhone: owner.phone ?? null,
             businessLogoUri: (owner as any).businessLogoUri ?? null,
-            savedAt: new Date().toISOString(),
+            savedAt: savedAt ? savedAt.toISOString() : new Date().toISOString(),
           };
         })
       );
@@ -1489,7 +1494,21 @@ export function registerClientRoutes(app: Express) {
     }
   });
 
-  /** POST /api/client/my-packages/:packageLocalId/use-session — decrement sessionsCompleted for a client package */
+  /**
+   * POST /api/client/my-packages/:packageLocalId/use-session
+   *
+   * Validates a package session and (when dryRun=false) decrements the session counter.
+   *
+   * Bug #6 security fix: only dryRun=true calls are allowed from the client portal.
+   * Actual session decrements must be triggered server-side (e.g. when a business owner
+   * marks an appointment as completed) to prevent any authenticated client from
+   * arbitrarily decrementing another client's package.
+   *
+   * The booking wizard passes dryRun=true to validate the package before booking, and
+   * then passes dryRun=false with an appointmentId after the appointment is created.
+   * That final non-dryRun call is now blocked here; the server decrements the session
+   * automatically when the appointment status transitions to "completed" (see routers.ts).
+   */
   app.post("/api/client/my-packages/:packageLocalId/use-session", async (req: Request, res: Response) => {
     try {
       const { clientAccount } = await getClientAccount(req);
@@ -1500,7 +1519,6 @@ export function registerClientRoutes(app: Express) {
       const { clientPackages: cpTable } = await import("../drizzle/schema");
       const { eq, and, or } = await import("drizzle-orm");
       // Find the package belonging to this client
-      const conditions: any[] = [eq(cpTable.localId, packageLocalId)];
       const clientConditions: any[] = [eq(cpTable.clientAccountId, clientAccount.id)];
       if (clientAccount.phone) clientConditions.push(eq(cpTable.clientPhone, clientAccount.phone));
       if (clientAccount.email) clientConditions.push(eq(cpTable.clientEmail, clientAccount.email));
@@ -1513,24 +1531,21 @@ export function registerClientRoutes(app: Express) {
       if (pkg.expiresAt) {
         const expiry = new Date(pkg.expiresAt + "T23:59:59");
         if (expiry < new Date()) {
-          // Auto-mark as expired
           await dbase.update(cpTable).set({ status: "expired" }).where(eq(cpTable.localId, packageLocalId));
           res.status(400).json({ error: "Package expired", code: "PACKAGE_EXPIRED", expiresAt: pkg.expiresAt });
           return;
         }
       }
-      // dryRun: just validate, don't actually decrement
+      // Bug #6: only allow dryRun validation from the client portal.
+      // Real session decrements happen server-side when the business marks the appointment completed.
       const { dryRun } = req.body ?? {};
-      if (dryRun) {
-        res.json({ success: true, dryRun: true, sessionsCompleted: pkg.sessionsCompleted, totalSessions: pkg.totalSessions, status: pkg.status });
+      if (!dryRun) {
+        // Return current state so the booking wizard can display it, but do NOT decrement.
+        // The session will be decremented by the server when the appointment is completed.
+        res.json({ success: true, dryRun: false, sessionsCompleted: pkg.sessionsCompleted, totalSessions: pkg.totalSessions, status: pkg.status });
         return;
       }
-      const newCompleted = Math.min(pkg.sessionsCompleted + 1, pkg.totalSessions);
-      const newStatus = newCompleted >= pkg.totalSessions ? "completed" : "active";
-      await dbase.update(cpTable)
-        .set({ sessionsCompleted: newCompleted, status: newStatus })
-        .where(eq(cpTable.localId, packageLocalId));
-      res.json({ success: true, sessionsCompleted: newCompleted, totalSessions: pkg.totalSessions, status: newStatus });
+      res.json({ success: true, dryRun: true, sessionsCompleted: pkg.sessionsCompleted, totalSessions: pkg.totalSessions, status: pkg.status });
     } catch (err: any) {
       console.error("[Client API] Error using package session:", err);
       res.status(500).json({ error: "Internal server error" });
@@ -1549,25 +1564,39 @@ export function registerClientRoutes(app: Express) {
       const appt = appts.find((a: any) => a.localId === appointmentId);
       if (!appt) { res.status(404).json({ error: "Appointment not found" }); return; }
       if (!appt.giftApplied) { res.status(400).json({ error: "This appointment does not have a gift certificate applied" }); return; }
-      // Mark the gift card as redeemed if we can find it by looking at the appointment notes
-      // The gift code is embedded in the enriched notes as "Gift Card: -$X.XX"
-      // We'll mark the appointment's giftApplied as confirmed by updating a flag
-      // For now, find any unredeemed gift card for this business and mark it
-      // In a full implementation, the giftCode would be stored on the appointment
-      const { giftCards: gcTableRaw } = await import("../drizzle/schema");
-      const gcTable = gcTableRaw as any;
-      const { eq: eqGc, and: andGc } = await import("drizzle-orm");
-      const dbase = await db.getDb();
-      if (dbase) {
-        // Mark all unredeemed gift cards for this business that match the appointment's client as redeemed
-        // This is a simplified approach - in production, store giftCode on appointment
-        await dbase.update(gcTable)
-          .set({ redeemed: true, redeemedAt: new Date(), pendingRedemptionAppointmentId: appointmentId })
-          .where(andGc(
-            eqGc(gcTable.businessOwnerId, owner.id),
-            eqGc(gcTable.redeemed, false),
-            eqGc(gcTable.pendingRedemptionAppointmentId, appointmentId)
-          ));
+      // Bug #5 fix: use the giftCode stored directly on the appointment for an exact lookup.
+      // This prevents accidentally redeeming the wrong card when a client has multiple
+      // unredeemed gift cards at the same business.
+      const storedGiftCode = (appt as any).giftCode as string | null | undefined;
+      if (storedGiftCode) {
+        const { giftCards: gcTableRaw } = await import("../drizzle/schema");
+        const gcTable = gcTableRaw as any;
+        const { eq: eqGc, and: andGc } = await import("drizzle-orm");
+        const dbase = await db.getDb();
+        if (dbase) {
+          await dbase.update(gcTable)
+            .set({ redeemed: true, redeemedAt: new Date(), pendingRedemptionAppointmentId: appointmentId })
+            .where(andGc(
+              eqGc(gcTable.code, storedGiftCode),
+              eqGc(gcTable.businessOwnerId, owner.id)
+            ));
+        }
+      } else {
+        // Fallback for legacy appointments that pre-date giftCode storage:
+        // mark the card that was already linked via pendingRedemptionAppointmentId
+        const { giftCards: gcTableRaw } = await import("../drizzle/schema");
+        const gcTable = gcTableRaw as any;
+        const { eq: eqGc, and: andGc } = await import("drizzle-orm");
+        const dbase = await db.getDb();
+        if (dbase) {
+          await dbase.update(gcTable)
+            .set({ redeemed: true, redeemedAt: new Date() })
+            .where(andGc(
+              eqGc(gcTable.businessOwnerId, owner.id),
+              eqGc(gcTable.redeemed, false),
+              eqGc(gcTable.pendingRedemptionAppointmentId, appointmentId)
+            ));
+        }
       }
       res.json({ success: true, message: "Gift certificate marked as redeemed" });
     } catch (err: any) {

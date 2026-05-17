@@ -349,9 +349,15 @@ export default function ClientHomeScreen() {
 
         {/* ── Payment Due Nudge Banner ── */}
         {(() => {
-          // Find the earliest upcoming confirmed appointment with pending cash payment
+          // Find the earliest upcoming confirmed appointment with an outstanding payment
+          // (pending_cash = client pays in person; pay_later = balance due at service time;
+          //  unpaid = any other unpaid status)
           const cashDueAppt = upcoming.find(
-            (a) => a.status === "confirmed" && (a as any).paymentStatus === "pending_cash"
+            (a) => a.status === "confirmed" && (
+              (a as any).paymentStatus === "pending_cash" ||
+              (a as any).paymentStatus === "pay_later" ||
+              (a as any).paymentStatus === "unpaid"
+            )
           );
           if (!cashDueAppt) return null;
           const method = (cashDueAppt as any).paymentMethod;

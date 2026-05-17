@@ -1451,6 +1451,13 @@ export async function getSavedBusinesses(clientAccountId: number): Promise<numbe
   return rows.map((r) => r.businessOwnerId);
 }
 
+export async function getSavedBusinessesWithTimestamp(clientAccountId: number): Promise<{ businessOwnerId: number; savedAt: Date | null }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select().from(clientSavedBusinesses).where(eq(clientSavedBusinesses.clientAccountId, clientAccountId));
+  return rows.map((r) => ({ businessOwnerId: r.businessOwnerId, savedAt: r.savedAt ?? null }));
+}
+
 export async function saveBusinessForClient(clientAccountId: number, businessOwnerId: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

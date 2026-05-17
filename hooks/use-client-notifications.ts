@@ -7,8 +7,11 @@
  * Events that trigger a push to the client:
  *  - Business confirms appointment  → navigate to client-appointment-detail
  *  - Business cancels appointment   → navigate to client-appointment-detail
- *  - Business marks completed       → navigate to client-appointment-detail
+ *  - Business marks completed       → navigate to client-appointment-detail (with review=1)
+ *  - Business updates appointment   → navigate to client-appointment-detail
+ *  - Gift card balance restored     → navigate to client-appointment-detail
  *  - Business sends a message       → navigate to client-message-thread
+ *  - Local reminder (24h/1h/30m)    → navigate to client-appointment-detail
  *
  * Call this hook once inside the (client-tabs) layout so it runs for the
  * entire lifetime of the client portal session.
@@ -133,6 +136,30 @@ export function useClientNotifications() {
             }
             break;
 
+          // Bug #2: business updated appointment details (travel fee, time, etc.)
+          case "appointment_updated":
+            if (appointmentId) {
+              router.push({
+                pathname: "/client-appointment-detail",
+                params: { id: appointmentId },
+              } as any);
+            } else {
+              router.push("/(client-tabs)/bookings" as any);
+            }
+            break;
+
+          // Bug #2: gift card balance was restored after a cancellation
+          case "gift_restored":
+            if (appointmentId) {
+              router.push({
+                pathname: "/client-appointment-detail",
+                params: { id: appointmentId },
+              } as any);
+            } else {
+              router.push("/(client-tabs)" as any);
+            }
+            break;
+
           case "business_message":
             if (businessOwnerId) {
               router.push({
@@ -141,6 +168,20 @@ export function useClientNotifications() {
               } as any);
             } else {
               router.push("/(client-tabs)/messages" as any);
+            }
+            break;
+
+          // Bug #4: local reminder notifications scheduled by the client app
+          case "reminder_24h":
+          case "reminder_1h":
+          case "reminder_30m":
+            if (appointmentId) {
+              router.push({
+                pathname: "/client-appointment-detail",
+                params: { id: appointmentId },
+              } as any);
+            } else {
+              router.push("/(client-tabs)/bookings" as any);
             }
             break;
 

@@ -2335,3 +2335,13 @@
 - [x] Phase 4: Add Stripe card payment option to package purchase on public web booking page
 - [x] Phase 4: Package Stripe Checkout flow on public web booking page with discount support
 - [x] Phase 5: Package Stripe Checkout flow in client portal app (client-booking-wizard)
+
+## Bug Fixes (Deep Audit)
+- [x] Bug #1: Fix review in Bookings tab — pass appointmentId to link review to appointment and prevent re-prompt loop
+- [x] Bug #2: Add routing for appointment_updated and gift_restored push notification types in use-client-notifications.ts
+- [x] Bug #3: Payment-due banner on Home tab should also show for pay_later payment status
+- [x] Bug #4: Local reminder notification taps (reminder_24h/1h/30m) should route to appointment detail
+- [x] Bug #5: Gift redemption confirmation should use stored giftCode on appointment, not heuristic
+- [x] Bug #6: Package use-session endpoint should not be callable by arbitrary clients (client-side blocked; server decrements on completion)
+- [x] Bug #7: savedAt in saved-businesses list should return actual DB timestamp not current time
+- [x] Bug #8: Package siblings query should use direct DB lookup by packageBookingId, not filter from client's own list
