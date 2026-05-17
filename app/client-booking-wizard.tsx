@@ -1125,7 +1125,8 @@ export default function ClientBookingWizardScreen() {
           promoCode: promoApplied?.code ?? undefined,
           promoLocalId: promoApplied?.localId ?? undefined,
           giftCode: giftApplied?.code ?? undefined,
-          giftSaving: giftApplied ? Math.min(giftApplied.value, Math.max(0, servicePrice - (discountAmount ?? 0) - (promoSaving ?? 0))) : undefined,
+          giftApplied: giftApplied ? true : undefined,
+          giftUsedAmount: giftApplied ? Math.min(giftApplied.value, Math.max(0, servicePrice - (discountAmount ?? 0) - (promoSaving ?? 0))) : undefined,
           packageLocalId: packageLocalId ?? undefined,
           sessionDates: selectedPackage && sessionDates.length > 1
             ? sessionDates.map(sd => ({ date: sd.date ? `${sd.date.getFullYear()}-${String(sd.date.getMonth()+1).padStart(2,'0')}-${String(sd.date.getDate()).padStart(2,'0')}` : null, time: sd.slot?.time ?? null }))

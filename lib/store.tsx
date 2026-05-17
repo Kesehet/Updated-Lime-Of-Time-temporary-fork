@@ -2019,6 +2019,9 @@ export function StoreProvider({ children, onStoreLoaded }: { children: React.Rea
               paymentConfirmationNumber: appt.paymentConfirmationNumber || undefined,
               travelFee: (appt as any).travelFee != null ? Number((appt as any).travelFee) : undefined,
               notifyTravelFeeChange: (appt as any)._notifyTravelFeeChange === true,
+              // Pass rescheduleRequest and cancelRequest so server can send approval/decline notifications
+              rescheduleRequest: (appt as any).rescheduleRequest ?? undefined,
+              cancelRequest: (appt as any).cancelRequest ?? undefined,
             });
             break;
           }

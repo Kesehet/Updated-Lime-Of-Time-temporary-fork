@@ -968,7 +968,9 @@ export function registerPublicRoutes(app: Express) {
         return;
       }
 
-      const { clientName, clientPhone, clientEmail, serviceLocalId, date, time, duration, notes, giftCode, totalPrice, extraItems, giftApplied, giftUsedAmount, discountName, discountPercentage, discountAmount, subtotal, locationId, staffLocalId: bookStaffLocalId, paymentMethod, paymentConfirmationNumber, promoCode, promoLocalId, clientAddress, travelFee, clientToday: bookClientToday, nowMinutes: bookNowMinutes } = req.body;
+      const { clientName, clientPhone, clientEmail, serviceLocalId, date, time, duration, notes, giftCode, totalPrice, extraItems, giftApplied, giftUsedAmount, discountName, discountPercentage, discountAmount, subtotal, locationId, staffLocalId: _staffLocalIdField, staffId: _staffIdField, paymentMethod, paymentConfirmationNumber, promoCode, promoLocalId, clientAddress, travelFee, clientToday: bookClientToday, nowMinutes: bookNowMinutes } = req.body;
+      // Accept both staffLocalId and staffId field names (client-booking-wizard sends staffId)
+      const bookStaffLocalId: string | undefined = _staffLocalIdField || _staffIdField || undefined;
 
       if (!clientName || !serviceLocalId || !date || !time) {
         res.status(400).json({ error: "Missing required fields: clientName, serviceLocalId, date, time" });
@@ -1177,6 +1179,7 @@ export function registerPublicRoutes(app: Express) {
         travelFee: travelFee != null ? String(parseFloat(String(travelFee))) : null,
         paymentMethod: paymentMethod || null,
         paymentStatus: (paymentMethod === 'cash' || paymentMethod === 'pay_later') ? 'pending_cash' : (paymentMethod ? 'unpaid' : null),
+        staffId: bookStaffLocalId || null,
       });
 
       // Atomically deduct from gift card balance (prevents double-spend race conditions)
@@ -1390,8 +1393,9 @@ export function registerPublicRoutes(app: Express) {
           notes: sessionNotes,
           totalPrice: isFirst ? String(finalTotal) : "0",
           locationId: locationId || null,
-          paymentMethod: isFirst ? ((paymentMethod && paymentMethod !== 'later') ? paymentMethod : null) : null,
-          paymentStatus: isFirst ? (paymentMethod === 'cash' ? 'pending_cash' : ((paymentMethod && paymentMethod !== 'later') ? 'unpaid' : null)) : null,
+          staffId: bookStaffLocalId || null,
+          paymentMethod: isFirst ? (paymentMethod || null) : null,
+          paymentStatus: isFirst ? ((paymentMethod === 'cash' || paymentMethod === 'pay_later') ? 'pending_cash' : (paymentMethod ? 'unpaid' : null)) : null,
           paymentConfirmationNumber: isFirst ? (paymentConfirmationNumber || null) : null,
           packageBookingId: packageGroupId,
           packageLocalId: packageLocalId,

@@ -369,7 +369,6 @@ function RootLayout() {
               <Stack.Screen name="package-browser" options={{ presentation: "fullScreenModal" }} />
               <Stack.Screen name="sms-automation" options={{ presentation: "card" }} />
               <Stack.Screen name="twilio-setup" options={{ presentation: "card" }} />
-              <Stack.Screen name="business-hours-settings" options={{ presentation: "card" }} />
               <Stack.Screen name="service-gallery" options={{ presentation: "card" }} />
               <Stack.Screen name="status-detail" options={{ presentation: "card" }} />
               <Stack.Screen name="payment-summary" options={{ presentation: "card" }} />
