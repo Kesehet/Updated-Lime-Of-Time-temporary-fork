@@ -87,6 +87,9 @@ export default function AppointmentDetailScreen() {
   });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentConfirmInput, setPaymentConfirmInput] = useState("");
+  // When completing a pay_later appointment, store the doIt callback so we can
+  // call it after the payment sheet is confirmed or skipped.
+  const pendingCompleteRef = useRef<(() => void) | null>(null);
   const [refunding, setRefunding] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundAmount, setRefundAmount] = useState("");
@@ -701,6 +704,13 @@ export default function AppointmentDetailScreen() {
     syncToDb({ type: "UPDATE_APPOINTMENT", payload: updated as any });
     setShowPaymentModal(false);
     setPaymentConfirmInput("");
+    // If this payment sheet was triggered from the Complete flow, also mark as completed now.
+    if (pendingCompleteRef.current) {
+      const completeFn = pendingCompleteRef.current;
+      pendingCompleteRef.current = null;
+      completeFn();
+      return; // router.back() is called inside completeFn, skip SMS below
+    }
     // Send payment receipt SMS to client — respect master notificationsEnabled
     const _notifPrefsP = state.settings.notificationPreferences ?? {};
     const _masterNotifOnP = state.settings.notificationsEnabled !== false;
@@ -866,6 +876,17 @@ export default function AppointmentDetailScreen() {
       setSelectedReason("");
       setCustomReason("");
       setCancelReasonModal(true);
+      return;
+    }
+    // For pay_later appointments that haven't been paid yet, show the payment
+    // collection sheet so the owner can record payment in the same step.
+    const isPayLater = appointment?.paymentMethod === 'pay_later' && appointment?.paymentStatus !== 'paid';
+    if (status === "completed" && isPayLater) {
+      pendingCompleteRef.current = doIt;
+      // Reset the method picker to cash as a sensible default
+      setSelectedPayMethod('cash');
+      setPaymentConfirmInput('');
+      setShowPaymentModal(true);
       return;
     }
     if (Platform.OS === "web") {
@@ -2321,19 +2342,34 @@ Would you also like to charge a no-show fee via Stripe?`,
       </Modal>
 
       {/* Payment Confirmation Modal */}
-      <Modal visible={showPaymentModal} transparent animationType="slide">
+      <Modal
+        visible={showPaymentModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          // Android back button — clear pending complete so it doesn't leak
+          pendingCompleteRef.current = null;
+          setShowPaymentModal(false);
+          setPaymentConfirmInput('');
+        }}
+      >
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end' }}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center' }}>
+            {/* Handle bar */}
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 16 }} />
             <Text style={{ fontSize: fs.md, fontWeight: '700', color: colors.foreground, marginBottom: 4 }}>
-              Mark as Paid
+              {pendingCompleteRef.current ? '✅ Complete & Collect Payment' : 'Mark as Paid'}
             </Text>
+            {pendingCompleteRef.current && (
+              <Text style={{ fontSize: fs.xs, color: colors.primary, marginBottom: 4 }}>Record how the client paid to complete this appointment.</Text>
+            )}
             <Text style={{ fontSize: fs.xs, color: colors.muted, marginBottom: 16 }}>
               {client?.name ?? 'Client'}{appointment.totalPrice != null ? ` · $${appointment.totalPrice.toFixed(2)}` : ''}
             </Text>
 
-            {/* Method picker — only shown when no method is pre-set */}
-            {(!appointment.paymentMethod || appointment.paymentMethod === 'unpaid') && (
+            {/* Method picker — always shown for pay_later or when no method is pre-set */}
+            {(!appointment.paymentMethod || appointment.paymentMethod === 'unpaid' || appointment.paymentMethod === 'pay_later') && (
               <>
                 <Text style={{ fontSize: fs.xs, fontWeight: '600', color: colors.muted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Payment Method</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
@@ -2367,19 +2403,37 @@ Would you also like to charge a no-show fee via Stripe?`,
                 returnKeyType="done"
               />
             )}
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity
-                onPress={() => { setShowPaymentModal(false); setPaymentConfirmInput(''); }}
-                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
-              >
-                <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.muted }}>Cancel</Text>
-              </TouchableOpacity>
+            <View style={{ gap: 10 }}>
               <TouchableOpacity
                 onPress={() => handleMarkPaid(paymentConfirmInput.trim() || undefined)}
-                style={{ flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.success, alignItems: 'center' }}
+                style={{ paddingVertical: 14, borderRadius: 12, backgroundColor: colors.success, alignItems: 'center' }}
               >
-                <Text style={{ fontSize: fs.sm, fontWeight: '700', color: '#FFF' }}>Confirm Paid</Text>
+                <Text style={{ fontSize: fs.sm, fontWeight: '700', color: '#FFF' }}>
+                  {pendingCompleteRef.current ? '✅ Confirm Payment & Complete' : 'Confirm Paid'}
+                </Text>
               </TouchableOpacity>
+              {pendingCompleteRef.current ? (
+                // Skip payment — just complete the appointment without recording payment
+                <TouchableOpacity
+                  onPress={() => {
+                    const completeFn = pendingCompleteRef.current!;
+                    pendingCompleteRef.current = null;
+                    setShowPaymentModal(false);
+                    setPaymentConfirmInput('');
+                    completeFn();
+                  }}
+                  style={{ paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+                >
+                  <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.muted }}>Complete — Collect Payment Later</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => { setShowPaymentModal(false); setPaymentConfirmInput(''); }}
+                  style={{ paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+                >
+                  <Text style={{ fontSize: fs.sm, fontWeight: '600', color: colors.muted }}>Cancel</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
