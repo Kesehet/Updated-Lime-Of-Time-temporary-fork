@@ -423,18 +423,43 @@ function GiftCardRow({
         </Text>
       ))}
 
-      {/* Value row */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 4 }}>
+      {/* Value row — always show original value; show remaining balance prominently when it differs */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 6, flexWrap: "wrap" }}>
         {total > 0 && (
-          <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary }}>
-            Value: ${total.toFixed(2)}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Text style={{ fontSize: fs.xs, color: colors.muted }}>Total:</Text>
+            <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.primary }}>${total.toFixed(2)}</Text>
+          </View>
         )}
-        {card.remainingBalance != null && card.remainingBalance < total && (
-          <Text style={{ fontSize: fs.xs, fontWeight: "600", color: colors.success }}>
-            Balance: ${card.remainingBalance.toFixed(2)}
-          </Text>
-        )}
+        {(() => {
+          // Determine the effective remaining balance
+          const remaining = card.remainingBalance != null ? card.remainingBalance : total;
+          const fullyRedeemed = remaining <= 0;
+          const partiallyUsed = remaining < total && remaining > 0;
+          const fullyAvailable = remaining >= total;
+          if (fullyRedeemed) {
+            return (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.error + "18", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.error }}>Fully Redeemed</Text>
+              </View>
+            );
+          }
+          if (partiallyUsed) {
+            return (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.warning + "18", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Text style={{ fontSize: fs.xs, color: colors.muted }}>Remaining:</Text>
+                <Text style={{ fontSize: fs.xs, fontWeight: "800", color: colors.warning }}>${remaining.toFixed(2)}</Text>
+              </View>
+            );
+          }
+          // Fully available — show a green badge
+          return (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.success + "18", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+              <Text style={{ fontSize: fs.xs, color: colors.muted }}>Balance:</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: "800", color: colors.success }}>${remaining.toFixed(2)}</Text>
+            </View>
+          );
+        })()}
       </View>
 
       {/* Owner notes */}
@@ -633,6 +658,16 @@ export default function GiftCardsScreen() {
   // ── Stats ─────────────────────────────────────────────────────────────────
   const totalActive = useMemo(() => state.giftCards.filter(c => !c.redeemed && !(c.expiresAt && new Date(c.expiresAt) < new Date())).length, [state.giftCards]);
   const totalRedeemed = useMemo(() => state.giftCards.filter(c => c.redeemed).length, [state.giftCards]);
+  // Total outstanding balance across all active/unpaid cards
+  const totalOutstandingBalance = useMemo(() => {
+    return state.giftCards
+      .filter(c => !c.redeemed && !(c.expiresAt && new Date(c.expiresAt) < new Date()))
+      .reduce((sum, c) => {
+        const cardTotal = getCardTotal(c);
+        const remaining = c.remainingBalance != null ? c.remainingBalance : cardTotal;
+        return sum + Math.max(0, remaining);
+      }, 0);
+  }, [state.giftCards, getCardTotal]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleShareBuyGiftLink = useCallback(async () => {
@@ -921,13 +956,13 @@ export default function GiftCardsScreen() {
         </View>
         <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
         <View style={styles.statItem}>
-          <Text style={[styles.statValue, { color: colors.foreground }]}>{issuedCards.length}</Text>
-          <Text style={[styles.statLabel, { color: colors.muted }]}>Issued</Text>
+          <Text style={[{ fontSize: fs.sm, fontWeight: "800" }, { color: colors.warning }]}>${totalOutstandingBalance.toFixed(2)}</Text>
+          <Text style={[styles.statLabel, { color: colors.muted }]}>Outstanding</Text>
         </View>
         <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
         <View style={styles.statItem}>
-          <Text style={[styles.statValue, { color: colors.warning }]}>{soldCards.length}</Text>
-          <Text style={[styles.statLabel, { color: colors.muted }]}>Sold</Text>
+          <Text style={[styles.statValue, { color: colors.foreground }]}>{issuedCards.length + soldCards.length}</Text>
+          <Text style={[styles.statLabel, { color: colors.muted }]}>Total</Text>
         </View>
       </View>
 

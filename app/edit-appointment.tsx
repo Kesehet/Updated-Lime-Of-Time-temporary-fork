@@ -93,6 +93,11 @@ export default function EditAppointmentScreen() {
   // Slot interval override
   const [localSlotInterval, setLocalSlotInterval] = useState<number | null>(null);
 
+  // Client address editing (for mobile services)
+  const [editedClientAddress, setEditedClientAddress] = useState<string>(appointment?.clientAddress ?? '');
+  const originalClientAddress = appointment?.clientAddress ?? '';
+  const addressChanged = editedClientAddress.trim() !== originalClientAddress.trim();
+
   // Closed-day tooltip
   const [closedDayMsg, setClosedDayMsg] = useState<string | null>(null);
   const closedDayTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -315,43 +320,64 @@ export default function EditAppointmentScreen() {
     const discountAmt = appointment.discountAmount ?? 0;
     const newTotal = Math.max(0, rawTotal - discountAmt);
 
-    const updated = {
-      ...appointment,
-      serviceId: editPrimaryService || appointment.serviceId,
-      date: selectedDate,
-      time: selectedTime,
-      locationId: selectedLocationId ?? appointment.locationId,
-      duration: totalEditDuration,
-      extraItems: editExtraItems,
-      totalPrice: newTotal,
+    const isMobileSvc = primaryService?.serviceType === 'mobile' || service?.serviceType === 'mobile';
+    const newAddress = isMobileSvc ? editedClientAddress.trim() : (appointment.clientAddress ?? '');
+
+    const doSave = () => {
+      const updated = {
+        ...appointment,
+        serviceId: editPrimaryService || appointment.serviceId,
+        date: selectedDate,
+        time: selectedTime,
+        locationId: selectedLocationId ?? appointment.locationId,
+        duration: totalEditDuration,
+        extraItems: editExtraItems,
+        totalPrice: newTotal,
+        ...(isMobileSvc ? { clientAddress: newAddress } : {}),
+      };
+
+      dispatch({ type: "UPDATE_APPOINTMENT", payload: updated });
+      syncToDb({ type: "UPDATE_APPOINTMENT", payload: updated });
+
+      // Go back to Appointment Detail first, then offer reminder
+      router.back();
+      // Small delay so navigation commits before the alert appears
+      setTimeout(() => {
+        Alert.alert(
+          "Appointment Updated",
+          "Would you like to send a reminder to the client?",
+          [
+            { text: "Not Now", style: "cancel" },
+            {
+              text: "Send Reminder",
+              onPress: () => {
+                router.push({
+                  pathname: "/send-reminder" as any,
+                  params: { appointmentId: appointment.id },
+                });
+              },
+            },
+          ]
+        );
+      }, 350);
     };
 
-    dispatch({ type: "UPDATE_APPOINTMENT", payload: updated });
-    syncToDb({ type: "UPDATE_APPOINTMENT", payload: updated });
-
-    // Go back to Appointment Detail first, then offer reminder
-    router.back();
-    // Small delay so navigation commits before the alert appears
-    setTimeout(() => {
+    // If address changed on a confirmed mobile appointment, warn about travel fee
+    if (isMobileSvc && addressChanged && appointment.status === 'confirmed' && appointment.travelFee != null && Number(appointment.travelFee) > 0) {
       Alert.alert(
-        "Appointment Updated",
-        "Would you like to send a reminder to the client?",
+        'Address Changed',
+        `The client address has changed. The current travel fee is $${Number(appointment.travelFee).toFixed(2)}. You may need to update the travel fee in the appointment detail after saving.`,
         [
-          { text: "Not Now", style: "cancel" },
-          {
-            text: "Send Reminder",
-            onPress: () => {
-              router.push({
-                pathname: "/send-reminder" as any,
-                params: { appointmentId: appointment.id },
-              });
-            },
-          },
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Save Anyway', onPress: doSave },
         ]
       );
-    }, 350);
+      return;
+    }
+
+    doSave();
   }, [appointment, selectedDate, selectedTime, selectedLocationId, activeLocations.length,
-      dispatch, syncToDb, router]);
+      dispatch, syncToDb, router, editedClientAddress, addressChanged, primaryService, service, totalEditDuration, editExtraItems, newTotal]);
 
   // ── Guard: appointment not found ───────────────────────────────────────
   if (!appointment) {
@@ -1216,6 +1242,48 @@ export default function EditAppointmentScreen() {
               <IconSymbol name="tag.fill" size={14} color={colors.muted} />
               <Text style={{ fontSize: fs.xs, color: colors.muted, fontWeight: "600" }}>Custom Discount...</Text>
             </Pressable>
+          </View>
+        )}
+
+        {/* Client Address — editable for mobile services */}
+        {(primaryService?.serviceType === 'mobile' || service?.serviceType === 'mobile') && (
+          <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface, marginTop: 8 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+              <Text style={{ fontSize: 16, marginRight: 6 }}>🚗</Text>
+              <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.muted, flex: 1 }}>CLIENT ADDRESS</Text>
+              {addressChanged && (
+                <View style={{ backgroundColor: colors.warning + '20', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                  <Text style={{ fontSize: fs.xs, fontWeight: '700', color: colors.warning }}>Changed</Text>
+                </View>
+              )}
+            </View>
+            <TextInput
+              value={editedClientAddress}
+              onChangeText={setEditedClientAddress}
+              placeholder="Enter client address…"
+              placeholderTextColor={colors.muted + '80'}
+              multiline
+              returnKeyType="done"
+              style={{
+                fontSize: fs.sm,
+                color: colors.foreground,
+                backgroundColor: colors.background,
+                borderWidth: 1,
+                borderColor: addressChanged ? colors.warning : colors.border,
+                borderRadius: 10,
+                padding: 10,
+                minHeight: 52,
+                textAlignVertical: 'top',
+              }}
+            />
+            {addressChanged && appointment?.travelFee != null && Number(appointment.travelFee) > 0 && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, backgroundColor: colors.warning + '12', borderRadius: 10, padding: 10 }}>
+                <Text style={{ fontSize: 14 }}>⚠️</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.warning, flex: 1 }}>
+                  Address changed — current travel fee is ${Number(appointment.travelFee).toFixed(2)}. Review the travel fee after saving.
+                </Text>
+              </View>
+            )}
           </View>
         )}
 

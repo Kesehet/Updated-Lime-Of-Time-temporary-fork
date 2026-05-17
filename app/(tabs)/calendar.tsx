@@ -205,7 +205,7 @@ function TimelineView({
 
       {/* Appointment blocks — side-by-side columns */}
       {layouts.map(({ appt, col, totalCols, top, height }) => {
-        const svc = getServiceById(appt.serviceId) as { color?: string; name?: string; duration?: number } | undefined;
+        const svc = getServiceById(appt.serviceId) as { color?: string; name?: string; duration?: number; serviceType?: string; travelDuration?: number } | undefined;
         const client = getClientById(appt.clientId) as { name?: string } | undefined;
         const color = (svc as { color?: string } | undefined)?.color ?? tintColor ?? colors.primary;
         // Use svc.name directly (not getServiceDisplayName) to avoid showing duration twice
@@ -213,44 +213,98 @@ function TimelineView({
         const colWidth = slotAreaWidth > 0 ? (slotAreaWidth - GAP * (totalCols - 1)) / totalCols : 0;
         const blockLeft = LABEL_WIDTH + 4 + col * (colWidth + GAP);
         const blockWidth = colWidth > 0 ? colWidth : undefined;
+        // Travel time indicator for mobile services
+        const travelMins = (svc?.serviceType === 'mobile' && svc?.travelDuration && svc.travelDuration > 0)
+          ? svc.travelDuration : 0;
+        const travelBlockH = travelMins > 0 ? Math.max(travelMins * (HOUR_HEIGHT / 60), 18) : 0;
+        const preTravelTop = top - travelBlockH;
+        const postTravelTop = top + height;
+        const postTravelH = travelBlockH;
         return (
-          <Pressable
-            key={appt.id}
-            onPress={() => onApptPress(appt.id)}
-            style={({ pressed }) => ([
-              styles.timelineApptAbs,
-              {
-                top,
-                height,
-                left: blockWidth ? blockLeft : LABEL_WIDTH + 4,
-                width: blockWidth,
-                right: blockWidth ? undefined : PADDING_RIGHT,
-                backgroundColor: color + "22",
-                borderLeftColor: color,
-                opacity: pressed ? 0.7 : 1,
-              },
-            ])}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 }}>
-              {routeOrderMap?.has(appt.id) && (
-                <View style={{
-                  width: 18, height: 18, borderRadius: 9,
-                  backgroundColor: color, alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#fff' }}>
-                    {routeOrderMap.get(appt.id)}
-                  </Text>
-                </View>
-              )}
-              <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground, flexShrink: 1 }} numberOfLines={1}>
-                {formatTime(appt.time)} {svcName} ({appt.duration} min)
-              </Text>
-            </View>
-            {height > 36 && (
-              <Text style={{ fontSize: 10, color: colors.muted }} numberOfLines={1}>{client?.name}</Text>
+          <React.Fragment key={appt.id}>
+            {/* Pre-travel block (drive to client) */}
+            {travelMins > 0 && preTravelTop >= 0 && (
+              <View
+                pointerEvents="none"
+                style={[
+                  styles.timelineApptAbs,
+                  {
+                    top: preTravelTop,
+                    height: travelBlockH,
+                    left: blockWidth ? blockLeft : LABEL_WIDTH + 4,
+                    width: blockWidth,
+                    right: blockWidth ? undefined : PADDING_RIGHT,
+                    backgroundColor: '#F59E0B' + '18',
+                    borderLeftColor: '#F59E0B',
+                    borderLeftWidth: 2,
+                    borderStyle: 'dashed',
+                    justifyContent: 'center',
+                  },
+                ]}
+              >
+                <Text style={{ fontSize: 9, color: '#B45309', fontWeight: '600' }} numberOfLines={1}>🚗 {travelMins} min travel</Text>
+              </View>
             )}
-          </Pressable>
+            <Pressable
+              onPress={() => onApptPress(appt.id)}
+              style={({ pressed }) => ([
+                styles.timelineApptAbs,
+                {
+                  top,
+                  height,
+                  left: blockWidth ? blockLeft : LABEL_WIDTH + 4,
+                  width: blockWidth,
+                  right: blockWidth ? undefined : PADDING_RIGHT,
+                  backgroundColor: color + "22",
+                  borderLeftColor: color,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ])}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 }}>
+                {routeOrderMap?.has(appt.id) && (
+                  <View style={{
+                    width: 18, height: 18, borderRadius: 9,
+                    backgroundColor: color, alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <Text style={{ fontSize: 10, fontWeight: '800', color: '#fff' }}>
+                      {routeOrderMap.get(appt.id)}
+                    </Text>
+                  </View>
+                )}
+                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: colors.foreground, flexShrink: 1 }} numberOfLines={1}>
+                  {formatTime(appt.time)} {svcName} ({appt.duration} min)
+                </Text>
+              </View>
+              {height > 36 && (
+                <Text style={{ fontSize: 10, color: colors.muted }} numberOfLines={1}>{client?.name}</Text>
+              )}
+            </Pressable>
+            {/* Post-travel block (drive back from client) */}
+            {travelMins > 0 && (
+              <View
+                pointerEvents="none"
+                style={[
+                  styles.timelineApptAbs,
+                  {
+                    top: postTravelTop,
+                    height: postTravelH,
+                    left: blockWidth ? blockLeft : LABEL_WIDTH + 4,
+                    width: blockWidth,
+                    right: blockWidth ? undefined : PADDING_RIGHT,
+                    backgroundColor: '#F59E0B' + '18',
+                    borderLeftColor: '#F59E0B',
+                    borderLeftWidth: 2,
+                    borderStyle: 'dashed',
+                    justifyContent: 'center',
+                  },
+                ]}
+              >
+                <Text style={{ fontSize: 9, color: '#B45309', fontWeight: '600' }} numberOfLines={1}>🚗 {travelMins} min return</Text>
+              </View>
+            )}
+          </React.Fragment>
         );
       })}
 
