@@ -1391,10 +1391,10 @@ export default function EditAppointmentScreen() {
                         <Pressable
                           onPress={() => {
                             if (!appointment) return;
-                            const updated = { ...appointment, travelFee: suggestedTravelFee };
+                            const updated = { ...appointment, travelFee: suggestedTravelFee, _notifyTravelFeeChange: true } as any;
                             dispatch({ type: 'UPDATE_APPOINTMENT', payload: updated });
                             syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updated });
-                            Alert.alert('Travel Fee Updated', `Travel fee has been updated to $${suggestedTravelFee.toFixed(2)}.`);
+                            Alert.alert('Travel Fee Updated', `Travel fee updated to $${suggestedTravelFee!.toFixed(2)}. The client has been notified via in-app message.`);
                           }}
                           style={({ pressed }) => ([
                             { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center' },

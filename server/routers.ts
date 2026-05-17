@@ -556,19 +556,60 @@ const appointmentsRouter = router({
         paymentConfirmationNumber: z.string().optional(),
         cancelRequest: z.any().optional(),
         rescheduleRequest: z.any().optional(),
+        travelFee: z.number().optional().nullable(),
+        notifyTravelFeeChange: z.boolean().optional(),
       })
     )
     .mutation(async ({ input }) => {
-      const { localId, businessOwnerId, ...data } = input;
+      const { localId, businessOwnerId, notifyTravelFeeChange, ...data } = input;
       const dbData: any = { ...data };
       if (data.totalPrice != null) dbData.totalPrice = String(data.totalPrice);
       if (data.discountAmount != null) dbData.discountAmount = String(data.discountAmount);
       if (data.giftUsedAmount != null) dbData.giftUsedAmount = String(data.giftUsedAmount);
+      if (data.travelFee != null) dbData.travelFee = String(data.travelFee);
       // Auto-mark as paid when a gift fully covers the appointment cost
       if (data.giftApplied && (data.totalPrice ?? 0) <= 0 && !dbData.paymentStatus) {
         dbData.paymentStatus = 'paid';
       }
       await db.updateAppointment(localId, businessOwnerId, dbData);
+
+      // ── Notify client when travel fee is updated ─────────────────────────────────
+      if (notifyTravelFeeChange && data.travelFee != null) {
+        try {
+          const [owner, enrichedAppt] = await Promise.all([
+            db.getBusinessOwnerById(businessOwnerId),
+            db.getEnrichedAppointment(localId, businessOwnerId),
+          ]);
+          if (owner && enrichedAppt?.clientPhone) {
+            const normPhone = db.normalizePhone(enrichedAppt.clientPhone);
+            const clientAcc = await db.getClientAccountByPhone(normPhone);
+            if (clientAcc) {
+              const sName = enrichedAppt.serviceName ?? "appointment";
+              const dateStr = enrichedAppt.date ?? "";
+              const timeStr = enrichedAppt.time ?? "";
+              const newFee = Number(data.travelFee);
+              const newTotal = enrichedAppt.totalPrice != null ? Number(enrichedAppt.totalPrice) : null;
+              const feeStr = `$${newFee.toFixed(2)}`;
+              const totalStr = newTotal != null ? ` Your updated appointment total is $${newTotal.toFixed(2)}.` : "";
+              const msgBody = `🚗 Travel fee update for your ${sName} on ${dateStr} at ${timeStr}:\n\nYour travel fee has been updated to ${feeStr}.${totalStr}\n\nIf you have any questions, please reply here. — ${owner.businessName}`;
+              // In-app message
+              await db.insertClientMessage({ businessOwnerId, clientAccountId: clientAcc.id, senderType: "business", body: msgBody }).catch(() => {});
+              // Push notification
+              if (clientAcc.expoPushToken) {
+                await sendExpoPush(clientAcc.expoPushToken, {
+                  title: `🚗 Travel Fee Updated`,
+                  body: `Your travel fee for ${sName} on ${dateStr} has been updated to ${feeStr}.${totalStr}`,
+                  data: { type: "appointment_updated" as any, appointmentId: localId, businessOwnerId },
+                  channelId: "appointments",
+                  sound: "default",
+                }).catch(() => {});
+              }
+            }
+          }
+        } catch (err) {
+          console.error("[TravelFeeNotify] Failed to send travel fee update notification:", err);
+        }
+      }
 
       // ── Restore gift card balance when a gift-covered appointment is cancelled or (optionally) no-show ──
       const shouldRestoreGift = data.status === "cancelled" || (

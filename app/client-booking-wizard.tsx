@@ -138,7 +138,7 @@ interface AvailableSlot {
   time: string;
 }
 
-type PaymentMethodId = "zelle" | "venmo" | "cashapp" | "cash" | "card";
+type PaymentMethodId = "zelle" | "venmo" | "cashapp" | "cash" | "card" | "pay_later";
 const BASE_PAYMENT_METHODS: { id: PaymentMethodId; label: string; icon: string; hint: string }[] = [
   { id: "zelle",   label: "Zelle",    icon: "💜", hint: "" },
   { id: "venmo",   label: "Venmo",    icon: "💙", hint: "" },
@@ -277,8 +277,14 @@ export default function ClientBookingWizardScreen() {
     if (stripeConnectEnabled) {
       methods.unshift({ id: "card", label: "Credit / Debit Card", icon: "💳", hint: "Pay securely online via Stripe" });
     }
+    // Add context-aware Pay Later option at the end
+    const payLaterLabel = isMobileService ? "Pay After Service" : "Pay In Store";
+    const payLaterHint = isMobileService
+      ? "Pay when the service is complete at your location"
+      : "Pay in person when you arrive at the store";
+    methods.push({ id: "pay_later", label: payLaterLabel, icon: isMobileService ? "🤝" : "🏪", hint: payLaterHint });
     return methods;
-  }, [stripeConnectEnabled, bizZelleHandle, bizVenmoHandle, bizCashAppHandle]);
+  }, [stripeConnectEnabled, bizZelleHandle, bizVenmoHandle, bizCashAppHandle, isMobileService]);
   // Category filter for the service selection step
   const [wizardCatFilter, setWizardCatFilter] = useState<string | null>(null);
   // ── Products step state ──────────────────────────────────────────────────
@@ -1024,8 +1030,8 @@ export default function ClientBookingWizardScreen() {
         Alert.alert("Payment Required", "Please select a payment method before confirming.");
         return;
       }
-      // Card payments don't need a confirmation number — Stripe handles it
-      if (paymentMethod !== "cash" && paymentMethod !== "card" && !paymentConfirmationNumber.trim()) {
+      // Card / cash / pay_later payments don't need a confirmation number
+      if (paymentMethod !== "cash" && paymentMethod !== "card" && paymentMethod !== "pay_later" && !paymentConfirmationNumber.trim()) {
         Alert.alert("Confirmation Number Required", "Please enter your payment confirmation number.");
         return;
       }
@@ -1115,7 +1121,7 @@ export default function ClientBookingWizardScreen() {
           // When the gift fully covers the booking (amount due = $0), mark as free/paid
           paymentMethod: wizardAmountDue <= 0 ? "free" : paymentMethod,
           paymentStatus: wizardAmountDue <= 0 ? "paid" : undefined,
-          paymentConfirmationNumber: (paymentMethod !== "cash" && wizardAmountDue > 0) ? paymentConfirmationNumber.trim() : undefined,
+          paymentConfirmationNumber: (paymentMethod !== "cash" && paymentMethod !== "pay_later" && wizardAmountDue > 0) ? paymentConfirmationNumber.trim() : undefined,
           promoCode: promoApplied?.code ?? undefined,
           promoLocalId: promoApplied?.localId ?? undefined,
           giftCode: giftApplied?.code ?? undefined,
@@ -1292,7 +1298,7 @@ export default function ClientBookingWizardScreen() {
           giftCode: giftApplied?.code ?? "",
           giftSaving: giftApplied ? `$${Math.min(giftApplied.value, Math.max(0, (selectedService ? (parseFloat(selectedService.price ?? "0") || 0) : 0) - (discountAmount ?? 0) - (promoSaving ?? 0))).toFixed(2)}` : "",
           paymentMethod: paymentMethod ?? "",
-          paymentConfirmationNumber: paymentMethod !== "cash" ? paymentConfirmationNumber.trim() : "",
+          paymentConfirmationNumber: (paymentMethod !== "cash" && paymentMethod !== "pay_later") ? paymentConfirmationNumber.trim() : "",
           cardLast4: cardLast4Ref.current?.last4 ?? "",
           cardBrand: cardLast4Ref.current?.brand ?? "",
           clientAddress: isMobileService && effectiveClientAddress.trim() ? effectiveClientAddress.trim() : "",
@@ -2247,7 +2253,7 @@ export default function ClientBookingWizardScreen() {
                   onPress={() => {
                     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setPaymentMethod(method.id);
-                    if (method.id === "cash") setPaymentConfirmationNumber("");
+                    if (method.id === "cash" || method.id === "pay_later") setPaymentConfirmationNumber("");
                   }}
                 >
                   <Text style={{ fontSize: 22 }}>{method.icon}</Text>
@@ -2291,7 +2297,7 @@ export default function ClientBookingWizardScreen() {
               ))}
             </View>
 
-            {paymentMethod && paymentMethod !== "cash" && paymentMethod !== "card" && (
+            {paymentMethod && paymentMethod !== "cash" && paymentMethod !== "card" && paymentMethod !== "pay_later" && (
               <View style={{ marginTop: 16 }}>
                 <Text style={[s.notesLabel, { color: TEXT_PRIMARY }]}>
                   {paymentMethod === "zelle" ? "Zelle" : paymentMethod === "venmo" ? "Venmo" : "Cash App"} Confirmation
@@ -2333,6 +2339,16 @@ export default function ClientBookingWizardScreen() {
                 <IconSymbol name="info.circle.fill" size={18} color={TEXT_MUTED} />
                 <Text style={[{ color: TEXT_MUTED, fontSize: 13, flex: 1, lineHeight: 18 }]}>
                   Cash payments are collected at your appointment. The business will confirm receipt from their side.
+                </Text>
+              </View>
+            )}
+            {paymentMethod === "pay_later" && (
+              <View style={[s.cashInfoCard, { backgroundColor: "rgba(255,165,0,0.07)", borderColor: "rgba(255,165,0,0.3)" }]}>
+                <Text style={{ fontSize: 16 }}>{isMobileService ? "🤝" : "🏪"}</Text>
+                <Text style={[{ color: TEXT_MUTED, fontSize: 13, flex: 1, lineHeight: 18 }]}>
+                  {isMobileService
+                    ? "You'll pay after the service is complete at your location. The provider will collect payment when finished."
+                    : "You'll pay when you arrive at the store. Please have your payment ready at the time of your appointment."}
                 </Text>
               </View>
             )}
@@ -3135,8 +3151,8 @@ function canProceed(
   if (step === STEP_PAYMENT) {
     if (!paymentMethod) return false;
     // Card payments don't need a confirmation number — Stripe handles it
-    // Cash payments don't need one either — paid in person
-    if (paymentMethod !== "cash" && paymentMethod !== "card" && !paymentConfirmationNumber?.trim()) return false;
+    // Cash / pay_later payments don't need one either — paid in person or after service
+    if (paymentMethod !== "cash" && paymentMethod !== "card" && paymentMethod !== "pay_later" && !paymentConfirmationNumber?.trim()) return false;
     return true;
   }
   // Promo step is always skippable (optional)

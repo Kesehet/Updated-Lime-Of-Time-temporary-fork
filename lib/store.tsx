@@ -2017,6 +2017,8 @@ export function StoreProvider({ children, onStoreLoaded }: { children: React.Rea
               paymentStatus: appt.paymentStatus,
               paymentMethod: appt.paymentMethod || undefined,
               paymentConfirmationNumber: appt.paymentConfirmationNumber || undefined,
+              travelFee: (appt as any).travelFee != null ? Number((appt as any).travelFee) : undefined,
+              notifyTravelFeeChange: (appt as any)._notifyTravelFeeChange === true,
             });
             break;
           }
