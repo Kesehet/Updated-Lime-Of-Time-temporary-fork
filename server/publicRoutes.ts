@@ -124,7 +124,9 @@ function generateAvailableSlots(
     // Check for conflicts
     const slotEnd = t + duration;
     const conflict = bookedSlots.some(
-      (b: any) => t < (b.end + bufferTime) && slotEnd > (b.start - bufferTime)
+      // Buffer applies ONLY after an appointment ends (not before it starts).
+      // A slot is blocked if it overlaps the appointment OR starts within bufferTime after the appointment ends.
+      (b: any) => t < (b.end + bufferTime) && slotEnd > b.start
     );
     if (!conflict) {
       slots.push(minutesToTime(t));
@@ -516,7 +518,10 @@ export function registerPublicRoutes(app: Express) {
 
       // When a specific location is requested, use single-location logic (staff > location > global)
       if (locationLocalId) {
-        const appts = allAppts.filter((a: any) => a.locationId === locationLocalId);
+        // Filter appointments by location; if a specific staff member is selected, also filter by staffId
+        // so that only that staff member's appointments are treated as conflicts.
+        let appts = allAppts.filter((a: any) => a.locationId === locationLocalId);
+        if (staffLocalId) appts = appts.filter((a: any) => a.staffId === staffLocalId);
         const schedule = allSchedule.filter((cs: any) => cs.locationId === locationLocalId || cs.locationId == null);
         let effectiveWorkingHours = owner.workingHours;
         const locs = await db.getLocationsByOwner(owner.id);
@@ -549,6 +554,8 @@ export function registerPublicRoutes(app: Express) {
       // If no active locations, fall back to global working hours
       if (activeLocs.length === 0) {
         let effectiveWorkingHours = owner.workingHours;
+        // Filter appointments by staffId if a specific staff member is selected
+        const globalAppts = staffLocalId ? allAppts.filter((a: any) => a.staffId === staffLocalId) : allAppts;
         if (staffLocalId) {
           const staffList = await db.getStaffByOwner(owner.id);
           const staff = staffList.find((s: any) => s.localId === staffLocalId);
@@ -557,7 +564,7 @@ export function registerPublicRoutes(app: Express) {
             effectiveWorkingHours = staffWh;
           }
         }
-        const slots = generateAvailableSlots(date, duration, effectiveWorkingHours, allAppts, getStep(duration), allSchedule, mode, buffer, clientToday, nowMinutes);
+        const slots = generateAvailableSlots(date, duration, effectiveWorkingHours, globalAppts, getStep(duration), allSchedule, mode, buffer, clientToday, nowMinutes);
         const slotLocationCounts: Record<string, number> = {};
         slots.forEach((s) => { slotLocationCounts[s] = 1; });
         res.json({ date, slots, slotLocationCounts });
@@ -577,7 +584,9 @@ export function registerPublicRoutes(app: Express) {
       // Compute per-location slot counts for the union
       const slotLocationCounts: Record<string, number> = {};
       for (const loc of activeLocs) {
-        const locAppts = allAppts.filter((a: any) => a.locationId === loc.localId);
+        // Filter by location; also filter by staffId if a specific staff member is selected
+        let locAppts = allAppts.filter((a: any) => a.locationId === loc.localId);
+        if (staffLocalId) locAppts = locAppts.filter((a: any) => a.staffId === staffLocalId);
         const locSchedule = allSchedule.filter((cs: any) => cs.locationId === loc.localId || cs.locationId == null);
         let locWH = owner.workingHours;
         if (loc.workingHours) {
@@ -959,7 +968,7 @@ export function registerPublicRoutes(app: Express) {
         return;
       }
 
-      const { clientName, clientPhone, clientEmail, serviceLocalId, date, time, duration, notes, giftCode, totalPrice, extraItems, giftApplied, giftUsedAmount, discountName, discountPercentage, discountAmount, subtotal, locationId, paymentMethod, paymentConfirmationNumber, promoCode, promoLocalId, clientAddress, travelFee, clientToday: bookClientToday, nowMinutes: bookNowMinutes } = req.body;
+      const { clientName, clientPhone, clientEmail, serviceLocalId, date, time, duration, notes, giftCode, totalPrice, extraItems, giftApplied, giftUsedAmount, discountName, discountPercentage, discountAmount, subtotal, locationId, staffLocalId: bookStaffLocalId, paymentMethod, paymentConfirmationNumber, promoCode, promoLocalId, clientAddress, travelFee, clientToday: bookClientToday, nowMinutes: bookNowMinutes } = req.body;
 
       if (!clientName || !serviceLocalId || !date || !time) {
         res.status(400).json({ error: "Missing required fields: clientName, serviceLocalId, date, time" });
@@ -1022,10 +1031,13 @@ export function registerPublicRoutes(app: Express) {
       const svc = svcList.find((s) => s.localId === serviceLocalId);
       const dur = duration || svc?.duration || 60;
 
-      // Scope appointments and custom schedule to the selected location for accurate validation
-      const bookAppts = locationId
+      // Scope appointments and custom schedule to the selected location for accurate validation.
+      // Also scope to the selected staff member if provided, so only that staff member's appointments
+      // are treated as conflicts (not all appointments at the location).
+      let bookAppts = locationId
         ? allBookAppts.filter((a: any) => a.locationId === locationId)
         : allBookAppts;
+      if (bookStaffLocalId) bookAppts = bookAppts.filter((a: any) => a.staffId === bookStaffLocalId);
       const bookSchedule = locationId
         ? allBookSchedule.filter((cs: any) => cs.locationId === locationId || cs.locationId == null)
         : allBookSchedule;
@@ -1163,8 +1175,8 @@ export function registerPublicRoutes(app: Express) {
         locationId: locationId || null,
         clientAddress: clientAddress || null,
         travelFee: travelFee != null ? String(parseFloat(String(travelFee))) : null,
-        paymentMethod: (paymentMethod && paymentMethod !== 'later') ? paymentMethod : null,
-        paymentStatus: paymentMethod === 'cash' ? 'pending_cash' : ((paymentMethod && paymentMethod !== 'later') ? 'unpaid' : null),
+        paymentMethod: paymentMethod || null,
+        paymentStatus: (paymentMethod === 'cash' || paymentMethod === 'pay_later') ? 'pending_cash' : (paymentMethod ? 'unpaid' : null),
       });
 
       // Atomically deduct from gift card balance (prevents double-spend race conditions)
@@ -4129,24 +4141,61 @@ function changeCalMonth(d) {
   }
   renderCal();
 }
-function selectDay(iso) {
+async function selectDay(iso) {
   selectedDate = iso;
   selectedTime = null;
   renderCal();
-  // Show simple time slots
-  const slots = ['9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM','1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM','4:00 PM','4:30 PM','5:00 PM'];
-  let html = '';
-  slots.forEach(function(t) {
-    html += '<div class="time-slot' + (selectedTime === t ? ' selected' : '') + '" data-time="' + escH(t) + '" onclick="selectTime(this.dataset.time)">' + t + '</div>';
-  });
-  document.getElementById('timeGrid').innerHTML = html;
-  document.getElementById('timeSection').style.display = 'block';
+  // Fetch real available slots from the API (respects working hours, existing appointments, buffer time, travel time)
+  const timeGrid = document.getElementById('timeGrid');
+  const timeSection = document.getElementById('timeSection');
+  timeSection.style.display = 'block';
+  timeGrid.innerHTML = '<div style="text-align:center;padding:16px;color:var(--textm,#888);font-size:13px;">Loading available times...</div>';
+  updateFooterBtn();
+  try {
+    const now = new Date();
+    const todayStr = now.toLocaleDateString('en-CA');
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    // Compute service duration (include travel time for mobile services)
+    let dur = 60;
+    if (allServices.length > 0 && selectedServiceIds.size > 0) {
+      const svc = allServices.find(function(s) { return selectedServiceIds.has(s.localId); });
+      if (svc) {
+        dur = svc.duration || 60;
+        // Add travel time for mobile services (round trip)
+        if (svc.serviceType === 'mobile' && svc.travelDuration) dur += svc.travelDuration * 2;
+      }
+    }
+    const staffParam = giftSelectedStaff ? '&staffId=' + encodeURIComponent(giftSelectedStaff.localId) : '';
+    const url = '/api/public/business/' + SLUG_ENC + '/slots?date=' + encodeURIComponent(iso) + '&duration=' + dur + staffParam + '&clientToday=' + encodeURIComponent(todayStr) + '&nowMinutes=' + nowMinutes;
+    const r = await fetch(url);
+    const data = await r.json();
+    const slots = (data.slots || []);
+    if (slots.length === 0) {
+      timeGrid.innerHTML = '<div style="text-align:center;padding:16px;color:var(--textm,#888);font-size:13px;">No available times on this date.</div>';
+    } else {
+      // Convert 24h "HH:MM" to 12h "H:MM AM/PM" for display
+      function fmt12(t) {
+        const parts = t.split(':'); const h = parseInt(parts[0]); const m = parts[1];
+        const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+        return h12 + ':' + m + ' ' + ampm;
+      }
+      let html = '';
+      slots.forEach(function(t) {
+        const display = fmt12(t);
+        html += '<div class="time-slot' + (selectedTime === t ? ' selected' : '') + '" data-time="' + escH(t) + '" onclick="selectTime(this.dataset.time)">' + escH(display) + '</div>';
+      });
+      timeGrid.innerHTML = html;
+    }
+  } catch(e) {
+    timeGrid.innerHTML = '<div style="text-align:center;padding:16px;color:var(--err,#ef4444);font-size:13px;">Failed to load times. Please try again.</div>';
+  }
   updateFooterBtn();
 }
 function selectTime(t) {
   selectedTime = t;
   document.querySelectorAll('.time-slot').forEach(function(el) {
-    el.className = 'time-slot' + (el.textContent === t ? ' selected' : '');
+    // Match by data-time (24h value) not textContent (12h display)
+    el.className = 'time-slot' + (el.dataset.time === t ? ' selected' : '');
   });
   updateFooterBtn();
 }
