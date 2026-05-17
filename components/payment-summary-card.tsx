@@ -54,6 +54,8 @@ export interface PaymentSummaryCardProps {
   unpaidRevenue: number;
   paidCount: number;
   unpaidCount: number;
+  giftRevenue?: number;
+  giftCount?: number;
   methodBreakdown: Record<string, MethodBreakdownEntry>;
   serviceBreakdown: ServiceBreakdownItem[];
   statusCounts: StatusCounts;
@@ -440,6 +442,8 @@ export function PaymentSummaryCard({
   unpaidRevenue,
   paidCount,
   unpaidCount,
+  giftRevenue = 0,
+  giftCount = 0,
   methodBreakdown,
   serviceBreakdown,
   statusCounts,
@@ -583,6 +587,20 @@ export function PaymentSummaryCard({
                   <IconSymbol name="chevron.right" size={11} color={colors.muted} style={{ marginLeft: 4 }} />
                 </Pressable>
               ))}
+            </View>
+          )}
+
+          {/* Gift Redeemed line */}
+          {giftCount > 0 && (
+            <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: 0.5, borderTopColor: colors.border }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22C55E' }} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: colors.foreground }}>🎁 Gift Redeemed</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ fontSize: 13, fontWeight: '800', color: '#22C55E' }}>${giftRevenue.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}</Text>
+                <Text style={{ fontSize: 11, color: colors.muted }}>{giftCount} appt{giftCount !== 1 ? 's' : ''}</Text>
+              </View>
             </View>
           )}
 

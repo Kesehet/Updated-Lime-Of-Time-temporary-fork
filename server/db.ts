@@ -742,6 +742,62 @@ export async function atomicDeductGiftCardBalance(
   }
 }
 
+/**
+ * Atomically restore a gift card balance when an appointment using the gift is cancelled.
+ * Mirrors atomicDeductGiftCardBalance — adds restoreAmount back to remainingBalance and
+ * un-marks the card as redeemed if the balance becomes positive again.
+ */
+export async function atomicRestoreGiftCardBalance(
+  code: string,
+  businessOwnerId: number,
+  restoreAmount: number
+): Promise<{ success: boolean; newBalance?: number; reason?: string }> {
+  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL not set");
+
+  const conn = await mysql2.createConnection(process.env.DATABASE_URL);
+  try {
+    await conn.beginTransaction();
+
+    const [rows] = await conn.execute(
+      `SELECT id, message FROM gift_cards WHERE code = ? AND businessOwnerId = ? FOR UPDATE`,
+      [code, businessOwnerId]
+    ) as any;
+
+    if (!rows || rows.length === 0) {
+      await conn.rollback();
+      return { success: false, reason: "Gift card not found" };
+    }
+
+    const row = rows[0];
+    const msgStr = row.message || "";
+    const match = msgStr.match(/\n---GIFT_DATA---\n(.+)$/s);
+    let meta: any = {};
+    if (match) { try { meta = JSON.parse(match[1]); } catch (_) {} }
+
+    const currentBalance: number = meta.remainingBalance ?? 0;
+    const originalValue: number = meta.originalValue ?? restoreAmount;
+    const newBalance = Math.min(originalValue, currentBalance + restoreAmount);
+    meta.remainingBalance = newBalance;
+    const cleanMsg = msgStr.replace(/\n---GIFT_DATA---\n.+$/s, "");
+    const updatedMsg = cleanMsg + "\n---GIFT_DATA---\n" + JSON.stringify(meta);
+    // Un-mark as redeemed if balance is now positive
+    const fullyRedeemed = newBalance <= 0;
+
+    await conn.execute(
+      `UPDATE gift_cards SET message = ?, redeemed = ?, redeemedAt = ? WHERE id = ?`,
+      [updatedMsg, fullyRedeemed ? 1 : 0, fullyRedeemed ? new Date() : null, row.id]
+    );
+
+    await conn.commit();
+    return { success: true, newBalance };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    await conn.end();
+  }
+}
+
 export async function deleteGiftCard(localId: string, businessOwnerId: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

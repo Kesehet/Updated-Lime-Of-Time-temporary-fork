@@ -570,6 +570,28 @@ const appointmentsRouter = router({
       }
       await db.updateAppointment(localId, businessOwnerId, dbData);
 
+      // ── Restore gift card balance when a gift-covered appointment is cancelled ───────────────
+      if (data.status === "cancelled") {
+        try {
+          // Fetch the appointment to check if a gift was used
+          const apptRow = await db.getAppointmentByLocalId(localId, businessOwnerId);
+          if (apptRow && (apptRow as any).giftApplied && (apptRow as any).giftCode) {
+            const giftCode: string = (apptRow as any).giftCode;
+            const usedAmount: number = parseFloat((apptRow as any).giftUsedAmount ?? '0') || 0;
+            if (usedAmount > 0) {
+              const restoreResult = await db.atomicRestoreGiftCardBalance(giftCode, businessOwnerId, usedAmount);
+              if (restoreResult.success) {
+                console.log(`[Gift] Restored $${usedAmount.toFixed(2)} to gift card ${giftCode} (new balance: $${restoreResult.newBalance?.toFixed(2)}) for cancelled appointment ${localId}`);
+              } else {
+                console.warn(`[Gift] Could not restore gift balance for ${giftCode}: ${restoreResult.reason}`);
+              }
+            }
+          }
+        } catch (giftErr) {
+          console.error("[Gift] Failed to restore gift card balance on cancellation:", giftErr);
+        }
+      }
+
       // Send confirmation email to client when appointment is accepted (status → confirmed)
       if (data.status === "confirmed") {
         try {

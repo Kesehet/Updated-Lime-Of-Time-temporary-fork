@@ -830,6 +830,13 @@ export default function HomeScreen() {
     const unpaidRevenue = unpaidAppts.reduce((sum, a) => sum + getApptPrice(a), 0);
     const paidCount = paidAppts.length;
     const unpaidCount = unpaidAppts.length;
+    // Gift redemption stats — appointments where a gift card was used
+    const giftAppts = filteredAppts.filter((a) => !!(a as any).giftApplied);
+    const giftRevenue = giftAppts.reduce((sum, a) => {
+      const used = parseFloat((a as any).giftUsedAmount ?? '0') || 0;
+      return sum + (used > 0 ? used : getApptPrice(a));
+    }, 0);
+    const giftCount = giftAppts.length;
     // Payment method breakdown — keyed by canonical method, value is { count, revenue }
     const METHOD_LABELS: Record<string, string> = {
       cash: 'Cash',
@@ -956,6 +963,8 @@ export default function HomeScreen() {
       unpaidRevenue,
       paidCount,
       unpaidCount,
+      giftRevenue,
+      giftCount,
       methodBreakdown,
       upcomingThisWeek,
       weekConfirmed,
@@ -2424,6 +2433,8 @@ export default function HomeScreen() {
           unpaidRevenue={analytics.unpaidRevenue}
           paidCount={analytics.paidCount}
           unpaidCount={analytics.unpaidCount}
+          giftRevenue={analytics.giftRevenue}
+          giftCount={analytics.giftCount}
           methodBreakdown={analytics.methodBreakdown}
           serviceBreakdown={analytics.serviceBreakdown}
           statusCounts={analytics.statusCounts}
