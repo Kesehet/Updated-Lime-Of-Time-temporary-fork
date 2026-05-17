@@ -570,25 +570,70 @@ const appointmentsRouter = router({
       }
       await db.updateAppointment(localId, businessOwnerId, dbData);
 
-      // ── Restore gift card balance when a gift-covered appointment is cancelled ───────────────
-      if (data.status === "cancelled") {
+      // ── Restore gift card balance when a gift-covered appointment is cancelled or (optionally) no-show ──
+      const shouldRestoreGift = data.status === "cancelled" || (
+        data.status === "no_show" && (() => {
+          // Check the business owner's restoreGiftOnNoShow preference
+          // We'll read it from the DB asynchronously below
+          return false; // placeholder — handled inside the try block
+        })()
+      );
+      if (data.status === "cancelled" || data.status === "no_show") {
         try {
-          // Fetch the appointment to check if a gift was used
           const apptRow = await db.getAppointmentByLocalId(localId, businessOwnerId);
           if (apptRow && (apptRow as any).giftApplied && (apptRow as any).giftCode) {
-            const giftCode: string = (apptRow as any).giftCode;
-            const usedAmount: number = parseFloat((apptRow as any).giftUsedAmount ?? '0') || 0;
-            if (usedAmount > 0) {
-              const restoreResult = await db.atomicRestoreGiftCardBalance(giftCode, businessOwnerId, usedAmount);
-              if (restoreResult.success) {
-                console.log(`[Gift] Restored $${usedAmount.toFixed(2)} to gift card ${giftCode} (new balance: $${restoreResult.newBalance?.toFixed(2)}) for cancelled appointment ${localId}`);
-              } else {
-                console.warn(`[Gift] Could not restore gift balance for ${giftCode}: ${restoreResult.reason}`);
+            // For no-show, check the business owner's restoreGiftOnNoShow preference
+            let doRestore = data.status === "cancelled";
+            if (data.status === "no_show") {
+              const ownerForGift = await db.getBusinessOwnerById(businessOwnerId);
+              const ownerSettings = (ownerForGift as any)?.settings ?? {};
+              doRestore = ownerSettings.restoreGiftOnNoShow === true;
+            }
+            if (doRestore) {
+              const giftCode: string = (apptRow as any).giftCode;
+              const usedAmount: number = parseFloat((apptRow as any).giftUsedAmount ?? '0') || 0;
+              if (usedAmount > 0) {
+                const restoreResult = await db.atomicRestoreGiftCardBalance(giftCode, businessOwnerId, usedAmount);
+                if (restoreResult.success) {
+                  console.log(`[Gift] Restored $${usedAmount.toFixed(2)} to gift card ${giftCode} (new balance: $${restoreResult.newBalance?.toFixed(2)}) for ${data.status} appointment ${localId}`);
+                  // ── Notify the client that their gift balance was restored ──────────────────
+                  try {
+                    const enrichedForGift = await db.getEnrichedAppointment(localId, businessOwnerId);
+                    if (enrichedForGift?.clientPhone) {
+                      const normPhoneGift = db.normalizePhone(enrichedForGift.clientPhone);
+                      const clientAccGift = await db.getClientAccountByPhone(normPhoneGift);
+                      if (clientAccGift) {
+                        const ownerForNotif = await db.getBusinessOwnerById(businessOwnerId);
+                        const bNameGift = ownerForNotif?.businessName ?? "your provider";
+                        const sNameGift = enrichedForGift.serviceName ?? "appointment";
+                        const amtStr = `$${usedAmount.toFixed(2)}`;
+                        const newBalStr = restoreResult.newBalance != null ? ` Your new gift card balance is $${restoreResult.newBalance.toFixed(2)}.` : "";
+                        // Push notification
+                        if (clientAccGift.expoPushToken) {
+                          await sendExpoPush(clientAccGift.expoPushToken, {
+                            title: `🎁 Gift Balance Restored`,
+                            body: `${amtStr} has been returned to your gift card because your ${sNameGift} with ${bNameGift} was ${data.status === "no_show" ? "marked as no-show" : "cancelled"}.${newBalStr}`,
+                            data: { type: "gift_restored" as any, appointmentId: localId, businessOwnerId },
+                            channelId: "appointments",
+                            sound: "default",
+                          }).catch(() => {});
+                        }
+                        // In-app message
+                        const inAppGiftMsg = `🎁 Your ${amtStr} gift card balance has been restored because your ${sNameGift} appointment on ${enrichedForGift.date ?? ""} was ${data.status === "no_show" ? "marked as no-show" : "cancelled"}.${newBalStr} — ${bNameGift}`;
+                        await db.insertClientMessage({ businessOwnerId, clientAccountId: clientAccGift.id, senderType: "business", body: inAppGiftMsg }).catch(() => {});
+                      }
+                    }
+                  } catch (notifErr) {
+                    console.error("[Gift] Failed to send gift restore notification:", notifErr);
+                  }
+                } else {
+                  console.warn(`[Gift] Could not restore gift balance for ${giftCode}: ${restoreResult.reason}`);
+                }
               }
             }
           }
         } catch (giftErr) {
-          console.error("[Gift] Failed to restore gift card balance on cancellation:", giftErr);
+          console.error("[Gift] Failed to restore gift card balance:", giftErr);
         }
       }
 
@@ -1135,7 +1180,20 @@ const giftCardsRouter = router({
   list: publicProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
-      return db.getGiftCardsByOwner(input.businessOwnerId);
+      const rows = await db.getGiftCardsByOwner(input.businessOwnerId);
+      // Parse GIFT_DATA block from message field to expose ownerNotes, remainingBalance, and transactions
+      return rows.map((card: any) => {
+        const msgStr = card.message || "";
+        const match = msgStr.match(/\n---GIFT_DATA---\n(.+)$/s);
+        let meta: any = {};
+        if (match) { try { meta = JSON.parse(match[1]); } catch (_) {} }
+        return {
+          ...card,
+          remainingBalance: meta.remainingBalance ?? meta.originalValue ?? card.totalValue ?? null,
+          ownerNotes: meta.ownerNotes ?? null,
+          transactions: Array.isArray(meta.transactions) ? meta.transactions : [],
+        };
+      });
     }),
 
   create: publicProcedure

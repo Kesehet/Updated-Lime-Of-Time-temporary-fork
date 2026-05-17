@@ -202,6 +202,8 @@ export interface GiftCard {
   bannerImageUri?: string;
   /** Internal note visible only to the business owner */
   ownerNotes?: string;
+  /** Transaction history: each entry records a redemption or restoration event */
+  transactions?: Array<{ type: string; amount: number; balanceAfter: number; at: string }>;
 }
 
 export interface Product {
@@ -553,6 +555,8 @@ export interface BusinessSettings {
   businessCategory?: string | null;
   /** IANA timezone identifier for the business (e.g. "America/New_York", "America/Chicago"). Default: "America/New_York" */
   timezone?: string;
+  /** Whether to restore the gift card balance when an appointment is marked as no-show. Default false (gift is consumed). */
+  restoreGiftOnNoShow?: boolean;
 }
 
 /** A global reminder template that can be sent to clients for any appointment */

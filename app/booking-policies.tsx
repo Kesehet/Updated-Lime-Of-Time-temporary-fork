@@ -52,6 +52,13 @@ export default function BookingPoliciesScreen() {
     syncToDb(action);
   }, [dispatch, syncToDb]);
 
+  const restoreGiftOnNoShow = settings.restoreGiftOnNoShow ?? false;
+  const toggleRestoreGiftOnNoShow = useCallback(() => {
+    const action = { type: "UPDATE_SETTINGS" as const, payload: { restoreGiftOnNoShow: !restoreGiftOnNoShow } };
+    dispatch(action);
+    syncToDb(action);
+  }, [restoreGiftOnNoShow, dispatch, syncToDb]);
+
   const toggleAutoComplete = useCallback(() => {
     const action = { type: "UPDATE_SETTINGS" as const, payload: { autoCompleteEnabled: !autoComplete } };
     dispatch(action);
@@ -387,6 +394,28 @@ export default function BookingPoliciesScreen() {
                 </Text>
               </Pressable>
             ))}
+          </View>
+        </View>
+        {/* No-Show Gift Policy */}
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.switchRow}>
+            <View style={styles.switchLabel}>
+              <IconSymbol name="gift.fill" size={20} color="#E91E63" />
+              <View style={{ marginLeft: 12, flex: 1 }}>
+                <Text style={{ fontSize: fs.sm, fontWeight: "500", color: colors.foreground }}>Restore Gift on No-Show</Text>
+                <Text style={{ fontSize: fs.xs, color: colors.muted, marginTop: 2 }}>
+                  {restoreGiftOnNoShow
+                    ? "Gift balance is restored when you mark an appointment as no-show."
+                    : "Gift balance is kept consumed when an appointment is marked as no-show."}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={restoreGiftOnNoShow}
+              onValueChange={toggleRestoreGiftOnNoShow}
+              trackColor={{ false: colors.border, true: "#E91E63" }}
+              thumbColor="#fff"
+            />
           </View>
         </View>
         {/* Custom Booking Slug */}

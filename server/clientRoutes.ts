@@ -1401,12 +1401,14 @@ export function registerClientRoutes(app: Express) {
         let remainingBalance: number | null = null;
         let giftType: string = "service";
         let bannerImageUri: string | null = null;
+        let transactions: Array<{ type: string; amount: number; balanceAfter: number; at: string }> = [];
         if (giftDataMatch) {
           try {
             const meta = JSON.parse(giftDataMatch[1]);
             remainingBalance = meta.remainingBalance ?? meta.originalValue ?? null;
             giftType = meta.giftType ?? "service";
             bannerImageUri = meta.bannerImageUri ?? null;
+            transactions = Array.isArray(meta.transactions) ? meta.transactions : [];
           } catch {}
         }
         const cleanMessage = rawMsg.replace(/\n---GIFT_DATA---\n.+$/s, "").trim() || null;
@@ -1431,6 +1433,7 @@ export function registerClientRoutes(app: Express) {
           packageLocalId: (card as any).packageLocalId || null,
           createdAt: card.createdAt,
           bannerImageUri,
+          transactions,
         };
       }));
       res.json(result);

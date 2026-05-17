@@ -723,6 +723,9 @@ export async function atomicDeductGiftCardBalance(
 
     const newBalance = Math.max(0, currentBalance - deductAmount);
     meta.remainingBalance = newBalance;
+    // Append to transaction log
+    if (!Array.isArray(meta.transactions)) meta.transactions = [];
+    meta.transactions.push({ type: "redeemed", amount: deductAmount, balanceAfter: newBalance, at: new Date().toISOString() });
     const cleanMsg = msgStr.replace(/\n---GIFT_DATA---\n.+$/s, "");
     const updatedMsg = cleanMsg + "\n---GIFT_DATA---\n" + JSON.stringify(meta);
     const fullyRedeemed = newBalance <= 0;
@@ -778,6 +781,9 @@ export async function atomicRestoreGiftCardBalance(
     const originalValue: number = meta.originalValue ?? restoreAmount;
     const newBalance = Math.min(originalValue, currentBalance + restoreAmount);
     meta.remainingBalance = newBalance;
+    // Append to transaction log
+    if (!Array.isArray(meta.transactions)) meta.transactions = [];
+    meta.transactions.push({ type: "restored", amount: restoreAmount, balanceAfter: newBalance, at: new Date().toISOString() });
     const cleanMsg = msgStr.replace(/\n---GIFT_DATA---\n.+$/s, "");
     const updatedMsg = cleanMsg + "\n---GIFT_DATA---\n" + JSON.stringify(meta);
     // Un-mark as redeemed if balance is now positive

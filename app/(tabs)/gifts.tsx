@@ -225,6 +225,46 @@ function EditBottomSheet({
                 multiline
               />
 
+              {/* Transaction History */}
+              {(() => {
+                const txs: Array<{ type: string; amount: number; balanceAfter: number; at: string }> =
+                  (card as any).transactions ?? [];
+                return (
+                  <View style={{ marginTop: 16, marginBottom: 4 }}>
+                    <Text style={[styles.fieldLabel, { color: colors.muted, marginBottom: 6 }]}>Transaction History</Text>
+                    {txs.length === 0 ? (
+                      <Text style={{ fontSize: fs.xs, color: colors.muted, fontStyle: "italic" }}>No transactions yet</Text>
+                    ) : (
+                      txs.slice().reverse().map((tx, idx) => {
+                        const isRestore = tx.type === "restored";
+                        const icon = isRestore ? "↩" : "🎁";
+                        const label = isRestore ? "Restored" : "Redeemed";
+                        const amtColor = isRestore ? colors.success : colors.warning;
+                        const date = new Date(tx.at);
+                        const dateStr = date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+                        const timeStr = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+                        return (
+                          <View key={idx} style={{
+                            flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+                            paddingVertical: 6, borderBottomWidth: idx < txs.length - 1 ? 1 : 0,
+                            borderBottomColor: colors.border,
+                          }}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1 }}>
+                              <Text style={{ fontSize: fs.sm }}>{icon}</Text>
+                              <View>
+                                <Text style={{ fontSize: fs.xs, fontWeight: "700", color: amtColor }}>{label} ${tx.amount.toFixed(2)}</Text>
+                                <Text style={{ fontSize: 10, color: colors.muted }}>{dateStr} · {timeStr}</Text>
+                              </View>
+                            </View>
+                            <Text style={{ fontSize: fs.xs, color: colors.muted }}>bal ${tx.balanceAfter.toFixed(2)}</Text>
+                          </View>
+                        );
+                      })
+                    )}
+                  </View>
+                );
+              })()}
+
               {/* Toggle Actions */}
               <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
                 {/* Mark Redeemed / Active */}
