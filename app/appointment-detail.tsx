@@ -15,6 +15,7 @@ import { FuturisticBackground } from "@/components/futuristic-background";
 import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { useStripe, initStripe } from "@/lib/use-stripe";
+import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
 import {
   minutesToTime,
@@ -188,7 +189,15 @@ export default function AppointmentDetailScreen() {
   const [savingGiftRedeem, setSavingGiftRedeem] = useState(false);
   // Pay on behalf of client — native Stripe payment sheet
   const [payingOnBehalf, setPayingOnBehalf] = useState(false);
-  const [showPayOnBehalfSuccess, setShowPayOnBehalfSuccess] = useState(false);
+  // Receipt modal data — shown after a successful card payment
+  const [receiptData, setReceiptData] = useState<{
+    amount: number;
+    serviceName?: string;
+    clientName?: string;
+    cardLast4?: string;
+    cardBrand?: string;
+    confirmationId?: string;
+  } | null>(null);
   // Fee breakdown modal state
   const [feeBreakdown, setFeeBreakdown] = useState<{
     serviceAmount: number;
@@ -594,7 +603,29 @@ export default function AppointmentDetailScreen() {
         method: 'POST',
         body: JSON.stringify({ businessOwnerId: state.businessOwnerId, appointmentLocalId: appointment.id }),
       }).catch((e) => console.warn('[Stripe] mark-appointment-paid failed (non-blocking):', e));
-      setShowPayOnBehalfSuccess(true);
+      // Fetch card last4 for receipt (non-blocking — show receipt with or without it)
+      let cardLast4: string | undefined;
+      let cardBrand: string | undefined;
+      try {
+        const apiBase = getApiBaseUrl();
+        const last4Res = await fetch(
+          `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(appointment.id)}&businessOwnerId=${encodeURIComponent(state.businessOwnerId ?? '')}`,
+          { headers: { Authorization: `Bearer ${await getSessionToken()}` } },
+        );
+        if (last4Res.ok) {
+          const last4Data = await last4Res.json();
+          cardLast4 = last4Data.last4 ?? undefined;
+          cardBrand = last4Data.brand ?? undefined;
+        }
+      } catch { /* non-blocking */ }
+      setReceiptData({
+        amount: appointment.totalPrice ?? 0,
+        serviceName: service ? getServiceDisplayName(service) : undefined,
+        clientName: client?.name ?? undefined,
+        cardLast4,
+        cardBrand,
+        confirmationId: appointment.id,
+      });
     } catch (err: any) {
       Alert.alert('Payment Error', err?.message ?? 'Could not process payment. Please try again.');
     } finally {
@@ -632,14 +663,36 @@ export default function AppointmentDetailScreen() {
         method: 'POST',
         body: JSON.stringify({ businessOwnerId: state.businessOwnerId, appointmentLocalId: appointment.id }),
       }).catch((e) => console.warn('[Stripe] mark-appointment-paid failed (non-blocking):', e));
-      setShowPayOnBehalfSuccess(true);
+      // Fetch card last4 for receipt (non-blocking — show receipt with or without it)
+      let cardLast4: string | undefined;
+      let cardBrand: string | undefined;
+      try {
+        const apiBase = getApiBaseUrl();
+        const last4Res = await fetch(
+          `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(appointment.id)}&businessOwnerId=${encodeURIComponent(state.businessOwnerId ?? '')}`,
+          { headers: { Authorization: `Bearer ${await getSessionToken()}` } },
+        );
+        if (last4Res.ok) {
+          const last4Data = await last4Res.json();
+          cardLast4 = last4Data.last4 ?? undefined;
+          cardBrand = last4Data.brand ?? undefined;
+        }
+      } catch { /* non-blocking */ }
+      setReceiptData({
+        amount: appointment.totalPrice ?? 0,
+        serviceName: service ? getServiceDisplayName(service) : undefined,
+        clientName: client?.name ?? undefined,
+        cardLast4,
+        cardBrand,
+        confirmationId: appointment.id,
+      });
     } catch (err: any) {
       Alert.alert('Payment Error', err?.message ?? 'Could not process payment.');
     } finally {
       setPayingOnBehalf(false);
       setFeeBreakdown(null);
     }
-  }, [feeBreakdown, appointment, state.businessOwnerId, presentPaymentSheet, dispatch, syncToDb]);
+  }, [feeBreakdown, appointment, state.businessOwnerId, service, client, presentPaymentSheet, dispatch, syncToDb]);
 
   // ── Payment status polling — check every 30s if appointment is unpaid ──────
   // ── Immediate payment status check on mount (for notification tap) ─────────
@@ -2331,29 +2384,17 @@ Would you also like to charge a no-show fee via Stripe?`,
       </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Pay on Behalf Success Modal */}
-      <Modal visible={showPayOnBehalfSuccess} transparent animationType="slide" onRequestClose={() => setShowPayOnBehalfSuccess(false)}>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)' }}>
-          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28, paddingBottom: 44, width: '100%', maxWidth: modalMaxWidth, alignSelf: 'center', alignItems: 'center' }}>
-            <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#0F766E20', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-              <Text style={{ fontSize: 36 }}>✅</Text>
-            </View>
-            <Text style={{ fontSize: fs.xl, fontWeight: '800', color: colors.foreground, marginBottom: 6, textAlign: 'center' }}>Payment Complete</Text>
-            <Text style={{ fontSize: fs.sm, color: colors.muted, textAlign: 'center', marginBottom: 4 }}>
-              {client?.name ?? 'Client'}’s appointment has been paid.
-            </Text>
-            <Text style={{ fontSize: fs.lg, fontWeight: '700', color: '#0F766E', marginBottom: 24 }}>
-              ${(appointment?.totalPrice ?? 0).toFixed(2)} — Card
-            </Text>
-            <Pressable
-              onPress={() => setShowPayOnBehalfSuccess(false)}
-              style={({ pressed }) => [{ backgroundColor: '#0F766E', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40, opacity: pressed ? 0.8 : 1 }]}
-            >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: fs.md }}>Done</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      {/* Payment Receipt Modal — shown after successful card payment */}
+      <PaymentReceiptModal
+        visible={!!receiptData}
+        onDone={() => setReceiptData(null)}
+        amount={receiptData?.amount ?? 0}
+        serviceName={receiptData?.serviceName}
+        clientName={receiptData?.clientName}
+        cardLast4={receiptData?.cardLast4}
+        cardBrand={receiptData?.cardBrand}
+        confirmationId={receiptData?.confirmationId}
+      />
 
       {/* Payment Confirmation Modal */}
       <Modal

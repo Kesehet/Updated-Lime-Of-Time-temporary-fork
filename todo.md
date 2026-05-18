@@ -2377,3 +2377,11 @@
 ### Stripe Customer Portal
 - [x] Stripe Customer Portal endpoint already exists (POST /api/stripe/create-portal)
 - [x] Manage Billing button in Subscription screen already calls correct endpoint
+
+## Payment Receipt Screen (May 18, 2026)
+- [x] Create PaymentReceiptModal component (last 4, amount, service, confirmation number, date/time)
+- [ ] Integrate receipt modal into client-booking-wizard.tsx card payment success (client already navigates to full confirmation screen)
+- [x] Integrate receipt modal into appointment-detail.tsx pay-on-behalf card payment success
+- [x] Integrate receipt modal into new-booking.tsx card payment success
+- [ ] Integrate receipt modal into client-buy-gift.tsx card payment success (client already navigates to full gift confirmation screen)
+- [ ] Integrate receipt modal into client-gift-confirmation.tsx card payment success (already shows card brand+last4 in payment label)

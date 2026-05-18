@@ -27,6 +27,9 @@ import { useResponsive } from "@/hooks/use-responsive";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { useStripe, initStripe } from "@/lib/use-stripe";
 import { apiCall } from "@/lib/_core/api";
+import { getApiBaseUrl } from "@/constants/oauth";
+import { getSessionToken } from "@/lib/_core/auth";
+import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
 
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -77,6 +80,16 @@ export default function NewBookingScreen() {
   } | null>(null);
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
   const pendingPaymentAppointmentId = useRef<string | null>(null);
+  // Receipt modal data — shown after a successful card payment before navigating away
+  const [receiptData, setReceiptData] = useState<{
+    amount: number;
+    serviceName?: string;
+    clientName?: string;
+    cardLast4?: string;
+    cardBrand?: string;
+    confirmationId?: string;
+    navigateTo: string;
+  } | null>(null);
   const [step, setStep] = useState<Step>(1);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(params.prefillServiceId ?? null);
@@ -857,8 +870,32 @@ export default function NewBookingScreen() {
           appointmentLocalId: appointmentId,
         }),
       }).catch((e) => console.warn('[Stripe] mark-appointment-paid failed (non-blocking):', e));
+      // Fetch card last4 for receipt (non-blocking — show receipt with or without it)
+      let cardLast4: string | undefined;
+      let cardBrand: string | undefined;
+      try {
+        const apiBase = getApiBaseUrl();
+        const last4Res = await fetch(
+          `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(appointmentId)}&businessOwnerId=${encodeURIComponent(state.businessOwnerId ?? '')}`,
+          { headers: { Authorization: `Bearer ${await getSessionToken()}` } },
+        );
+        if (last4Res.ok) {
+          const last4Data = await last4Res.json();
+          cardLast4 = last4Data.last4 ?? undefined;
+          cardBrand = last4Data.brand ?? undefined;
+        }
+      } catch { /* non-blocking */ }
+      const paidApptForReceipt = state.appointments.find((a) => a.id === appointmentId);
+      setReceiptData({
+        amount: paidApptForReceipt?.totalPrice ?? feeBreakdown?.totalCharged ?? 0,
+        serviceName: selectedService ? getServiceDisplayName(selectedService) : undefined,
+        clientName: selectedClient?.name ?? undefined,
+        cardLast4,
+        cardBrand,
+        confirmationId: appointmentId,
+        navigateTo: appointmentId,
+      });
       setChargingCard(false);
-      router.replace({ pathname: '/appointment-detail', params: { id: appointmentId } });
     } catch (err: any) {
       Alert.alert('Payment Error', err?.message ?? 'Failed to process card payment');
       setChargingCard(false);
@@ -866,7 +903,7 @@ export default function NewBookingScreen() {
       setFeeBreakdown(null);
       pendingPaymentAppointmentId.current = null;
     }
-  }, [feeBreakdown, initStripe, presentPaymentSheet, state.appointments, state.businessOwnerId, dispatch, syncToDb, router]);
+  }, [feeBreakdown, initStripe, presentPaymentSheet, state.appointments, state.businessOwnerId, selectedService, selectedClient, dispatch, syncToDb, router]);
 
   const handleBook = useCallback(async () => {
     if (!selectedServiceId || !selectedClientId || !selectedTime) return;
@@ -1053,7 +1090,42 @@ export default function NewBookingScreen() {
             appointmentLocalId: firstAppointmentId,
           }),
         }).catch((e) => console.warn('[Stripe] mark-appointment-paid failed (non-blocking):', e));
+        // Fetch card last4 for receipt (non-blocking — show receipt with or without it)
+        let inlineCardLast4: string | undefined;
+        let inlineCardBrand: string | undefined;
+        try {
+          const apiBase = getApiBaseUrl();
+          const last4Res = await fetch(
+            `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(firstAppointmentId)}&businessOwnerId=${encodeURIComponent(state.businessOwnerId ?? '')}`,
+            { headers: { Authorization: `Bearer ${await getSessionToken()}` } },
+          );
+          if (last4Res.ok) {
+            const last4Data = await last4Res.json();
+            inlineCardLast4 = last4Data.last4 ?? undefined;
+            inlineCardBrand = last4Data.brand ?? undefined;
+          }
+        } catch { /* non-blocking */ }
+        // Silently save address to client profile on mobile booking (no alert needed)
+        if (isMobileService && clientAddress.trim() && selectedClientId && selectedClient) {
+          const existingSaved = (selectedClient as any)?.savedAddress ?? "";
+          if (clientAddress.trim() !== existingSaved.trim()) {
+            const updatedClient = { ...selectedClient, savedAddress: clientAddress.trim() };
+            dispatch({ type: "UPDATE_CLIENT", payload: updatedClient });
+            syncToDb({ type: "UPDATE_CLIENT", payload: updatedClient });
+          }
+        }
+        const inlinePaidAppt = state.appointments.find((a) => a.id === firstAppointmentId);
+        setReceiptData({
+          amount: inlinePaidAppt?.totalPrice ?? grandTotal,
+          serviceName: selectedService ? getServiceDisplayName(selectedService) : undefined,
+          clientName: selectedClient?.name ?? undefined,
+          cardLast4: inlineCardLast4,
+          cardBrand: inlineCardBrand,
+          confirmationId: firstAppointmentId,
+          navigateTo: firstAppointmentId,
+        });
         setChargingCard(false);
+        return; // navigation happens in onDone of PaymentReceiptModal
       } catch (err: any) {
         Alert.alert('Payment Error', err?.message ?? 'Failed to process card payment');
         setChargingCard(false);
@@ -3089,6 +3161,26 @@ export default function NewBookingScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Payment Receipt Modal — shown after successful card payment, navigates on Done */}
+      <PaymentReceiptModal
+        visible={!!receiptData}
+        onDone={() => {
+          const navId = receiptData?.navigateTo;
+          setReceiptData(null);
+          if (navId) {
+            router.replace({ pathname: '/appointment-detail', params: { id: navId } });
+          } else {
+            router.back();
+          }
+        }}
+        amount={receiptData?.amount ?? 0}
+        serviceName={receiptData?.serviceName}
+        clientName={receiptData?.clientName}
+        cardLast4={receiptData?.cardLast4}
+        cardBrand={receiptData?.cardBrand}
+        confirmationId={receiptData?.confirmationId}
+      />
     </ScreenContainer>
   );
 }
