@@ -854,6 +854,50 @@ export function registerStripeConnectRoutes(app: Express): void {
               } catch (notifErr) {
                 console.error("[StripeConnect] Card payment notification error:", notifErr);
               }
+
+              // ── Push notification to CLIENT (if they have a portal account) ──────
+              try {
+                const { clientAccounts } = await import("../drizzle/schema");
+                const dbC = await getDb();
+                if (dbC) {
+                  const apptC = (await dbC.select().from(appointments).where(and(eq(appointments.localId, appointmentLocalId!), eq(appointments.businessOwnerId, businessOwnerId))).limit(1))[0];
+                  if (apptC) {
+                    const clientLocalIdC = (apptC as any).clientLocalId ?? "";
+                    const clientInfoRowsC = clientLocalIdC
+                      ? await dbC.select({ email: clients.email }).from(clients)
+                          .where(and(eq(clients.localId, clientLocalIdC), eq(clients.businessOwnerId, businessOwnerId))).limit(1)
+                      : [];
+                    const clientEmailC = clientInfoRowsC[0]?.email;
+                    if (clientEmailC) {
+                      const caRowsC = await dbC
+                        .select({ expoPushToken: (clientAccounts as any).expoPushToken })
+                        .from(clientAccounts as any)
+                        .where(eq((clientAccounts as any).email, clientEmailC))
+                        .limit(1);
+                      const clientPushTokenC = (caRowsC[0] as any)?.expoPushToken;
+                      if (clientPushTokenC) {
+                        const svcRowsC = (apptC as any).serviceLocalId
+                          ? await dbC.select().from(services).where(and(eq(services.localId, (apptC as any).serviceLocalId), eq(services.businessOwnerId, businessOwnerId))).limit(1)
+                          : [];
+                        const ownerRowsC = await dbC.select().from(businessOwners).where(eq(businessOwners.id, businessOwnerId)).limit(1);
+                        const amountC = typeof (apptC as any).totalPrice === 'number' ? (apptC as any).totalPrice as number : 0;
+                        const amountStrC = `$${amountC.toFixed(2)}`;
+                        const svcNameC = (svcRowsC[0] as any)?.name || "Service";
+                        const bizNameC = ownerRowsC[0]?.businessName || "Your appointment";
+                        await sendExpoPush(clientPushTokenC, {
+                          title: "✅ Payment Confirmed",
+                          body: `${amountStrC} paid for ${svcNameC} at ${bizNameC}. See you soon!`,
+                          data: { type: "payment_received" as const, appointmentId: appointmentLocalId },
+                          sound: "default",
+                        });
+                        console.log(`[StripeConnect] Payment Confirmed push sent to client (${clientEmailC}) for appt ${appointmentLocalId}`);
+                      }
+                    }
+                  }
+                }
+              } catch (clientNotifErr) {
+                console.error("[StripeConnect] Client payment notification error:", clientNotifErr);
+              }
             }
           } catch (dbErr) {
             console.error("[StripeConnect] DB update error:", dbErr);
@@ -1020,6 +1064,49 @@ export function registerStripeConnectRoutes(app: Express): void {
                 }
               } catch (notifErr) {
                 console.error('[StripeConnect] Card payment notification error (payment_intent.succeeded):', notifErr);
+              }
+
+              // ── Push notification to CLIENT (if they have a portal account) ──────
+              try {
+                const { clientAccounts } = await import('../drizzle/schema');
+                const db3 = await getDb();
+                if (db3) {
+                  const apptRows2 = await db3.select().from(appointments).where(and(eq(appointments.localId, appointmentLocalId), eq(appointments.businessOwnerId, businessOwnerId))).limit(1);
+                  const appt2 = apptRows2[0];
+                  if (appt2) {
+                    const clientLocalId2 = (appt2 as any).clientLocalId ?? '';
+                    const clientInfoRows2 = clientLocalId2
+                      ? await db3.select({ email: clients.email }).from(clients)
+                          .where(and(eq(clients.localId, clientLocalId2), eq(clients.businessOwnerId, businessOwnerId))).limit(1)
+                      : [];
+                    const clientEmail2 = clientInfoRows2[0]?.email;
+                    if (clientEmail2) {
+                      const caRows2 = await db3
+                        .select({ expoPushToken: (clientAccounts as any).expoPushToken })
+                        .from(clientAccounts as any)
+                        .where(eq((clientAccounts as any).email, clientEmail2))
+                        .limit(1);
+                      const clientPushToken2 = (caRows2[0] as any)?.expoPushToken;
+                      if (clientPushToken2) {
+                        const svcRows2 = appt2.serviceLocalId ? await db3.select().from(services).where(and(eq(services.localId, appt2.serviceLocalId), eq(services.businessOwnerId, businessOwnerId))).limit(1) : [];
+                        const ownerRows2 = await db3.select().from(businessOwners).where(eq(businessOwners.id, businessOwnerId)).limit(1);
+                        const amountNum2 = typeof appt2.totalPrice === 'number' ? appt2.totalPrice : 0;
+                        const amountStr2 = `$${amountNum2.toFixed(2)}`;
+                        const svcName2 = (svcRows2[0] as any)?.name || 'Service';
+                        const bizName2 = ownerRows2[0]?.businessName || 'Your appointment';
+                        await sendExpoPush(clientPushToken2, {
+                          title: '✅ Payment Confirmed',
+                          body: `${amountStr2} paid for ${svcName2} at ${bizName2}. See you soon!`,
+                          data: { type: 'payment_received' as const, appointmentId: appointmentLocalId },
+                          sound: 'default',
+                        });
+                        console.log(`[StripeConnect] Payment Confirmed push sent to client (${clientEmail2}) for appt ${appointmentLocalId} (payment_intent.succeeded)`);
+                      }
+                    }
+                  }
+                }
+              } catch (clientNotifErr2) {
+                console.error('[StripeConnect] Client payment notification error (payment_intent.succeeded):', clientNotifErr2);
               }
             }
           } catch (dbErr) {
