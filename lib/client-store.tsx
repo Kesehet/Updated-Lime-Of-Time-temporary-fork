@@ -66,6 +66,10 @@ export interface ClientAppointment {
   sessionTotal?: number | null;
   /** Sibling sessions in the same package group, sorted by sessionIndex */
   packageSiblings?: PackageSessionSibling[] | null;
+  /** UUID string used as appointmentLocalId for Stripe payment sheet */
+  localId?: string | null;
+  /** Whether the business has Stripe Connect enabled (allows card payments) */
+  stripeConnectEnabled?: boolean | null;
 }
 
 export interface PackageSessionSibling {

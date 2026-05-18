@@ -634,6 +634,8 @@ export function registerClientRoutes(app: Express) {
         serviceType: service?.serviceType ?? null,
         travelDuration: service?.travelDuration ?? null,
         packageSiblings: packageSiblings.length > 0 ? packageSiblings : null,
+        localId: appt.localId ?? null,
+        stripeConnectEnabled: !!(owner as any)?.stripeConnectEnabled,
       });
     } catch (err: any) {
       res.status(err.message === "Unauthorized" ? 401 : 500).json({ error: err.message });

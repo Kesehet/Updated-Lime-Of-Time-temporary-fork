@@ -13,6 +13,7 @@ import {
   Image,
   KeyboardAvoidingView,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -79,6 +80,8 @@ export default function NewBookingScreen() {
     accountId: string;
   } | null>(null);
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false); // loading overlay
+  const [paymentRetryError, setPaymentRetryError] = useState<string | null>(null); // inline retry error
   const pendingPaymentAppointmentId = useRef<string | null>(null);
   // Resolve function for the "wait until Modal is fully dismissed" promise.
   // Set by handleConfirmNewBookingPayment, called by the Modal's onDismiss callback.
@@ -857,10 +860,12 @@ export default function NewBookingScreen() {
       // resets the Stripe SDK internal state and invalidates the payment sheet that was
       // already set up in handleBook, causing the sheet to render blank/white.
       await new Promise<void>((resolve) => { feeBreakdownDismissResolveRef.current = resolve; });
+      setPaymentProcessing(true);
       const { error: presentError } = await presentPaymentSheet();
+      setPaymentProcessing(false);
       if (presentError) {
         if (presentError.code !== 'Canceled') {
-          Alert.alert('Payment Failed', presentError.message);
+          setPaymentRetryError(presentError.message ?? 'Payment failed. Please try again.');
         }
         setChargingCard(false);
         router.replace({ pathname: '/appointment-detail', params: { id: appointmentId } });
@@ -3114,6 +3119,30 @@ export default function NewBookingScreen() {
           />
         </View>
       </Modal>
+
+      {/* ── Payment Processing Overlay ─────────────────────────────────── */}
+      {paymentProcessing && (
+        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.65)", alignItems: "center", justifyContent: "center", zIndex: 999 }}>
+          <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 32, alignItems: "center", gap: 16, borderWidth: 1, borderColor: colors.border }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: "600" }}>Processing payment...</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, textAlign: "center" }}>Please do not close the app</Text>
+          </View>
+        </View>
+      )}
+
+      {/* ── Payment Retry Error ───────────────────────────────────────────── */}
+      {paymentRetryError && (
+        <View style={{ position: "absolute", bottom: 120, left: 20, right: 20, backgroundColor: "rgba(239,68,68,0.12)", borderRadius: 14, borderWidth: 1, borderColor: "rgba(239,68,68,0.35)", padding: 16, zIndex: 998 }}>
+          <Text style={{ color: colors.error, fontSize: 13, textAlign: "center", lineHeight: 18, marginBottom: 10 }}>{paymentRetryError}</Text>
+          <Pressable
+            style={({ pressed }) => ({ alignItems: "center", opacity: pressed ? 0.7 : 1 })}
+            onPress={() => { setPaymentRetryError(null); setShowFeeBreakdown(true); }}
+          >
+            <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "700" }}>Try Again</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* ── Fee Breakdown Modal ────────────────────────────────────────── */}
       <Modal

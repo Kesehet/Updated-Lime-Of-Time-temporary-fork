@@ -268,6 +268,8 @@ export default function ClientBookingWizardScreen() {
     accountId: string;
   } | null>(null);
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false); // loading overlay after fee breakdown closes
+  const [paymentRetryError, setPaymentRetryError] = useState<string | null>(null); // inline retry error
   const pendingPaymentRef = useRef<{ appointmentId: string } | null>(null);
   // Resolve function for the "wait until Modal is fully dismissed" promise.
   // Set by handleConfirmPayment, called by the Modal's onDismiss callback.
@@ -980,6 +982,7 @@ export default function ClientBookingWizardScreen() {
   // Called when user taps "Confirm & Pay" in the fee breakdown modal
   const handleConfirmPayment = async () => {
     if (!feeBreakdown || !pendingPaymentRef.current) return;
+    setPaymentRetryError(null);
     setShowFeeBreakdown(false);
     setSubmitting(true);
     try {
@@ -995,9 +998,13 @@ export default function ClientBookingWizardScreen() {
       // already set up in handleSubmit, causing the sheet to render blank/white.
       // The initPaymentSheet() call in handleSubmit is sufficient.
       await new Promise<void>((resolve) => { feeBreakdownDismissResolveRef.current = resolve; });
+      setPaymentProcessing(true);
       const { error: presentError } = await presentPaymentSheet();
+      setPaymentProcessing(false);
       if (presentError && presentError.code !== "Canceled") {
-        Alert.alert("Payment Failed", presentError.message ?? "Please try again.");
+        setPaymentRetryError(presentError.message ?? "Payment failed. Please try again.");
+        setSubmitting(false);
+        return;
       } else if (!presentError) {
         // Payment succeeded — fetch card last4 for receipt display
         const { appointmentId } = pendingPaymentRef.current;
@@ -3080,6 +3087,30 @@ export default function ClientBookingWizardScreen() {
           </TouchableOpacity>
         </View>
       </Modal>
+
+      {/* ── Payment Processing Overlay ─────────────────────────────────── */}
+      {paymentProcessing && (
+        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.65)", alignItems: "center", justifyContent: "center", zIndex: 999 }}>
+          <View style={{ backgroundColor: PORTAL_BG, borderRadius: 20, padding: 32, alignItems: "center", gap: 16, borderWidth: 1, borderColor: "rgba(74,124,89,0.4)" }}>
+            <ActivityIndicator size="large" color={LIME_GREEN} />
+            <Text style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "600" }}>Processing payment...</Text>
+            <Text style={{ color: TEXT_MUTED, fontSize: 13, textAlign: "center" }}>Please do not close the app</Text>
+          </View>
+        </View>
+      )}
+
+      {/* ── Payment Retry Error ───────────────────────────────────────────── */}
+      {paymentRetryError && (
+        <View style={{ position: "absolute", bottom: 120, left: 20, right: 20, backgroundColor: "rgba(239,68,68,0.12)", borderRadius: 14, borderWidth: 1, borderColor: "rgba(239,68,68,0.35)", padding: 16, zIndex: 998 }}>
+          <Text style={{ color: "#F87171", fontSize: 13, textAlign: "center", lineHeight: 18, marginBottom: 10 }}>{paymentRetryError}</Text>
+          <Pressable
+            style={({ pressed }) => ({ alignItems: "center", opacity: pressed ? 0.7 : 1 })}
+            onPress={() => { setPaymentRetryError(null); setShowFeeBreakdown(true); }}
+          >
+            <Text style={{ color: LIME_GREEN, fontSize: 14, fontWeight: "700" }}>Try Again</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* ── Fee Breakdown Modal ────────────────────────────────────────── */}
       <Modal
