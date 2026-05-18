@@ -129,8 +129,10 @@ export default function ClientGiftConfirmationScreen() {
             recipientName: recipientName ?? "",
             items: [{ name: "Gift Card", price: amount }],
             totalAmount: amount,
-            successUrl: `${apiBase}/gift-payment-success?code=${giftCode}`,
-            cancelUrl: `${apiBase}/gift-payment-cancel?code=${giftCode}`,
+            // successUrl: route to the server-side gift-checkout-success handler which marks the gift
+            // as paid and redirects to the gift confirmation page. cancelUrl: return to gift confirm page.
+            successUrl: `${apiBase}/api/stripe-connect/gift-checkout-success?giftCode=${encodeURIComponent(giftCode)}&bizOwnerId=${encodeURIComponent(String(businessOwnerId))}&redirectBase=${encodeURIComponent(apiBase)}`,
+            cancelUrl: `${apiBase}/api/gift-confirm/${encodeURIComponent(giftCode)}?payment=cancelled`,
           }),
         });
         const data = await res.json();

@@ -58,7 +58,7 @@ export default function NewBookingScreen() {
   const params = useLocalSearchParams<{ date?: string; prefillServiceId?: string; prefillClientId?: string; prefillStaffId?: string }>();
 
    const sendSmsMutation = trpc.twilio.sendSms.useMutation();
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const { initStripe, initPaymentSheet, presentPaymentSheet } = useStripe();
   const [chargingCard, setChargingCard] = useState(false);
   // Fee breakdown modal state
   const [feeBreakdown, setFeeBreakdown] = useState<{
@@ -828,6 +828,9 @@ export default function NewBookingScreen() {
     setShowFeeBreakdown(false);
     setChargingCard(true);
     try {
+      // Re-initialize Stripe with the connected account to prevent race condition
+      // where StripeProvider re-render between fee modal open and confirm resets the account context
+      await initStripe({ publishableKey: feeBreakdown.publishableKey, stripeAccountId: feeBreakdown.accountId });
       const { error: presentError } = await presentPaymentSheet();
       if (presentError) {
         if (presentError.code !== 'Canceled') {
@@ -837,13 +840,21 @@ export default function NewBookingScreen() {
         router.replace({ pathname: '/appointment-detail', params: { id: appointmentId } });
         return;
       }
-      // Payment succeeded — update appointment payment status
+      // Payment succeeded — update appointment payment status in local state
       const paidAppt = state.appointments.find((a) => a.id === appointmentId);
       if (paidAppt) {
         const updatedAppt = { ...paidAppt, paymentStatus: 'paid' as const, paymentMethod: 'card' as const };
         dispatch({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
         syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
       }
+      // Also persist payment status to server DB (don't rely solely on webhook for connected accounts)
+      apiCall('/api/stripe-connect/mark-appointment-paid', {
+        method: 'POST',
+        body: JSON.stringify({
+          businessOwnerId: state.businessOwnerId,
+          appointmentLocalId: appointmentId,
+        }),
+      }).catch((e) => console.warn('[Stripe] mark-appointment-paid failed (non-blocking):', e));
       setChargingCard(false);
       router.replace({ pathname: '/appointment-detail', params: { id: appointmentId } });
     } catch (err: any) {
@@ -853,7 +864,7 @@ export default function NewBookingScreen() {
       setFeeBreakdown(null);
       pendingPaymentAppointmentId.current = null;
     }
-  }, [feeBreakdown, presentPaymentSheet, state.appointments, dispatch, syncToDb, router]);
+  }, [feeBreakdown, initStripe, presentPaymentSheet, state.appointments, state.businessOwnerId, dispatch, syncToDb, router]);
 
   const handleBook = useCallback(async () => {
     if (!selectedServiceId || !selectedClientId || !selectedTime) return;
@@ -998,7 +1009,6 @@ export default function NewBookingScreen() {
         const { error: initError } = await initPaymentSheet({
           merchantDisplayName: state.settings.businessName ?? 'Business',
           paymentIntentClientSecret: sheetData.paymentIntent,
-          stripeAccountId: sheetData.accountId,
           customerId: undefined,
           allowsDelayedPaymentMethods: false,
           defaultBillingDetails: selectedClient?.name ? { name: selectedClient.name } : undefined,
@@ -1026,13 +1036,21 @@ export default function NewBookingScreen() {
           router.replace({ pathname: '/appointment-detail', params: { id: firstAppointmentId } });
           return;
         }
-        // Payment succeeded — update appointment payment status
+        // Payment succeeded — update appointment payment status in local state
         const paidAppt = state.appointments.find((a) => a.id === firstAppointmentId);
         if (paidAppt) {
           const updatedAppt = { ...paidAppt, paymentStatus: 'paid' as const, paymentMethod: 'card' as const };
           dispatch({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
           syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
         }
+        // Also persist to server DB (don't rely solely on webhook for connected accounts)
+        apiCall('/api/stripe-connect/mark-appointment-paid', {
+          method: 'POST',
+          body: JSON.stringify({
+            businessOwnerId: state.businessOwnerId,
+            appointmentLocalId: firstAppointmentId,
+          }),
+        }).catch((e) => console.warn('[Stripe] mark-appointment-paid failed (non-blocking):', e));
         setChargingCard(false);
       } catch (err: any) {
         Alert.alert('Payment Error', err?.message ?? 'Failed to process card payment');

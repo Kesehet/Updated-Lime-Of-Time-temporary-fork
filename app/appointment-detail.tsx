@@ -581,7 +581,7 @@ export default function AppointmentDetailScreen() {
         }
         return;
       }
-      // Payment succeeded — mark appointment as paid by card
+      // Payment succeeded — mark appointment as paid by card in local state
       const updated = {
         ...appointment,
         paymentStatus: 'paid' as const,
@@ -589,6 +589,11 @@ export default function AppointmentDetailScreen() {
       };
       dispatch({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
       syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
+      // Persist to server DB (don't rely solely on webhook for connected accounts)
+      apiCall('/api/stripe-connect/mark-appointment-paid', {
+        method: 'POST',
+        body: JSON.stringify({ businessOwnerId: state.businessOwnerId, appointmentLocalId: appointment.id }),
+      }).catch((e) => console.warn('[Stripe] mark-appointment-paid failed (non-blocking):', e));
       setShowPayOnBehalfSuccess(true);
     } catch (err: any) {
       Alert.alert('Payment Error', err?.message ?? 'Could not process payment. Please try again.');
@@ -614,7 +619,7 @@ export default function AppointmentDetailScreen() {
         }
         return;
       }
-      // Payment succeeded — mark appointment as paid by card
+      // Payment succeeded — mark appointment as paid by card in local state
       const updated = {
         ...appointment,
         paymentStatus: 'paid' as const,
@@ -622,6 +627,11 @@ export default function AppointmentDetailScreen() {
       };
       dispatch({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
       syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
+      // Persist to server DB (don't rely solely on webhook for connected accounts)
+      apiCall('/api/stripe-connect/mark-appointment-paid', {
+        method: 'POST',
+        body: JSON.stringify({ businessOwnerId: state.businessOwnerId, appointmentLocalId: appointment.id }),
+      }).catch((e) => console.warn('[Stripe] mark-appointment-paid failed (non-blocking):', e));
       setShowPayOnBehalfSuccess(true);
     } catch (err: any) {
       Alert.alert('Payment Error', err?.message ?? 'Could not process payment.');
@@ -629,7 +639,7 @@ export default function AppointmentDetailScreen() {
       setPayingOnBehalf(false);
       setFeeBreakdown(null);
     }
-  }, [feeBreakdown, appointment, presentPaymentSheet, dispatch, syncToDb]);
+  }, [feeBreakdown, appointment, state.businessOwnerId, presentPaymentSheet, dispatch, syncToDb]);
 
   // ── Payment status polling — check every 30s if appointment is unpaid ──────
   // ── Immediate payment status check on mount (for notification tap) ─────────

@@ -2345,3 +2345,13 @@
 - [x] Bug #6: Package use-session endpoint should not be callable by arbitrary clients (client-side blocked; server decrements on completion)
 - [x] Bug #7: savedAt in saved-businesses list should return actual DB timestamp not current time
 - [x] Bug #8: Package siblings query should use direct DB lookup by packageBookingId, not filter from client's own list
+
+## Stripe Payment Audit Fixes (May 17, 2026)
+- [x] Fix #1: Add initStripe call in new-booking.tsx handleConfirmNewBookingPayment before presentPaymentSheet
+- [x] Fix #2 & #10: Create mark-appointment-paid server endpoint and call it after native payment success in all 3 screens
+- [x] Fix #3: Webhook connect:true — register as Connect webhook so payout events from connected accounts are delivered
+- [x] Fix #4 & #9: Correct businessNetPayout calculation in create-payment-sheet, create-gift-payment-sheet, create-package-checkout
+- [x] Fix #5: Fix web gift confirmation successUrl/cancelUrl to use gift-checkout-success route
+- [x] Fix #6: Add server-side promo code validation in create-package-checkout
+- [x] Fix #7: Add idempotency check to mark-gift-paid endpoint
+- [x] Fix #8: Add authentication to payment-intent-last4 endpoint

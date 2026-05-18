@@ -984,6 +984,12 @@ export default function ClientBookingWizardScreen() {
       } else if (!presentError) {
         // Payment succeeded — fetch card last4 for receipt display
         const { appointmentId } = pendingPaymentRef.current;
+        // Persist payment status to server DB (don't rely solely on webhook for connected accounts)
+        fetch(`${apiBase}/api/stripe-connect/mark-appointment-paid`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.sessionToken}` },
+          body: JSON.stringify({ businessOwnerId, appointmentLocalId: appointmentId }),
+        }).catch(() => { /* non-blocking */ });
         try {
           const last4Res = await fetch(
             `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(appointmentId)}&businessOwnerId=${encodeURIComponent(String(businessOwnerId))}`,
@@ -1213,7 +1219,12 @@ export default function ClientBookingWizardScreen() {
                 if (presentError && presentError.code !== "Canceled") {
                   Alert.alert("Payment Failed", presentError.message ?? "Please try again.");
                 } else if (!presentError) {
-                  // Payment succeeded — fetch card last4 for receipt display
+                  // Payment succeeded — persist to server DB and fetch card last4
+                  fetch(`${apiBase}/api/stripe-connect/mark-appointment-paid`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.sessionToken}` },
+                    body: JSON.stringify({ businessOwnerId, appointmentLocalId: appointmentId }),
+                  }).catch(() => { /* non-blocking */ });
                   try {
                     const last4Res = await fetch(
                       `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(appointmentId)}&businessOwnerId=${encodeURIComponent(String(businessOwnerId))}`,

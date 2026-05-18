@@ -13,6 +13,7 @@ import { businessOwners, appointments, clients, services } from "../drizzle/sche
 import { eq, and } from "drizzle-orm";
 import { getPlatformConfig } from "./subscription";
 import { sendExpoPush, notifyCardPayment } from "./push";
+import { sdk } from "./_core/sdk";
 const DEFAULT_PLATFORM_FEE_PERCENT = 0.015; // 1.5% fallback
 
 /**
@@ -1568,7 +1569,10 @@ export function registerStripeConnectRoutes(app: Express): void {
         return;
       }
 
-      // Create the webhook endpoint
+      // Create the webhook endpoint.
+      // Using connect: true registers this as a Connect webhook so Stripe will forward
+      // events from ALL connected accounts (e.g. payout.created/paid/failed) to this URL.
+      // Without connect: true, payout events from connected accounts are never delivered.
       const endpoint = await stripe.webhookEndpoints.create({
         url: webhookUrl,
         enabled_events: [
@@ -1581,7 +1585,8 @@ export function registerStripeConnectRoutes(app: Express): void {
           "payout.paid",
           "payout.failed",
         ],
-        description: "Lime Of Time — booking payment confirmations",
+        connect: true,
+        description: "Lime Of Time — booking payment confirmations (Connect webhook)",
       });
 
       // Save the signing secret to platform config
@@ -2009,7 +2014,7 @@ export function registerStripeConnectRoutes(app: Express): void {
             const refundMsg = refundCents > 0
               ? `A refund of $${(refundCents / 100).toFixed(2)} has been issued to your card.`
               : "No refund was issued.";
-            await sendExpoPush(caMatch.expoPushToken, { title: "Appointment Cancelled", body: refundMsg, data: { type: "cancellation" } }).catch(() => {});
+            await sendExpoPush(caMatch.expoPushToken, { title: "Appointment Cancelled", body: refundMsg, data: { type: "appointment_cancelled" as const } }).catch(() => {});
           }
         }
       } catch {
@@ -2194,7 +2199,9 @@ export function registerStripeConnectRoutes(app: Express): void {
       const totalCents = serviceAmountCents + platformFeeCents;
       // Stripe's own processing fee (2.9% + $0.30) — deducted from business payout, not added to client charge
       const stripeProcessingFeeCents = Math.round(totalCents * 0.029) + 30;
-      const businessNetPayoutCents = serviceAmountCents - stripeProcessingFeeCents; // platform fee goes to platform, not business
+      // Business receives: serviceAmount minus Stripe processing fee minus platform fee
+      // (platform fee is collected via application_fee_amount from the connected account)
+      const businessNetPayoutCents = serviceAmountCents - stripeProcessingFeeCents - platformFeeCents;
 
       console.log(`[StripeConnect] create-payment-sheet: serviceAmount=$${serviceAmount} platformFee=${platformFeeCents}c total=${totalCents}c accountId=${accountId}`);
       const paymentIntent = await stripe.paymentIntents.create(
@@ -2291,7 +2298,8 @@ export function registerStripeConnectRoutes(app: Express): void {
       const platformFeeCents = Math.round(amountCents * feePercent);
       // Stripe's own processing fee (2.9% + $0.30) — deducted from business payout
       const stripeProcessingFeeCents = Math.round(amountCents * 0.029) + 30;
-      const businessNetPayoutCents = amountCents - stripeProcessingFeeCents;
+      // Business receives: gift amount minus Stripe processing fee minus platform fee
+      const businessNetPayoutCents = amountCents - stripeProcessingFeeCents - platformFeeCents;
 
       // Client is charged the gift amount only; platform fee is deducted from business payout
       const description = items?.length > 0
@@ -2334,10 +2342,73 @@ export function registerStripeConnectRoutes(app: Express): void {
     }
   });
 
+  // POST /api/stripe-connect/mark-appointment-paid
+  // Body: { businessOwnerId, appointmentLocalId }
+  // Called immediately after Stripe native payment sheet succeeds to mark the appointment as paid.
+  // This is needed because the webhook may not fire reliably for connected account events.
+  // Idempotent: only updates if appointment is currently unpaid.
+  app.post("/api/stripe-connect/mark-appointment-paid", async (req: Request, res: Response) => {
+    try {
+      const { businessOwnerId, appointmentLocalId } = req.body as {
+        businessOwnerId: number;
+        appointmentLocalId: string;
+      };
+      if (!businessOwnerId || !appointmentLocalId) {
+        res.status(400).json({ error: "businessOwnerId and appointmentLocalId are required" }); return;
+      }
+      const db = await getDb();
+      if (!db) { res.status(503).json({ error: "DB unavailable" }); return; }
+      // Idempotency: only update if not already paid
+      const existing = await db.select().from(appointments)
+        .where(and(eq(appointments.localId, appointmentLocalId), eq(appointments.businessOwnerId, businessOwnerId)))
+        .limit(1);
+      const appt = existing[0] as any;
+      if (!appt) { res.status(404).json({ error: "Appointment not found" }); return; }
+      if (appt.paymentStatus === 'paid') {
+        // Already paid — idempotent success
+        res.json({ ok: true, alreadyPaid: true }); return;
+      }
+      await db.update(appointments)
+        .set({ paymentStatus: 'paid', paymentMethod: 'card' } as any)
+        .where(and(eq(appointments.localId, appointmentLocalId), eq(appointments.businessOwnerId, businessOwnerId)));
+      console.log(`[StripeConnect] Appointment ${appointmentLocalId} marked paid via mark-appointment-paid (owner ${businessOwnerId})`);
+      // Push notification to business owner
+      try {
+        const ownerRows = await db.select().from(businessOwners).where(eq(businessOwners.id, businessOwnerId)).limit(1);
+        const owner = ownerRows[0];
+        const pushToken = (owner as any)?.expoPushToken;
+        if (pushToken) {
+          // Look up client and service names for the notification body
+          const { clients, services } = await import("../drizzle/schema");
+          const clientRows = await db.select({ name: clients.name }).from(clients)
+            .where(and(eq(clients.localId, appt.clientLocalId ?? ""), eq(clients.businessOwnerId, businessOwnerId))).limit(1);
+          const svcRows = await db.select({ name: services.name }).from(services)
+            .where(and(eq(services.localId, appt.serviceLocalId ?? ""), eq(services.businessOwnerId, businessOwnerId))).limit(1);
+          const clientName = clientRows[0]?.name ?? "A client";
+          const svcName = svcRows[0]?.name ?? "appointment";
+          const amount = parseFloat(String(appt.totalPrice ?? 0));
+          await sendExpoPush(pushToken, {
+            title: "💳 Card Payment Received",
+            body: `${clientName} paid $${amount.toFixed(2)} for ${svcName} on ${appt.date}.`,
+            data: { type: "payment_received" as const, appointmentId: appointmentLocalId },
+            sound: "default",
+          });
+        }
+      } catch (notifErr) {
+        console.error("[StripeConnect] mark-appointment-paid notification error:", notifErr);
+      }
+      res.json({ ok: true });
+    } catch (err: any) {
+      console.error("[StripeConnect] mark-appointment-paid error:", err);
+      res.status(500).json({ error: err?.message ?? "Failed to mark appointment as paid" });
+    }
+  });
+
   // POST /api/stripe-connect/mark-gift-paid
   // Body: { businessOwnerId, giftCode, paymentIntentId? }
   // Called immediately after Stripe native payment sheet succeeds to mark the gift card as paid.
   // This is needed because the webhook may not fire reliably for connected account events.
+  // Idempotent: only updates if gift is currently unpaid, and only sends notification once.
   app.post("/api/stripe-connect/mark-gift-paid", async (req: Request, res: Response) => {
     try {
       const { businessOwnerId, giftCode } = req.body as {
@@ -2350,12 +2421,22 @@ export function registerStripeConnectRoutes(app: Express): void {
       const db = await getDb();
       if (!db) { res.status(503).json({ error: "DB unavailable" }); return; }
       const { giftCards } = await import("../drizzle/schema");
+      // Idempotency: only update and notify if not already paid
+      const existing = await db.select().from(giftCards as any)
+        .where(and(eq((giftCards as any).code, giftCode), eq((giftCards as any).businessOwnerId, businessOwnerId)))
+        .limit(1);
+      const gc = existing[0] as any;
+      if (!gc) { res.status(404).json({ error: "Gift card not found" }); return; }
+      if (gc.paymentStatus === 'paid') {
+        // Already paid — idempotent success, no duplicate notification
+        res.json({ ok: true, alreadyPaid: true }); return;
+      }
       await db
         .update(giftCards)
         .set({ paymentStatus: "paid", paymentMethod: "card" } as any)
         .where(and(eq((giftCards as any).code, giftCode), eq((giftCards as any).businessOwnerId, businessOwnerId)));
       console.log(`[StripeConnect] Gift ${giftCode} marked paid via mark-gift-paid (owner ${businessOwnerId})`);
-      // Push notification to business owner
+      // Push notification to business owner (only sent once due to idempotency check above)
       try {
         const ownerRows = await db.select().from(businessOwners).where(eq(businessOwners.id, businessOwnerId)).limit(1);
         const owner = ownerRows[0];
@@ -2485,10 +2566,46 @@ export function registerStripeConnectRoutes(app: Express): void {
       }
 
       // ── Validate discount server-side ────────────────────────────────────────
-      // For now we accept the client-supplied discountAmount but cap it at the package price.
-      // Future: validate promoCode against discounts table.
-      const discountAmount = Math.min(Math.max(0, clientDiscountAmount), packagePrice);
-      const chargeAmount = packagePrice - discountAmount;
+      // If a promoCode is provided, validate it against the DB and compute the discount from it.
+      // This prevents clients from sending an inflated discountAmount to get a near-free package.
+      let validatedDiscountAmount = 0;
+      let validatedDiscountName: string | null = null;
+      if (promoCode) {
+        const { promoCodes } = await import("../drizzle/schema");
+        const today = new Date().toISOString().split("T")[0];
+        const promoRows = await db.select().from(promoCodes)
+          .where(and(
+            eq(promoCodes.code, promoCode.trim().toUpperCase()),
+            eq(promoCodes.businessOwnerId, businessOwnerId),
+            eq(promoCodes.active, true),
+          ))
+          .limit(1);
+        const promo = promoRows[0] as any;
+        if (promo) {
+          // Check expiry
+          const notExpired = !promo.expiresAt || promo.expiresAt >= today;
+          // Check max uses
+          const notMaxed = !promo.maxUses || promo.usedCount < promo.maxUses;
+          if (notExpired && notMaxed) {
+            if (promo.percentage > 0) {
+              validatedDiscountAmount = Math.round(packagePrice * promo.percentage) / 100;
+            } else if (promo.flatAmount) {
+              validatedDiscountAmount = parseFloat(String(promo.flatAmount));
+            }
+            validatedDiscountName = promo.label;
+          } else {
+            res.status(400).json({ error: notExpired ? "Promo code has reached its usage limit" : "Promo code has expired" }); return;
+          }
+        } else {
+          res.status(400).json({ error: "Invalid promo code" }); return;
+        }
+      } else if (clientDiscountAmount > 0) {
+        // No promo code but client sent a discount amount — reject to prevent exploit
+        // (legitimate discounts must come from a validated promo code)
+        res.status(400).json({ error: "Discount amount requires a valid promo code" }); return;
+      }
+      const discountAmount = Math.min(validatedDiscountAmount, packagePrice);
+      const chargeAmount = Math.max(0, packagePrice - discountAmount);
 
       // ── Fee calculation ──────────────────────────────────────────────────────
       const feePercent = await getPlatformFeePercent();
@@ -2497,7 +2614,8 @@ export function registerStripeConnectRoutes(app: Express): void {
       const totalCents = chargeAmountCents + platformFeeCents;
       // Stripe's own processing fee (2.9% + $0.30) — deducted from business payout
       const stripeProcessingFeeCents = Math.round(totalCents * 0.029) + 30;
-      const businessNetPayoutCents = chargeAmountCents - stripeProcessingFeeCents;
+      // Business receives: charge amount minus Stripe processing fee minus platform fee
+      const businessNetPayoutCents = chargeAmountCents - stripeProcessingFeeCents - platformFeeCents;
 
       console.log(`[StripeConnect] create-package-checkout: pkg=${pkg.name} price=$${packagePrice} discount=$${discountAmount} charge=$${chargeAmount} platformFee=${platformFeeCents}c accountId=${accountId}`);
 
@@ -2578,6 +2696,7 @@ export function registerStripeConnectRoutes(app: Express): void {
         breakdown: {
           packagePrice: parseFloat(packagePrice.toFixed(2)),
           discountAmount: parseFloat(discountAmount.toFixed(2)),
+          discountName: validatedDiscountName,
           promoCode: promoCode || null,
           platformFee: parseFloat((platformFeeCents / 100).toFixed(2)),
           platformFeePercent: parseFloat((feePercent * 100).toFixed(1)),
@@ -2594,6 +2713,17 @@ export function registerStripeConnectRoutes(app: Express): void {
 
   app.get("/api/stripe-connect/payment-intent-last4", async (req: Request, res: Response) => {
     try {
+      // Require authentication: either a business owner session or a client Bearer token
+      const authHeader = req.headers.authorization as string | undefined;
+      const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
+      if (!token) {
+        res.status(401).json({ error: "Authentication required" }); return;
+      }
+      // Verify the token is valid (sdk.verifySession handles both owner and client JWTs)
+      const session = await (sdk as any).verifySession(token).catch(() => null);
+      if (!session) {
+        res.status(401).json({ error: "Invalid or expired token" }); return;
+      }
       const { appointmentId, businessOwnerId } = req.query as { appointmentId: string; businessOwnerId: string };
       if (!appointmentId || !businessOwnerId) {
         res.status(400).json({ error: "appointmentId and businessOwnerId are required" }); return;
