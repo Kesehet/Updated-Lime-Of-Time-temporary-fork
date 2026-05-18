@@ -2313,9 +2313,9 @@
 - [x] Add "Jump to Today" floating button on Calendar tab
 - [x] Add swipe-to-delete on Clients list
 ## Phase: Payment + Address Fixes (May 15, 2026)
-- [ ] Fix Stripe Pay-on-behalf: call initStripe with connected account before initPaymentSheet in appointment-detail.tsx
-- [ ] Fix Stripe card payment: call initStripe with connected account before initPaymentSheet in calendar-booking.tsx
-- [ ] Fix Stripe card payment: call initStripe with connected account before initPaymentSheet in client-booking-wizard.tsx
+- [x] Fix Stripe Pay-on-behalf: call initStripe with connected account before initPaymentSheet in appointment-detail.tsx
+- [x] Fix Stripe card payment: calendar-booking.tsx uses Checkout link (no native sheet) — no initStripe needed
+- [x] Fix Stripe card payment: call initStripe with connected account before initPaymentSheet in client-booking-wizard.tsx
 - [ ] Replace single clientAddress field with split Street/City/State/ZIP + autocomplete in calendar-booking.tsx
 - [ ] Add address auto-populate useEffect in calendar-booking.tsx (from savedAddress or past appointments)
 - [ ] Remove "Save Address to Profile?" alert in new-booking.tsx — auto-save silently

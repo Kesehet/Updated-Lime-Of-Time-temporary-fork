@@ -974,6 +974,10 @@ export default function ClientBookingWizardScreen() {
     setShowFeeBreakdown(false);
     setSubmitting(true);
     try {
+      // Re-initialize Stripe with the connected account before presenting the sheet.
+      // The fee breakdown modal is shown between initStripe and presentPaymentSheet,
+      // during which a StripeProvider re-render can reset the account context.
+      await initStripe({ publishableKey: feeBreakdown.publishableKey, stripeAccountId: feeBreakdown.accountId });
       const { error: presentError } = await presentPaymentSheet();
       if (presentError && presentError.code !== "Canceled") {
         Alert.alert("Payment Failed", presentError.message ?? "Please try again.");

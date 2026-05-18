@@ -603,6 +603,10 @@ export default function AppointmentDetailScreen() {
     setShowFeeBreakdown(false);
     setPayingOnBehalf(true);
     try {
+      // Re-initialize Stripe with the connected account before presenting the sheet.
+      // The fee breakdown modal is shown between initStripe and presentPaymentSheet,
+      // during which a StripeProvider re-render can reset the account context.
+      await initStripe({ publishableKey: feeBreakdown.publishableKey, stripeAccountId: feeBreakdown.accountId });
       const { error: presentError } = await presentPaymentSheet();
       if (presentError) {
         if (presentError.code !== 'Canceled') {
