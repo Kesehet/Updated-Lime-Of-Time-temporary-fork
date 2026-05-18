@@ -2,7 +2,7 @@ import { z } from "zod";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, ownerProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
@@ -256,13 +256,13 @@ const businessRouter = router({
 // ─── Services Router ─────────────────────────────────────────────────
 
 const servicesRouter = router({
-  list: publicProcedure
+  list: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       return db.getServicesByOwner(input.businessOwnerId);
     }),
 
-  create: publicProcedure
+  create: ownerProcedure
     .input(
       z.object({
         businessOwnerId: z.number(),
@@ -304,7 +304,7 @@ const servicesRouter = router({
       return { id, localId: input.localId };
     }),
 
-  update: publicProcedure
+  update: ownerProcedure
     .input(
       z.object({
         localId: z.string(),
@@ -348,7 +348,7 @@ const servicesRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: ownerProcedure
     .input(z.object({ localId: z.string(), businessOwnerId: z.number() }))
     .mutation(async ({ input }) => {
       await db.deleteService(input.localId, input.businessOwnerId);
@@ -359,7 +359,7 @@ const servicesRouter = router({
 // ─── Clients Router ──────────────────────────────────────────────────
 
 const clientsRouter = router({
-  checkByPhone: publicProcedure
+  checkByPhone: ownerProcedure
     .input(z.object({ businessOwnerId: z.number(), phone: z.string() }))
     .query(async ({ input }) => {
       if (!input.phone.trim()) return null;
@@ -368,13 +368,13 @@ const clientsRouter = router({
       return { localId: existing.localId, name: existing.name, phone: existing.phone ?? null };
     }),
 
-  list: publicProcedure
+  list: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       return db.getClientsByOwner(input.businessOwnerId);
     }),
 
-  create: publicProcedure
+  create: ownerProcedure
     .input(
       z.object({
         businessOwnerId: z.number(),
@@ -408,7 +408,7 @@ const clientsRouter = router({
       return { id, localId: input.localId };
     }),
 
-  update: publicProcedure
+  update: ownerProcedure
     .input(
       z.object({
         localId: z.string(),
@@ -442,14 +442,14 @@ const clientsRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: ownerProcedure
     .input(z.object({ localId: z.string(), businessOwnerId: z.number() }))
     .mutation(async ({ input }) => {
       await db.deleteClient(input.localId, input.businessOwnerId);
       return { success: true };
     }),
 
-  findByPhone: publicProcedure
+  findByPhone: ownerProcedure
     .input(z.object({ phone: z.string(), businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       const client = await db.getClientByPhone(input.phone, input.businessOwnerId);
@@ -460,13 +460,13 @@ const clientsRouter = router({
 // ─── Appointments Router ─────────────────────────────────────────────
 
 const appointmentsRouter = router({
-  list: publicProcedure
+  list: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       return db.getAppointmentsByOwner(input.businessOwnerId);
     }),
 
-  create: publicProcedure
+  create: ownerProcedure
     .input(
       z.object({
         businessOwnerId: z.number(),
@@ -530,7 +530,7 @@ const appointmentsRouter = router({
       } catch { /* non-blocking */ }
       return { id, localId: input.localId };
     }),
-  update: publicProcedure
+  update: ownerProcedure
     .input(
       z.object({
         localId: z.string(),
@@ -1129,13 +1129,13 @@ const appointmentsRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: ownerProcedure
     .input(z.object({ localId: z.string(), businessOwnerId: z.number() }))
     .mutation(async ({ input }) => {
       await db.deleteAppointment(input.localId, input.businessOwnerId);
       return { success: true };
     }),
-  bulkMarkPaid: publicProcedure
+  bulkMarkPaid: ownerProcedure
     .input(z.object({
       localIds: z.array(z.string()),
       businessOwnerId: z.number(),
@@ -1145,7 +1145,7 @@ const appointmentsRouter = router({
       await db.bulkMarkPaid(input.localIds, input.businessOwnerId, input.paymentMethod);
       return { success: true, count: input.localIds.length };
     }),
-  bulkMarkUnpaid: publicProcedure
+  bulkMarkUnpaid: ownerProcedure
     .input(z.object({
       localIds: z.array(z.string()),
       businessOwnerId: z.number(),
@@ -1158,13 +1158,13 @@ const appointmentsRouter = router({
 // ─── Reviews Router ──────────────────────────────────────────────────
 
 const reviewsRouter = router({
-  list: publicProcedure
+  list: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       return db.getReviewsByOwner(input.businessOwnerId);
     }),
 
-  create: publicProcedure
+  create: ownerProcedure
     .input(
       z.object({
         businessOwnerId: z.number(),
@@ -1180,7 +1180,7 @@ const reviewsRouter = router({
       return { id, localId: input.localId };
     }),
 
-  delete: publicProcedure
+  delete: ownerProcedure
     .input(z.object({ localId: z.string(), businessOwnerId: z.number() }))
     .mutation(async ({ input }) => {
       await db.deleteReview(input.localId, input.businessOwnerId);
@@ -1191,13 +1191,13 @@ const reviewsRouter = router({
 // ─── Discounts Router ────────────────────────────────────────────────
 
 const discountsRouter = router({
-  list: publicProcedure
+  list: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       return db.getDiscountsByOwner(input.businessOwnerId);
     }),
 
-  create: publicProcedure
+  create: ownerProcedure
     .input(
       z.object({
         businessOwnerId: z.number(),
@@ -1224,7 +1224,7 @@ const discountsRouter = router({
       return { id, localId: input.localId };
     }),
 
-  update: publicProcedure
+  update: ownerProcedure
     .input(
       z.object({
         localId: z.string(),
@@ -1246,7 +1246,7 @@ const discountsRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: ownerProcedure
     .input(z.object({ localId: z.string(), businessOwnerId: z.number() }))
     .mutation(async ({ input }) => {
       await db.deleteDiscount(input.localId, input.businessOwnerId);
@@ -1257,7 +1257,7 @@ const discountsRouter = router({
 // ─── Gift Cards Router ────────────────────────────────────────────────
 
 const giftCardsRouter = router({
-  list: publicProcedure
+  list: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       const rows = await db.getGiftCardsByOwner(input.businessOwnerId);
@@ -1276,7 +1276,7 @@ const giftCardsRouter = router({
       });
     }),
 
-  create: publicProcedure
+  create: ownerProcedure
     .input(
       z.object({
         businessOwnerId: z.number(),
@@ -1294,7 +1294,7 @@ const giftCardsRouter = router({
       return { id, localId: input.localId };
     }),
 
-  update: publicProcedure
+  update: ownerProcedure
     .input(
       z.object({
         localId: z.string(),
@@ -1333,20 +1333,20 @@ const giftCardsRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: ownerProcedure
     .input(z.object({ localId: z.string(), businessOwnerId: z.number() }))
     .mutation(async ({ input }) => {
       await db.deleteGiftCard(input.localId, input.businessOwnerId);
       return { success: true };
     }),
 
-  findByCode: publicProcedure
+  findByCode: ownerProcedure
     .input(z.object({ code: z.string(), businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       const card = await db.getGiftCardByCode(input.code, input.businessOwnerId);
       return card ?? null;
     }),
-  markAsPaid: publicProcedure
+  markAsPaid: ownerProcedure
     .input(z.object({
       localId: z.string(),
       businessOwnerId: z.number(),
@@ -1362,13 +1362,13 @@ const giftCardsRouter = router({
 // ─── Custom Schedule Router ───────────────────────────────────────────
 
 const customScheduleRouter = router({
-  list: publicProcedure
+  list: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       return db.getCustomScheduleByOwner(input.businessOwnerId);
     }),
 
-  upsert: publicProcedure
+  upsert: ownerProcedure
     .input(
       z.object({
         businessOwnerId: z.number(),
@@ -1392,7 +1392,7 @@ const customScheduleRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: ownerProcedure
     .input(z.object({ businessOwnerId: z.number(), date: z.string(), locationId: z.string().optional() }))
     .mutation(async ({ input }) => {
       await db.deleteCustomScheduleDay(input.businessOwnerId, input.date, input.locationId);
@@ -1403,13 +1403,13 @@ const customScheduleRouter = router({
 // ─── Products Router ────────────────────────────────────────────────
 
 const productsRouter = router({
-  list: publicProcedure
+  list: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       return db.getProductsByOwner(input.businessOwnerId);
     }),
 
-  create: publicProcedure
+  create: ownerProcedure
     .input(
       z.object({
         businessOwnerId: z.number(),
@@ -1426,7 +1426,7 @@ const productsRouter = router({
       return { id, localId: input.localId };
     }),
 
-  update: publicProcedure
+  update: ownerProcedure
     .input(
       z.object({
         localId: z.string(),
@@ -1444,7 +1444,7 @@ const productsRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: ownerProcedure
     .input(z.object({ localId: z.string(), businessOwnerId: z.number() }))
     .mutation(async ({ input }) => {
       await db.deleteProduct(input.localId, input.businessOwnerId);
@@ -1455,13 +1455,13 @@ const productsRouter = router({
 // ─── Staff Router ─────────────────────────────────────────────────────
 
 const staffRouter = router({
-  list: publicProcedure
+  list: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       return db.getStaffByOwner(input.businessOwnerId);
     }),
 
-  create: publicProcedure
+  create: ownerProcedure
     .input(
       z.object({
         businessOwnerId: z.number(),
@@ -1485,7 +1485,7 @@ const staffRouter = router({
       return { id, localId: input.localId };
     }),
 
-  update: publicProcedure
+  update: ownerProcedure
     .input(
       z.object({
         localId: z.string(),
@@ -1510,7 +1510,7 @@ const staffRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: ownerProcedure
     .input(z.object({ localId: z.string(), businessOwnerId: z.number() }))
     .mutation(async ({ input }) => {
       await db.deleteStaffMember(input.localId, input.businessOwnerId);
@@ -1521,13 +1521,13 @@ const staffRouter = router({
 // ─── Locations Router ─────────────────────────────────────────────────
 
 const locationsRouter = router({
-  list: publicProcedure
+  list: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       return db.getLocationsByOwner(input.businessOwnerId);
     }),
 
-  create: publicProcedure
+  create: ownerProcedure
     .input(
       z.object({
         businessOwnerId: z.number(),
@@ -1577,7 +1577,7 @@ const locationsRouter = router({
       return { id, localId: input.localId };
     }),
 
-  update: publicProcedure
+  update: ownerProcedure
     .input(
       z.object({
         localId: z.string(),
@@ -1621,7 +1621,7 @@ const locationsRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: ownerProcedure
     .input(z.object({ localId: z.string(), businessOwnerId: z.number() }))
     .mutation(async ({ input }) => {
       await db.deleteLocation(input.localId, input.businessOwnerId);
@@ -1637,7 +1637,7 @@ const twilioRouter = router({
    * Credentials are read server-side from platform_config.
    * The smsAction is checked against the business's subscription plan.
    */
-  sendSms: publicProcedure
+  sendSms: ownerProcedure
     .input(
       z.object({
         businessOwnerId: z.number(),
@@ -1953,7 +1953,7 @@ const otpRouter = router({
 
 const subscriptionRouter = router({
   /** Get the current business owner's subscription info (plan, usage, trial) */
-  getMyPlan: publicProcedure
+  getMyPlan: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       const info = await getBusinessSubscriptionInfo(input.businessOwnerId);
@@ -1961,7 +1961,7 @@ const subscriptionRouter = router({
     }),
 
   /** Get over-limit warnings for businesses in a grace period */
-  getOverLimitWarnings: publicProcedure
+  getOverLimitWarnings: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       const info = await getBusinessSubscriptionInfo(input.businessOwnerId);
@@ -2042,13 +2042,13 @@ const subscriptionRouter = router({
 
 // ─── Promo Codes Router ───────────────────────────────────────────────
 const promoCodesRouter = router({
-  list: publicProcedure
+  list: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       return db.getPromoCodesByOwner(input.businessOwnerId);
     }),
 
-  create: publicProcedure
+  create: ownerProcedure
     .input(
       z.object({
         businessOwnerId: z.number(),
@@ -2067,7 +2067,7 @@ const promoCodesRouter = router({
       return { id, localId: input.localId };
     }),
 
-  update: publicProcedure
+  update: ownerProcedure
     .input(
       z.object({
         localId: z.string(),
@@ -2088,14 +2088,14 @@ const promoCodesRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: ownerProcedure
     .input(z.object({ localId: z.string(), businessOwnerId: z.number() }))
     .mutation(async ({ input }) => {
       await db.deletePromoCode(input.localId, input.businessOwnerId);
       return { success: true };
     }),
 
-  findByCode: publicProcedure
+  findByCode: ownerProcedure
     .input(z.object({ code: z.string(), businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       const promo = await db.getPromoCodeByCode(input.code.toUpperCase(), input.businessOwnerId);
@@ -2132,12 +2132,12 @@ const filesRouter = router({
 // ─── Service Packages Router ───────────────────────────────────────
 
 const packagesRouter = router({
-  list: publicProcedure
+  list: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       return db.getServicePackagesByOwner(input.businessOwnerId);
     }),
-  create: publicProcedure
+  create: ownerProcedure
     .input(z.object({
       businessOwnerId: z.number(),
       localId: z.string(),
@@ -2169,7 +2169,7 @@ const packagesRouter = router({
       } as any);
       return { id, localId: input.localId };
     }),
-  update: publicProcedure
+  update: ownerProcedure
     .input(z.object({
       localId: z.string(),
       businessOwnerId: z.number(),
@@ -2200,7 +2200,7 @@ const packagesRouter = router({
       await db.updateServicePackage(localId, businessOwnerId, updateData as any);
       return { success: true };
     }),
-  delete: publicProcedure
+  delete: ownerProcedure
     .input(z.object({ localId: z.string(), businessOwnerId: z.number() }))
     .mutation(async ({ input }) => {
       await db.deleteServicePackage(input.localId, input.businessOwnerId);
@@ -2212,7 +2212,7 @@ const packagesRouter = router({
 
 const referralRouter = router({
   /** Get or create the referral code for the current business owner */
-  getMyCode: publicProcedure
+  getMyCode: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       const owner = await db.getBusinessOwnerById(input.businessOwnerId);
@@ -2248,7 +2248,7 @@ const referralRouter = router({
       return { success: true, referralId: referral?.id, referralCodeId: codeRow.id, discountPercent: codeRow.discountPercent, discountMonths: codeRow.discountMonths, referrerBusinessName: referrerOwner?.businessName ?? null };
     }),
 
-  getMyReferrals: publicProcedure
+  getMyReferrals: ownerProcedure
     .input(z.object({ businessOwnerId: z.number() }))
     .query(async ({ input }) => {
       const code = await db.getReferralCodeByOwner(input.businessOwnerId);

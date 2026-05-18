@@ -2385,3 +2385,12 @@
 - [x] Integrate receipt modal into new-booking.tsx card payment success
 - [ ] Integrate receipt modal into client-buy-gift.tsx card payment success (client already navigates to full gift confirmation screen)
 - [ ] Integrate receipt modal into client-gift-confirmation.tsx card payment success (already shows card brand+last4 in payment label)
+
+## Go-Live Hardening (May 2026)
+
+- [x] Add ownerProcedure middleware to server/_core/trpc.ts (reads businessOwnerId from request body/params, verifies against session user)
+- [x] Replace publicProcedure with ownerProcedure on all owner-scoped tRPC routes in routers.ts (59 routes protected)
+- [x] Client-appointment-detail.tsx already has Payment Summary card (status, method, last4, confirmation number, refund info) — confirmed
+- [x] Client-appointment-detail.tsx already has Request Reschedule button — confirmed
+- [x] Fix promo code usedCount increment in Stripe webhook (checkout.session.completed)
+- [x] Add time-slot end-time guard unit tests (7 regression tests in availability-system.test.ts, all passing)

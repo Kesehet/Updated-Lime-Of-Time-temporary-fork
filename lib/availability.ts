@@ -310,7 +310,7 @@ export async function getStaffAvailabilityForDate(
  * @param duration - Duration in minutes
  * @returns true if time + duration fits within range
  */
-function isTimeWithinRange(
+export function isTimeWithinRange(
   time: string,
   startTime: string,
   endTime: string,

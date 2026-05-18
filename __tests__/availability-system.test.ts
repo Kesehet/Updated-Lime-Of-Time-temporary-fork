@@ -21,7 +21,8 @@ import {
   getDailyOverrides,
   setStaffAvailability,
   removeStaffAvailability,
-  getStaffAvailabilityOverrides
+  getStaffAvailabilityOverrides,
+  isTimeWithinRange,
 } from '../lib/availability';
 
 // ============================================================================
@@ -469,5 +470,50 @@ describe('Availability System - Error Handling', () => {
     );
 
     expect(Array.isArray(slots)).toBe(true);
+  });
+});
+
+// ============================================================================
+// Regression Tests: Time-Slot End-Time Guard
+// ============================================================================
+
+describe('isTimeWithinRange — end-time guard regression', () => {
+  // Business hours: 09:00 – 17:00 (540 – 1020 minutes)
+  const OPEN  = '09:00';
+  const CLOSE = '17:00';
+
+  it('allows a 60-min service starting at 16:00 (ends exactly at 17:00)', () => {
+    // 16:00 + 60 min = 17:00 ≤ 17:00  → should be allowed
+    expect(isTimeWithinRange('16:00', OPEN, CLOSE, 60)).toBe(true);
+  });
+
+  it('rejects a 60-min service starting at 16:30 (would end at 17:30)', () => {
+    // 16:30 + 60 min = 17:30 > 17:00  → must be rejected
+    expect(isTimeWithinRange('16:30', OPEN, CLOSE, 60)).toBe(false);
+  });
+
+  it('allows a 60-min service starting at 09:00 (first slot of the day)', () => {
+    // 09:00 + 60 min = 10:00 ≤ 17:00  → should be allowed
+    expect(isTimeWithinRange('09:00', OPEN, CLOSE, 60)).toBe(true);
+  });
+
+  it('rejects a slot that starts before opening time', () => {
+    // 08:00 < 09:00  → must be rejected
+    expect(isTimeWithinRange('08:00', OPEN, CLOSE, 60)).toBe(false);
+  });
+
+  it('rejects a slot that starts exactly at closing time', () => {
+    // 17:00 + 60 min = 18:00 > 17:00  → must be rejected
+    expect(isTimeWithinRange('17:00', OPEN, CLOSE, 60)).toBe(false);
+  });
+
+  it('allows a 30-min service starting at 16:30 (ends exactly at 17:00)', () => {
+    // 16:30 + 30 min = 17:00 ≤ 17:00  → should be allowed
+    expect(isTimeWithinRange('16:30', OPEN, CLOSE, 30)).toBe(true);
+  });
+
+  it('rejects a 30-min service starting at 16:45 (would end at 17:15)', () => {
+    // 16:45 + 30 min = 17:15 > 17:00  → must be rejected
+    expect(isTimeWithinRange('16:45', OPEN, CLOSE, 30)).toBe(false);
   });
 });
