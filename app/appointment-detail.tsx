@@ -13,6 +13,7 @@ import { trpc } from "@/lib/trpc";
 import { usePlanLimitCheck } from "@/hooks/use-plan-limit-check";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { getApiBaseUrl, DEEP_LINK_SCHEME } from "@/constants/oauth";
+import * as WebBrowser from "expo-web-browser";
 import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
 import {
@@ -608,17 +609,20 @@ export default function AppointmentDetailScreen() {
       );
       if (!result.url) throw new Error('Could not create payment session.');
       setPayingOnBehalf(false);
-      // Open Stripe Checkout in system Safari — reliable on all platforms
-      // Mark that we're awaiting payment so AppState listener checks status on return
-      pendingPaymentCheckRef.current = true;
-      await Linking.openURL(result.url);
+      // Open Stripe Checkout in the in-app browser sheet.
+      // openBrowserAsync AWAITS until the user taps Done or the deep-link redirect fires.
+      await WebBrowser.openBrowserAsync(result.url, {
+        dismissButtonStyle: 'cancel',
+        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FORM_SHEET,
+      });
+      // Browser closed — immediately check if payment went through
+      await checkPaymentStatusAfterBrowser(appointment.id);
     } catch (err: any) {
       Alert.alert('Payment Error', err?.message ?? 'Could not process payment. Please try again.');
     } finally {
       setPayingOnBehalf(false);
     }
-  }, [appointment, state.businessOwnerId, checkPaymentStatusAfterBrowser]);
-
+    }, [appointment, state.businessOwnerId, checkPaymentStatusAfterBrowser]);
   // ── Payment status polling — check every 30s if appointment is unpaid ──────
   // ── Immediate payment status check on mount (for notification tap) ─────────
   // When the screen opens from a push notification, the DB may already be updated
@@ -956,13 +960,14 @@ export default function AppointmentDetailScreen() {
       });
       setShowNoShowFeeModal(false);
       if (result.url) {
-        // Open in system Safari — in-app browser closes immediately on iOS with Stripe redirects
-        await Linking.openURL(result.url);
-        Alert.alert(
-          'Payment Link Opened',
-          'Complete the no-show fee payment in Safari. The status will update automatically.',
-          [{ text: 'OK' }],
-        );
+        // Open Stripe Checkout in the in-app browser sheet.
+        // openBrowserAsync AWAITS until the user taps Done or the deep-link redirect fires.
+        await WebBrowser.openBrowserAsync(result.url, {
+          dismissButtonStyle: 'cancel',
+          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FORM_SHEET,
+        });
+        // Browser closed — immediately check if the no-show fee was paid
+        await checkPaymentStatusAfterBrowser(appointment.id);
       }
     } catch (err: any) {
       Alert.alert("Error", err?.message ?? "Could not create no-show fee charge");

@@ -34,6 +34,7 @@ import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import * as Calendar from "expo-calendar";
 import { getApiBaseUrl, DEEP_LINK_SCHEME } from "@/constants/oauth";
+import * as WebBrowser from "expo-web-browser";
 import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
@@ -159,15 +160,39 @@ export default function ClientAppointmentDetailScreen() {
 
   const handleConfirmAndPay = useCallback(async () => {
     const url = pendingCheckoutUrl;
+    const apptSnapshot = appt;
     setShowPaymentSummary(false);
     setPendingCheckoutUrl(null);
     setPendingCheckoutBreakdown(null);
-    if (!url || !appt) return;
+    if (!url || !apptSnapshot) return;
     try {
       if (Platform.OS !== "web") {
-        // Mark that we're awaiting payment — AppState listener will check status on return
-        pendingPaymentCheckRef.current = true;
-        await Linking.openURL(url);
+        // Open Stripe Checkout in the in-app browser sheet.
+        // openBrowserAsync AWAITS until the user taps Done or the deep-link redirect fires.
+        await WebBrowser.openBrowserAsync(url, {
+          dismissButtonStyle: "cancel",
+          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FORM_SHEET,
+        });
+        // Browser closed — check if payment went through
+        try {
+          const apiBase = getApiBaseUrl();
+          const statusRes = await fetch(
+            `${apiBase}/api/stripe-connect/appointment-payment-status?appointmentLocalId=${encodeURIComponent(apptSnapshot.localId ?? "")}&businessOwnerId=${encodeURIComponent(apptSnapshot.businessOwnerId)}`,
+          ).catch(() => null);
+          if (statusRes?.ok) {
+            const statusData = await statusRes.json();
+            if (statusData.paymentStatus === "paid") {
+              setAppt((prev) => prev ? { ...prev, paymentStatus: "paid", paymentMethod: "card" } : prev);
+              setReceiptData({
+                amount: apptSnapshot.totalPrice ? parseFloat(String(apptSnapshot.totalPrice)) : 0,
+                serviceName: apptSnapshot.serviceName,
+                confirmationId: apptSnapshot.localId ?? undefined,
+              });
+            }
+          }
+        } catch {
+          // Silently ignore — AppState listener will catch it on next foreground
+        }
       } else {
         window.location.href = url;
       }

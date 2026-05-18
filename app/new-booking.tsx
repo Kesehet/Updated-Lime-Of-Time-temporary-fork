@@ -27,6 +27,7 @@ import { useResponsive } from "@/hooks/use-responsive";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { apiCall } from "@/lib/_core/api";
 import { DEEP_LINK_SCHEME } from "@/constants/oauth";
+import * as WebBrowser from "expo-web-browser";
 import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
 
@@ -3023,12 +3024,17 @@ export default function NewBookingScreen() {
                   setPendingNavTarget(null);
                   if (!url) return;
                   if (Platform.OS !== "web") {
-                    await Linking.openURL(url);
+                    // Open Stripe Checkout in the in-app browser sheet.
+                    // openBrowserAsync AWAITS until the user taps Done or the deep-link redirect fires.
+                    await WebBrowser.openBrowserAsync(url, {
+                      dismissButtonStyle: "cancel",
+                      presentationStyle: WebBrowser.WebBrowserPresentationStyle.FORM_SHEET,
+                    });
                   } else {
                     window.location.href = url;
                     return;
                   }
-                  // After Stripe opens in Safari, navigate to appointment detail
+                  // After browser closes, navigate to appointment detail
                   if (navId) {
                     router.replace({ pathname: '/appointment-detail', params: { id: navId } });
                   } else {

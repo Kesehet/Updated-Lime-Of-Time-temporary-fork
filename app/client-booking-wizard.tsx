@@ -34,6 +34,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useClientStore } from "@/lib/client-store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { getApiBaseUrl, DEEP_LINK_SCHEME } from "@/constants/oauth";
+import * as WebBrowser from "expo-web-browser";
 import { scheduleAppointmentReminders } from "@/lib/notifications";
 import * as Haptics from "expo-haptics";
 import { ClientPortalBackground } from "@/components/client-portal-background";
@@ -3053,12 +3054,17 @@ export default function ClientBookingWizardScreen() {
                   pendingConfirmationParamsRef.current = null;
                   if (!url) return;
                   if (Platform.OS !== "web") {
-                    await Linking.openURL(url);
+                    // Open Stripe Checkout in the in-app browser sheet.
+                    // openBrowserAsync AWAITS until the user taps Done or the deep-link redirect fires.
+                    await WebBrowser.openBrowserAsync(url, {
+                      dismissButtonStyle: "cancel",
+                      presentationStyle: WebBrowser.WebBrowserPresentationStyle.FORM_SHEET,
+                    });
                   } else {
                     window.location.href = url;
                     return;
                   }
-                  // Navigate to confirmation after Stripe opens in Safari
+                  // Navigate to confirmation after browser closes
                   if (navParams) {
                     router.replace({ pathname: "/client-booking-confirmation", params: navParams } as any);
                   }
