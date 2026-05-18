@@ -33,7 +33,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import * as Calendar from "expo-calendar";
-import { getApiBaseUrl } from "@/constants/oauth";
+import { getApiBaseUrl, DEEP_LINK_SCHEME } from "@/constants/oauth";
 import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
@@ -121,15 +121,17 @@ export default function ClientAppointmentDetailScreen() {
     setPayingCard(true);
     try {
       const apiBase = getApiBaseUrl();
+      // Build deep-link success/cancel URLs so Safari auto-closes and returns to the app after payment
+      const deepSuccessUrl = `${DEEP_LINK_SCHEME}://payment-success?appt=${encodeURIComponent(appt.localId)}&boid=${appt.businessOwnerId}`;
+      const deepCancelUrl = `${DEEP_LINK_SCHEME}://payment-cancel?appt=${encodeURIComponent(appt.localId)}&boid=${appt.businessOwnerId}`;
       const res = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           businessOwnerId: appt.businessOwnerId,
           appointmentLocalId: appt.localId,
-          amount: appt.totalPrice ? parseFloat(String(appt.totalPrice)) : 0,
-          clientEmail: undefined,
-          description: appt.serviceName ?? "Appointment payment",
+          successUrl: deepSuccessUrl,
+          cancelUrl: deepCancelUrl,
         }),
       });
       if (!res.ok) {

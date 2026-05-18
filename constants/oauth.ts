@@ -23,6 +23,7 @@ export const APP_ID = env.appId;
 export const OWNER_OPEN_ID = env.ownerId;
 export const OWNER_NAME = env.ownerName;
 export const API_BASE_URL = env.apiBaseUrl;
+export const DEEP_LINK_SCHEME = env.deepLinkScheme;
 
 /**
  * Get the API base URL, deriving from current hostname if not set.

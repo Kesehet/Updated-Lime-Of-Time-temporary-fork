@@ -26,6 +26,7 @@ import { useActiveLocation } from "@/hooks/use-active-location";
 import { useResponsive } from "@/hooks/use-responsive";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import { apiCall } from "@/lib/_core/api";
+import { DEEP_LINK_SCHEME } from "@/constants/oauth";
 import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
 
@@ -955,6 +956,9 @@ export default function NewBookingScreen() {
     if (selectedPaymentMethod === 'card' && firstAppointmentId && grandTotal > 0 && state.businessOwnerId) {
       setChargingCard(true);
       try {
+        // Build deep-link success/cancel URLs so Stripe redirects back to the app after payment
+        const deepSuccessUrl = `${DEEP_LINK_SCHEME}://payment-success?appt=${encodeURIComponent(firstAppointmentId)}&boid=${state.businessOwnerId}`;
+        const deepCancelUrl = `${DEEP_LINK_SCHEME}://payment-cancel?appt=${encodeURIComponent(firstAppointmentId)}&boid=${state.businessOwnerId}`;
         const checkoutData = await apiCall<{ url: string; sessionId: string }>(
           '/api/stripe-connect/request-payment',
           {
@@ -962,6 +966,8 @@ export default function NewBookingScreen() {
             body: JSON.stringify({
               businessOwnerId: state.businessOwnerId,
               appointmentLocalId: firstAppointmentId,
+              successUrl: deepSuccessUrl,
+              cancelUrl: deepCancelUrl,
             }),
           }
         );

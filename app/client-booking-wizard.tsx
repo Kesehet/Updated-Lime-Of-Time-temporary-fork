@@ -33,7 +33,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useClientStore } from "@/lib/client-store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { getApiBaseUrl } from "@/constants/oauth";
+import { getApiBaseUrl, DEEP_LINK_SCHEME } from "@/constants/oauth";
 import { scheduleAppointmentReminders } from "@/lib/notifications";
 import * as Haptics from "expo-haptics";
 import { ClientPortalBackground } from "@/components/client-portal-background";
@@ -1123,10 +1123,13 @@ export default function ClientBookingWizardScreen() {
       // ── Card payment: show Payment Summary sheet, then open Stripe Checkout ──
       if (paymentMethod === "card" && finalPrice > 0) {
         try {
+          // Build deep-link success/cancel URLs so Stripe redirects back to the app after payment
+          const deepSuccessUrl = `${DEEP_LINK_SCHEME}://payment-success?appt=${encodeURIComponent(appointmentId)}&boid=${businessOwnerId}`;
+          const deepCancelUrl = `${DEEP_LINK_SCHEME}://payment-cancel?appt=${encodeURIComponent(appointmentId)}&boid=${businessOwnerId}`;
           const checkoutRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
-            body: JSON.stringify({ businessOwnerId, appointmentLocalId: appointmentId }),
+            body: JSON.stringify({ businessOwnerId, appointmentLocalId: appointmentId, successUrl: deepSuccessUrl, cancelUrl: deepCancelUrl }),
           });
           if (checkoutRes.ok) {
             const checkoutData = await checkoutRes.json();

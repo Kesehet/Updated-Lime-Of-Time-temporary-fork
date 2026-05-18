@@ -443,9 +443,11 @@ export function registerStripeConnectRoutes(app: Express): void {
   // the hosted payment URL so the owner can SMS it to the client.
   app.post("/api/stripe-connect/request-payment", async (req: Request, res: Response) => {
     try {
-      const { businessOwnerId, appointmentLocalId } = req.body as {
+      const { businessOwnerId, appointmentLocalId, successUrl: clientSuccessUrl, cancelUrl: clientCancelUrl } = req.body as {
         businessOwnerId: number;
         appointmentLocalId: string;
+        successUrl?: string;
+        cancelUrl?: string;
       };
 
       if (!businessOwnerId || !appointmentLocalId) {
@@ -496,14 +498,12 @@ export function registerStripeConnectRoutes(app: Express): void {
       const platformFeeCents = Math.round(amountCents * feePercent);
       console.log(`[StripeConnect] request-payment: amount=$${amount} feePercent=${(feePercent*100).toFixed(2)}% feeCents=${platformFeeCents} accountId=${accountId}`);
 
-      // Build success URL — dedicated receipt page (no booking form flash)
-      // Use customSlug if set, otherwise derive from businessName (same logic as getBusinessOwnerBySlug)
+      // Build success/cancel URLs — prefer client-supplied deep-link URLs (for native app),
+      // fall back to web receipt page for browser/SMS flows
       const origin = `${req.protocol}://${req.get("host")}`;
       const slug = (owner as any).customSlug || (owner.businessName ? owner.businessName.toLowerCase().replace(/\s+/g, "-") : String(businessOwnerId));
-      // Point to the dedicated /api/payment-receipt/:slug page so client sees a clean receipt
-      // without the booking form. The receipt page fetches appointment-by-session internally.
-      const successUrl = `${origin}/api/payment-receipt/${slug}?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${origin}/api/book/${slug}`;
+      const successUrl = clientSuccessUrl || `${origin}/api/payment-receipt/${slug}?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = clientCancelUrl || `${origin}/api/book/${slug}`;
 
       const session = await stripe.checkout.sessions.create(
         {

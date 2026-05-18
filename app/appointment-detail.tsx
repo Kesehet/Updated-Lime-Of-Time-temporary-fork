@@ -12,7 +12,7 @@ import { apiCall } from "@/lib/_core/api";
 import { trpc } from "@/lib/trpc";
 import { usePlanLimitCheck } from "@/hooks/use-plan-limit-check";
 import { FuturisticBackground } from "@/components/futuristic-background";
-import { getApiBaseUrl } from "@/constants/oauth";
+import { getApiBaseUrl, DEEP_LINK_SCHEME } from "@/constants/oauth";
 import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
 import {
@@ -591,6 +591,9 @@ export default function AppointmentDetailScreen() {
     setPayingOnBehalf(true);
     try {
       // Create the Stripe Checkout session now that the owner has confirmed the fee breakdown
+      // Pass deep-link URLs so Safari auto-closes and returns to the app after payment
+      const deepSuccessUrl = `${DEEP_LINK_SCHEME}://payment-success?appt=${encodeURIComponent(appointment.id)}&boid=${state.businessOwnerId}`;
+      const deepCancelUrl = `${DEEP_LINK_SCHEME}://payment-cancel?appt=${encodeURIComponent(appointment.id)}&boid=${state.businessOwnerId}`;
       const result = await apiCall<{ ok: boolean; url: string; sessionId: string }>(
         '/api/stripe-connect/request-payment',
         {
@@ -598,6 +601,8 @@ export default function AppointmentDetailScreen() {
           body: JSON.stringify({
             businessOwnerId: state.businessOwnerId,
             appointmentLocalId: appointment.id,
+            successUrl: deepSuccessUrl,
+            cancelUrl: deepCancelUrl,
           }),
         },
       );
@@ -934,9 +939,9 @@ export default function AppointmentDetailScreen() {
     if (!state.businessOwnerId || !appointment) return;
     setNoShowFeeLoading(true);
     try {
-      const apiBase = getApiBaseUrl();
-      const successUrl = `${apiBase}/api/stripe-connect/webhook-success?type=no_show_fee&appointmentId=${appointment.id}`;
-      const cancelUrl = `${apiBase}/api/stripe-connect/webhook-cancel`;
+      // Use deep-link URLs so Safari auto-closes and returns to the app after no-show fee payment
+      const successUrl = `${DEEP_LINK_SCHEME}://payment-success?appt=${encodeURIComponent(appointment.id)}&boid=${state.businessOwnerId}&type=no_show_fee`;
+      const cancelUrl = `${DEEP_LINK_SCHEME}://payment-cancel?appt=${encodeURIComponent(appointment.id)}&boid=${state.businessOwnerId}`;
       const result = await apiCall<{ url: string; sessionId: string }>("/api/stripe-connect/no-show-fee", {
         method: "POST",
         body: JSON.stringify({
