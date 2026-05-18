@@ -61,6 +61,18 @@ export default function NewBookingScreen() {
 
    const sendSmsMutation = trpc.twilio.sendSms.useMutation();
   const [chargingCard, setChargingCard] = useState(false);
+  // Payment Summary sheet state (shown before Stripe Checkout)
+  const [showPaymentSummary, setShowPaymentSummary] = useState(false);
+  const [pendingCheckoutUrl, setPendingCheckoutUrl] = useState<string | null>(null);
+  const [pendingCheckoutBreakdown, setPendingCheckoutBreakdown] = useState<{
+    serviceAmount: number;
+    platformFee: number;
+    platformFeePercent: number;
+    totalCharged: number;
+    stripeFee: number;
+    businessNetPayout: number;
+  } | null>(null);
+  const [pendingNavTarget, setPendingNavTarget] = useState<string | null>(null);
   // Receipt modal data — shown after a successful card payment before navigating away
   const [receiptData, setReceiptData] = useState<{
     amount: number;
@@ -940,7 +952,7 @@ export default function NewBookingScreen() {
       }
     }
 
-    // If card payment selected, open Stripe Checkout in system browser (reliable on all platforms)
+    // If card payment selected, show Payment Summary sheet then open Stripe Checkout
     if (selectedPaymentMethod === 'card' && firstAppointmentId && grandTotal > 0 && state.businessOwnerId) {
       setChargingCard(true);
       try {
@@ -956,10 +968,19 @@ export default function NewBookingScreen() {
         );
         setChargingCard(false);
         if (checkoutData.url) {
-          await WebBrowser.openBrowserAsync(checkoutData.url);
+          // Calculate fee breakdown for the summary sheet
+          const PLATFORM_FEE_PERCENT = 1.5;
+          const platformFee = parseFloat((grandTotal * PLATFORM_FEE_PERCENT / 100).toFixed(2));
+          const totalCharged = parseFloat((grandTotal + platformFee).toFixed(2));
+          const stripeFee = parseFloat((totalCharged * 0.029 + 0.30).toFixed(2));
+          const businessNetPayout = parseFloat((totalCharged - platformFee - stripeFee).toFixed(2));
+          setPendingCheckoutBreakdown({ serviceAmount: grandTotal, platformFee, platformFeePercent: PLATFORM_FEE_PERCENT, totalCharged, stripeFee, businessNetPayout });
+          setPendingCheckoutUrl(checkoutData.url);
+          setPendingNavTarget(firstAppointmentId);
+          setShowPaymentSummary(true);
+          return; // navigation happens after user taps "Confirm & Pay" in the sheet
         }
-        // After browser closes, navigate to appointment detail.
-        // The webhook will have marked the appointment as paid if payment succeeded.
+        // If no URL, fall through to normal navigation
         router.replace({ pathname: '/appointment-detail', params: { id: firstAppointmentId } });
         return;
       } catch (err: any) {
@@ -2937,6 +2958,84 @@ export default function NewBookingScreen() {
               </Pressable>
             )}
           />
+        </View>
+      </Modal>
+
+      {/* Payment Summary Sheet - shown before Stripe Checkout */}
+      <Modal
+        visible={showPaymentSummary}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPaymentSummary(false)}
+        statusBarTranslucent
+      >
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: "center", marginBottom: 20 }} />
+            <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: "700", marginBottom: 4 }}>Payment Summary</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 20 }}>Review the charge breakdown before paying</Text>
+            {pendingCheckoutBreakdown && (
+              <View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                  <Text style={{ color: colors.muted, fontSize: 14 }}>Service amount</Text>
+                  <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600" }}>${pendingCheckoutBreakdown.serviceAmount.toFixed(2)}</Text>
+                </View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                  <Text style={{ color: colors.muted, fontSize: 14 }}>Platform fee ({pendingCheckoutBreakdown.platformFeePercent}%)</Text>
+                  <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600" }}>+${pendingCheckoutBreakdown.platformFee.toFixed(2)}</Text>
+                </View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, marginTop: 4 }}>
+                  <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "700" }}>Total charged to client</Text>
+                  <Text style={{ color: colors.primary, fontSize: 16, fontWeight: "700" }}>${pendingCheckoutBreakdown.totalCharged.toFixed(2)}</Text>
+                </View>
+                <View style={{ backgroundColor: colors.background, borderRadius: 12, padding: 12, marginTop: 4, gap: 6 }}>
+                  <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Business payout breakdown</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ color: colors.muted, fontSize: 12 }}>Stripe processing fee (2.9% + $0.30)</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12 }}>-${pendingCheckoutBreakdown.stripeFee.toFixed(2)}</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ color: colors.muted, fontSize: 12 }}>Business net payout</Text>
+                    <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: "600" }}>${pendingCheckoutBreakdown.businessNetPayout.toFixed(2)}</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
+              <Pressable
+                onPress={() => { setShowPaymentSummary(false); setPendingCheckoutUrl(null); setPendingCheckoutBreakdown(null); setPendingNavTarget(null); }}
+                style={({ pressed }) => [{ flex: 1, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: colors.border, alignItems: "center" }, pressed && { opacity: 0.7 }]}
+              >
+                <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600" }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  const url = pendingCheckoutUrl;
+                  const navId = pendingNavTarget;
+                  setShowPaymentSummary(false);
+                  setPendingCheckoutUrl(null);
+                  setPendingCheckoutBreakdown(null);
+                  setPendingNavTarget(null);
+                  if (!url) return;
+                  if (Platform.OS !== "web") {
+                    await WebBrowser.openBrowserAsync(url);
+                  } else {
+                    window.location.href = url;
+                    return;
+                  }
+                  // After browser closes, navigate to appointment detail
+                  if (navId) {
+                    router.replace({ pathname: '/appointment-detail', params: { id: navId } });
+                  } else {
+                    router.back();
+                  }
+                }}
+                style={({ pressed }) => [{ flex: 2, paddingVertical: 14, borderRadius: 14, backgroundColor: colors.primary, alignItems: "center" }, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+              >
+                <Text style={{ color: colors.background, fontSize: 15, fontWeight: "700" }}>Confirm & Pay</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
       </Modal>
 

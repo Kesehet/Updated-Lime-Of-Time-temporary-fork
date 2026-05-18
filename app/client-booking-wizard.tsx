@@ -253,6 +253,8 @@ export default function ClientBookingWizardScreen() {
   const [copiedHandle, setCopiedHandle] = useState<string | null>(null);
   // Ref to hold card last4 after Stripe payment sheet succeeds (passed to confirmation screen)
   const cardLast4Ref = useRef<{ last4: string; brand: string } | null>(null);
+  // Ref to hold navigation params for the confirmation screen (set before showing Payment Summary sheet)
+  const pendingConfirmationParamsRef = useRef<Record<string, string> | null>(null);
   // Derived: is the selected service a mobile/at-home service?
   // Declared here (before PAYMENT_METHODS useMemo) to avoid used-before-declaration TS error.
   const isMobileService = selectedService?.serviceType === 'mobile';
@@ -296,6 +298,21 @@ export default function ClientBookingWizardScreen() {
   }, [wizardProducts, productCart]);
   // Full-screen photo preview state
   const [previewUri, setPreviewUri] = useState<string | null>(null);
+  // Payment Summary sheet state (shown before opening Stripe Checkout)
+  const [showPaymentSummary, setShowPaymentSummary] = useState(false);
+  const [pendingCheckoutUrl, setPendingCheckoutUrl] = useState<string | null>(null);
+  const [pendingCheckoutBreakdown, setPendingCheckoutBreakdown] = useState<{
+    serviceAmount: number;
+    discountAmount: number;
+    discountName?: string;
+    promoSaving: number;
+    promoCode?: string;
+    platformFee: number;
+    platformFeePercent: number;
+    totalCharged: number;
+    stripeFee: number;
+    businessNetPayout: number;
+  } | null>(null);
   // Package session info for confirmation badge (fetched when reaching confirm step)
   const [pkgSessionInfo, setPkgSessionInfo] = useState<{ sessionsCompleted: number; totalSessions: number } | null>(null);
 
@@ -1104,47 +1121,68 @@ export default function ClientBookingWizardScreen() {
       }
       const selectedStaffMember = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
 
-      // ── Card payment: Stripe Checkout via browser (reliable on all platforms) ──
+      // ── Card payment: show Payment Summary sheet, then open Stripe Checkout ──
       if (paymentMethod === "card" && finalPrice > 0) {
         try {
-          if (Platform.OS !== "web" && businessOwnerId) {
-            // Native: use Stripe Checkout in system browser — same URL as "Request Card Payment" SMS
-            // This avoids all native Stripe sheet timing/presentation issues on iOS.
-            const checkoutRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
-              body: JSON.stringify({
-                businessOwnerId,
-                appointmentLocalId: appointmentId,
-              }),
-            });
-            if (checkoutRes.ok) {
-              const checkoutData = await checkoutRes.json();
-              const checkoutUrl = checkoutData.url;
-              if (checkoutUrl) {
-                setSubmitting(false);
-                await WebBrowser.openBrowserAsync(checkoutUrl);
-                // After browser closes, the webhook may have already marked it paid.
-                // We navigate to confirmation regardless — the receipt page shows payment status.
-              }
-            }
-          } else {
-            // Web: redirect to Stripe Checkout
-            const stripeRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
-              body: JSON.stringify({
-                appointmentLocalId: appointmentId,
-                businessOwnerId: businessOwnerId,
-              }),
-            });
-            if (stripeRes.ok) {
-              const stripeData = await stripeRes.json();
-              const redirectUrl = stripeData.url ?? stripeData.paymentUrl;
-              if (redirectUrl) {
-                window.location.href = redirectUrl;
-                return;
-              }
+          const checkoutRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
+            body: JSON.stringify({ businessOwnerId, appointmentLocalId: appointmentId }),
+          });
+          if (checkoutRes.ok) {
+            const checkoutData = await checkoutRes.json();
+            const checkoutUrl = checkoutData.url;
+            if (checkoutUrl) {
+              // Calculate fee breakdown for the summary sheet
+              const PLATFORM_FEE_PERCENT = 1.5;
+              const platformFee = parseFloat((finalPrice * PLATFORM_FEE_PERCENT / 100).toFixed(2));
+              const totalCharged = parseFloat((finalPrice + platformFee).toFixed(2));
+              const stripeFee = parseFloat((totalCharged * 0.029 + 0.30).toFixed(2));
+              const businessNetPayout = parseFloat((totalCharged - platformFee - stripeFee).toFixed(2));
+              setPendingCheckoutBreakdown({
+                serviceAmount: finalPrice,
+                discountAmount: discountAmount ?? 0,
+                discountName,
+                promoSaving,
+                promoCode: promoApplied?.code,
+                platformFee,
+                platformFeePercent: PLATFORM_FEE_PERCENT,
+                totalCharged,
+                stripeFee,
+                businessNetPayout,
+              });
+              // Store all confirmation navigation params in ref so they survive the sheet open/close
+              pendingConfirmationParamsRef.current = {
+                serviceName: selectedService.name,
+                staffName: selectedStaffMember?.name ?? "",
+                staffAvatarUrl: selectedStaffMember?.photoUri ?? "",
+                locationName: selectedLocation?.name ?? "",
+                locationAddress: selectedLocation?.address ?? "",
+                locationPhone: selectedLocation?.phone ?? "",
+                date: dateStr,
+                time: selectedSlot.time,
+                duration: String(selectedService.duration),
+                businessName: businessDisplayName || effectiveSlug,
+                businessSlug: effectiveSlug,
+                price: `$${finalPrice.toFixed(2)}`,
+                originalPrice: selectedService.price ?? "",
+                discountName: discountName ?? "",
+                discountAmount: discountAmount ? `$${discountAmount.toFixed(2)}` : "",
+                promoCode: promoApplied?.code ?? "",
+                promoSaving: promoSaving > 0 ? `$${promoSaving.toFixed(2)}` : "",
+                giftCode: giftApplied?.code ?? "",
+                giftSaving: giftApplied ? `$${Math.min(giftApplied.value, Math.max(0, (selectedService ? (parseFloat(selectedService.price ?? "0") || 0) : 0) - (discountAmount ?? 0) - (promoSaving ?? 0))).toFixed(2)}` : "",
+                paymentMethod: paymentMethod ?? "",
+                paymentConfirmationNumber: paymentConfirmationNumber.trim(),
+                cardLast4: cardLast4Ref.current?.last4 ?? "",
+                cardBrand: cardLast4Ref.current?.brand ?? "",
+                clientAddress: isMobileService && effectiveClientAddress.trim() ? effectiveClientAddress.trim() : "",
+                travelFee: travelFeeAmount > 0 ? `$${travelFeeAmount.toFixed(2)}` : "",
+              };
+              setPendingCheckoutUrl(checkoutUrl);
+              setSubmitting(false);
+              setShowPaymentSummary(true);
+              return; // navigation happens after user taps "Confirm & Pay" in the sheet
             }
           }
         } catch {
@@ -2939,6 +2977,96 @@ export default function ClientBookingWizardScreen() {
           >
             <IconSymbol name="xmark" size={18} color="#FFFFFF" />
           </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* ─── Payment Summary Sheet (shown before Stripe Checkout) ─────────── */}
+      <Modal
+        visible={showPaymentSummary}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPaymentSummary(false)}
+        statusBarTranslucent
+      >
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
+          <View style={{ backgroundColor: "#1A3A28", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+            {/* Handle */}
+            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)", alignSelf: "center", marginBottom: 20 }} />
+            <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "700", marginBottom: 4 }}>Payment Summary</Text>
+            <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, marginBottom: 20 }}>Review the charge breakdown before paying</Text>
+            {pendingCheckoutBreakdown && (
+              <View style={{ gap: 0 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
+                  <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Service amount</Text>
+                  <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "600" }}>${pendingCheckoutBreakdown.serviceAmount.toFixed(2)}</Text>
+                </View>
+                {pendingCheckoutBreakdown.discountAmount > 0 && (
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
+                    <Text style={{ color: "#4ADE80", fontSize: 14 }}>{pendingCheckoutBreakdown.discountName ? `Discount (${pendingCheckoutBreakdown.discountName})` : "Discount"}</Text>
+                    <Text style={{ color: "#4ADE80", fontSize: 14, fontWeight: "600" }}>-${pendingCheckoutBreakdown.discountAmount.toFixed(2)}</Text>
+                  </View>
+                )}
+                {pendingCheckoutBreakdown.promoSaving > 0 && (
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
+                    <Text style={{ color: "#4ADE80", fontSize: 14 }}>{pendingCheckoutBreakdown.promoCode ? `Promo (${pendingCheckoutBreakdown.promoCode})` : "Promo"}</Text>
+                    <Text style={{ color: "#4ADE80", fontSize: 14, fontWeight: "600" }}>-${pendingCheckoutBreakdown.promoSaving.toFixed(2)}</Text>
+                  </View>
+                )}
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
+                  <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Platform fee ({pendingCheckoutBreakdown.platformFeePercent}%)</Text>
+                  <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "600" }}>+${pendingCheckoutBreakdown.platformFee.toFixed(2)}</Text>
+                </View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, marginTop: 4 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700" }}>Total charged to you</Text>
+                  <Text style={{ color: "#4A7C59", fontSize: 16, fontWeight: "700" }}>${pendingCheckoutBreakdown.totalCharged.toFixed(2)}</Text>
+                </View>
+                <View style={{ backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginTop: 4, gap: 6 }}>
+                  <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Business payout breakdown</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Stripe processing fee (2.9% + $0.30)</Text>
+                    <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>-${pendingCheckoutBreakdown.stripeFee.toFixed(2)}</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Business net payout</Text>
+                    <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: "600" }}>${pendingCheckoutBreakdown.businessNetPayout.toFixed(2)}</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+            {/* Action buttons */}
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
+              <TouchableOpacity
+                onPress={() => { setShowPaymentSummary(false); setPendingCheckoutUrl(null); setPendingCheckoutBreakdown(null); pendingConfirmationParamsRef.current = null; }}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)", alignItems: "center" }}
+              >
+                <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, fontWeight: "600" }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  const url = pendingCheckoutUrl;
+                  const navParams = pendingConfirmationParamsRef.current;
+                  setShowPaymentSummary(false);
+                  setPendingCheckoutUrl(null);
+                  setPendingCheckoutBreakdown(null);
+                  pendingConfirmationParamsRef.current = null;
+                  if (!url) return;
+                  if (Platform.OS !== "web") {
+                    await WebBrowser.openBrowserAsync(url);
+                  } else {
+                    window.location.href = url;
+                    return;
+                  }
+                  // Navigate to confirmation after browser closes
+                  if (navParams) {
+                    router.replace({ pathname: "/client-booking-confirmation", params: navParams } as any);
+                  }
+                }}
+                style={{ flex: 2, paddingVertical: 14, borderRadius: 14, backgroundColor: "#4A7C59", alignItems: "center" }}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "700" }}>Confirm & Pay</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
 

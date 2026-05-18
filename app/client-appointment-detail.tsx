@@ -101,6 +101,17 @@ export default function ClientAppointmentDetailScreen() {
     serviceName?: string;
     confirmationId?: string;
   } | null>(null);
+  // Payment Summary sheet state
+  const [showPaymentSummary, setShowPaymentSummary] = useState(false);
+  const [pendingCheckoutUrl, setPendingCheckoutUrl] = useState<string | null>(null);
+  const [pendingCheckoutBreakdown, setPendingCheckoutBreakdown] = useState<{
+    serviceAmount: number;
+    platformFee: number;
+    platformFeePercent: number;
+    totalCharged: number;
+    stripeFee: number;
+    businessNetPayout: number;
+  } | null>(null);
 
   const handlePayWithCard = useCallback(async () => {
     if (!appt || !appt.localId) return;
@@ -125,29 +136,55 @@ export default function ClientAppointmentDetailScreen() {
       }
       const data = await res.json();
       if (!data.url) throw new Error("No payment URL returned");
-      // Open Stripe Checkout in the system browser
-      await WebBrowser.openBrowserAsync(data.url, { dismissButtonStyle: "cancel" });
-      // After browser closes, check if payment was completed
-      const statusRes = await fetch(
-        `${apiBase}/api/stripe-connect/appointment-payment-status?appointmentLocalId=${encodeURIComponent(appt.localId ?? "")}&businessOwnerId=${encodeURIComponent(appt.businessOwnerId)}`,
-      ).catch(() => null);
-      if (statusRes?.ok) {
-        const statusData = await statusRes.json();
-        if (statusData.paymentStatus === "paid") {
-          setAppt((prev) => prev ? { ...prev, paymentStatus: "paid", paymentMethod: "card" } : prev);
-          setReceiptData({
-            amount: appt.totalPrice ? parseFloat(String(appt.totalPrice)) : 0,
-            serviceName: appt.serviceName,
-            confirmationId: appt.localId ?? undefined,
-          });
-        }
-      }
+      // Show Payment Summary sheet before opening Stripe Checkout
+      const serviceAmount = appt.totalPrice ? parseFloat(String(appt.totalPrice)) : 0;
+      const PLATFORM_FEE_PERCENT = 1.5;
+      const platformFee = parseFloat((serviceAmount * PLATFORM_FEE_PERCENT / 100).toFixed(2));
+      const totalCharged = parseFloat((serviceAmount + platformFee).toFixed(2));
+      const stripeFee = parseFloat((totalCharged * 0.029 + 0.30).toFixed(2));
+      const businessNetPayout = parseFloat((totalCharged - platformFee - stripeFee).toFixed(2));
+      setPendingCheckoutBreakdown({ serviceAmount, platformFee, platformFeePercent: PLATFORM_FEE_PERCENT, totalCharged, stripeFee, businessNetPayout });
+      setPendingCheckoutUrl(data.url);
+      setPayingCard(false);
+      setShowPaymentSummary(true);
     } catch (err: any) {
       Alert.alert("Payment Error", err?.message ?? "Could not open payment page. Please try again.");
-    } finally {
       setPayingCard(false);
     }
   }, [appt]);
+
+  const handleConfirmAndPay = useCallback(async () => {
+    const url = pendingCheckoutUrl;
+    setShowPaymentSummary(false);
+    setPendingCheckoutUrl(null);
+    setPendingCheckoutBreakdown(null);
+    if (!url || !appt) return;
+    try {
+      if (Platform.OS !== "web") {
+        await WebBrowser.openBrowserAsync(url, { dismissButtonStyle: "cancel" });
+        // After browser closes, check if payment was completed
+        const apiBase = getApiBaseUrl();
+        const statusRes = await fetch(
+          `${apiBase}/api/stripe-connect/appointment-payment-status?appointmentLocalId=${encodeURIComponent(appt.localId ?? "")}&businessOwnerId=${encodeURIComponent(appt.businessOwnerId)}`,
+        ).catch(() => null);
+        if (statusRes?.ok) {
+          const statusData = await statusRes.json();
+          if (statusData.paymentStatus === "paid") {
+            setAppt((prev) => prev ? { ...prev, paymentStatus: "paid", paymentMethod: "card" } : prev);
+            setReceiptData({
+              amount: appt.totalPrice ? parseFloat(String(appt.totalPrice)) : 0,
+              serviceName: appt.serviceName,
+              confirmationId: appt.localId ?? undefined,
+            });
+          }
+        }
+      } else {
+        window.location.href = url;
+      }
+    } catch (err: any) {
+      Alert.alert("Payment Error", err?.message ?? "Could not open payment page. Please try again.");
+    }
+  }, [appt, pendingCheckoutUrl]);
 
   // ── Review state ──────────────────────────────────────────────────────────
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
@@ -1025,6 +1062,64 @@ export default function ClientAppointmentDetailScreen() {
       </Modal>
 
       {/* ── Payment Receipt Modal ─────────────────────────────────────── */}
+      {/* Payment Summary Sheet - shown before Stripe Checkout */}
+      <Modal
+        visible={showPaymentSummary}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPaymentSummary(false)}
+        statusBarTranslucent
+      >
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
+          <View style={{ backgroundColor: GREEN_DARK, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)", alignSelf: "center", marginBottom: 20 }} />
+            <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "700", marginBottom: 4 }}>Payment Summary</Text>
+            <Text style={{ color: TEXT_MUTED, fontSize: 13, marginBottom: 20 }}>Review the charge breakdown before paying</Text>
+            {pendingCheckoutBreakdown && (
+              <View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 14 }}>Service amount</Text>
+                  <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "600" }}>${pendingCheckoutBreakdown.serviceAmount.toFixed(2)}</Text>
+                </View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 14 }}>Platform fee ({pendingCheckoutBreakdown.platformFeePercent}%)</Text>
+                  <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "600" }}>+${pendingCheckoutBreakdown.platformFee.toFixed(2)}</Text>
+                </View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, marginTop: 4 }}>
+                  <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700" }}>Total charged to you</Text>
+                  <Text style={{ color: GREEN_ACCENT, fontSize: 16, fontWeight: "700" }}>${pendingCheckoutBreakdown.totalCharged.toFixed(2)}</Text>
+                </View>
+                <View style={{ backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginTop: 4, gap: 6 }}>
+                  <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Business payout breakdown</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Stripe processing fee (2.9% + $0.30)</Text>
+                    <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>-${pendingCheckoutBreakdown.stripeFee.toFixed(2)}</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Business net payout</Text>
+                    <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: "600" }}>${pendingCheckoutBreakdown.businessNetPayout.toFixed(2)}</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
+              <Pressable
+                onPress={() => { setShowPaymentSummary(false); setPendingCheckoutUrl(null); setPendingCheckoutBreakdown(null); }}
+                style={({ pressed }) => [{ flex: 1, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)", alignItems: "center" }, pressed && { opacity: 0.7 }]}
+              >
+                <Text style={{ color: TEXT_MUTED, fontSize: 15, fontWeight: "600" }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleConfirmAndPay}
+                style={({ pressed }) => [{ flex: 2, paddingVertical: 14, borderRadius: 14, backgroundColor: "#4A7C59", alignItems: "center" }, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+              >
+                <Text style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "700" }}>Confirm & Pay</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {receiptData && (
         <PaymentReceiptModal
           visible={!!receiptData}
