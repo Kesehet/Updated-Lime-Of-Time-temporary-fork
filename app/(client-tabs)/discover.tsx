@@ -617,6 +617,8 @@ export default function DiscoverScreen() {
         }
         if (status !== "granted") {
           setLocationError("Location access denied. Showing all businesses.");
+          // Always re-fetch without coords so all businesses show when location is denied
+          fetchBusinesses(undefined, undefined, searchQuery, state.discoverCategory, state.discoverRadius);
           return;
         }
         // Use Promise.race to enforce an 8s timeout — getCurrentPositionAsync has no built-in timeout option
@@ -645,6 +647,8 @@ export default function DiscoverScreen() {
         }
       } catch {
         setLocationError("Could not get location. Showing all businesses.");
+        // Always re-fetch without coords so all businesses show when GPS fails/times out
+        fetchBusinesses(undefined, undefined, searchQuery, state.discoverCategory, state.discoverRadius);
       }
     })();
     return () => { cancelled = true; };
