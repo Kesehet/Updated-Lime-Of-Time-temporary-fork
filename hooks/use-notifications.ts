@@ -868,21 +868,23 @@ export function useNotifications() {
           });
         }
 
-        // Build a preview of today's birthdays for the notification body
+        // Only schedule the daily birthday notification if there are clients with birthdays today.
+        // When no birthdays exist today, skip silently — a "No client birthdays today" notification
+        // is noisy and unhelpful. The notification will fire again tomorrow when re-evaluated.
+        if (todayClients.length === 0) {
+          logger.log("[Notifications] No client birthdays today — skipping birthday notification");
+          return;
+        }
+
         const previewNames = todayClients.slice(0, 3).map((c) => c.name);
         const extraCount = todayClients.length - previewNames.length;
-        const bodyToday =
-          todayClients.length === 0
-            ? "No client birthdays today."
-            : previewNames.join(", ") + (extraCount > 0 ? ` +${extraCount} more` : "");
+        const bodyToday = previewNames.join(", ") + (extraCount > 0 ? ` +${extraCount} more` : "");
 
         const hourLabel = reminderHour > 12 ? `${reminderHour - 12}:00 PM` : reminderHour === 12 ? "12:00 PM" : `${reminderHour}:00 AM`;
         await Notifications.scheduleNotificationAsync({
           identifier: "birthday-daily-reminder",
           content: {
-            title: todayClients.length > 0
-              ? `🎂 ${todayClients.length} Birthday${todayClients.length > 1 ? "s" : ""} Today!`
-              : `🎂 Birthday Check — ${businessName}`,
+            title: `🎂 ${todayClients.length} Birthday${todayClients.length > 1 ? "s" : ""} Today!`,
             body: bodyToday,
             data: { type: "general", url: "/birthday-campaigns" },
             sound: true,
@@ -894,7 +896,7 @@ export function useNotifications() {
             ...(Platform.OS === "android" ? { channelId: "birthdays" } : {}),
           },
         });
-        logger.log(`[Notifications] Birthday daily reminder scheduled for ${hourLabel}`);
+        logger.log(`[Notifications] Birthday daily reminder scheduled for ${hourLabel} — ${todayClients.length} birthday(s) today`);
       } catch (err) {
         logger.warn("[Notifications] Failed to schedule birthday reminder:", err);
       }

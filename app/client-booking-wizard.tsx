@@ -1169,7 +1169,7 @@ export default function ClientBookingWizardScreen() {
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       scheduleAppointmentReminders(
         appointmentId,
-        effectiveSlug,
+        businessDisplayName || effectiveSlug,
         selectedService.name,
         dateStr,
         selectedSlot.time
