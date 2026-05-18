@@ -122,17 +122,12 @@ export default function ClientAppointmentDetailScreen() {
     setPayingCard(true);
     try {
       const apiBase = getApiBaseUrl();
-      // Build deep-link success/cancel URLs so Safari auto-closes and returns to the app after payment
-      const deepSuccessUrl = `${DEEP_LINK_SCHEME}://payment-success?appt=${encodeURIComponent(appt.localId)}&boid=${appt.businessOwnerId}`;
-      const deepCancelUrl = `${DEEP_LINK_SCHEME}://payment-cancel?appt=${encodeURIComponent(appt.localId)}&boid=${appt.businessOwnerId}`;
       const res = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           businessOwnerId: appt.businessOwnerId,
           appointmentLocalId: appt.localId,
-          successUrl: deepSuccessUrl,
-          cancelUrl: deepCancelUrl,
         }),
       });
       if (!res.ok) {

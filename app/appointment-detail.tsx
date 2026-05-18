@@ -592,9 +592,6 @@ export default function AppointmentDetailScreen() {
     setPayingOnBehalf(true);
     try {
       // Create the Stripe Checkout session now that the owner has confirmed the fee breakdown
-      // Pass deep-link URLs so Safari auto-closes and returns to the app after payment
-      const deepSuccessUrl = `${DEEP_LINK_SCHEME}://payment-success?appt=${encodeURIComponent(appointment.id)}&boid=${state.businessOwnerId}`;
-      const deepCancelUrl = `${DEEP_LINK_SCHEME}://payment-cancel?appt=${encodeURIComponent(appointment.id)}&boid=${state.businessOwnerId}`;
       const result = await apiCall<{ ok: boolean; url: string; sessionId: string }>(
         '/api/stripe-connect/request-payment',
         {
@@ -602,8 +599,6 @@ export default function AppointmentDetailScreen() {
           body: JSON.stringify({
             businessOwnerId: state.businessOwnerId,
             appointmentLocalId: appointment.id,
-            successUrl: deepSuccessUrl,
-            cancelUrl: deepCancelUrl,
           }),
         },
       );
@@ -943,9 +938,6 @@ export default function AppointmentDetailScreen() {
     if (!state.businessOwnerId || !appointment) return;
     setNoShowFeeLoading(true);
     try {
-      // Use deep-link URLs so Safari auto-closes and returns to the app after no-show fee payment
-      const successUrl = `${DEEP_LINK_SCHEME}://payment-success?appt=${encodeURIComponent(appointment.id)}&boid=${state.businessOwnerId}&type=no_show_fee`;
-      const cancelUrl = `${DEEP_LINK_SCHEME}://payment-cancel?appt=${encodeURIComponent(appointment.id)}&boid=${state.businessOwnerId}`;
       const result = await apiCall<{ url: string; sessionId: string }>("/api/stripe-connect/no-show-fee", {
         method: "POST",
         body: JSON.stringify({
@@ -954,8 +946,6 @@ export default function AppointmentDetailScreen() {
           amount: feeAmount,
           serviceName: service ? getServiceDisplayName(service) : "Appointment",
           clientName: client?.name ?? "",
-          successUrl,
-          cancelUrl,
         }),
       });
       setShowNoShowFeeModal(false);
