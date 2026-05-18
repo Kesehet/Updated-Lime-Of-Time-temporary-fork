@@ -43,7 +43,7 @@ import { getCategoryDef, ALL_CATEGORY } from "@/constants/categories";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as WebBrowser from "expo-web-browser";
 import * as Clipboard from "expo-clipboard";
-import { useStripe, initStripe } from "@/lib/use-stripe";
+
 
 const LIME_GREEN = "#4A7C59";
 // ─── Portal palette (same as business detail) ────────────────────────────────
@@ -253,28 +253,6 @@ export default function ClientBookingWizardScreen() {
   const [copiedHandle, setCopiedHandle] = useState<string | null>(null);
   // Ref to hold card last4 after Stripe payment sheet succeeds (passed to confirmation screen)
   const cardLast4Ref = useRef<{ last4: string; brand: string } | null>(null);
-  // Fee breakdown modal state
-  const [feeBreakdown, setFeeBreakdown] = useState<{
-    serviceAmount: number;
-    discountAmount: number;
-    discountName: string | null;
-    platformFee: number;
-    platformFeePercent: number;
-    stripeFee: number;
-    totalCharged: number;
-    businessNetPayout: number;
-    publishableKey: string;
-    paymentIntent: string;
-    accountId: string;
-  } | null>(null);
-  const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
-  const [paymentProcessing, setPaymentProcessing] = useState(false); // loading overlay after fee breakdown closes
-  const [paymentRetryError, setPaymentRetryError] = useState<string | null>(null); // inline retry error
-  const pendingPaymentRef = useRef<{ appointmentId: string } | null>(null);
-  // Resolve function for the "wait until Modal is fully dismissed" promise.
-  // Set by handleConfirmPayment, called by the Modal's onDismiss callback.
-  const feeBreakdownDismissResolveRef = useRef<(() => void) | null>(null);
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   // Derived: is the selected service a mobile/at-home service?
   // Declared here (before PAYMENT_METHODS useMemo) to avoid used-before-declaration TS error.
   const isMobileService = selectedService?.serviceType === 'mobile';
@@ -979,82 +957,6 @@ export default function ClientBookingWizardScreen() {
     }
   };
 
-  // Called when user taps "Confirm & Pay" in the fee breakdown modal
-  const handleConfirmPayment = async () => {
-    if (!feeBreakdown || !pendingPaymentRef.current) return;
-    setPaymentRetryError(null);
-    setShowFeeBreakdown(false);
-    setSubmitting(true);
-    try {
-      // Wait for the fee breakdown modal's slide-out animation to fully complete
-      // before presenting the Stripe sheet. On iOS, a native payment sheet cannot
-      // be presented while a React Native Modal is still animating out.
-      //
-      // We use the Modal's onDismiss callback (fires after the animation fully completes)
-      // instead of a fixed timeout, which is unreliable across devices.
-      //
-      // IMPORTANT: Do NOT call initStripe() again here. Calling it after initPaymentSheet()
-      // resets the Stripe SDK internal state and invalidates the payment sheet that was
-      // already set up in handleSubmit, causing the sheet to render blank/white.
-      // The initPaymentSheet() call in handleSubmit is sufficient.
-      await new Promise<void>((resolve) => { feeBreakdownDismissResolveRef.current = resolve; });
-      setPaymentProcessing(true);
-      const { error: presentError } = await presentPaymentSheet();
-      setPaymentProcessing(false);
-      if (presentError && presentError.code !== "Canceled") {
-        setPaymentRetryError(presentError.message ?? "Payment failed. Please try again.");
-        setSubmitting(false);
-        return;
-      } else if (!presentError) {
-        // Payment succeeded — fetch card last4 for receipt display
-        const { appointmentId } = pendingPaymentRef.current;
-        // Persist payment status to server DB (don't rely solely on webhook for connected accounts)
-        fetch(`${apiBase}/api/stripe-connect/mark-appointment-paid`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.sessionToken}` },
-          body: JSON.stringify({ businessOwnerId, appointmentLocalId: appointmentId }),
-        }).catch(() => { /* non-blocking */ });
-        try {
-          const last4Res = await fetch(
-            `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(appointmentId)}&businessOwnerId=${encodeURIComponent(String(businessOwnerId))}`,
-            { headers: { "Authorization": `Bearer ${state.sessionToken}` } }
-          );
-          if (last4Res.ok) {
-            const { last4, brand } = await last4Res.json();
-            if (last4) cardLast4Ref.current = { last4, brand: brand ?? "card" };
-          }
-        } catch { /* non-blocking */ }
-        // Navigate to confirmation
-        const { selectedService: svc, selectedDate: date, selectedSlot: slot, selectedStaffId: staffId, notes: notesVal } = {
-          selectedService, selectedDate, selectedSlot, selectedStaffId, notes
-        };
-        if (svc && date && slot) {
-          const dateStr = date.toISOString().split("T")[0];
-          const selectedStaffMember = staffId !== "any" ? staff.find((m) => m.localId === staffId) : null;
-          router.replace({
-            pathname: "/client-booking-confirmation" as any,
-            params: {
-              service: svc.name,
-              date: dateStr,
-              time: slot.time,
-              staff: selectedStaffMember?.name ?? "",
-              notes: notesVal,
-              paymentMethod: "card",
-              totalPrice: String(feeBreakdown.totalCharged),
-              last4: cardLast4Ref.current?.last4 ?? "",
-              cardBrand: cardLast4Ref.current?.brand ?? "",
-              businessSlug: effectiveSlug,
-              businessOwnerId: String(businessOwnerId),
-            },
-          });
-        }
-      }
-    } finally {
-      setSubmitting(false);
-      setFeeBreakdown(null);
-      pendingPaymentRef.current = null;
-    }
-  };
 
   const handleSubmit = async () => {
     if (!selectedService || !selectedDate || !selectedSlot) return;
@@ -1202,76 +1104,28 @@ export default function ClientBookingWizardScreen() {
       }
       const selectedStaffMember = selectedStaffId !== "any" ? staff.find((m) => m.localId === selectedStaffId) : null;
 
-      // ── Card payment: native Stripe payment sheet (iOS/Android) or web redirect ──
+      // ── Card payment: Stripe Checkout via browser (reliable on all platforms) ──
       if (paymentMethod === "card" && finalPrice > 0) {
         try {
           if (Platform.OS !== "web" && businessOwnerId) {
-            // Native: use Stripe React Native payment sheet
-            const sheetRes = await fetch(`${apiBase}/api/stripe-connect/create-payment-sheet`, {
+            // Native: use Stripe Checkout in system browser — same URL as "Request Card Payment" SMS
+            // This avoids all native Stripe sheet timing/presentation issues on iOS.
+            const checkoutRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
               body: JSON.stringify({
                 businessOwnerId,
                 appointmentLocalId: appointmentId,
-                amount: finalPrice,
-                currency: "usd",
-                description: `${selectedService.name} — ${dateStr} at ${formatTime12(selectedSlot.time)}`,
-                clientEmail: state.account?.email ?? undefined,
               }),
             });
-            if (sheetRes.ok) {
-              const sheetData = await sheetRes.json();
-              const { publishableKey, paymentIntent, accountId, breakdown } = sheetData;
-              // Re-initialize Stripe SDK with the connected account context so the
-              // PaymentIntent lookup resolves on the correct Stripe account.
-              await initStripe({ publishableKey, stripeAccountId: accountId });
-              const { error: initError } = await initPaymentSheet({
-                merchantDisplayName: businessDisplayName || effectiveSlug,
-                paymentIntentClientSecret: paymentIntent,
-                style: "alwaysDark",
-              });
-              if (!initError) {
-                // Show fee breakdown modal before presenting payment sheet
-                if (breakdown) {
-                  pendingPaymentRef.current = { appointmentId };
-                  setFeeBreakdown({ ...breakdown, publishableKey, paymentIntent, accountId });
-                  setShowFeeBreakdown(true);
-                  setSubmitting(false);
-                  return; // payment continues in handleConfirmPayment
-                }
-                const { error: presentError } = await presentPaymentSheet();
-                if (presentError && presentError.code !== "Canceled") {
-                  Alert.alert("Payment Failed", presentError.message ?? "Please try again.");
-                } else if (!presentError) {
-                  // Payment succeeded — persist to server DB and fetch card last4
-                  fetch(`${apiBase}/api/stripe-connect/mark-appointment-paid`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.sessionToken}` },
-                    body: JSON.stringify({ businessOwnerId, appointmentLocalId: appointmentId }),
-                  }).catch(() => { /* non-blocking */ });
-                  try {
-                    const last4Res = await fetch(
-                      `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(appointmentId)}&businessOwnerId=${encodeURIComponent(String(businessOwnerId))}`,
-                      { headers: { "Authorization": `Bearer ${state.sessionToken}` } }
-                    );
-                    if (last4Res.ok) {
-                      const { last4, brand } = await last4Res.json();
-                      if (last4) cardLast4Ref.current = { last4, brand: brand ?? "card" };
-                    }
-                  } catch { /* non-blocking */ }
-                }
-              }
-            } else {
-              // Fallback to web checkout
-              const fallbackRes = await fetch(`${apiBase}/api/stripe-connect/request-payment`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${state.sessionToken}` },
-                body: JSON.stringify({ appointmentId, businessSlug: effectiveSlug, amount: finalPrice, clientEmail: state.account?.email ?? undefined }),
-              });
-              if (fallbackRes.ok) {
-                const fallbackData = await fallbackRes.json();
-                const fallbackUrl = fallbackData.url ?? fallbackData.paymentUrl;
-                if (fallbackUrl) await WebBrowser.openAuthSessionAsync(fallbackUrl, undefined, { showInRecents: false });
+            if (checkoutRes.ok) {
+              const checkoutData = await checkoutRes.json();
+              const checkoutUrl = checkoutData.url;
+              if (checkoutUrl) {
+                setSubmitting(false);
+                await WebBrowser.openBrowserAsync(checkoutUrl);
+                // After browser closes, the webhook may have already marked it paid.
+                // We navigate to confirmation regardless — the receipt page shows payment status.
               }
             }
           } else {
@@ -3088,100 +2942,6 @@ export default function ClientBookingWizardScreen() {
         </View>
       </Modal>
 
-      {/* ── Payment Processing Overlay ─────────────────────────────────── */}
-      {paymentProcessing && (
-        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.65)", alignItems: "center", justifyContent: "center", zIndex: 999 }}>
-          <View style={{ backgroundColor: PORTAL_BG, borderRadius: 20, padding: 32, alignItems: "center", gap: 16, borderWidth: 1, borderColor: "rgba(74,124,89,0.4)" }}>
-            <ActivityIndicator size="large" color={LIME_GREEN} />
-            <Text style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "600" }}>Processing payment...</Text>
-            <Text style={{ color: TEXT_MUTED, fontSize: 13, textAlign: "center" }}>Please do not close the app</Text>
-          </View>
-        </View>
-      )}
-
-      {/* ── Payment Retry Error ───────────────────────────────────────────── */}
-      {paymentRetryError && (
-        <View style={{ position: "absolute", bottom: 120, left: 20, right: 20, backgroundColor: "rgba(239,68,68,0.12)", borderRadius: 14, borderWidth: 1, borderColor: "rgba(239,68,68,0.35)", padding: 16, zIndex: 998 }}>
-          <Text style={{ color: "#F87171", fontSize: 13, textAlign: "center", lineHeight: 18, marginBottom: 10 }}>{paymentRetryError}</Text>
-          <Pressable
-            style={({ pressed }) => ({ alignItems: "center", opacity: pressed ? 0.7 : 1 })}
-            onPress={() => { setPaymentRetryError(null); setShowFeeBreakdown(true); }}
-          >
-            <Text style={{ color: LIME_GREEN, fontSize: 14, fontWeight: "700" }}>Try Again</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {/* ── Fee Breakdown Modal ────────────────────────────────────────── */}
-      <Modal
-        visible={showFeeBreakdown}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowFeeBreakdown(false)}
-        onDismiss={() => { feeBreakdownDismissResolveRef.current?.(); feeBreakdownDismissResolveRef.current = null; }}
-      >
-        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
-          <View style={{ backgroundColor: "#1A3A28", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
-            {/* Handle */}
-            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)", alignSelf: "center", marginBottom: 20 }} />
-            <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "700", marginBottom: 4 }}>Payment Summary</Text>
-            <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, marginBottom: 20 }}>Review the charge breakdown before paying</Text>
-
-            {/* Breakdown rows */}
-            {feeBreakdown && (
-              <View style={{ gap: 0 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
-                  <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Service amount</Text>
-                  <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "600" }}>${feeBreakdown.serviceAmount.toFixed(2)}</Text>
-                </View>
-                {feeBreakdown.discountAmount > 0 && (
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
-                    <Text style={{ color: "#4ADE80", fontSize: 14 }}>{feeBreakdown.discountName ? `Discount (${feeBreakdown.discountName})` : "Discount"}</Text>
-                    <Text style={{ color: "#4ADE80", fontSize: 14, fontWeight: "600" }}>-${feeBreakdown.discountAmount.toFixed(2)}</Text>
-                  </View>
-                )}
-                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" }}>
-                  <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Platform fee ({feeBreakdown.platformFeePercent}%)</Text>
-                  <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "600" }}>+${feeBreakdown.platformFee.toFixed(2)}</Text>
-                </View>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, marginTop: 4 }}>
-                  <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700" }}>Total charged to you</Text>
-                  <Text style={{ color: "#4A7C59", fontSize: 16, fontWeight: "700" }}>${feeBreakdown.totalCharged.toFixed(2)}</Text>
-                </View>
-
-                {/* Business payout section */}
-                <View style={{ backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginTop: 4, gap: 6 }}>
-                  <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Business payout breakdown</Text>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Stripe processing fee (2.9% + $0.30)</Text>
-                    <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>-${feeBreakdown.stripeFee.toFixed(2)}</Text>
-                  </View>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Business net payout</Text>
-                    <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: "600" }}>${feeBreakdown.businessNetPayout.toFixed(2)}</Text>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {/* Action buttons */}
-            <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
-              <TouchableOpacity
-                onPress={() => { setShowFeeBreakdown(false); setFeeBreakdown(null); pendingPaymentRef.current = null; }}
-                style={{ flex: 1, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)", alignItems: "center" }}
-              >
-                <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, fontWeight: "600" }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleConfirmPayment}
-                style={{ flex: 2, paddingVertical: 14, borderRadius: 14, backgroundColor: "#4A7C59", alignItems: "center" }}
-              >
-                <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "700" }}>Confirm & Pay</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </ScreenContainer>
   );
 }

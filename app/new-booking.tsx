@@ -13,7 +13,6 @@ import {
   Image,
   KeyboardAvoidingView,
   TouchableOpacity,
-  ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -26,10 +25,8 @@ import { trpc } from "@/lib/trpc";
 import { useActiveLocation } from "@/hooks/use-active-location";
 import { useResponsive } from "@/hooks/use-responsive";
 import { FuturisticBackground } from "@/components/futuristic-background";
-import { useStripe, initStripe } from "@/lib/use-stripe";
+import * as WebBrowser from "expo-web-browser";
 import { apiCall } from "@/lib/_core/api";
-import { getApiBaseUrl } from "@/constants/oauth";
-import { getSessionToken } from "@/lib/_core/auth";
 import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
 
@@ -63,29 +60,7 @@ export default function NewBookingScreen() {
   const params = useLocalSearchParams<{ date?: string; prefillServiceId?: string; prefillClientId?: string; prefillStaffId?: string }>();
 
    const sendSmsMutation = trpc.twilio.sendSms.useMutation();
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [chargingCard, setChargingCard] = useState(false);
-  // Fee breakdown modal state
-  const [feeBreakdown, setFeeBreakdown] = useState<{
-    serviceAmount: number;
-    discountAmount: number;
-    discountName: string | null;
-    platformFee: number;
-    platformFeePercent: number;
-    stripeFee: number;
-    totalCharged: number;
-    businessNetPayout: number;
-    publishableKey: string;
-    paymentIntent: string;
-    accountId: string;
-  } | null>(null);
-  const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
-  const [paymentProcessing, setPaymentProcessing] = useState(false); // loading overlay
-  const [paymentRetryError, setPaymentRetryError] = useState<string | null>(null); // inline retry error
-  const pendingPaymentAppointmentId = useRef<string | null>(null);
-  // Resolve function for the "wait until Modal is fully dismissed" promise.
-  // Set by handleConfirmNewBookingPayment, called by the Modal's onDismiss callback.
-  const feeBreakdownDismissResolveRef = useRef<(() => void) | null>(null);
   // Receipt modal data — shown after a successful card payment before navigating away
   const [receiptData, setReceiptData] = useState<{
     amount: number;
@@ -842,85 +817,6 @@ export default function NewBookingScreen() {
     });
   }, [state.products]);
 
-  // Called when owner confirms the fee breakdown modal before charging client
-  const handleConfirmNewBookingPayment = useCallback(async () => {
-    if (!feeBreakdown || !pendingPaymentAppointmentId.current) return;
-    const appointmentId = pendingPaymentAppointmentId.current;
-    setShowFeeBreakdown(false);
-    setChargingCard(true);
-    try {
-      // Wait for the fee breakdown modal's slide-out animation to fully complete
-      // before presenting the Stripe sheet. On iOS, a native payment sheet cannot
-      // be presented while a React Native Modal is still animating out.
-      //
-      // We use the Modal's onDismiss callback (fires after the animation fully completes)
-      // instead of a fixed timeout, which is unreliable across devices.
-      //
-      // IMPORTANT: Do NOT call initStripe() again here. Calling it after initPaymentSheet()
-      // resets the Stripe SDK internal state and invalidates the payment sheet that was
-      // already set up in handleBook, causing the sheet to render blank/white.
-      await new Promise<void>((resolve) => { feeBreakdownDismissResolveRef.current = resolve; });
-      setPaymentProcessing(true);
-      const { error: presentError } = await presentPaymentSheet();
-      setPaymentProcessing(false);
-      if (presentError) {
-        if (presentError.code !== 'Canceled') {
-          setPaymentRetryError(presentError.message ?? 'Payment failed. Please try again.');
-        }
-        setChargingCard(false);
-        router.replace({ pathname: '/appointment-detail', params: { id: appointmentId } });
-        return;
-      }
-      // Payment succeeded — update appointment payment status in local state
-      const paidAppt = state.appointments.find((a) => a.id === appointmentId);
-      if (paidAppt) {
-        const updatedAppt = { ...paidAppt, paymentStatus: 'paid' as const, paymentMethod: 'card' as const };
-        dispatch({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
-        syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
-      }
-      // Also persist payment status to server DB (don't rely solely on webhook for connected accounts)
-      apiCall('/api/stripe-connect/mark-appointment-paid', {
-        method: 'POST',
-        body: JSON.stringify({
-          businessOwnerId: state.businessOwnerId,
-          appointmentLocalId: appointmentId,
-        }),
-      }).catch((e) => console.warn('[Stripe] mark-appointment-paid failed (non-blocking):', e));
-      // Fetch card last4 for receipt (non-blocking — show receipt with or without it)
-      let cardLast4: string | undefined;
-      let cardBrand: string | undefined;
-      try {
-        const apiBase = getApiBaseUrl();
-        const last4Res = await fetch(
-          `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(appointmentId)}&businessOwnerId=${encodeURIComponent(state.businessOwnerId ?? '')}`,
-          { headers: { Authorization: `Bearer ${await getSessionToken()}` } },
-        );
-        if (last4Res.ok) {
-          const last4Data = await last4Res.json();
-          cardLast4 = last4Data.last4 ?? undefined;
-          cardBrand = last4Data.brand ?? undefined;
-        }
-      } catch { /* non-blocking */ }
-      const paidApptForReceipt = state.appointments.find((a) => a.id === appointmentId);
-      setReceiptData({
-        amount: paidApptForReceipt?.totalPrice ?? feeBreakdown?.totalCharged ?? 0,
-        serviceName: selectedService ? getServiceDisplayName(selectedService) : undefined,
-        clientName: selectedClient?.name ?? undefined,
-        cardLast4,
-        cardBrand,
-        confirmationId: appointmentId,
-        navigateTo: appointmentId,
-      });
-      setChargingCard(false);
-    } catch (err: any) {
-      Alert.alert('Payment Error', err?.message ?? 'Failed to process card payment');
-      setChargingCard(false);
-    } finally {
-      setFeeBreakdown(null);
-      pendingPaymentAppointmentId.current = null;
-    }
-  }, [feeBreakdown, initStripe, presentPaymentSheet, state.appointments, state.businessOwnerId, selectedService, selectedClient, dispatch, syncToDb, router]);
-
   const handleBook = useCallback(async () => {
     if (!selectedServiceId || !selectedClientId || !selectedTime) return;
     // Auto-select the only location if none is selected
@@ -1044,106 +940,30 @@ export default function NewBookingScreen() {
       }
     }
 
-    // If card payment selected, present native Stripe payment sheet before navigating
+    // If card payment selected, open Stripe Checkout in system browser (reliable on all platforms)
     if (selectedPaymentMethod === 'card' && firstAppointmentId && grandTotal > 0 && state.businessOwnerId) {
       setChargingCard(true);
       try {
-        const sheetData = await apiCall<{ publishableKey: string; paymentIntent: string; accountId: string; breakdown?: any }>(
-          '/api/stripe-connect/create-payment-sheet',
+        const checkoutData = await apiCall<{ url: string; sessionId: string }>(
+          '/api/stripe-connect/request-payment',
           {
             method: 'POST',
             body: JSON.stringify({
               businessOwnerId: state.businessOwnerId,
               appointmentLocalId: firstAppointmentId,
-              amount: grandTotal,
-              description: selectedService ? `${getServiceDisplayName(selectedService)} - ${selectedClient?.name ?? 'Client'}` : 'Appointment',
-              clientEmail: (selectedClient as any)?.email ?? undefined,
             }),
           }
         );
-        const { error: initError } = await initPaymentSheet({
-          merchantDisplayName: state.settings.businessName ?? 'Business',
-          paymentIntentClientSecret: sheetData.paymentIntent,
-          customerId: undefined,
-          allowsDelayedPaymentMethods: false,
-          defaultBillingDetails: selectedClient?.name ? { name: selectedClient.name } : undefined,
-        });
-        if (initError) {
-          Alert.alert('Payment Error', initError.message);
-          setChargingCard(false);
-          router.replace({ pathname: '/appointment-detail', params: { id: firstAppointmentId } });
-          return;
-        }
-        // Show fee breakdown modal before presenting payment sheet
-        if (sheetData.breakdown) {
-          pendingPaymentAppointmentId.current = firstAppointmentId;
-          setFeeBreakdown({ ...sheetData.breakdown, publishableKey: sheetData.publishableKey, paymentIntent: sheetData.paymentIntent, accountId: sheetData.accountId });
-          setShowFeeBreakdown(true);
-          setChargingCard(false);
-          return; // payment continues in handleConfirmNewBookingPayment
-        }
-        const { error: presentError } = await presentPaymentSheet();
-        if (presentError) {
-          if (presentError.code !== 'Canceled') {
-            Alert.alert('Payment Failed', presentError.message);
-          }
-          setChargingCard(false);
-          router.replace({ pathname: '/appointment-detail', params: { id: firstAppointmentId } });
-          return;
-        }
-        // Payment succeeded — update appointment payment status in local state
-        const paidAppt = state.appointments.find((a) => a.id === firstAppointmentId);
-        if (paidAppt) {
-          const updatedAppt = { ...paidAppt, paymentStatus: 'paid' as const, paymentMethod: 'card' as const };
-          dispatch({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
-          syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updatedAppt });
-        }
-        // Also persist to server DB (don't rely solely on webhook for connected accounts)
-        apiCall('/api/stripe-connect/mark-appointment-paid', {
-          method: 'POST',
-          body: JSON.stringify({
-            businessOwnerId: state.businessOwnerId,
-            appointmentLocalId: firstAppointmentId,
-          }),
-        }).catch((e) => console.warn('[Stripe] mark-appointment-paid failed (non-blocking):', e));
-        // Fetch card last4 for receipt (non-blocking — show receipt with or without it)
-        let inlineCardLast4: string | undefined;
-        let inlineCardBrand: string | undefined;
-        try {
-          const apiBase = getApiBaseUrl();
-          const last4Res = await fetch(
-            `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(firstAppointmentId)}&businessOwnerId=${encodeURIComponent(state.businessOwnerId ?? '')}`,
-            { headers: { Authorization: `Bearer ${await getSessionToken()}` } },
-          );
-          if (last4Res.ok) {
-            const last4Data = await last4Res.json();
-            inlineCardLast4 = last4Data.last4 ?? undefined;
-            inlineCardBrand = last4Data.brand ?? undefined;
-          }
-        } catch { /* non-blocking */ }
-        // Silently save address to client profile on mobile booking (no alert needed)
-        if (isMobileService && clientAddress.trim() && selectedClientId && selectedClient) {
-          const existingSaved = (selectedClient as any)?.savedAddress ?? "";
-          if (clientAddress.trim() !== existingSaved.trim()) {
-            const updatedClient = { ...selectedClient, savedAddress: clientAddress.trim() };
-            dispatch({ type: "UPDATE_CLIENT", payload: updatedClient });
-            syncToDb({ type: "UPDATE_CLIENT", payload: updatedClient });
-          }
-        }
-        const inlinePaidAppt = state.appointments.find((a) => a.id === firstAppointmentId);
-        setReceiptData({
-          amount: inlinePaidAppt?.totalPrice ?? grandTotal,
-          serviceName: selectedService ? getServiceDisplayName(selectedService) : undefined,
-          clientName: selectedClient?.name ?? undefined,
-          cardLast4: inlineCardLast4,
-          cardBrand: inlineCardBrand,
-          confirmationId: firstAppointmentId,
-          navigateTo: firstAppointmentId,
-        });
         setChargingCard(false);
-        return; // navigation happens in onDone of PaymentReceiptModal
+        if (checkoutData.url) {
+          await WebBrowser.openBrowserAsync(checkoutData.url);
+        }
+        // After browser closes, navigate to appointment detail.
+        // The webhook will have marked the appointment as paid if payment succeeded.
+        router.replace({ pathname: '/appointment-detail', params: { id: firstAppointmentId } });
+        return;
       } catch (err: any) {
-        Alert.alert('Payment Error', err?.message ?? 'Failed to process card payment');
+        Alert.alert('Payment Error', err?.message ?? 'Failed to open payment page');
         setChargingCard(false);
       }
     }
@@ -1169,7 +989,7 @@ export default function NewBookingScreen() {
 
     // Navigate to the newly created appointment detail
     doNavigate();
-  }, [selectedServiceId, selectedClientId, selectedDate, selectedTime, totalDuration, notes, cart, recurring, dispatch, router, appliedDiscount, discountAmount, totalPrice, subtotal, grandTotal, clientAddress, isMobileService, travelFeeAmount, selectedStaffId, selectedLocationId, syncToDb, selectedService, selectedClient, state.settings, sendSmsMutation, selectedPaymentMethod, initPaymentSheet, presentPaymentSheet, state.businessOwnerId, chargingCard]);
+  }, [selectedServiceId, selectedClientId, selectedDate, selectedTime, totalDuration, notes, cart, recurring, dispatch, router, appliedDiscount, discountAmount, totalPrice, subtotal, grandTotal, clientAddress, isMobileService, travelFeeAmount, selectedStaffId, selectedLocationId, syncToDb, selectedService, selectedClient, state.settings, sendSmsMutation, selectedPaymentMethod, state.businessOwnerId, chargingCard]);
 
   const getInitials = (name: string) => {
     const parts = name.split(" ");
@@ -3117,94 +2937,6 @@ export default function NewBookingScreen() {
               </Pressable>
             )}
           />
-        </View>
-      </Modal>
-
-      {/* ── Payment Processing Overlay ─────────────────────────────────── */}
-      {paymentProcessing && (
-        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.65)", alignItems: "center", justifyContent: "center", zIndex: 999 }}>
-          <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 32, alignItems: "center", gap: 16, borderWidth: 1, borderColor: colors.border }}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: "600" }}>Processing payment...</Text>
-            <Text style={{ color: colors.muted, fontSize: 13, textAlign: "center" }}>Please do not close the app</Text>
-          </View>
-        </View>
-      )}
-
-      {/* ── Payment Retry Error ───────────────────────────────────────────── */}
-      {paymentRetryError && (
-        <View style={{ position: "absolute", bottom: 120, left: 20, right: 20, backgroundColor: "rgba(239,68,68,0.12)", borderRadius: 14, borderWidth: 1, borderColor: "rgba(239,68,68,0.35)", padding: 16, zIndex: 998 }}>
-          <Text style={{ color: colors.error, fontSize: 13, textAlign: "center", lineHeight: 18, marginBottom: 10 }}>{paymentRetryError}</Text>
-          <Pressable
-            style={({ pressed }) => ({ alignItems: "center", opacity: pressed ? 0.7 : 1 })}
-            onPress={() => { setPaymentRetryError(null); setShowFeeBreakdown(true); }}
-          >
-            <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "700" }}>Try Again</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {/* ── Fee Breakdown Modal ────────────────────────────────────────── */}
-      <Modal
-        visible={showFeeBreakdown}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowFeeBreakdown(false)}
-        onDismiss={() => { feeBreakdownDismissResolveRef.current?.(); feeBreakdownDismissResolveRef.current = null; }}
-      >
-        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
-          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
-            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: "center", marginBottom: 20 }} />
-            <Text style={{ color: colors.foreground, fontSize: 18, fontWeight: "700", marginBottom: 4 }}>Payment Summary</Text>
-            <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 20 }}>Review the charge breakdown before processing</Text>
-            {feeBreakdown && (
-              <View style={{ gap: 0 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                  <Text style={{ color: colors.muted, fontSize: 14 }}>Service amount</Text>
-                  <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600" }}>${feeBreakdown.serviceAmount.toFixed(2)}</Text>
-                </View>
-                {feeBreakdown.discountAmount > 0 && (
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                    <Text style={{ color: colors.success, fontSize: 14 }}>{feeBreakdown.discountName ? `Discount (${feeBreakdown.discountName})` : "Discount"}</Text>
-                    <Text style={{ color: colors.success, fontSize: 14, fontWeight: "600" }}>-${feeBreakdown.discountAmount.toFixed(2)}</Text>
-                  </View>
-                )}
-                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                  <Text style={{ color: colors.muted, fontSize: 14 }}>Platform fee ({feeBreakdown.platformFeePercent}%)</Text>
-                  <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "600" }}>+${feeBreakdown.platformFee.toFixed(2)}</Text>
-                </View>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, marginTop: 4 }}>
-                  <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "700" }}>Total charged to client</Text>
-                  <Text style={{ color: colors.primary, fontSize: 16, fontWeight: "700" }}>${feeBreakdown.totalCharged.toFixed(2)}</Text>
-                </View>
-                <View style={{ backgroundColor: colors.background, borderRadius: 12, padding: 12, marginTop: 4, gap: 6 }}>
-                  <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Business payout breakdown</Text>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <Text style={{ color: colors.muted, fontSize: 12 }}>Stripe processing fee (2.9% + $0.30)</Text>
-                    <Text style={{ color: colors.muted, fontSize: 12 }}>-${feeBreakdown.stripeFee.toFixed(2)}</Text>
-                  </View>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <Text style={{ color: colors.muted, fontSize: 12 }}>Business net payout</Text>
-                    <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: "600" }}>${feeBreakdown.businessNetPayout.toFixed(2)}</Text>
-                  </View>
-                </View>
-              </View>
-            )}
-            <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
-              <TouchableOpacity
-                onPress={() => { setShowFeeBreakdown(false); setFeeBreakdown(null); pendingPaymentAppointmentId.current = null; }}
-                style={{ flex: 1, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: colors.border, alignItems: "center" }}
-              >
-                <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600" }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleConfirmNewBookingPayment}
-                style={{ flex: 2, paddingVertical: 14, borderRadius: 14, backgroundColor: colors.primary, alignItems: "center" }}
-              >
-                <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "700" }}>Confirm & Charge</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
         </View>
       </Modal>
 

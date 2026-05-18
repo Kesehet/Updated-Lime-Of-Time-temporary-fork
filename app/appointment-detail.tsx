@@ -1,4 +1,4 @@
-import { Text, View, Pressable, StyleSheet, ScrollView, Alert, Platform, Linking, Modal, TextInput, TouchableOpacity, Image, FlatList, KeyboardAvoidingView, ActivityIndicator,
+import { Text, View, Pressable, StyleSheet, ScrollView, Alert, Platform, Linking, Modal, TextInput, TouchableOpacity, Image, FlatList, KeyboardAvoidingView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -14,7 +14,6 @@ import { usePlanLimitCheck } from "@/hooks/use-plan-limit-check";
 import { FuturisticBackground } from "@/components/futuristic-background";
 import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
-import { useStripe, initStripe } from "@/lib/use-stripe";
 import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
 import {
@@ -208,17 +207,9 @@ export default function AppointmentDetailScreen() {
     stripeFee: number;
     totalCharged: number;
     businessNetPayout: number;
-    publishableKey: string;
-    paymentIntent: string;
-    accountId: string;
   } | null>(null);
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
-  const [paymentProcessing, setPaymentProcessing] = useState(false); // loading overlay
-  const [paymentRetryError, setPaymentRetryError] = useState<string | null>(null); // inline retry error
-  // Resolve function for the "wait until Modal is fully dismissed" promise.
-  // Set by handleConfirmBehalfPayment, called by the Modal's onDismiss callback.
-  const feeBreakdownDismissResolveRef = useRef<(() => void) | null>(null);
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+
   // Package sessions accordion
   const [showSessionsAccordion, setShowSessionsAccordion] = useState(false);
 
@@ -539,174 +530,88 @@ export default function AppointmentDetailScreen() {
     }
   }, [appointment, state.businessOwnerId, state.settings.twilioEnabled, client, service, biz.businessName, sendSmsMutation, openSms, dispatch]);
 
-  // ── Pay on behalf of client via native Stripe payment sheet ──────────────────
+  // ── Helper: check appointment payment status after browser closes ──────────
+  const checkPaymentStatusAfterBrowser = useCallback(async (appointmentLocalId: string) => {
+    if (!state.businessOwnerId) return;
+    try {
+      const statusResult = await apiCall<{ ok: boolean; paymentStatus: string; paymentMethod: string | null }>(
+        `/api/stripe-connect/appointment-payment-status?businessOwnerId=${state.businessOwnerId}&appointmentLocalId=${encodeURIComponent(appointmentLocalId)}`,
+      );
+      if (statusResult.paymentStatus === 'paid') {
+        // Update local state
+        const updated = { ...appointment!, paymentStatus: 'paid' as const, paymentMethod: 'card' as any };
+        dispatch({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
+        syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
+        // Show receipt
+        setReceiptData({
+          amount: appointment?.totalPrice ?? 0,
+          serviceName: service ? getServiceDisplayName(service) : undefined,
+          clientName: client?.name ?? undefined,
+          confirmationId: appointmentLocalId,
+        });
+      }
+    } catch { /* non-blocking — webhook will handle it */ }
+  }, [state.businessOwnerId, appointment, service, client, dispatch, syncToDb]);
+
+  // ── Pay on behalf of client via Stripe Checkout (browser-based) ──────────────
   const handlePayOnBehalf = useCallback(async () => {
-    if (!appointment || !state.businessOwnerId || Platform.OS === 'web') return;
+    if (!appointment || !state.businessOwnerId) return;
     const totalAmount = appointment.totalPrice ?? 0;
     if (totalAmount <= 0) {
       Alert.alert('No Amount', 'This appointment has no charge amount.');
       return;
     }
+    // Calculate fee breakdown locally and show confirmation modal.
+    // The actual Stripe Checkout session is created only when the owner taps "Confirm & Charge".
+    const total = totalAmount;
+    const platformFeePercent = 1.5;
+    const platformFee = Math.round(total * (platformFeePercent / 100) * 100) / 100;
+    const stripeFee = Math.round((total * 0.029 + 0.30) * 100) / 100;
+    const totalCharged = Math.round((total + platformFee) * 100) / 100;
+    const businessNetPayout = Math.round((total - stripeFee) * 100) / 100;
+    setFeeBreakdown({
+      serviceAmount: total,
+      discountAmount: 0,
+      discountName: null,
+      platformFee,
+      platformFeePercent,
+      stripeFee,
+      totalCharged,
+      businessNetPayout,
+    });
+    setShowFeeBreakdown(true);
+  }, [appointment, state.businessOwnerId]);
+
+  // Called when owner confirms the fee breakdown modal before charging client on behalf
+  const handleConfirmBehalfPayment = useCallback(async () => {
+    if (!appointment || !state.businessOwnerId) return;
+    setShowFeeBreakdown(false);
+    setFeeBreakdown(null);
     setPayingOnBehalf(true);
     try {
-      const apiBase = getApiBaseUrl();
-      const token = await getSessionToken();
-      const serviceName = service ? getServiceDisplayName(service) : 'Service';
-      const sheetRes = await fetch(`${apiBase}/api/stripe-connect/create-payment-sheet`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          businessOwnerId: state.businessOwnerId,
-          appointmentLocalId: appointment.id,
-          amount: totalAmount,
-          currency: 'usd',
-          description: `${serviceName} — ${appointment.date} at ${appointment.time}`,
-          clientEmail: client?.email ?? undefined,
-        }),
-      });
-      if (!sheetRes.ok) {
-        const err = await sheetRes.json().catch(() => ({}));
-        throw new Error(err?.error ?? 'Could not create payment session.');
-      }
-      const sheetData = await sheetRes.json();
-      const { publishableKey, paymentIntent, accountId, breakdown } = sheetData;
-      // Re-initialize Stripe SDK with the connected account context so the
-      // PaymentIntent lookup resolves on the correct Stripe account (not the platform account).
-      await initStripe({ publishableKey, stripeAccountId: accountId });
-      const { error: initError } = await initPaymentSheet({
-        merchantDisplayName: biz.businessName || 'Business',
-        paymentIntentClientSecret: paymentIntent,
-        style: 'alwaysDark',
-      });
-      if (initError) {
-        throw new Error(initError.message ?? 'Could not initialize payment.');
-      }
-      // Show fee breakdown modal before presenting payment sheet
-      if (breakdown) {
-        setFeeBreakdown({ ...breakdown, publishableKey, paymentIntent, accountId });
-        setShowFeeBreakdown(true);
-        setPayingOnBehalf(false);
-        return; // payment continues in handleConfirmBehalfPayment
-      }
-      const { error: presentError } = await presentPaymentSheet();
-      if (presentError) {
-        if (presentError.code !== 'Canceled') {
-          Alert.alert('Payment Failed', presentError.message ?? 'Please try again.');
-        }
-        return;
-      }
-      // Payment succeeded — mark appointment as paid by card in local state
-      const updated = {
-        ...appointment,
-        paymentStatus: 'paid' as const,
-        paymentMethod: 'card' as any,
-      };
-      dispatch({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
-      syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
-      // Persist to server DB (don't rely solely on webhook for connected accounts)
-      apiCall('/api/stripe-connect/mark-appointment-paid', {
-        method: 'POST',
-        body: JSON.stringify({ businessOwnerId: state.businessOwnerId, appointmentLocalId: appointment.id }),
-      }).catch((e) => console.warn('[Stripe] mark-appointment-paid failed (non-blocking):', e));
-      // Fetch card last4 for receipt (non-blocking — show receipt with or without it)
-      let cardLast4: string | undefined;
-      let cardBrand: string | undefined;
-      try {
-        const apiBase = getApiBaseUrl();
-        const last4Res = await fetch(
-          `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(appointment.id)}&businessOwnerId=${encodeURIComponent(state.businessOwnerId ?? '')}`,
-          { headers: { Authorization: `Bearer ${await getSessionToken()}` } },
-        );
-        if (last4Res.ok) {
-          const last4Data = await last4Res.json();
-          cardLast4 = last4Data.last4 ?? undefined;
-          cardBrand = last4Data.brand ?? undefined;
-        }
-      } catch { /* non-blocking */ }
-      setReceiptData({
-        amount: appointment.totalPrice ?? 0,
-        serviceName: service ? getServiceDisplayName(service) : undefined,
-        clientName: client?.name ?? undefined,
-        cardLast4,
-        cardBrand,
-        confirmationId: appointment.id,
-      });
+      // Create the Stripe Checkout session now that the owner has confirmed the fee breakdown
+      const result = await apiCall<{ ok: boolean; url: string; sessionId: string }>(
+        '/api/stripe-connect/request-payment',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            businessOwnerId: state.businessOwnerId,
+            appointmentLocalId: appointment.id,
+          }),
+        },
+      );
+      if (!result.url) throw new Error('Could not create payment session.');
+      setPayingOnBehalf(false);
+      // Open Stripe Checkout in the system browser — reliable on all platforms
+      await WebBrowser.openBrowserAsync(result.url);
+      // After browser closes, check if payment was completed
+      await checkPaymentStatusAfterBrowser(appointment.id);
     } catch (err: any) {
       Alert.alert('Payment Error', err?.message ?? 'Could not process payment. Please try again.');
     } finally {
       setPayingOnBehalf(false);
     }
-  }, [appointment, state.businessOwnerId, service, client, biz.businessName, initPaymentSheet, presentPaymentSheet, dispatch, syncToDb]);
-
-  // Called when owner confirms the fee breakdown modal before charging client on behalf
-  const handleConfirmBehalfPayment = useCallback(async () => {
-    if (!feeBreakdown || !appointment) return;
-    setShowFeeBreakdown(false);
-    setPayingOnBehalf(true);
-    try {
-      // Wait for the fee breakdown modal's slide-out animation to fully complete
-      // before presenting the Stripe sheet. On iOS, a native payment sheet cannot
-      // be presented while a React Native Modal is still animating out.
-      //
-      // We use the Modal's onDismiss callback (fires after the animation fully completes)
-      // instead of a fixed timeout, which is unreliable across devices.
-      //
-      // IMPORTANT: Do NOT call initStripe() again here. Calling it after initPaymentSheet()
-      // resets the Stripe SDK internal state and invalidates the payment sheet that was
-      // already set up in handlePayOnBehalf, causing the sheet to render blank/white.
-      await new Promise<void>((resolve) => { feeBreakdownDismissResolveRef.current = resolve; });
-      setPaymentProcessing(true);
-      const { error: presentError } = await presentPaymentSheet();
-      setPaymentProcessing(false);
-      if (presentError) {
-        if (presentError.code !== 'Canceled') {
-          setPaymentRetryError(presentError.message ?? 'Payment failed. Please try again.');
-        }
-        return;
-      }
-      // Payment succeeded — mark appointment as paid by card in local state
-      const updated = {
-        ...appointment,
-        paymentStatus: 'paid' as const,
-        paymentMethod: 'card' as any,
-      };
-      dispatch({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
-      syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updated as any });
-      // Persist to server DB (don't rely solely on webhook for connected accounts)
-      apiCall('/api/stripe-connect/mark-appointment-paid', {
-        method: 'POST',
-        body: JSON.stringify({ businessOwnerId: state.businessOwnerId, appointmentLocalId: appointment.id }),
-      }).catch((e) => console.warn('[Stripe] mark-appointment-paid failed (non-blocking):', e));
-      // Fetch card last4 for receipt (non-blocking — show receipt with or without it)
-      let cardLast4: string | undefined;
-      let cardBrand: string | undefined;
-      try {
-        const apiBase = getApiBaseUrl();
-        const last4Res = await fetch(
-          `${apiBase}/api/stripe-connect/payment-intent-last4?appointmentId=${encodeURIComponent(appointment.id)}&businessOwnerId=${encodeURIComponent(state.businessOwnerId ?? '')}`,
-          { headers: { Authorization: `Bearer ${await getSessionToken()}` } },
-        );
-        if (last4Res.ok) {
-          const last4Data = await last4Res.json();
-          cardLast4 = last4Data.last4 ?? undefined;
-          cardBrand = last4Data.brand ?? undefined;
-        }
-      } catch { /* non-blocking */ }
-      setReceiptData({
-        amount: appointment.totalPrice ?? 0,
-        serviceName: service ? getServiceDisplayName(service) : undefined,
-        clientName: client?.name ?? undefined,
-        cardLast4,
-        cardBrand,
-        confirmationId: appointment.id,
-      });
-    } catch (err: any) {
-      Alert.alert('Payment Error', err?.message ?? 'Could not process payment.');
-    } finally {
-      setPayingOnBehalf(false);
-      setFeeBreakdown(null);
-    }
-  }, [feeBreakdown, appointment, state.businessOwnerId, service, client, presentPaymentSheet, dispatch, syncToDb]);
+  }, [appointment, state.businessOwnerId, checkPaymentStatusAfterBrowser]);
 
   // ── Payment status polling — check every 30s if appointment is unpaid ──────
   // ── Immediate payment status check on mount (for notification tap) ─────────
@@ -3475,37 +3380,12 @@ Would you also like to charge a no-show fee via Stripe?`,
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* ── Payment Processing Overlay ─────────────────────────────────── */}
-      {paymentProcessing && (
-        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.65)", alignItems: "center", justifyContent: "center", zIndex: 999 }}>
-          <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 32, alignItems: "center", gap: 16, borderWidth: 1, borderColor: colors.border }}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: "600" }}>Processing payment...</Text>
-            <Text style={{ color: colors.muted, fontSize: 13, textAlign: "center" }}>Please do not close the app</Text>
-          </View>
-        </View>
-      )}
-
-      {/* ── Payment Retry Error ───────────────────────────────────────────── */}
-      {paymentRetryError && (
-        <View style={{ position: "absolute", bottom: 120, left: 20, right: 20, backgroundColor: "rgba(239,68,68,0.12)", borderRadius: 14, borderWidth: 1, borderColor: "rgba(239,68,68,0.35)", padding: 16, zIndex: 998 }}>
-          <Text style={{ color: colors.error, fontSize: 13, textAlign: "center", lineHeight: 18, marginBottom: 10 }}>{paymentRetryError}</Text>
-          <Pressable
-            style={({ pressed }) => ({ alignItems: "center", opacity: pressed ? 0.7 : 1 })}
-            onPress={() => { setPaymentRetryError(null); setShowFeeBreakdown(true); }}
-          >
-            <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "700" }}>Try Again</Text>
-          </Pressable>
-        </View>
-      )}
-
       {/* ── Fee Breakdown Modal ────────────────────────────────────────── */}
       <Modal
         visible={showFeeBreakdown}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowFeeBreakdown(false)}
-        onDismiss={() => { feeBreakdownDismissResolveRef.current?.(); feeBreakdownDismissResolveRef.current = null; }}
+        onRequestClose={() => { setShowFeeBreakdown(false); setFeeBreakdown(null); }}
       >
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' }}>
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
