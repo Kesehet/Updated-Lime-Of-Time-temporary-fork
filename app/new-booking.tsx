@@ -80,6 +80,9 @@ export default function NewBookingScreen() {
   } | null>(null);
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
   const pendingPaymentAppointmentId = useRef<string | null>(null);
+  // Resolve function for the "wait until Modal is fully dismissed" promise.
+  // Set by handleConfirmNewBookingPayment, called by the Modal's onDismiss callback.
+  const feeBreakdownDismissResolveRef = useRef<(() => void) | null>(null);
   // Receipt modal data — shown after a successful card payment before navigating away
   const [receiptData, setReceiptData] = useState<{
     amount: number;
@@ -847,10 +850,13 @@ export default function NewBookingScreen() {
       // before presenting the Stripe sheet. On iOS, a native payment sheet cannot
       // be presented while a React Native Modal is still animating out.
       //
+      // We use the Modal's onDismiss callback (fires after the animation fully completes)
+      // instead of a fixed timeout, which is unreliable across devices.
+      //
       // IMPORTANT: Do NOT call initStripe() again here. Calling it after initPaymentSheet()
       // resets the Stripe SDK internal state and invalidates the payment sheet that was
       // already set up in handleBook, causing the sheet to render blank/white.
-      await new Promise<void>((resolve) => setTimeout(resolve, 350));
+      await new Promise<void>((resolve) => { feeBreakdownDismissResolveRef.current = resolve; });
       const { error: presentError } = await presentPaymentSheet();
       if (presentError) {
         if (presentError.code !== 'Canceled') {
@@ -3110,7 +3116,13 @@ export default function NewBookingScreen() {
       </Modal>
 
       {/* ── Fee Breakdown Modal ────────────────────────────────────────── */}
-      <Modal visible={showFeeBreakdown} transparent animationType="slide" onRequestClose={() => setShowFeeBreakdown(false)}>
+      <Modal
+        visible={showFeeBreakdown}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFeeBreakdown(false)}
+        onDismiss={() => { feeBreakdownDismissResolveRef.current?.(); feeBreakdownDismissResolveRef.current = null; }}
+      >
         <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
             <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: "center", marginBottom: 20 }} />

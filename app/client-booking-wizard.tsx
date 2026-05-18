@@ -269,6 +269,9 @@ export default function ClientBookingWizardScreen() {
   } | null>(null);
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
   const pendingPaymentRef = useRef<{ appointmentId: string } | null>(null);
+  // Resolve function for the "wait until Modal is fully dismissed" promise.
+  // Set by handleConfirmPayment, called by the Modal's onDismiss callback.
+  const feeBreakdownDismissResolveRef = useRef<(() => void) | null>(null);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   // Derived: is the selected service a mobile/at-home service?
   // Declared here (before PAYMENT_METHODS useMemo) to avoid used-before-declaration TS error.
@@ -984,11 +987,14 @@ export default function ClientBookingWizardScreen() {
       // before presenting the Stripe sheet. On iOS, a native payment sheet cannot
       // be presented while a React Native Modal is still animating out.
       //
+      // We use the Modal's onDismiss callback (fires after the animation fully completes)
+      // instead of a fixed timeout, which is unreliable across devices.
+      //
       // IMPORTANT: Do NOT call initStripe() again here. Calling it after initPaymentSheet()
       // resets the Stripe SDK internal state and invalidates the payment sheet that was
       // already set up in handleSubmit, causing the sheet to render blank/white.
       // The initPaymentSheet() call in handleSubmit is sufficient.
-      await new Promise<void>((resolve) => setTimeout(resolve, 350));
+      await new Promise<void>((resolve) => { feeBreakdownDismissResolveRef.current = resolve; });
       const { error: presentError } = await presentPaymentSheet();
       if (presentError && presentError.code !== "Canceled") {
         Alert.alert("Payment Failed", presentError.message ?? "Please try again.");
@@ -3076,7 +3082,13 @@ export default function ClientBookingWizardScreen() {
       </Modal>
 
       {/* ── Fee Breakdown Modal ────────────────────────────────────────── */}
-      <Modal visible={showFeeBreakdown} transparent animationType="slide" onRequestClose={() => setShowFeeBreakdown(false)}>
+      <Modal
+        visible={showFeeBreakdown}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFeeBreakdown(false)}
+        onDismiss={() => { feeBreakdownDismissResolveRef.current?.(); feeBreakdownDismissResolveRef.current = null; }}
+      >
         <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
           <View style={{ backgroundColor: "#1A3A28", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
             {/* Handle */}
