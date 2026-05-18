@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
-import { Dimensions, Platform, StyleSheet, View } from "react-native";
+import { Platform, View } from "react-native";
 import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider } from "@/lib/theme-provider";
 import * as SplashScreen from "expo-splash-screen";
@@ -291,12 +291,14 @@ function RootLayout() {
         mounts — this guarantees it is on screen when the native splash is dismissed. */}
     {!splashDone && (
       <View
-        style={[
-          StyleSheet.absoluteFill,
-          // Explicitly size to the full window so the splash fills the screen
-          // even before the flex container has been laid out by the native runtime.
-          { width: Dimensions.get("window").width, height: Dimensions.get("window").height },
-        ]}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999,
+        }}
         pointerEvents="none"
         importantForAccessibility="no-hide-descendants"
       >
