@@ -9,8 +9,8 @@ import express from "express";
 import type { Express, Request, Response } from "express";
 import Stripe from "stripe";
 import { getDb } from "./db";
-import { businessOwners, appointments, clients, services } from "../drizzle/schema";
-import { eq, and } from "drizzle-orm";
+import { businessOwners, appointments, clients, services, promoCodes } from "../drizzle/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { getPlatformConfig } from "./subscription";
 import { sendExpoPush, notifyCardPayment } from "./push";
 import { sdk } from "./_core/sdk";
@@ -723,6 +723,24 @@ export function registerStripeConnectRoutes(app: Express): void {
                   );
               }
               console.log(`[StripeConnect] Package ${packageLocalId} marked paid via card (owner ${businessOwnerId})`);
+              // Increment promo code usedCount if one was applied to this purchase
+              const promoCodeUsed = session.metadata?.promoCode;
+              if (promoCodeUsed && promoCodeUsed.trim()) {
+                try {
+                  await db
+                    .update(promoCodes)
+                    .set({ usedCount: sql`${promoCodes.usedCount} + 1` } as any)
+                    .where(
+                      and(
+                        eq(promoCodes.code, promoCodeUsed.trim().toUpperCase()),
+                        eq(promoCodes.businessOwnerId, businessOwnerId)
+                      )
+                    );
+                  console.log(`[StripeConnect] Promo code ${promoCodeUsed} usedCount incremented (owner ${businessOwnerId})`);
+                } catch (promoErr) {
+                  console.error('[StripeConnect] Failed to increment promo usedCount:', promoErr);
+                }
+              }
               // Push notification to business owner
               try {
                 const ownerRows = await db.select().from(businessOwners).where(eq(businessOwners.id, businessOwnerId)).limit(1);
