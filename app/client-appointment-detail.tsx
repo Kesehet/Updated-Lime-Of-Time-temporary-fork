@@ -7,7 +7,7 @@
  * Design: dark forest-green portal aesthetic matching all other client portal screens.
  */
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import {
   Linking,
   KeyboardAvoidingView,
   Share,
+  AppState,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -103,6 +104,8 @@ export default function ClientAppointmentDetailScreen() {
   // Payment Summary sheet state
   const [showPaymentSummary, setShowPaymentSummary] = useState(false);
   const [pendingCheckoutUrl, setPendingCheckoutUrl] = useState<string | null>(null);
+  // Set to true when we open Stripe in Safari so we check status when app resumes
+  const pendingPaymentCheckRef = useRef(false);
   const [pendingCheckoutBreakdown, setPendingCheckoutBreakdown] = useState<{
     serviceAmount: number;
     platformFee: number;
@@ -160,23 +163,9 @@ export default function ClientAppointmentDetailScreen() {
     if (!url || !appt) return;
     try {
       if (Platform.OS !== "web") {
+        // Mark that we're awaiting payment — AppState listener will check status on return
+        pendingPaymentCheckRef.current = true;
         await Linking.openURL(url);
-        // After Stripe opens in Safari, check if payment was completed
-        const apiBase = getApiBaseUrl();
-        const statusRes = await fetch(
-          `${apiBase}/api/stripe-connect/appointment-payment-status?appointmentLocalId=${encodeURIComponent(appt.localId ?? "")}&businessOwnerId=${encodeURIComponent(appt.businessOwnerId)}`,
-        ).catch(() => null);
-        if (statusRes?.ok) {
-          const statusData = await statusRes.json();
-          if (statusData.paymentStatus === "paid") {
-            setAppt((prev) => prev ? { ...prev, paymentStatus: "paid", paymentMethod: "card" } : prev);
-            setReceiptData({
-              amount: appt.totalPrice ? parseFloat(String(appt.totalPrice)) : 0,
-              serviceName: appt.serviceName,
-              confirmationId: appt.localId ?? undefined,
-            });
-          }
-        }
       } else {
         window.location.href = url;
       }
@@ -221,6 +210,36 @@ export default function ClientAppointmentDetailScreen() {
       setReviewModalVisible(true);
     }
   }, [openReview, loading, appt?.status, alreadyReviewed]);
+
+  // ── AppState listener: check payment status immediately when client returns from Safari ──
+  useEffect(() => {
+    if (!appt || appt.paymentStatus === "paid") return;
+    const subscription = AppState.addEventListener("change", async (nextState) => {
+      if (nextState === "active" && pendingPaymentCheckRef.current) {
+        pendingPaymentCheckRef.current = false;
+        try {
+          const apiBase = getApiBaseUrl();
+          const statusRes = await fetch(
+            `${apiBase}/api/stripe-connect/appointment-payment-status?appointmentLocalId=${encodeURIComponent(appt.localId ?? "")}&businessOwnerId=${encodeURIComponent(appt.businessOwnerId)}`,
+          ).catch(() => null);
+          if (statusRes?.ok) {
+            const statusData = await statusRes.json();
+            if (statusData.paymentStatus === "paid") {
+              setAppt((prev) => prev ? { ...prev, paymentStatus: "paid", paymentMethod: "card" } : prev);
+              setReceiptData({
+                amount: appt.totalPrice ? parseFloat(String(appt.totalPrice)) : 0,
+                serviceName: appt.serviceName,
+                confirmationId: appt.localId ?? undefined,
+              });
+            }
+          }
+        } catch {
+          // Silently ignore
+        }
+      }
+    });
+    return () => subscription.remove();
+  }, [appt?.localId, appt?.paymentStatus, appt?.businessOwnerId]);
 
 
   const handleSubmitReview = useCallback(async () => {

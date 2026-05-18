@@ -1,4 +1,4 @@
-import { Text, View, Pressable, StyleSheet, ScrollView, Alert, Platform, Linking, Modal, TextInput, TouchableOpacity, Image, FlatList, KeyboardAvoidingView,
+import { Text, View, Pressable, StyleSheet, ScrollView, Alert, Platform, Linking, Modal, TextInput, TouchableOpacity, Image, FlatList, KeyboardAvoidingView, AppState,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -12,7 +12,6 @@ import { apiCall } from "@/lib/_core/api";
 import { trpc } from "@/lib/trpc";
 import { usePlanLimitCheck } from "@/hooks/use-plan-limit-check";
 import { FuturisticBackground } from "@/components/futuristic-background";
-import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
@@ -105,6 +104,8 @@ export default function AppointmentDetailScreen() {
   const [lastSessionId, setLastSessionId] = useState<string | null>(null);
   // Track if we've already notified the owner about auto-detected payment
   const pollingNotifiedRef = useRef(false);
+  // Set to true when we open Stripe in Safari so we check status when app resumes
+  const pendingPaymentCheckRef = useRef(false);
   // Staff notes state (internal, not visible to clients)
   const [staffNotesValue, setStaffNotesValue] = useState(appointment?.staffNotes ?? "");
   const [staffNotesSaving, setStaffNotesSaving] = useState(false);
@@ -602,10 +603,10 @@ export default function AppointmentDetailScreen() {
       );
       if (!result.url) throw new Error('Could not create payment session.');
       setPayingOnBehalf(false);
-      // Open Stripe Checkout in the system browser — reliable on all platforms
-      await WebBrowser.openBrowserAsync(result.url);
-      // After browser closes, check if payment was completed
-      await checkPaymentStatusAfterBrowser(appointment.id);
+      // Open Stripe Checkout in system Safari — reliable on all platforms
+      // Mark that we're awaiting payment so AppState listener checks status on return
+      pendingPaymentCheckRef.current = true;
+      await Linking.openURL(result.url);
     } catch (err: any) {
       Alert.alert('Payment Error', err?.message ?? 'Could not process payment. Please try again.');
     } finally {
@@ -673,6 +674,45 @@ export default function AppointmentDetailScreen() {
 
     return () => clearInterval(intervalId);
   }, [appointment?.id, appointment?.paymentStatus, state.businessOwnerId, (state.settings as any).stripeConnectEnabled]);
+
+  // ── AppState listener: check payment status immediately when user returns from Safari ──
+  useEffect(() => {
+    if (!appointment || !state.businessOwnerId) return;
+    if (appointment.paymentStatus === 'paid') return;
+
+    const subscription = AppState.addEventListener('change', async (nextState) => {
+      if (nextState === 'active' && pendingPaymentCheckRef.current) {
+        pendingPaymentCheckRef.current = false;
+        try {
+          const result = await apiCall<{ ok: boolean; paymentStatus: string; paymentMethod: string | null; totalPrice: number }>(
+            `/api/stripe-connect/appointment-payment-status?businessOwnerId=${state.businessOwnerId}&appointmentLocalId=${encodeURIComponent(appointment.id)}`,
+            { method: 'GET' },
+          );
+          if (result.ok && result.paymentStatus === 'paid' && !pollingNotifiedRef.current) {
+            pollingNotifiedRef.current = true;
+            const updated = {
+              ...appointment,
+              paymentStatus: 'paid' as const,
+              paymentMethod: (result.paymentMethod ?? 'card') as any,
+            };
+            dispatch({ type: 'UPDATE_APPOINTMENT', payload: updated });
+            syncToDb({ type: 'UPDATE_APPOINTMENT', payload: updated });
+            // Show receipt
+            setReceiptData({
+              amount: appointment.totalPrice ?? 0,
+              serviceName: service ? getServiceDisplayName(service) : undefined,
+              clientName: client?.name ?? undefined,
+              confirmationId: appointment.id,
+            });
+          }
+        } catch {
+          // Silently ignore
+        }
+      }
+    });
+
+    return () => subscription.remove();
+  }, [appointment?.id, appointment?.paymentStatus, state.businessOwnerId]);
 
   const handleMarkPaid = (confirmationNumber?: string) => {
     const appt = appointment!;
@@ -911,7 +951,13 @@ export default function AppointmentDetailScreen() {
       });
       setShowNoShowFeeModal(false);
       if (result.url) {
-        await WebBrowser.openBrowserAsync(result.url);
+        // Open in system Safari — in-app browser closes immediately on iOS with Stripe redirects
+        await Linking.openURL(result.url);
+        Alert.alert(
+          'Payment Link Opened',
+          'Complete the no-show fee payment in Safari. The status will update automatically.',
+          [{ text: 'OK' }],
+        );
       }
     } catch (err: any) {
       Alert.alert("Error", err?.message ?? "Could not create no-show fee charge");
