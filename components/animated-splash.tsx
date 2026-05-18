@@ -297,6 +297,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     zIndex: 9999,
+    overflow: "hidden", // clip decorative bg circles so they don't show as corner squares
   },
   bgCircle1: {
     position: "absolute",
