@@ -843,14 +843,14 @@ export default function NewBookingScreen() {
     setShowFeeBreakdown(false);
     setChargingCard(true);
     try {
-      // Re-initialize Stripe with the connected account to prevent race condition
-      // where StripeProvider re-render between fee modal open and confirm resets the account context.
+      // Wait for the fee breakdown modal's slide-out animation to fully complete
+      // before presenting the Stripe sheet. On iOS, a native payment sheet cannot
+      // be presented while a React Native Modal is still animating out.
       //
-      // CRITICAL FIX: On iOS, presenting a native Stripe payment sheet while a React
-      // Native Modal is still animating out causes the sheet to silently fail to appear.
-      // Wait for the modal's slide-out animation (300ms) to fully complete first.
+      // IMPORTANT: Do NOT call initStripe() again here. Calling it after initPaymentSheet()
+      // resets the Stripe SDK internal state and invalidates the payment sheet that was
+      // already set up in handleBook, causing the sheet to render blank/white.
       await new Promise<void>((resolve) => setTimeout(resolve, 350));
-      await initStripe({ publishableKey: feeBreakdown.publishableKey, stripeAccountId: feeBreakdown.accountId });
       const { error: presentError } = await presentPaymentSheet();
       if (presentError) {
         if (presentError.code !== 'Canceled') {

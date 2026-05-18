@@ -980,16 +980,15 @@ export default function ClientBookingWizardScreen() {
     setShowFeeBreakdown(false);
     setSubmitting(true);
     try {
-      // Re-initialize Stripe with the connected account before presenting the sheet.
-      // The fee breakdown modal is shown between initStripe and presentPaymentSheet,
-      // during which a StripeProvider re-render can reset the account context.
+      // Wait for the fee breakdown modal's slide-out animation to fully complete
+      // before presenting the Stripe sheet. On iOS, a native payment sheet cannot
+      // be presented while a React Native Modal is still animating out.
       //
-      // CRITICAL FIX: On iOS, presenting a native Stripe payment sheet while a React
-      // Native Modal is still animating out causes the sheet to silently fail to appear.
-      // We must wait for the modal's slide-out animation (300ms) to fully complete
-      // before calling presentPaymentSheet().
+      // IMPORTANT: Do NOT call initStripe() again here. Calling it after initPaymentSheet()
+      // resets the Stripe SDK internal state and invalidates the payment sheet that was
+      // already set up in handleSubmit, causing the sheet to render blank/white.
+      // The initPaymentSheet() call in handleSubmit is sufficient.
       await new Promise<void>((resolve) => setTimeout(resolve, 350));
-      await initStripe({ publishableKey: feeBreakdown.publishableKey, stripeAccountId: feeBreakdown.accountId });
       const { error: presentError } = await presentPaymentSheet();
       if (presentError && presentError.code !== "Canceled") {
         Alert.alert("Payment Failed", presentError.message ?? "Please try again.");
