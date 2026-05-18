@@ -25,7 +25,6 @@ import { trpc } from "@/lib/trpc";
 import { useActiveLocation } from "@/hooks/use-active-location";
 import { useResponsive } from "@/hooks/use-responsive";
 import { FuturisticBackground } from "@/components/futuristic-background";
-import * as WebBrowser from "expo-web-browser";
 import { apiCall } from "@/lib/_core/api";
 import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
@@ -3018,12 +3017,12 @@ export default function NewBookingScreen() {
                   setPendingNavTarget(null);
                   if (!url) return;
                   if (Platform.OS !== "web") {
-                    await WebBrowser.openBrowserAsync(url);
+                    await Linking.openURL(url);
                   } else {
                     window.location.href = url;
                     return;
                   }
-                  // After browser closes, navigate to appointment detail
+                  // After Stripe opens in Safari, navigate to appointment detail
                   if (navId) {
                     router.replace({ pathname: '/appointment-detail', params: { id: navId } });
                   } else {

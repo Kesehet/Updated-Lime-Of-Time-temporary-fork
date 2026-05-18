@@ -33,7 +33,6 @@ import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import * as Calendar from "expo-calendar";
 import { getApiBaseUrl } from "@/constants/oauth";
-import * as WebBrowser from "expo-web-browser";
 import { PaymentReceiptModal } from "@/components/payment-receipt-modal";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
@@ -161,8 +160,8 @@ export default function ClientAppointmentDetailScreen() {
     if (!url || !appt) return;
     try {
       if (Platform.OS !== "web") {
-        await WebBrowser.openBrowserAsync(url, { dismissButtonStyle: "cancel" });
-        // After browser closes, check if payment was completed
+        await Linking.openURL(url);
+        // After Stripe opens in Safari, check if payment was completed
         const apiBase = getApiBaseUrl();
         const statusRes = await fetch(
           `${apiBase}/api/stripe-connect/appointment-payment-status?appointmentLocalId=${encodeURIComponent(appt.localId ?? "")}&businessOwnerId=${encodeURIComponent(appt.businessOwnerId)}`,

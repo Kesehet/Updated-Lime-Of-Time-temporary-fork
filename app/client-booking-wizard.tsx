@@ -41,7 +41,6 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { getCategoryDef, ALL_CATEGORY } from "@/constants/categories";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as WebBrowser from "expo-web-browser";
 import * as Clipboard from "expo-clipboard";
 
 
@@ -3051,12 +3050,12 @@ export default function ClientBookingWizardScreen() {
                   pendingConfirmationParamsRef.current = null;
                   if (!url) return;
                   if (Platform.OS !== "web") {
-                    await WebBrowser.openBrowserAsync(url);
+                    await Linking.openURL(url);
                   } else {
                     window.location.href = url;
                     return;
                   }
-                  // Navigate to confirmation after browser closes
+                  // Navigate to confirmation after Stripe opens in Safari
                   if (navParams) {
                     router.replace({ pathname: "/client-booking-confirmation", params: navParams } as any);
                   }
