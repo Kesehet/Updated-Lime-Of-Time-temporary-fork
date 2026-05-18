@@ -283,7 +283,7 @@ export default function StatusDetailPage() {
   const colors = useColors();
   const router = useRouter();
   const params = useLocalSearchParams<{ status?: string }>();
-  const { state, dispatch } = useStore();
+  const { state, dispatch, syncToDb } = useStore();
 
   // Determine initial status from params
   const initialStatus = useMemo<AppointmentStatus | "all">(() => {
@@ -333,7 +333,9 @@ export default function StatusDetailPage() {
           text: "Mark Paid",
           style: "default",
           onPress: () => {
-            dispatch({ type: "UPDATE_APPOINTMENT_STATUS", payload: { id, status: "completed" as AppointmentStatus } });
+            const action = { type: "UPDATE_APPOINTMENT_STATUS" as const, payload: { id, status: "completed" as AppointmentStatus } };
+            dispatch(action);
+            syncToDb(action).catch(() => {});
           },
         },
       ]

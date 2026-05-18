@@ -1481,7 +1481,7 @@ const staffRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const id = await db.createStaffMember(input);
+      const id = await db.createStaffMember(input as any);
       return { id, localId: input.localId };
     }),
 
@@ -1506,7 +1506,7 @@ const staffRouter = router({
     )
     .mutation(async ({ input }) => {
       const { localId, businessOwnerId, ...data } = input;
-      await db.updateStaffMember(localId, businessOwnerId, data);
+      await db.updateStaffMember(localId, businessOwnerId, data as any);
       return { success: true };
     }),
 

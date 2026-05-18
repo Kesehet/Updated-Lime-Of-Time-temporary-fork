@@ -1062,7 +1062,7 @@ export default function HomeScreen() {
     const totalRevenue = allAppts.filter((a) => a.status === "completed").reduce((s, a) => s + getPrice(a), 0);
 
     // Build 6 data points for the chart based on range
-    const monthlyData: { label: string; value: number; color: string }[] = [];
+    const monthlyData: { label: string; value: number; color: string; dateStr?: string }[] = [];
     const mColors = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0", "#E91E63", "#00BCD4"];
     if (kpiDateRange === "week") {
       const days = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -1071,7 +1071,7 @@ export default function HomeScreen() {
         d.setDate(now.getDate() - now.getDay() + i);
         const dStr = formatDateStr(d);
         const rev = completedRanged.filter((a) => a.date === dStr).reduce((s, a) => s + getPrice(a), 0);
-        monthlyData.push({ label: days[i], value: Math.round(rev), color: mColors[i % 6] });
+        monthlyData.push({ label: days[i], value: Math.round(rev), color: mColors[i % 6], dateStr: dStr });
       }
     } else if (kpiDateRange === "month") {
       for (let w = 0; w < 4; w++) {
@@ -1092,7 +1092,7 @@ export default function HomeScreen() {
       }
     }
 
-    const weeklyDailyData = monthlyData.map((d) => ({ ...d, apptCount: activeRanged.filter((a) => a.date === d.label).length }));
+    const weeklyDailyData = monthlyData.map((d) => ({ ...d, apptCount: activeRanged.filter((a) => a.date === (d.dateStr ?? d.label)).length }));
 
     const svcCounts: Record<string, number> = {};
     activeRanged.forEach((a) => { svcCounts[a.serviceId] = (svcCounts[a.serviceId] || 0) + 1; });

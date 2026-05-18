@@ -35,7 +35,7 @@ import * as Haptics from "expo-haptics";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { getCategoryDef, ALL_CATEGORY, SERVICE_CATEGORIES } from "@/constants/categories";
 import * as WebBrowser from "expo-web-browser";
-import { useStripe } from "@/lib/use-stripe";
+import { useStripe, initStripe } from "@/lib/use-stripe";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
 const GREEN_DARK   = "#1A3A28";
@@ -445,9 +445,10 @@ export default function ClientBuyGiftScreen() {
               setSubmitting(false);
               return;
             }
+            // Re-initialize Stripe with the connected account before presenting the payment sheet
+            await initStripe({ publishableKey: sheetData.publishableKey, stripeAccountId: sheetData.accountId });
             const { error: initError } = await initPaymentSheet({
               paymentIntentClientSecret: sheetData.paymentIntent,
-              stripeAccountId: sheetData.accountId,
               merchantDisplayName: businessName || "Business",
               style: "alwaysDark",
             });

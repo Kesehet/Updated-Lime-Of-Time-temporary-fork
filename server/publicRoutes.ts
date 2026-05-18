@@ -1317,7 +1317,10 @@ export function registerPublicRoutes(app: Express) {
         notes, totalPrice, locationId, paymentMethod, paymentConfirmationNumber,
         promoCode, promoLocalId,
         giftCode, giftApplied, giftUsedAmount, discountName, discountPercentage, discountAmount,
+        staffLocalId: _pkgStaffLocalIdField, staffId: _pkgStaffIdField,
       } = req.body;
+      // Accept both staffLocalId and staffId field names (client-booking-wizard sends staffId)
+      const bookStaffLocalId: string | undefined = _pkgStaffLocalIdField || _pkgStaffIdField || undefined;
       if (!clientName || !packageLocalId || !Array.isArray(sessions) || sessions.length === 0) {
         res.status(400).json({ error: "Missing required fields" }); return;
       }
@@ -7586,7 +7589,7 @@ function bookingPage(slug: string, owner: any, preselectedLocationId?: string | 
       }
       for (let day = 1; day <= daysInMonth; day++) {
         const ds = calYear + "-" + String(calMonth+1).padStart(2,"0") + "-" + String(day).padStart(2,"0");
-        const isPast = ds <= todayStr || (pkgMinDate && ds < pkgMinDate);
+        const isPast = ds < todayStr || (pkgMinDate && ds < pkgMinDate); // strictly past — today is selectable
         const isWorking = isWorkingDay(ds);
         // For package sessions, highlight the current session's already-selected date
         const isSelected = selectedPackage

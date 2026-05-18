@@ -25,7 +25,7 @@ import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
 import * as WebBrowser from "expo-web-browser";
 import { getApiBaseUrl } from "@/constants/oauth";
-import { useStripe } from "@/lib/use-stripe";
+import { useStripe, initStripe } from "@/lib/use-stripe";
 
 // ─── Portal palette ───────────────────────────────────────────────────────────
 const GREEN_DARK   = "#1A3A28";
@@ -92,9 +92,10 @@ export default function ClientGiftConfirmationScreen() {
           Alert.alert("Payment Error", sheetData?.error ?? "Could not start payment. Please try again.");
           return;
         }
+        // Re-initialize Stripe with the connected account before presenting the payment sheet
+        await initStripe({ publishableKey: sheetData.publishableKey, stripeAccountId: sheetData.accountId });
         const { error: initError } = await initPaymentSheet({
           paymentIntentClientSecret: sheetData.paymentIntent,
-          stripeAccountId: sheetData.accountId,
           merchantDisplayName: businessName ?? "Business",
           style: "alwaysDark",
         });

@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
@@ -40,14 +42,66 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+// ─── Rate limiters ────────────────────────────────────────────────────────────
+const authRateLimit = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
+  skip: () => process.env.NODE_ENV !== "production",
+});
+
+const bookingRateLimit = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many booking requests, please try again later." },
+  skip: () => process.env.NODE_ENV !== "production",
+});
+
+const otpRateLimit = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many OTP requests, please try again later." },
+  skip: () => process.env.NODE_ENV !== "production",
+});
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Enable CORS for all routes - reflect the request origin to support credentials
+  // ─── Security headers (helmet) ────────────────────────────────────────────
+  app.use(helmet({
+    // Allow inline scripts/styles for admin dashboard and public booking pages
+    contentSecurityPolicy: false,
+    // Allow framing for Stripe-hosted pages
+    frameguard: false,
+  }));
+
+  // ─── CORS ─────────────────────────────────────────────────────────────────
+  // In production, restrict to known origins. In dev, reflect any origin.
+  const ALLOWED_ORIGINS = [
+    "https://lime-of-time.com",
+    "https://www.lime-of-time.com",
+    // Expo dev tools and local dev
+    /^https?:\/\/localhost(:\d+)?$/,
+    /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
+    /^exp:\/\//,
+    /^exps:\/\//,
+    // Manus preview URLs
+    /\.manus\.computer$/,
+  ];
+
   app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin) {
+    const isAllowed = !origin || process.env.NODE_ENV !== "production" || ALLOWED_ORIGINS.some((o) =>
+      typeof o === "string" ? o === origin : o.test(origin)
+    );
+    if (origin && isAllowed) {
       res.header("Access-Control-Allow-Origin", origin);
     }
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
@@ -81,6 +135,16 @@ async function startServer() {
 
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+
+  // ─── Rate limiting ────────────────────────────────────────────────────────
+  // Auth endpoints (login, OTP send/verify)
+  app.use("/api/trpc/auth.login", authRateLimit);
+  app.use("/api/trpc/auth.sendOtp", otpRateLimit);
+  app.use("/api/trpc/auth.verifyOtp", otpRateLimit);
+  app.use("/api/client/send-otp", otpRateLimit);
+  app.use("/api/client/verify-otp", otpRateLimit);
+  // Public booking endpoints
+  app.use("/api/public", bookingRateLimit);
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });

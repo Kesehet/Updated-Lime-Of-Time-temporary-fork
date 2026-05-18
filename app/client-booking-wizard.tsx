@@ -125,6 +125,8 @@ interface PublicStaff {
   photoUri: string | null;
   serviceIds: string[];
   locationIds?: string[] | null;
+  active?: boolean;
+  color?: string | null;
 }
 interface PublicLocation {
   localId: string;
@@ -133,6 +135,9 @@ interface PublicLocation {
   phone: string;
   workingHours: Record<string, { enabled: boolean; start: string; end: string }> | null;
   temporarilyClosed: boolean;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
 }
 interface AvailableSlot {
   time: string;
@@ -265,6 +270,9 @@ export default function ClientBookingWizardScreen() {
   const [showFeeBreakdown, setShowFeeBreakdown] = useState(false);
   const pendingPaymentRef = useRef<{ appointmentId: string } | null>(null);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  // Derived: is the selected service a mobile/at-home service?
+  // Declared here (before PAYMENT_METHODS useMemo) to avoid used-before-declaration TS error.
+  const isMobileService = selectedService?.serviceType === 'mobile';
   // Build dynamic payment methods list — Card only shown when Stripe is connected
   const PAYMENT_METHODS = useMemo(() => {
     // Only include manual payment methods if the business has configured them
@@ -334,8 +342,6 @@ export default function ClientBookingWizardScreen() {
   // Build the step list dynamically — Date & Time are merged into one step
   // Products step is only shown when the business has products available
   const hasProducts = wizardProducts.length > 0;
-  // Address step is shown when selected service is mobile type
-  const isMobileService = selectedService?.serviceType === 'mobile';
   // Find the last client address used for this business (for pre-fill)
   const lastUsedAddress = useMemo(() => {
     if (!effectiveSlug) return (state.account as any)?.savedAddress ?? "";
@@ -1943,7 +1949,7 @@ export default function ClientBookingWizardScreen() {
                     ))}
                     {calDays.map((day) => {
                       const dateStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
-                      const isPast = dateStr <= todayDateStr;
+                      const isPast = dateStr < todayDateStr; // strictly past — today is selectable
                       const isUnavailable = !isPast && unavailableDates.has(dateStr);
                       const isClosed = !isPast && closedDates.has(dateStr);
                       const isFull = !isPast && fullDates.has(dateStr);

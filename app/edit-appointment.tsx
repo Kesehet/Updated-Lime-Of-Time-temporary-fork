@@ -468,7 +468,7 @@ export default function EditAppointmentScreen() {
 
     doSave();
   }, [appointment, selectedDate, selectedTime, selectedLocationId, activeLocations.length,
-      dispatch, syncToDb, router, editedClientAddress, addressChanged, primaryService, service, totalEditDuration, editExtraItems, newTotal,
+      dispatch, syncToDb, router, editedClientAddress, addressChanged, primaryService, service, totalEditDuration, editExtraItems,
       suggestedTravelFee, travelFeeRouteInfo]);
 
   // ── Guard: appointment not found ───────────────────────────────────────

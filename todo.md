@@ -2355,3 +2355,25 @@
 - [x] Fix #6: Add server-side promo code validation in create-package-checkout
 - [x] Fix #7: Add idempotency check to mark-gift-paid endpoint
 - [x] Fix #8: Add authentication to payment-intent-last4 endpoint
+
+## Go-Live Fixes (May 17, 2026)
+
+### Security Hardening
+- [x] Add helmet middleware for security headers (X-Frame-Options, HSTS, X-Content-Type-Options)
+- [x] Add express-rate-limit on /api/public/*/book and /api/auth/* endpoints
+- [x] Restrict CORS to lime-of-time.com domain in production
+
+### Open Bug Fixes
+- [x] Fix UPDATE_APPOINTMENT_STATUS tRPC sync error — added syncToDb call in status-detail.tsx handleMarkPaid
+- [x] Fix Home page KPI weekly chart apptCount — was comparing day abbreviation to date string (always 0)
+- [x] Fix past time slots showing for today in client portal — <= was blocking today; changed to <
+- [x] Fix past date blocking today on public /book/slug page — same <= bug fixed in publicRoutes.ts
+- [x] Fix bookStaffLocalId undefined in package booking handler (publicRoutes.ts)
+- [x] Fix Stripe Customer Portal returnUrl hardcoded to lime-of-time.com — now uses API base URL
+- [x] Fix initStripe race condition in client-buy-gift.tsx and client-gift-confirmation.tsx
+- [x] Fix stripeAccountId in initPaymentSheet (belongs in initStripe, not initPaymentSheet) in 3 files
+- [x] Fix TypeScript errors: pay_later added to paymentMethod union, newTotal removed from useCallback deps, staff create/update cast
+
+### Stripe Customer Portal
+- [x] Stripe Customer Portal endpoint already exists (POST /api/stripe/create-portal)
+- [x] Manage Billing button in Subscription screen already calls correct endpoint

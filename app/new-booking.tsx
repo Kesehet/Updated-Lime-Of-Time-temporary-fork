@@ -12,6 +12,7 @@ import {
   Modal,
   Image,
   KeyboardAvoidingView,
+  TouchableOpacity,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -24,7 +25,7 @@ import { trpc } from "@/lib/trpc";
 import { useActiveLocation } from "@/hooks/use-active-location";
 import { useResponsive } from "@/hooks/use-responsive";
 import { FuturisticBackground } from "@/components/futuristic-background";
-import { useStripe } from "@/lib/use-stripe";
+import { useStripe, initStripe } from "@/lib/use-stripe";
 import { apiCall } from "@/lib/_core/api";
 
 
@@ -58,7 +59,7 @@ export default function NewBookingScreen() {
   const params = useLocalSearchParams<{ date?: string; prefillServiceId?: string; prefillClientId?: string; prefillStaffId?: string }>();
 
    const sendSmsMutation = trpc.twilio.sendSms.useMutation();
-  const { initStripe, initPaymentSheet, presentPaymentSheet } = useStripe();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [chargingCard, setChargingCard] = useState(false);
   // Fee breakdown modal state
   const [feeBreakdown, setFeeBreakdown] = useState<{
@@ -120,7 +121,7 @@ export default function NewBookingScreen() {
     const savedAddr = (client as any)?.savedAddress ?? "";
     // Priority 2: most recent appointment with a clientAddress
     const past = state.appointments
-      .filter((a) => a.clientLocalId === selectedClientId && (a as any).clientAddress)
+      .filter((a) => a.clientId === selectedClientId && (a as any).clientAddress)
       .sort((a, b) => ((b as any).date ?? "").localeCompare((a as any).date ?? ""));
     const lastAddr: string = savedAddr || ((past[0] as any)?.clientAddress ?? "");
     if (!lastAddr) return;
@@ -159,10 +160,11 @@ export default function NewBookingScreen() {
   useEffect(() => {
     const allFilled = addrStreet.trim() && addrCity.trim() && addrState.trim() && addrZip.trim();
     if (!allFilled) { setTravelTimeEstimate(null); setDynamicTravelFee(null); setRouteDistanceMiles(null); setOutsideServiceArea(false); setCoveringStaffIds([]); return; }
-    // Get business origin address
-    const bizAddr = activeLocation
-      ? [activeLocation.address, activeLocation.city, activeLocation.state, activeLocation.zipCode].filter(Boolean).join(', ')
-      : [profile.address, profile.city, profile.state, profile.zipCode].filter(Boolean).join(', ');
+    // Get business origin address — use the selected location if available, otherwise fall back to business settings
+    const selectedLoc = selectedLocationId ? state.locations.find((l) => l.id === selectedLocationId) : (activeLocations.length === 1 ? activeLocations[0] : null);
+    const bizAddr = selectedLoc
+      ? [(selectedLoc as any).address, (selectedLoc as any).city, (selectedLoc as any).state, (selectedLoc as any).zipCode].filter(Boolean).join(', ')
+      : [(state.settings as any).address, (state.settings as any).city, (state.settings as any).state, (state.settings as any).zipCode].filter(Boolean).join(', ');
     if (!bizAddr) { setTravelTimeEstimate(null); setDynamicTravelFee(null); setRouteDistanceMiles(null); return; }
     const destAddr = clientAddress;
     let cancelled = false;

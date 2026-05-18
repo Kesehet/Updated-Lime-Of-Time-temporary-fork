@@ -396,7 +396,7 @@ export default function SubscriptionScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           businessOwnerId,
-          returnUrl: "https://lime-of-time.com",
+          returnUrl: getApiBaseUrl(),
         }),
       });
       const data = await res.json() as { url?: string; error?: string };
