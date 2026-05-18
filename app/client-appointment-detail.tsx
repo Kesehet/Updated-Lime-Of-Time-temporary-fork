@@ -8,6 +8,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useFocusEffect } from "expo-router";
 import {
   View,
   Text,
@@ -205,27 +206,30 @@ export default function ClientAppointmentDetailScreen() {
   const [reviewSuccess, setReviewSuccess] = useState(false);
   const [showSessionsAccordion, setShowSessionsAccordion] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await apiCall<ClientAppointment>(`/api/client/appointments/${id}`);
-        setAppt(data);
-        // Check if already reviewed (only for completed appointments)
-        if (data.status === "completed") {
-          try {
-            const check = await apiCall<{ reviewed: boolean }>(`/api/client/reviews/check/${id}`);
-            setAlreadyReviewed(check.reviewed);
-          } catch {
-            // Non-fatal — just don't show the review button
+  // Refresh appointment every time screen comes into focus (catches webhook-triggered paid status)
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        try {
+          const data = await apiCall<ClientAppointment>(`/api/client/appointments/${id}`);
+          setAppt(data);
+          // Check if already reviewed (only for completed appointments)
+          if (data.status === "completed") {
+            try {
+              const check = await apiCall<{ reviewed: boolean }>(`/api/client/reviews/check/${id}`);
+              setAlreadyReviewed(check.reviewed);
+            } catch {
+              // Non-fatal — just don't show the review button
+            }
           }
+        } catch (err) {
+          console.warn("[ApptDetail] load error:", err);
+        } finally {
+          setLoading(false);
         }
-      } catch (err) {
-        console.warn("[ApptDetail] load error:", err);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [id]);
+      })();
+    }, [id])
+  );
   // Auto-open review modal when navigated from push notification
   useEffect(() => {
     if (openReview === "1" && !loading && appt?.status === "completed" && !alreadyReviewed) {
@@ -233,11 +237,11 @@ export default function ClientAppointmentDetailScreen() {
     }
   }, [openReview, loading, appt?.status, alreadyReviewed]);
 
-  // ── AppState listener: check payment status immediately when client returns from Safari ──
+  // ── AppState listener: check payment status when client returns to app (covers SMS link flow too) ──
   useEffect(() => {
     if (!appt || appt.paymentStatus === "paid") return;
     const subscription = AppState.addEventListener("change", async (nextState) => {
-      if (nextState === "active" && pendingPaymentCheckRef.current) {
+      if (nextState === "active") {
         pendingPaymentCheckRef.current = false;
         try {
           const apiBase = getApiBaseUrl();
