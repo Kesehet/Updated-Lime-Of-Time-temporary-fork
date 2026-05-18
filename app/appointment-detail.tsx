@@ -642,6 +642,11 @@ export default function AppointmentDetailScreen() {
       // Re-initialize Stripe with the connected account before presenting the sheet.
       // The fee breakdown modal is shown between initStripe and presentPaymentSheet,
       // during which a StripeProvider re-render can reset the account context.
+      //
+      // CRITICAL FIX: On iOS, presenting a native Stripe payment sheet while a React
+      // Native Modal is still animating out causes the sheet to silently fail to appear.
+      // Wait for the modal's slide-out animation (300ms) to fully complete first.
+      await new Promise<void>((resolve) => setTimeout(resolve, 350));
       await initStripe({ publishableKey: feeBreakdown.publishableKey, stripeAccountId: feeBreakdown.accountId });
       const { error: presentError } = await presentPaymentSheet();
       if (presentError) {
