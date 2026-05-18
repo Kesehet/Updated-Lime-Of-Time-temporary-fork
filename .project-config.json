@@ -12,10 +12,10 @@
   "experiments": null,
   "git_remote": {
     "repo_url": "s3://vida-prod-gitrepo/webdev-git/310519663347678319/Dw4mhfnuurFcniLsqjLpWN",
-    "access_key_id": "ASIAZV3A2ECZB6WEAHDB",
-    "secret_access_key": "0CCnBEoYJTiQ5Utk5NkUZ+dT12NQ/ctLSRTSpnoS",
-    "session_token": "IQoJb3JpZ2luX2VjEM7//////////wEaCXVzLWVhc3QtMSJIMEYCIQC/lI5CBaGkWQcR/GyC4+dLkExUsFzk0THgSIw4vaPiCQIhAM/bkqecSasUQfOHTrYhi3WukqjsN+cxridPeKa0MR4GKv8DCJf//////////wEQBBoMNjY1Mzg2MDk4ODY2IgxSi9ImVj10NN6jbTMq0wNSi2X9xSkBPIEPLTXlVub3wfXyx2qrnl4f+FJTgF8iivkN6z5Br8Iy9hCtREAsMnH+kuUsYG92wu9jRIeY10LX95pKbRN/07kzh+XwPUvqtyQlHJ2JYVyO4ZU/IPN/whypyAyrp7QRu1uz8KvagcQnvRujvRQA7LBC4+WdgRUUnCY8gXQ040Rw2LoeA+vDejVFRO0rRZ5J8JsB+Kkhlb3+5L0R18AgxQowMidUKcG2cYWXD1IAifQwXYQwuHsnCtTQyxblWN17/stXclU8PgWBMvFaa25zK2geMqjVsp+30wGb8KKZTk6BaO8jQpxmzRpRd4iH9zxdn4VzajtqGD1BgiPakpruLkeOkqUcr+ZKzsGizQWhDoNqUo5vHnk6RBxYQiBOTGQmGyNlkpKT4PPzQSt61PhrTWgx32WWGN8A9y5GvA5/dspB5UWk2Jg87EYFJbT6a2AbVrDSI65lpCUJEq9QLSwPV446Knr9+uSs9JMUQBwQJTt7vtce9cvqw0l6aqn2Sxpm8EpcfuLug2lR/liwFrXMvvw8oUvMIgSgO4YpEM/CjYK09ocyLWOL/k6pY+mQbh0lsa8uG8rMSfHeXGMp4aynYbxsoHvlkApAApR/8jCF0aPQBjqcAfLl9QUIaXlgizMBVBcCZdqGLwon/WOtzFnimFduLRGoNaSbvNm7k46Cq7bAZ9EFpQZjM4fj2MLHTXLxRGaXr+x8uJGGv0/mKpukYThxNlA8sCaXNcj6pIIed49tS7A8LduiDDc//preSym7n0uLYV5HnosDhySHPbuGyPNGhGqAJav1Am7zFQoZu78ovCr9qLfxOD5KazbYUffFTg==",
-    "expiration": "2026-05-17T09:58:29.000Z"
+    "access_key_id": "ASIAZV3A2ECZIPJPTR2K",
+    "secret_access_key": "/AbOJTvNd0tJ8mFMalhdT+1vjwmJ8JgJpHIfNNhc",
+    "session_token": "IQoJb3JpZ2luX2VjEPr//////////wEaCXVzLWVhc3QtMSJHMEUCIQDTf/U/eQKIHPG+lSvHCBP7g6nVYkgMStcrsQfYE+RXAgIgAMUE/qBDWPNSTn2NMBPKcdzLylCWkz+BVIA7gm44HNcq/wMIw///////////ARAEGgw2NjUzODYwOTg4NjYiDHaL3P4j6Tr0jT6NwSrTA+JyldjQiR9a3xEAmArcGQhO+S6RousrUfiW8pkmnDBX0bbcrGF0W74ZT3oNMwH9lSMJR7fhKju3s0ZsJtGPljjKbOt0xYSNBkJZFhG1QIjpn5aQ8Jz9v5Z69P3TQHvlQSSCTbFJET3KiK/tyUmzvPPhZbfONUJmghlzlllsto7J3W2O6svFv0AFMEIcEVlWgSUH14MT8FouqJkxRSrOaH+KOwDMegMvXYx2g5W4NXZgu3ApIID+aVyIvuQSJifvk5reabWI6sPBN+Aho5++x4PaRxP8oVd9WXSLM7vtp7coejJoMYLIQjmXvJIb2vUlrTIxzcpDCg4PBozIU/GsBF2oO+3ezUYPbUZH81xbdASwOP2L+FMf0QUSfAStiELoPdEADh6W8AHAlnZ0SVFwl1k7E3m7/Y1D1fgy/lvblFGUFiNa+HRv6w4LAfp2rm/aUQlCVJXW+2XaF1S9Z6FT1A4CDzyXV8i6NbWddXWTYUgxabs/M5JzSH2VtyU9OiSqGtbwJhmf7rM9tZpc0vg0ueDvEX9Vngr5OVlBqrJOM46ZbkLS55CgkM4K82CxFjfAL+/AwBuQJfG3VrbcnXklEhoZecpAOFT4ryKlydEdipjRzWGCMOGgrdAGOp0BGEvV2zh/UiT8WjpRbGFu11tvtqD8Wg4NcDML0VwXxZw/A0CMCyS9/oZJEKjsKlAGvgButgD73qLvyaoYOEo6HRKsu7qCHa2w7idEBu5a/NgFBfrIYQfOokZMe+Elw7e2VR+gZgn6fwyDcY7VtO4AvNGvsaJVVHW3eRjp6qmVz6ks1KzFkalxtjRrYMKr+gXE9lj7UArodAZg63wm0Q==",
+    "expiration": "2026-05-19T05:46:09.000Z"
   },
   "name": "manus-scheduler",
   "path": "/home/ubuntu/manus-scheduler",
