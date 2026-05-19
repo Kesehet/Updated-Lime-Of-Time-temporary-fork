@@ -56,23 +56,23 @@ const config: ExpoConfig = {
     },
   },
 
-  ios: {
-    supportsTablet: true,
-    bundleIdentifier: env.iosBundleId,
-    infoPlist: {
-      ITSAppUsesNonExemptEncryption: false,
-    },
-    splash: {
-      image: "./assets/images/splash-icon.png",
-      resizeMode: "contain",
-      backgroundColor: "#0D2318",
-      dark: {
+    ios: {
+      supportsTablet: true,
+      bundleIdentifier: env.iosBundleId,
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+      },
+      splash: {
         image: "./assets/images/splash-icon.png",
-        resizeMode: "contain",
+        resizeMode: "cover",
         backgroundColor: "#0D2318",
+        dark: {
+          image: "./assets/images/splash-icon.png",
+          resizeMode: "cover",
+          backgroundColor: "#0D2318",
+        },
       },
     },
-  },
 
   android: {
     adaptiveIcon: {
@@ -141,8 +141,7 @@ const config: ExpoConfig = {
       "expo-splash-screen",
       {
         image: "./assets/images/splash-icon.png",
-        imageWidth: 400,
-        resizeMode: "contain",
+        resizeMode: "cover",
         backgroundColor: "#0D2318",
         dark: {
           backgroundColor: "#0D2318",

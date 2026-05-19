@@ -179,6 +179,9 @@ function formatDateLabel(d: Date): string {
 export default function ClientBookingWizardScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
+  // Calculate exact cell width to avoid floating-point wrapping (14.28% × 7 = 99.96%, causing wrap)
+  const calCellWidth = Math.floor((screenWidth - 40) / 7);
   const { slug, businessSlug, serviceLocalId, preServiceName, preStaffId, preStaffName, packageLocalId, preGiftCode } = useLocalSearchParams<{ slug?: string; businessSlug?: string; serviceLocalId?: string; preServiceName?: string; preStaffId?: string; preStaffName?: string; packageLocalId?: string; preGiftCode?: string }>();
   const effectiveSlug = slug || businessSlug || "";
   const { state, dispatch } = useClientStore();
@@ -1852,10 +1855,12 @@ export default function ClientBookingWizardScreen() {
                 const totalCells = leadingEmpties + daysInMonth;
                 // Pad to a complete 7-column row so no trailing empty row remains
                 const trailingEmpties = (7 - (totalCells % 7)) % 7;
+                // Use exact pixel width to prevent floating-point wrap (14.28% × 7 = 99.96%)
+                const cellStyle = [s.calCell, { width: calCellWidth, height: Math.floor(calCellWidth / 1.2) }];
                 return (
                   <>
                     {Array.from({ length: leadingEmpties }).map((_, i) => (
-                      <View key={`lead-${i}`} style={s.calCell} />
+                      <View key={`lead-${i}`} style={cellStyle} />
                     ))}
                     {calDays.map((day) => {
                       const dateStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
@@ -1879,6 +1884,7 @@ export default function ClientBookingWizardScreen() {
                           key={day.toISOString()}
                           style={({ pressed }) => [
                             s.calCell,
+                            { width: calCellWidth, height: Math.floor(calCellWidth / 1.2) },
                             isSelected && { backgroundColor: LIME_GREEN, borderRadius: 20 },
                             isToday && !isSelected && { borderWidth: 1.5, borderColor: LIME_GREEN, borderRadius: 20, opacity: 0.45 },
                             !isToday && isPast && { opacity: isClosed ? 0.25 : 0.45 },
@@ -1919,7 +1925,7 @@ export default function ClientBookingWizardScreen() {
                       );
                     })}
                     {Array.from({ length: trailingEmpties }).map((_, i) => (
-                      <View key={`trail-${i}`} style={s.calCell} />
+                      <View key={`trail-${i}`} style={cellStyle} />
                     ))}
                   </>
                 );
@@ -3206,7 +3212,7 @@ const styles = (colors: ReturnType<typeof useColors>) =>
     dayHeaders: { flexDirection: "row", marginBottom: 4 },
     dayHeader: { flex: 1, textAlign: "center", fontSize: 12, fontWeight: "600" },
     calGrid: { flexDirection: "row", flexWrap: "wrap" },
-    calCell: { width: "14.28%" as any, aspectRatio: 1.1, alignItems: "center", justifyContent: "center" },
+    calCell: { width: "14.28%" as any, aspectRatio: 1.2, alignItems: "center", justifyContent: "center" },
     selectedDateLabel: { textAlign: "center", fontSize: 14, fontWeight: "600", marginTop: 12 },
     timeSectionHeader: { flexDirection: "row" as const, alignItems: "center" as const, gap: 6, marginBottom: 6 },
     timeSectionTitle: { fontSize: 15, fontWeight: "700" as const },
