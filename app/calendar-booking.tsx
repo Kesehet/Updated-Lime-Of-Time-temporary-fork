@@ -277,12 +277,25 @@ export default function CalendarBookingScreen() {
   );
 
   const isMobileService = selectedService?.serviceType === 'mobile';
+  const getBufferTimeForLocation = useCallback((locationId?: string | null) => {
+    const globalBuffer = Math.max(0, Number((state.settings as any).bufferTime ?? 0));
+    if (!locationId) return globalBuffer;
+    const loc = state.locations.find((l) => l.id === locationId);
+    const locationBuffer = loc?.bufferMinutes;
+    if (locationBuffer == null || Number.isNaN(Number(locationBuffer))) return globalBuffer;
+    return Math.max(0, Number(locationBuffer));
+  }, [state.settings, state.locations]);
+
+  const effectiveBufferTime = useMemo(() => {
+    return getBufferTimeForLocation(selectedLocationId);
+  }, [getBufferTimeForLocation, selectedLocationId]);
 
   const totalDuration = useMemo(() => {
     const baseDur = selectedServices.reduce((s, i) => s + i.duration, 0) + cart.reduce((s, i) => s + i.duration, 0);
-    // Add travel duration (round trip) for mobile services
+    // Add one-way travel duration for mobile services.
+    // Buffer is added separately through availability filtering.
     if (isMobileService && (selectedService as any)?.travelDuration > 0) {
-      return baseDur + (selectedService as any).travelDuration * 2;
+      return baseDur + (selectedService as any).travelDuration;
     }
     return baseDur;
   }, [selectedServices, cart, isMobileService, selectedService]);
@@ -298,11 +311,11 @@ export default function CalendarBookingScreen() {
   );
 
   const effectiveStep = useMemo(() => {
-    const bufferMin = (state.settings as any).bufferTime ?? 0;
+    const bufferMin = effectiveBufferTime;
     const autoStep = Math.max(5, totalDuration + bufferMin);
     const configured = (state.settings as any).slotInterval ?? 0;
     return configured > 0 ? configured : autoStep;
-  }, [(state.settings as any).slotInterval, (state.settings as any).bufferTime, totalDuration]);
+  }, [(state.settings as any).slotInterval, totalDuration, effectiveBufferTime]);
 
   const locationWorkingHours = useMemo(() => {
     if (
@@ -1041,7 +1054,7 @@ export default function CalendarBookingScreen() {
           if (!step0IsAllMode) {
             return generateCalendarSlots(
               ds, step0DefaultDuration, step0WorkingHours, step0Appts, step0EffectiveInterval,
-              step0CustomSchedule, state.settings.scheduleMode, (state.settings as any).bufferTime ?? 0
+              step0CustomSchedule, state.settings.scheduleMode, effectiveBufferTime
             );
           }
           // All-locations mode: union slots across all locations (same logic as Calendar tab)
@@ -1080,7 +1093,7 @@ export default function CalendarBookingScreen() {
               fullLocWh,
               locAppts, step0EffectiveInterval,
               mergedCustomSchedule,
-              state.settings.scheduleMode, (state.settings as any).bufferTime ?? 0
+              state.settings.scheduleMode, getBufferTimeForLocation(loc.id)
             );
             const locBooked = new Set(
               locAppts
@@ -1190,7 +1203,7 @@ export default function CalendarBookingScreen() {
               fullLocWh,
               locAppts, step0EffectiveInterval,
               mergedCustomSchedule,
-              state.settings.scheduleMode, (state.settings as any).bufferTime ?? 0
+              state.settings.scheduleMode, getBufferTimeForLocation(loc.id)
             );
             const locBooked = new Set(
               locAppts
@@ -2044,7 +2057,7 @@ export default function CalendarBookingScreen() {
             30,
             state.customSchedule ?? [],
             state.settings.scheduleMode,
-            (state.settings as any).bufferTime ?? 0
+            effectiveBufferTime
           );
         })();
 
@@ -2191,7 +2204,7 @@ export default function CalendarBookingScreen() {
                       ds, sessionDuration, state.settings.workingHours,
                       state.appointments, 30,
                       state.customSchedule ?? [], state.settings.scheduleMode,
-                      (state.settings as any).bufferTime ?? 0
+                      effectiveBufferTime
                     );
                     return slots.length;
                   })();
@@ -2555,7 +2568,7 @@ export default function CalendarBookingScreen() {
                 effectiveStep,
                 mergedCustom,
                 state.settings.scheduleMode,
-                state.settings.bufferTime ?? 0
+                effectiveBufferTime
               );
               timeAvailable = slots.includes(preselectedTime);
             }
