@@ -1545,6 +1545,8 @@ const locationsRouter = router({
         reopenOn: z.string().optional().nullable(),
         workingHours: z.any().optional(),
         photoUri: z.string().optional().nullable(),
+        bufferMinutes: z.number().optional().nullable(),
+        slotIntervalMinutes: z.number().optional().nullable(),
         countryCode: z.string().optional(),
       })
     )
@@ -1595,6 +1597,8 @@ const locationsRouter = router({
         reopenOn: z.string().optional().nullable(),
         workingHours: z.any().optional(),
         photoUri: z.string().optional().nullable(),
+        bufferMinutes: z.number().optional().nullable(),
+        slotIntervalMinutes: z.number().optional().nullable(),
         countryCode: z.string().optional(),
       })
     )

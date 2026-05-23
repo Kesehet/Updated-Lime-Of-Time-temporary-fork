@@ -925,14 +925,11 @@ function filterSlots(
     const slotEnd = slotStart + serviceDuration;
     return !dayAppointments.some((a) => {
       const apptStart = timeToMinutes(a.time);
-      const apptEnd = apptStart + a.duration;
-      // Buffer applies ONLY after an appointment ends (not before it starts).
-      // A slot is blocked if:
-      //   - it overlaps the appointment itself (slotStart < apptEnd && slotEnd > apptStart), OR
-      //   - it starts within bufferTime minutes after the appointment ends
-      //     (i.e., slotStart < apptEnd + bufferTime)
-      // But we do NOT block slots that end within bufferTime of the appointment start.
-      return slotStart < (apptEnd + bufferTime) && slotEnd > apptStart;
+      const apptBlockStart = apptStart - bufferTime;
+      const apptBlockEnd = apptStart + a.duration + bufferTime;
+      // Symmetric single buffer around booked appointments:
+      // unavailable block = [start - buffer, start + duration + buffer)
+      return slotStart < apptBlockEnd && slotEnd > apptBlockStart;
     });
   });
 }
@@ -1010,7 +1007,7 @@ export function generateCalendarSlots(
   const dayAppts = appointments
     .filter((a) => a.date === date && a.status !== "cancelled")
     .map((a) => ({
-      start: timeToMinutes(a.time),
+      start: timeToMinutes(a.time) - bufferTime,
       end: timeToMinutes(a.time) + a.duration + bufferTime,
     }))
     .sort((a, b) => a.start - b.start);

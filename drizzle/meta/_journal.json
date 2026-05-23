@@ -610,6 +610,13 @@
       "when": 1778899434899,
       "tag": "0086_overconfident_elektra",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "5",
+      "when": 1779402196424,
+      "tag": "0087_location_scheduling_overrides",
+      "breakpoints": true
     }
   ]
 }

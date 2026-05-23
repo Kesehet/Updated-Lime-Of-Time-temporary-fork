@@ -994,6 +994,8 @@ export function dbLocationToLocal(l: any): Location {
     reopenOn: l.reopenOn ?? undefined,
     workingHours: (l.workingHours && Object.keys(l.workingHours).length > 0) ? normalizeWorkingHours(l.workingHours) : null,
     photoUri: l.photoUri ?? undefined,
+    bufferMinutes: l.bufferMinutes ?? null,
+    slotIntervalMinutes: l.slotIntervalMinutes ?? null,
     createdAt: l.createdAt ? new Date(l.createdAt).toISOString() : new Date().toISOString(),
     countryCode: l.countryCode ?? "+1",
   };
@@ -1299,6 +1301,8 @@ export function StoreProvider({ children, onStoreLoaded }: { children: React.Rea
                           temporarilyClosed: loc.temporarilyClosed,
                           reopenOn: loc.reopenOn,
                           workingHours: loc.workingHours,
+                          bufferMinutes: loc.bufferMinutes ?? null,
+                          slotIntervalMinutes: loc.slotIntervalMinutes ?? null,
                         }).catch(() => {});
                       }
                     }
@@ -2337,6 +2341,8 @@ export function StoreProvider({ children, onStoreLoaded }: { children: React.Rea
               isDefault: loc.isDefault,
               active: loc.active,
               workingHours: loc.workingHours,
+              bufferMinutes: loc.bufferMinutes ?? null,
+              slotIntervalMinutes: loc.slotIntervalMinutes ?? null,
               countryCode: loc.countryCode || "+1",
             });
             break;
@@ -2362,6 +2368,8 @@ export function StoreProvider({ children, onStoreLoaded }: { children: React.Rea
                 temporarilyClosed: loc.temporarilyClosed,
                 reopenOn: loc.reopenOn,
                 workingHours: loc.workingHours,
+                bufferMinutes: loc.bufferMinutes ?? null,
+                slotIntervalMinutes: loc.slotIntervalMinutes ?? null,
                 countryCode: loc.countryCode || "+1",
               });
             } else {
@@ -2381,6 +2389,8 @@ export function StoreProvider({ children, onStoreLoaded }: { children: React.Rea
                 temporarilyClosed: loc.temporarilyClosed,
                 reopenOn: loc.reopenOn,
                 workingHours: loc.workingHours,
+                bufferMinutes: loc.bufferMinutes ?? null,
+                slotIntervalMinutes: loc.slotIntervalMinutes ?? null,
                 countryCode: loc.countryCode || "+1",
               });
             }

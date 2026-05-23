@@ -600,6 +600,10 @@ export const locations = mysqlTable("locations", {
   /** Optional cover photo URL for this location */
   photoUri: text("photoUri"),
   workingHours: json("workingHours"),
+  /** Optional location-specific buffer override. Null uses the business setting. */
+  bufferMinutes: int("bufferMinutes"),
+  /** Optional location-specific slot interval override. Null uses the business setting. */
+  slotIntervalMinutes: int("slotIntervalMinutes"),
   /** Geocoded latitude */
   lat: decimal("lat", { precision: 10, scale: 7 }),
   /** Geocoded longitude */
